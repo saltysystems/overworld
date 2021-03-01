@@ -1,0 +1,114 @@
+syntax = "proto2";
+
+package goblet;
+
+message AccountNewReq {
+	required string email = 1;
+	required string password = 2;
+}
+
+message AccountNewResp {
+	enum Status {
+		OK = 0;
+		ERROR = 1;
+	}
+	required Status status = 1;
+	optional string error = 2;
+}
+
+message AccountLoginReq {
+	required string email = 1;
+	required string password = 2;
+}
+
+message AccountLoginResp {
+	enum Status {
+		OK = 0;
+		ERROR = 1;
+	}
+	required Status status = 1;
+	message Player {
+		required string name = 1;
+	}
+	repeated Player players = 2;
+	optional string error = 3;
+}
+
+// opcode 0x1050
+message PlayerNewReq {
+	required string name = 1;
+	required string title = 2;
+	required uint32 appearance = 3;
+	required string role = 4;
+}
+
+// opcode 0x1060 
+message PlayerNewResp {
+	enum Status {
+		OK = 0;
+		ERROR = 1;
+	}
+	required Status status = 1;
+	optional string error = 3;
+}
+
+message PlayerAuthenticate {
+	required bytes id = 1;
+}
+
+message PlayerLog {
+	required string msg = 2;
+}
+
+enum GameObject {
+	ROOM = 0;
+	ENTITY = 1;
+	SCRIPT = 2;
+}
+
+// opcode 0x1070                               
+message ObjectGet {                            
+        required bytes id = 1;          
+        enum GameObject {                      
+                ROOM = 0;           
+                ENTITY = 1;      
+                SCRIPT = 2;                    
+        }                                      
+        required GameObject object = 2;
+		// allow retrieval by id or name
+		optional bytes oid = 3;
+        optional string name = 4;
+}
+
+message ShellCommand {
+	required bytes id = 1; // player id
+	required string command = 2;
+}
+
+// messages
+message Room {
+	required string name = 1;
+    required bytes ownerid = 2;
+	required string description = 3;
+
+	required bool backlink = 4;
+	repeated string link = 5;
+	repeated Entity entity = 6;
+	repeated LuaScript script = 7;
+}
+
+message Entity { 
+	required bytes id = 1;
+	required string name = 2;
+	// name, qty ?
+	//map<string,uint32> stats = 3;
+	//map<string,uint32> inventory = 4;
+	required string room = 3;
+	//repeated LuaScript script = 4;
+}
+
+message LuaScript {
+	required bytes id = 1;
+	optional string name = 2;
+	required string content = 3;
+}

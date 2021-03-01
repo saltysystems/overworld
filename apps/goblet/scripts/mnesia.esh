@@ -1,0 +1,87 @@
+#!/usr/bin/env escript
+%% -*- erlang -*-
+%%! -smp enable ls-mnesia debug verbose
+
+-include("../include/goblet_database.hrl").
+
+-record(goblet_table_ids, {table_name, last_id}).
+
+main(Args) ->
+	case Args of
+    	[String] ->
+			io:format("Writing database files to ~p~n", [String]),
+			application:set_env(mnesia, dir, String);
+		[] -> 
+			io:format("Writing database files to ~p~n", [?DATABASE_DIR]),
+			application:set_env(mnesia, dir, ?DATABASE_DIR)
+	end,
+    application:stop(mnesia),
+    install([node()|nodes()]).
+
+install(Nodes) ->
+    case mnesia:create_schema(Nodes) of
+        ok -> 
+            rpc:multicall(Nodes, application, start, [mnesia]),
+			counter_create_table(Nodes),
+			account_create_table(Nodes),
+			player_create_table(Nodes),
+			entity_create_table(Nodes),
+			object_create_table(Nodes),
+			script_create_table(Nodes),
+			zone_create_table(Nodes),
+			setup_counters([goblet_account, goblet_player, goblet_entity, goblet_object, goblet_script, goblet_zone]),
+            rpc:multicall(Nodes, application, stop, [mnesia]);
+        Err -> 
+            io:format("Couldn't create schema: ~p", [Err]),
+            Err
+    end.    
+
+setup_counters([]) ->
+	ok;
+setup_counters([H|T]) ->
+    Fun = fun() ->
+                mnesia:write(goblet_table_ids, 
+                  #goblet_table_ids{table_name=H, last_id=0}, 
+                  write
+                )
+          end,
+    {atomic, ok} = mnesia:transaction(Fun),
+	setup_counters(T).
+	
+counter_create_table(Nodes) ->
+    {_, ok} = mnesia:create_table(goblet_table_ids, [
+			   {record_name, goblet_table_ids},
+			   {attributes, record_info(fields, goblet_table_ids)},
+				 {disc_copies, Nodes}
+    			]).
+
+account_create_table(Nodes) ->
+	{_, ok} = mnesia:create_table(goblet_account,
+				[{attributes, record_info(fields, goblet_account)},
+				 {disc_copies, Nodes}
+				 ]).
+player_create_table(Nodes) ->
+	{_, ok} = mnesia:create_table(goblet_player,
+				[{attributes, record_info(fields, goblet_player)},
+				 {disc_copies, Nodes}
+				 ]).
+entity_create_table(Nodes) ->
+	{_, ok} = mnesia:create_table(goblet_entity,
+				[{attributes, record_info(fields, goblet_entity)},
+				 {disc_copies, Nodes}
+				 ]).
+object_create_table(Nodes) ->
+	{_, ok} = mnesia:create_table(goblet_object,
+				[{attributes, record_info(fields, goblet_object)},
+				 {disc_copies, Nodes}
+				 ]).
+script_create_table(Nodes) ->
+	{_, ok} = mnesia:create_table(goblet_script,
+				[{attributes, record_info(fields, goblet_script)},
+				 {disc_copies, Nodes}
+				 ]).
+zone_create_table(Nodes) ->
+	{_, ok} = mnesia:create_table(goblet_zone,
+				[{attributes, record_info(fields, goblet_zone)},
+				 {disc_copies, Nodes}
+				 ]).
