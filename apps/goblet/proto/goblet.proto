@@ -39,7 +39,13 @@ message PlayerNewReq {
 	required string name = 1;
 	required string title = 2;
 	required uint32 appearance = 3;
-	required string role = 4;
+	enum Role {
+		DESTROYER = 0;
+		INTERCEPTOR = 1;
+		REPAIR = 2;
+		CARRIER = 3;
+	}
+	required Role role = 4;
 }
 
 // opcode 0x1060 
