@@ -68,5 +68,5 @@ player_new_test() ->
 				name = "Chester The Tester",
 				title = "Rickety Mockup",
 				appearance = 1,
-				role = "test"}),
+				role = 'INTERCEPTOR'}),
 	goblet_protocol:player_new(Message, State).
