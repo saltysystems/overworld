@@ -9,10 +9,12 @@
     account_login/2,
     create_player/6,
     delete_player/2,
+    delete_orphaned_player/1,
     player_by_name/1,
     salt_and_hash/2
 ]).
 
+-spec create_account(list(), list()) -> ok | {error, atom()}.
 create_account(Email, Password) ->
     Fun = fun() ->
         case mnesia:read({goblet_account, Email}) of
@@ -38,12 +40,14 @@ create_account(Email, Password) ->
     end,
     mnesia:activity(transaction, Fun).
 
+-spec delete_account(list()) -> ok.
 delete_account(Email) ->
     Fun = fun() ->
         mnesia:delete({goblet_account, Email})
     end,
     mnesia:activity(transaction, Fun).
 
+-spec account_by_email(list()) -> ok | {error, atom()}.
 account_by_email(Email) ->
     Fun = fun() ->
         case mnesia:read({goblet_account, Email}) of
@@ -55,6 +59,7 @@ account_by_email(Email) ->
     end,
     mnesia:activity(transaction, Fun).
 
+-spec player_by_name(list()) -> ok | {error, atom()}.
 player_by_name(Name) ->
     Fun = fun() ->
         case mnesia:read({goblet_player, Name}) of
@@ -66,6 +71,7 @@ player_by_name(Name) ->
     end,
     mnesia:activity(transaction, Fun).
 
+-spec create_player(list(), list(), pos_integer(), atom(), list(), list()) -> ok | {error, atom()}.
 create_player(Name, Title, Appearance, Role, Zone, Email) ->
     Fun = fun() ->
         case mnesia:read({goblet_player, Name}) of
@@ -100,6 +106,7 @@ create_player(Name, Title, Appearance, Role, Zone, Email) ->
     end,
     mnesia:activity(transaction, Fun).
 
+-spec delete_player(list(), list()) -> ok.
 delete_player(Name, Email) ->
     Fun = fun() ->
         mnesia:delete({goblet_player, Name}),
@@ -114,11 +121,26 @@ delete_player(Name, Email) ->
     mnesia:activity(transaction, Fun).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Exported, but unsafe functions %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+-spec delete_orphaned_player(list()) -> ok.
+delete_orphaned_player(Name) ->
+    % Some players can get orphaned from their account during unusual
+    % conditions or database testing
+    Fun = fun() ->
+        mnesia:delete({goblet_player, Name})
+    end,
+    mnesia:activity(transaction, Fun).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Internal functions             %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 account_login(Email, Password) ->
     case account_by_email(Email) of
-        [] ->
-            {error, no_such_account};
+        {error, Error} ->
+            {error, Error};
         Record ->
             Hash = Record#'goblet_account'.hash,
             Salt = Record#'goblet_account'.salt,
