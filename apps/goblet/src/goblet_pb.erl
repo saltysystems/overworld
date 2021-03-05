@@ -26,6 +26,7 @@
     'enum_value_by_symbol_AccountLoginResp.Status'/1
 ]).
 
+-export(['enum_symbol_by_value_PlayerNewReq.Role'/1, 'enum_value_by_symbol_PlayerNewReq.Role'/1]).
 -export([
     'enum_symbol_by_value_PlayerNewResp.Status'/1,
     'enum_value_by_symbol_PlayerNewResp.Status'/1
@@ -71,6 +72,7 @@
 %% enumerated types
 -type 'AccountNewResp.Status'() :: 'OK' | 'ERROR'.
 -type 'AccountLoginResp.Status'() :: 'OK' | 'ERROR'.
+-type 'PlayerNewReq.Role'() :: 'DESTROYER' | 'INTERCEPTOR' | 'REPAIR' | 'CARRIER'.
 -type 'PlayerNewResp.Status'() :: 'OK' | 'ERROR'.
 -type 'GameObject'() :: 'ROOM' | 'ENTITY' | 'SCRIPT'.
 -type 'ObjectGet.GameObject'() :: 'ROOM' | 'ENTITY' | 'SCRIPT'.
@@ -78,6 +80,7 @@
 -export_type([
     'AccountNewResp.Status'/0,
     'AccountLoginResp.Status'/0,
+    'PlayerNewReq.Role'/0,
     'PlayerNewResp.Status'/0,
     'GameObject'/0,
     'ObjectGet.GameObject'/0
@@ -410,7 +413,11 @@ encode_msg_PlayerNewReq(
     end,
     begin
         TrF4 = id(F4, TrUserData),
-        e_type_string(TrF4, <<B3/binary, 34>>, TrUserData)
+        'e_enum_PlayerNewReq.Role'(
+            TrF4,
+            <<B3/binary, 32>>,
+            TrUserData
+        )
     end.
 
 encode_msg_PlayerNewResp(Msg, TrUserData) ->
@@ -756,6 +763,33 @@ e_field_Room_script([], Bin, _TrUserData) ->
 ) ->
     <<Bin/binary, 1>>;
 'e_enum_AccountLoginResp.Status'(V, Bin, _TrUserData) ->
+    e_varint(V, Bin).
+
+'e_enum_PlayerNewReq.Role'(
+    'DESTROYER',
+    Bin,
+    _TrUserData
+) ->
+    <<Bin/binary, 0>>;
+'e_enum_PlayerNewReq.Role'(
+    'INTERCEPTOR',
+    Bin,
+    _TrUserData
+) ->
+    <<Bin/binary, 1>>;
+'e_enum_PlayerNewReq.Role'(
+    'REPAIR',
+    Bin,
+    _TrUserData
+) ->
+    <<Bin/binary, 2>>;
+'e_enum_PlayerNewReq.Role'(
+    'CARRIER',
+    Bin,
+    _TrUserData
+) ->
+    <<Bin/binary, 3>>;
+'e_enum_PlayerNewReq.Role'(V, Bin, _TrUserData) ->
     e_varint(V, Bin).
 
 'e_enum_PlayerNewResp.Status'('OK', Bin, _TrUserData) ->
@@ -2943,7 +2977,7 @@ dfp_read_field_def_PlayerNewReq(
         TrUserData
     );
 dfp_read_field_def_PlayerNewReq(
-    <<34, Rest/binary>>,
+    <<32, Rest/binary>>,
     Z1,
     Z2,
     F@_1,
@@ -3064,7 +3098,7 @@ dg_read_field_def_PlayerNewReq(
                 F@_4,
                 TrUserData
             );
-        34 ->
+        32 ->
             d_field_PlayerNewReq_role(
                 Rest,
                 0,
@@ -3315,11 +3349,17 @@ d_field_PlayerNewReq_role(
     _,
     TrUserData
 ) ->
-    {NewFValue, RestF} = begin
-        Len = X bsl N + Acc,
-        <<Bytes:Len/binary, Rest2/binary>> = Rest,
-        {id(binary:copy(Bytes), TrUserData), Rest2}
-    end,
+    {NewFValue, RestF} =
+        {id(
+                'd_enum_PlayerNewReq.Role'(begin
+                    <<Res:32/signed-native>> =
+                        <<(X bsl N +
+                                Acc):32/unsigned-native>>,
+                    id(Res, TrUserData)
+                end),
+                TrUserData
+            ),
+            Rest},
     dfp_read_field_def_PlayerNewReq(
         RestF,
         0,
@@ -7352,6 +7392,12 @@ skip_64_LuaScript(
 'd_enum_AccountLoginResp.Status'(1) -> 'ERROR';
 'd_enum_AccountLoginResp.Status'(V) -> V.
 
+'d_enum_PlayerNewReq.Role'(0) -> 'DESTROYER';
+'d_enum_PlayerNewReq.Role'(1) -> 'INTERCEPTOR';
+'d_enum_PlayerNewReq.Role'(2) -> 'REPAIR';
+'d_enum_PlayerNewReq.Role'(3) -> 'CARRIER';
+'d_enum_PlayerNewReq.Role'(V) -> V.
+
 'd_enum_PlayerNewResp.Status'(0) -> 'OK';
 'd_enum_PlayerNewResp.Status'(1) -> 'ERROR';
 'd_enum_PlayerNewResp.Status'(V) -> V.
@@ -7953,7 +7999,11 @@ v_msg_PlayerNewReq(
     v_type_string(F1, [name | Path], TrUserData),
     v_type_string(F2, [title | Path], TrUserData),
     v_type_uint32(F3, [appearance | Path], TrUserData),
-    v_type_string(F4, [role | Path], TrUserData),
+    'v_enum_PlayerNewReq.Role'(
+        F4,
+        [role | Path],
+        TrUserData
+    ),
     ok;
 v_msg_PlayerNewReq(X, Path, _TrUserData) ->
     mk_type_error({expected_msg, 'PlayerNewReq'}, X, Path).
@@ -8225,6 +8275,43 @@ v_msg_LuaScript(X, Path, _TrUserData) ->
         Path
     ).
 
+-compile({nowarn_unused_function, 'v_enum_PlayerNewReq.Role'/3}).
+
+-dialyzer({nowarn_function, 'v_enum_PlayerNewReq.Role'/3}).
+
+'v_enum_PlayerNewReq.Role'(
+    'DESTROYER',
+    _Path,
+    _TrUserData
+) ->
+    ok;
+'v_enum_PlayerNewReq.Role'(
+    'INTERCEPTOR',
+    _Path,
+    _TrUserData
+) ->
+    ok;
+'v_enum_PlayerNewReq.Role'(
+    'REPAIR',
+    _Path,
+    _TrUserData
+) ->
+    ok;
+'v_enum_PlayerNewReq.Role'(
+    'CARRIER',
+    _Path,
+    _TrUserData
+) ->
+    ok;
+'v_enum_PlayerNewReq.Role'(V, Path, TrUserData) when is_integer(V) ->
+    v_type_sint32(V, Path, TrUserData);
+'v_enum_PlayerNewReq.Role'(X, Path, _TrUserData) ->
+    mk_type_error(
+        {invalid_enum, 'PlayerNewReq.Role'},
+        X,
+        Path
+    ).
+
 -compile({nowarn_unused_function, 'v_enum_PlayerNewResp.Status'/3}).
 
 -dialyzer({nowarn_function, 'v_enum_PlayerNewResp.Status'/3}).
@@ -8415,6 +8502,12 @@ get_msg_defs() ->
     [
         {{enum, 'AccountNewResp.Status'}, [{'OK', 0}, {'ERROR', 1}]},
         {{enum, 'AccountLoginResp.Status'}, [{'OK', 0}, {'ERROR', 1}]},
+        {{enum, 'PlayerNewReq.Role'}, [
+            {'DESTROYER', 0},
+            {'INTERCEPTOR', 1},
+            {'REPAIR', 2},
+            {'CARRIER', 3}
+        ]},
         {{enum, 'PlayerNewResp.Status'}, [{'OK', 0}, {'ERROR', 1}]},
         {{enum, 'GameObject'}, [{'ROOM', 0}, {'ENTITY', 1}, {'SCRIPT', 2}]},
         {{enum, 'ObjectGet.GameObject'}, [{'ROOM', 0}, {'ENTITY', 1}, {'SCRIPT', 2}]},
@@ -8537,7 +8630,7 @@ get_msg_defs() ->
                 name = role,
                 fnum = 4,
                 rnum = 5,
-                type = string,
+                type = {enum, 'PlayerNewReq.Role'},
                 occurrence = required,
                 opts = []
             }
@@ -8786,6 +8879,7 @@ get_enum_names() ->
     [
         'AccountNewResp.Status',
         'AccountLoginResp.Status',
+        'PlayerNewReq.Role',
         'PlayerNewResp.Status',
         'GameObject',
         'ObjectGet.GameObject'
@@ -8928,7 +9022,7 @@ find_msg_def('PlayerNewReq') ->
             name = role,
             fnum = 4,
             rnum = 5,
-            type = string,
+            type = {enum, 'PlayerNewReq.Role'},
             occurrence = required,
             opts = []
         }
@@ -9148,6 +9242,13 @@ find_enum_def('AccountNewResp.Status') ->
     [{'OK', 0}, {'ERROR', 1}];
 find_enum_def('AccountLoginResp.Status') ->
     [{'OK', 0}, {'ERROR', 1}];
+find_enum_def('PlayerNewReq.Role') ->
+    [
+        {'DESTROYER', 0},
+        {'INTERCEPTOR', 1},
+        {'REPAIR', 2},
+        {'CARRIER', 3}
+    ];
 find_enum_def('PlayerNewResp.Status') ->
     [{'OK', 0}, {'ERROR', 1}];
 find_enum_def('GameObject') ->
@@ -9164,6 +9265,8 @@ enum_symbol_by_value(
     Value
 ) ->
     'enum_symbol_by_value_AccountLoginResp.Status'(Value);
+enum_symbol_by_value('PlayerNewReq.Role', Value) ->
+    'enum_symbol_by_value_PlayerNewReq.Role'(Value);
 enum_symbol_by_value('PlayerNewResp.Status', Value) ->
     'enum_symbol_by_value_PlayerNewResp.Status'(Value);
 enum_symbol_by_value('GameObject', Value) ->
@@ -9175,6 +9278,8 @@ enum_value_by_symbol('AccountNewResp.Status', Sym) ->
     'enum_value_by_symbol_AccountNewResp.Status'(Sym);
 enum_value_by_symbol('AccountLoginResp.Status', Sym) ->
     'enum_value_by_symbol_AccountLoginResp.Status'(Sym);
+enum_value_by_symbol('PlayerNewReq.Role', Sym) ->
+    'enum_value_by_symbol_PlayerNewReq.Role'(Sym);
 enum_value_by_symbol('PlayerNewResp.Status', Sym) ->
     'enum_value_by_symbol_PlayerNewResp.Status'(Sym);
 enum_value_by_symbol('GameObject', Sym) ->
@@ -9197,6 +9302,24 @@ enum_value_by_symbol('ObjectGet.GameObject', Sym) ->
     0;
 'enum_value_by_symbol_AccountLoginResp.Status'('ERROR') ->
     1.
+
+'enum_symbol_by_value_PlayerNewReq.Role'(0) ->
+    'DESTROYER';
+'enum_symbol_by_value_PlayerNewReq.Role'(1) ->
+    'INTERCEPTOR';
+'enum_symbol_by_value_PlayerNewReq.Role'(2) ->
+    'REPAIR';
+'enum_symbol_by_value_PlayerNewReq.Role'(3) ->
+    'CARRIER'.
+
+'enum_value_by_symbol_PlayerNewReq.Role'('DESTROYER') ->
+    0;
+'enum_value_by_symbol_PlayerNewReq.Role'('INTERCEPTOR') ->
+    1;
+'enum_value_by_symbol_PlayerNewReq.Role'('REPAIR') ->
+    2;
+'enum_value_by_symbol_PlayerNewReq.Role'('CARRIER') ->
+    3.
 
 'enum_symbol_by_value_PlayerNewResp.Status'(0) -> 'OK';
 'enum_symbol_by_value_PlayerNewResp.Status'(1) -> 'ERROR'.
@@ -9298,6 +9421,7 @@ msg_name_to_fqbin(E) -> error({gpb_error, {badmsg, E}}).
 
 fqbin_to_enum_name(<<"goblet.AccountNewResp.Status">>) -> 'AccountNewResp.Status';
 fqbin_to_enum_name(<<"goblet.AccountLoginResp.Status">>) -> 'AccountLoginResp.Status';
+fqbin_to_enum_name(<<"goblet.PlayerNewReq.Role">>) -> 'PlayerNewReq.Role';
 fqbin_to_enum_name(<<"goblet.PlayerNewResp.Status">>) -> 'PlayerNewResp.Status';
 fqbin_to_enum_name(<<"goblet.GameObject">>) -> 'GameObject';
 fqbin_to_enum_name(<<"goblet.ObjectGet.GameObject">>) -> 'ObjectGet.GameObject';
@@ -9305,6 +9429,7 @@ fqbin_to_enum_name(E) -> error({gpb_error, {badenum, E}}).
 
 enum_name_to_fqbin('AccountNewResp.Status') -> <<"goblet.AccountNewResp.Status">>;
 enum_name_to_fqbin('AccountLoginResp.Status') -> <<"goblet.AccountLoginResp.Status">>;
+enum_name_to_fqbin('PlayerNewReq.Role') -> <<"goblet.PlayerNewReq.Role">>;
 enum_name_to_fqbin('PlayerNewResp.Status') -> <<"goblet.PlayerNewResp.Status">>;
 enum_name_to_fqbin('GameObject') -> <<"goblet.GameObject">>;
 enum_name_to_fqbin('ObjectGet.GameObject') -> <<"goblet.ObjectGet.GameObject">>;
@@ -9367,6 +9492,7 @@ get_enum_containment("goblet") ->
         'AccountNewResp.Status',
         'GameObject',
         'ObjectGet.GameObject',
+        'PlayerNewReq.Role',
         'PlayerNewResp.Status'
     ];
 get_enum_containment(P) ->
@@ -9397,6 +9523,7 @@ get_proto_by_enum_name_as_fqbin(<<"goblet.AccountNewResp.Status">>) -> "goblet";
 get_proto_by_enum_name_as_fqbin(<<"goblet.AccountLoginResp.Status">>) -> "goblet";
 get_proto_by_enum_name_as_fqbin(<<"goblet.ObjectGet.GameObject">>) -> "goblet";
 get_proto_by_enum_name_as_fqbin(<<"goblet.GameObject">>) -> "goblet";
+get_proto_by_enum_name_as_fqbin(<<"goblet.PlayerNewReq.Role">>) -> "goblet";
 get_proto_by_enum_name_as_fqbin(E) -> error({gpb_error, {badenum, E}}).
 
 -spec get_protos_by_pkg_name_as_fqbin(_) -> no_return().
