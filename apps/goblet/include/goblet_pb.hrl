@@ -53,7 +53,7 @@
         {name                   :: iodata(),        % = 1
          title                  :: iodata(),        % = 2
          appearance             :: non_neg_integer(), % = 3, 32 bits
-         role                   :: iodata()         % = 4
+         role                   :: 'DESTROYER' | 'INTERCEPTOR' | 'REPAIR' | 'CARRIER' | integer() % = 4, enum PlayerNewReq.Role
         }).
 -endif.
 
