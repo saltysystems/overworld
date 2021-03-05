@@ -114,7 +114,7 @@ player_new(Message, State) when State#session.authenticated =:= true ->
     Name = binary:bin_to_list(Decode#'PlayerNewReq'.name),
     Title = binary:bin_to_list(Decode#'PlayerNewReq'.title),
     Appearance = Decode#'PlayerNewReq'.appearance,
-    Role = binary:bin_to_list(Decode#'PlayerNewReq'.role),
+    Role = Decode#'PlayerNewReq'.role,
     Account = State#session.email,
     Msg =
         case goblet_space_player:new(Name, Title, Appearance, Role, Account) of
