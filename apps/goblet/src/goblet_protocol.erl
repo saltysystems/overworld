@@ -23,7 +23,7 @@
 %% @doc Decode messages from clients and route them to an appropriate function
 %% @end
 %%----------------------------------------------------------------------------
--spec decode(binary(), any()) -> {ok, any()} | {binary(), any()}.
+-spec decode(binary(), any()) -> {ok, any()} | {[binary(), ...], any()}.
 decode(<<OpCode:16, _T/binary>>, State) when OpCode =:= ?VERSION ->
     logger:notice("Got a version request~n"),
     {ok, State};
@@ -114,7 +114,7 @@ player_new(Message, State) when State#session.authenticated =:= true ->
     Name = binary:bin_to_list(Decode#'PlayerNewReq'.name),
     Title = binary:bin_to_list(Decode#'PlayerNewReq'.title),
     Appearance = Decode#'PlayerNewReq'.appearance,
-    Role = Decode#'PlayerNewReq'.role,
+    Role = binary:bin_to_list(Decode#'PlayerNewReq'.role),
     Account = State#session.email,
     Msg =
         case goblet_space_player:new(Name, Title, Appearance, Role, Account) of
