@@ -46,8 +46,8 @@ create_player_test() ->
 	Name = "Chester McTester",
 	Title = "Fleet Captain",
 	Appearance = 1,
-	Role = 'DESTROYER',
-	Zone = 'Freehold',
+	Role = "Destroyer",
+	Zone = "Freehold",
 	Resp = goblet_db:create_player(Name, Title, Appearance, Role, Zone, Email),
 	?assertEqual(ok, Resp),
 	% Now check to see that the player is properly associated with the 
