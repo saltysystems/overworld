@@ -47,7 +47,7 @@ delete_account(Email) ->
     end,
     mnesia:activity(transaction, Fun).
 
--spec account_by_email(list()) -> ok | {error, atom()}.
+-spec account_by_email(list()) -> tuple() | {error, atom()}.
 account_by_email(Email) ->
     Fun = fun() ->
         case mnesia:read({goblet_account, Email}) of
@@ -71,7 +71,7 @@ player_by_name(Name) ->
     end,
     mnesia:activity(transaction, Fun).
 
--spec create_player(list(), list(), pos_integer(), atom(), list(), list()) -> ok | {error, atom()}.
+-spec create_player(list(), list(), pos_integer(), list(), list(), list()) -> ok | {error, atom()}.
 create_player(Name, Title, Appearance, Role, Zone, Email) ->
     Fun = fun() ->
         case mnesia:read({goblet_player, Name}) of
@@ -132,10 +132,6 @@ delete_orphaned_player(Name) ->
         mnesia:delete({goblet_player, Name})
     end,
     mnesia:activity(transaction, Fun).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Internal functions             %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 account_login(Email, Password) ->
     case account_by_email(Email) of
