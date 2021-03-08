@@ -1,10 +1,8 @@
 -module(goblet_space_player).
 
--define(SERVER, ?MODULE).
-
 -export([new/5]).
 
--spec new(list(), list(), pos_integer(), atom(), list()) -> ok | {error, any()}.
+-spec new(list(), list(), pos_integer(), list(), list()) -> ok | {error, any()}.
 new(Name, ShipName, Appearance, Role, Email) ->
     Zone = "drydock",
     case
@@ -48,8 +46,7 @@ is_valid_appearance(_Appearance) ->
     no_such_appearance.
 
 is_valid_role(Role) ->
-    % The Quartinary: DPS, Tank, Heals, Crowd Control
-    ValidRoles = ['DESTROYER', 'INTERCEPTOR', 'REPAIR', 'CARRIER'],
+    ValidRoles = ["destroyer", "interceptor", "carrier", "command"],
     case lists:member(Role, ValidRoles) of
         true ->
             ok;
