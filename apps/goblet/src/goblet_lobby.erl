@@ -40,7 +40,7 @@ get_matches() ->
 %% @doc Add a match to the lobby server, return a record of the match
 %%      with updated fields (state, ID).
 %%-------------------------------------------------------------------
--spec add_match(record()) -> {ok, record()}.
+-spec add_match(tuple()) -> {ok, tuple()}.
 add_match(MatchInfo) ->
     gen_server:call(?MODULE, {add_match, MatchInfo}).
 
@@ -48,7 +48,7 @@ add_match(MatchInfo) ->
 %% @doc Delete the match from the lobby server, if it exists. If
 %%      it does not, then do nothing.
 %%-------------------------------------------------------------------
--spec del_match(record()) -> ok.
+-spec del_match(tuple()) -> ok.
 del_match(MatchInfo) ->
     gen_server:call(?MODULE, {del_match, MatchInfo}).
 
@@ -81,8 +81,8 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Request, State) ->
     {noreply, State}.
 
-handle_info(_Info, _State) ->
-    ok.
+handle_info(_Info, State) ->
+    {noreply, State}.
 
 terminate(_Reason, _State) ->
     ok.
