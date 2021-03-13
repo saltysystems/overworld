@@ -7,7 +7,7 @@
     delete_account/1,
     account_by_email/1,
     account_login/2,
-    create_player/6,
+    create_player/5,
     delete_player/2,
     delete_orphaned_player/1,
     player_by_name/1,
@@ -71,8 +71,8 @@ player_by_name(Name) ->
     end,
     mnesia:activity(transaction, Fun).
 
--spec create_player(list(), list(), pos_integer(), list(), list(), list()) -> ok | {error, atom()}.
-create_player(Name, Title, Appearance, Role, Zone, Email) ->
+-spec create_player(list(), list(), pos_integer(), list(), list()) -> ok | {error, atom()}.
+create_player(Name, Title, Appearance, Role, Account) ->
     Fun = fun() ->
         case mnesia:read({goblet_player, Name}) of
             [] ->
@@ -87,17 +87,16 @@ create_player(Name, Title, Appearance, Role, Zone, Email) ->
                         role = Role,
                         stats = [],
                         inventory = [],
-                        zone = Zone,
                         online = false
                     },
                     write
                 ),
                 % Get the account information
-                [Account] = mnesia:read({goblet_account, Email}),
-                Players = Account#goblet_account.player_ids,
+                [Resp] = mnesia:read({goblet_account, Account}),
+                Players = Resp#goblet_account.player_ids,
                 mnesia:write(
                     goblet_account,
-                    Account#goblet_account{player_ids = [Name | Players]},
+                    Resp#goblet_account{player_ids = [Name | Players]},
                     write
                 );
             _ ->
@@ -107,14 +106,14 @@ create_player(Name, Title, Appearance, Role, Zone, Email) ->
     mnesia:activity(transaction, Fun).
 
 -spec delete_player(list(), list()) -> ok.
-delete_player(Name, Email) ->
+delete_player(Name, Account) ->
     Fun = fun() ->
         mnesia:delete({goblet_player, Name}),
-        [Account] = mnesia:read({goblet_account, Email}),
-        Players = Account#goblet_account.player_ids,
+        [Resp] = mnesia:read({goblet_account, Account}),
+        Players = Resp#goblet_account.player_ids,
         mnesia:write(
             goblet_account,
-            Account#goblet_account{player_ids = lists:delete(Name, Players)},
+            Resp#goblet_account{player_ids = lists:delete(Name, Players)},
             write
         )
     end,
