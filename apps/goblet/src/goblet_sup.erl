@@ -31,7 +31,9 @@ init([]) ->
         intensity => 0,
         period => 1
     },
-    ChildSpecs = [],
+    ChildSpecs = [
+        #{id => goblet_lobby, start => {goblet_lobby, start, []}}
+    ],
     {ok, {SupFlags, ChildSpecs}}.
 
 %% internal functions
