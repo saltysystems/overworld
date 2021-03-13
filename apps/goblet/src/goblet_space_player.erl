@@ -3,8 +3,7 @@
 -export([new/5]).
 
 -spec new(list(), list(), pos_integer(), list(), list()) -> ok | {error, any()}.
-new(Name, ShipName, Appearance, Role, Email) ->
-    Zone = "drydock",
+new(Name, ShipName, Appearance, Role, Account) ->
     case
         run_checks([
             fun() -> is_valid_name(Name) end,
@@ -14,7 +13,7 @@ new(Name, ShipName, Appearance, Role, Email) ->
         ])
     of
         ok ->
-            goblet_db:create_player(Name, ShipName, Appearance, Role, Zone, Email);
+            goblet_db:create_player(Name, ShipName, Appearance, Role, Account);
         Error ->
             {error, Error}
     end.
