@@ -2,24 +2,33 @@
 
 %-behaviour(gen_server).
 
-%-export([start/0, stop/0]).
+-export([start/0, stop/0]).
 -export([handle_tick/2, phases/1, normalize_actions/1]).
 
 % Required genServer callbacks
 %-export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
+%
+-define(SERVER, ?MODULE).
 
 -record(action, {ap, name, from, target}).
 
-% Process all inputs. If there aint nothin goin on, respond with the old state
-% and don't update clients
+% Process all inputs. If there aint nothin goin on, respond with the old
+% state and don't update clients
 handle_tick(Q, _InstanceState) when Q == [] ->
     ok;
 handle_tick(_Q, _InstanceState) ->
     io:format("something else").
 
-%handle_tick(Q, InstanceState) ->
-%    % Pop one item off the stack and process it.
-%	pqueue:
+% Public API
+start() ->
+    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+
+stop() ->
+    gen_server:stop(?SERVER),
+    ok.
+
+% Callbacks
+%init([]) ->
 
 %is_valid_ability(Player, Ability) ->
 %	% Check if the ability is in the player's ability list for this round
