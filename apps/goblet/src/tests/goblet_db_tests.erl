@@ -47,8 +47,7 @@ create_player_test() ->
 	Title = "Fleet Captain",
 	Appearance = 1,
 	Role = "Destroyer",
-	Zone = "Freehold",
-	Resp = goblet_db:create_player(Name, Title, Appearance, Role, Zone, Email),
+	Resp = goblet_db:create_player(Name, Title, Appearance, Role, Email),
 	?assertEqual(ok, Resp),
 	% Now check to see that the player is properly associated with the 
 	Acct = goblet_db:account_by_email(Email),
