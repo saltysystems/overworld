@@ -7,6 +7,27 @@
 
 -define(goblet_pb_gpb_version, "4.11.2").
 
+-ifndef('RESPONSEOBJECT_PB_H').
+-define('RESPONSEOBJECT_PB_H', true).
+-record('ResponseObject',
+        {status                 :: 'OK' | 'ERROR' | integer(), % = 1, enum ResponseObject.Status
+         error                  :: iodata() | undefined % = 2
+        }).
+-endif.
+
+-ifndef('MATCH_PB_H').
+-define('MATCH_PB_H', true).
+-record('Match',
+        {id                     :: non_neg_integer(), % = 1, 32 bits
+         state                  :: iodata(),        % = 2
+         players                :: non_neg_integer(), % = 3, 32 bits
+         players_max            :: non_neg_integer(), % = 4, 32 bits
+         start_time             :: non_neg_integer(), % = 5, 32 bits
+         mode                   :: iodata(),        % = 6
+         extra                  :: iodata() | undefined % = 7
+        }).
+-endif.
+
 -ifndef('ACCOUNTNEWREQ_PB_H').
 -define('ACCOUNTNEWREQ_PB_H', true).
 -record('AccountNewReq',
@@ -76,6 +97,14 @@
 -define('PLAYERLOG_PB_H', true).
 -record('PlayerLog',
         {msg                    :: iodata()         % = 2
+        }).
+-endif.
+
+-ifndef('LOBBYINFO_PB_H').
+-define('LOBBYINFO_PB_H', true).
+-record('LobbyInfo',
+        {resp                   :: goblet_pb:'ResponseObject'(), % = 1
+         matches = []           :: [goblet_pb:'Match'()] | undefined % = 2
         }).
 -endif.
 
