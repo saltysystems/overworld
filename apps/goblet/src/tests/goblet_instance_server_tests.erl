@@ -18,7 +18,7 @@ normalize_actions_test() ->
 phases_test() -> 
 	P1_Actions = [
 		#action{name=shoot, ap=2, from="player1", target="player2"},
-		#action{name=move, ap=1, from="player1", target={0,0:},
+		#action{name=move, ap=1, from="player1", target={0,0}},
 		#action{name=laz0r, ap=6, from="player1", target="player2"}
 	],
 	P2_Actions = [
