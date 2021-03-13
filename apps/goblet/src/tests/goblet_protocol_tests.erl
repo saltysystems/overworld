@@ -70,3 +70,12 @@ player_new_test() ->
 				appearance = 1,
 				role = "interceptor"}),
 	goblet_protocol:player_new(Message, State).
+
+lobby_info_test() ->
+    State = #session{}, % shouldnt matter here
+    {[RespOp, RespMsg], _State} = goblet_protocol:lobby_info(<<>>, State),
+    ?assertEqual(<<?LOBBY_INFO:16>>, RespOp),
+    DecodedResp = goblet_pb:decode_msg(RespMsg, 'LobbyInfo'),
+    ResponseObj = DecodedResp#'LobbyInfo'.resp,
+    ?assertEqual(ResponseObj#'ResponseObject'.status, 'OK'),
+    ?assertEqual(is_list(DecodedResp#'LobbyInfo'.matches), true).
