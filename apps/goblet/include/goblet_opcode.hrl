@@ -10,7 +10,14 @@
 -define(PLAYER_NEW, 16#1050).
 -define(PLAYER_LOGIN, 16#1055).
 -define(PLAYER_LOG, 16#1060).
--define(LOBBY_INFO, 16#1070).
+
+% Lobby and match creation commands
+-define(LOBBY_INFO, 16#2010).
+-define(MATCH_CREATE, 16#2020).
+-define(MATCH_JOIN, 16#2030).
+-define(MATCH_LEAVE, 16#2040).
+
+%%%% Deprecated
 
 % Room-specific commands
 -define(ROOM_STATE, 16#1100).
