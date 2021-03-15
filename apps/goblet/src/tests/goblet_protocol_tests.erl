@@ -79,3 +79,18 @@ lobby_info_test() ->
     ResponseObj = DecodedResp#'LobbyInfo'.resp,
     ?assertEqual(ResponseObj#'ResponseObject'.status, 'OK'),
     ?assertEqual(is_list(DecodedResp#'LobbyInfo'.matches), true).
+
+create_match_test() ->
+    State = #session{authenticated=true}, % shouldnt matter here
+    Mode = 'NORMAL',
+    MaxPlayers = 6,
+    Msg = goblet_pb:encode_msg(#'MatchCreateReq'{mode=Mode, players_max=MaxPlayers}),
+    {[RespOp, RespMsg], State} = goblet_protocol:create_match(Msg, State),
+    OpCode = <<?MATCH_CREATE:16>>,
+    ?assertEqual(OpCode, RespOp),
+    DecodedResp = goblet_pb:decode_msg(RespMsg, 'MatchCreateResp'),
+    ResponseObj = DecodedResp#'MatchCreateResp'.resp,
+    ?assertEqual(ResponseObj#'ResponseObject'.status, 'OK'),
+    M = DecodedResp#'MatchCreateResp'.match,
+    ?assertEqual(MaxPlayers, M#'Match'.players_max),
+    ?assertEqual(Mode, M#'Match'.mode).
