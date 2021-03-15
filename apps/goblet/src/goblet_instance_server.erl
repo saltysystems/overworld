@@ -1,38 +1,139 @@
 -module(goblet_instance_server).
 
-%-behaviour(gen_server).
+-behaviour(gen_statem).
 
--export([start/0, stop/0]).
--export([handle_tick/2, phases/1, normalize_actions/1]).
+-export([phases/1, normalize_actions/1]). % internal functions ackchually
 
-% Required genServer callbacks
-%-export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
-%
--define(SERVER, ?MODULE).
-
--record(action, {ap, name, from, target}).
-
-% Process all inputs. If there aint nothin goin on, respond with the old
-% state and don't update clients
-handle_tick(Q, _InstanceState) when Q == [] ->
-    ok;
-handle_tick(_Q, _InstanceState) ->
-    io:format("something else").
-
-% Public API
-start() ->
-    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
-
-stop() ->
-    gen_server:stop(?SERVER),
-    ok.
+% API
+-export([start/2, player_ready/2]).
 
 % Callbacks
-%init([]) ->
+-export([init/1, callback_mode/0, terminate/3]).
 
-%is_valid_ability(Player, Ability) ->
-%	% Check if the ability is in the player's ability list for this round
-%	lists:member(Ability, Player#player.abilities).
+% State Functions
+-export([
+    prepare/3,
+    decision/3, 
+    execution/3
+    %finish/4
+    ]).
+
+-define(SERVER(Name), {via, gproc, {n, l, {?MODULE, Name}}}).
+
+-record(action, {ap, name, from, target}).
+-record(match, {id, playerlist, readyplayers}).
+
+% Public API
+start(PlayerList, MatchID) ->
+    logger:notice("Starting up state machine for Match ~p", [MatchID]),
+    gen_statem:start_link(?SERVER(MatchID), ?MODULE, {PlayerList, MatchID}, []).
+
+player_ready(Player, MatchID) ->
+    gen_statem:cast(?SERVER(MatchID), {prepare, Player}).   
+
+% Callbacks
+init({PlayerList, MatchID}) ->
+    M = #match{id=MatchID, playerlist=PlayerList, readyplayers=[]},
+    {ok, prepare, M}.
+
+callback_mode() ->
+    state_functions.
+
+% State Functions
+
+% In prepare stage, we wait for all Players to confirm that they are ready.
+prepare(cast, {prepare, Player}, #match{id=_ID, playerlist=PlayerList, readyplayers=Ready} = Data) -> 
+    ReadyPlayers = [ Player | Ready ],
+    ReadySet = sets:from_list(ReadyPlayers),
+    PlayerSet = sets:from_list(PlayerList),
+    logger:notice("Player ~p is now ready.", [Player]),
+    NextState = 
+        case PlayerSet == ReadySet of
+            true ->
+                % All players are ready, reset ready state and move to the next
+                % phase. We want a maximum of 20s to go by before we skip over
+                % decision and go straight to execute
+                logger:notice("All players are ready, move on to decision state"),
+                TimeOut = {{timeout, decide}, 20000, execute},
+                {next_state, decision, Data#match{readyplayers=[]}, [TimeOut]};
+            false ->
+                % Wait for all players to be ready
+                % TODO: Implement timeout
+                {next_state, prepare, Data#match{readyplayers=ReadyPlayers}}
+        end,
+    logger:notice("Ready players are:~p", [ReadyPlayers]),
+    NextState;
+prepare(EventType, EventContent, Data) ->
+    logger:warning("Got a bad event sent to prepare"),
+    handle_event(EventType, EventContent, Data).
+
+% In the decision stage, we accept decisions from players until the timeout is
+% reached. Then we move to Execute phase.
+decision(cast, {decision, Player, Actions}, #match{playerlist=PL, readyplayers=RP} = Data) -> 
+    % TODO: Validate action list
+    Ready = [ Player | RP ],
+    RSet = sets:from_list(RP),
+    PSet = sets:from_list(PL),
+    logger:notice("Player ~p has made a decision.", [Player]),
+    NextState = 
+        case RSet == PSet of
+            true ->
+                % All players have made their decision
+                % Cancel the decision timer by setting it to infinity and move
+                % onto execute state
+                logger:notice("All players are ready, move on to execution state"),
+                TimeOut = {{timeout, decide}, infinity, execute},
+                {next_state, execution, Data#match{readyplayers=[]}, [TimeOut]};
+            false ->
+                {next_state, decision, Data#match{readyplayers=Ready}}
+        end,
+    logger:notice("Ready players are: ~p", [Ready]),
+    NextState;
+decision({timeout, decide}, execute, Data) ->
+    % Decisions have timed out, move on
+    logger:notice("20000ms has expired - force move to execution state"),
+    {next_state, execution, Data, [{state_timeout, 10000, decide}] };
+decision(EventType, EventContent, Data) ->
+    logger:warning("Got a bad event sent to decision"),
+    handle_event(EventType, EventContent, Data).
+ 
+
+% In the execution phase, we group actions, calculate the results, and give the
+% clients a bit of time to play animations. Then we expect to hear the clients
+% have finished with their animations, or we time out after some generous time
+% period (60s ?). We check to see if the match is over, and go to the Finish
+% phase if it is. Otherwise, back to Decision.
+%execution(cast, {execution, Player, Actions}, Data) -> 
+%    NewData = Data, % calculate results here
+%    {next_state, decision, NewData, [{state_timeout, 5000, decide}]};
+execution(state_timeout, decide, Data) ->
+    NewData = Data, % calculate results here
+    logger:notice("10000ms has passed for animations, back to decision"),
+    TimeOut = {{timeout, decide}, 20000, execute},
+    {next_state, decision, Data, [TimeOut]};
+execution(EventType, EventContent, Data) ->
+    logger:warning("Got a bad event sent to execution"),
+    handle_event(EventType, EventContent, Data).
+    
+
+% In the finish phase, we instruct the clients to wrap up, show them results, and we shut down or wait to be shut down by our supervisor.
+
+
+
+
+handle_event(EventType, EventContent, Data) ->
+    {keep_state, Data}.
+
+
+terminate(_Reason, _State, _Data) ->
+    %TODO: Save the player progress
+    ok.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Internal Functions                                                 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 normalize_actions(ActionList) ->
     % Take a list of actions for a player, e.g.
@@ -54,6 +155,7 @@ normalize_actions([H | T], [AccH | AccT]) ->
     NewList = H + AccH,
     normalize_actions(T, [NewList | [AccH | AccT]]).
 
+
 % The ActionList must already do the math needed to handle this
 phases(ActionList) ->
     % Get the largest key
@@ -64,6 +166,7 @@ phases(ActionList) ->
     % Recurse through the phases, pairing up matching keys into the same phase
     % til we hit 0.
     group_phases(MaxPhase#action.ap, S).
+
 
 group_phases(N, KeyList) ->
     group_phases(N, KeyList, []).
