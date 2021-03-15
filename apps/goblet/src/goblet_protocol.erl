@@ -9,7 +9,7 @@
 
 -include_lib("kernel/include/logger.hrl").
 
--record(session, {email = none, authenticated = false, statem = login}).
+-record(session, {email = none, authenticated = false, statem = login, match = false}).
 
 %%============================================================================
 %% Goblet Protocol.
@@ -24,22 +24,26 @@
 %% @end
 %%----------------------------------------------------------------------------
 -spec decode(binary(), any()) -> {ok, any()} | {[binary(), ...], any()}.
-decode(<<OpCode:16, _T/binary>>, State) when OpCode =:= ?VERSION ->
+decode(<<?VERSION:16, _T/binary>>, State) ->
     logger:notice("Got a version request~n"),
     {ok, State};
-decode(<<OpCode:16, T/binary>>, _State) when OpCode =:= ?ACCOUNT_NEW ->
+decode(<<?ACCOUNT_NEW:16, T/binary>>, _State) -> 
     logger:notice("Got a new account request~n"),
     account_new(T);
-decode(<<OpCode:16, T/binary>>, _State) when OpCode =:= ?ACCOUNT_LOGIN ->
+decode(<<?ACCOUNT_LOGIN:16, T/binary>>, _State) ->
     logger:notice("Got an account login request~n"),
     account_login(T);
-decode(<<OpCode:16, T/binary>>, State) when OpCode =:= ?LOBBY_INFO ->
+decode(<<?LOBBY_INFO:16, T/binary>>, State) ->
     logger:notice("Got a lobby info request~n"),
     lobby_info(T, State);
-decode(<<OpCode:16, T/binary>>, State) when OpCode =:= ?PLAYER_NEW ->
+decode(<<?PLAYER_NEW:16, T/binary>>, State) ->
     logger:notice("Got a new player request~n"),
     % Need to inspect the state for acct info
     player_new(T, State);
+decode(<<?MATCH_CREATE:16, T/binary>>, State) ->
+    logger:notice("Got a new match request~n"),
+    % Need to inspect the state for acct info
+    match_create(T, State);
 decode(<<OpCode:16, _T/binary>>, State) ->
     logger:notice("Got an unknown opcode: ~p", [OpCode]),
     {ok, State}.
@@ -118,6 +122,23 @@ lobby_info(_Message, State) ->
     Msg = goblet_pb:encode_msg(#'LobbyInfo'{resp = Resp, matches = M1}),
     OpCode = <<?LOBBY_INFO:16>>,
     {[OpCode, Msg], State}.
+
+
+%%----------------------------------------------------------------------------
+%% @doc Create a new match. Will only create matches for sessions where the
+%%      player is authenticated and in the 'lobby' state
+%% @end
+%%----------------------------------------------------------------------------
+match_create(Message, State) when State#session.authenticated =:= true, State#session.statem =:= lobby ->
+    Match = goblet_pb:decode_message(Message, 'MatchCreateReq'),
+    Mode = Match#'MatchCreateReq'.mode,
+    MaxPlayers = Match#'MatchCreateReq'.players_max,
+    Extra = case Match#'MatchCreateReq'.extra of
+        undefined -> <<>>;
+        Bytes -> Bytes
+    end,
+    goblet_lobby:create_match(Mode, MaxPlayers, Extra).
+    
 
 %%----------------------------------------------------------------------------
 %% @doc Create a new player character
