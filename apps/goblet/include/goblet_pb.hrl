@@ -19,11 +19,11 @@
 -define('MATCH_PB_H', true).
 -record('Match',
         {id                     :: non_neg_integer(), % = 1, 32 bits
-         state                  :: iodata(),        % = 2
+         state                  :: 'CREATING' | 'PLAYING' | 'FINISHING' | integer(), % = 2, enum MatchState
          players                :: non_neg_integer(), % = 3, 32 bits
          players_max            :: non_neg_integer(), % = 4, 32 bits
          start_time             :: non_neg_integer(), % = 5, 32 bits
-         mode                   :: iodata(),        % = 6
+         mode                   :: 'DEFAULT' | 'BLITZ' | 'STRATEGIC' | integer(), % = 6, enum MatchMode
          extra                  :: iodata() | undefined % = 7
         }).
 -endif.
@@ -105,6 +105,23 @@
 -record('LobbyInfo',
         {resp                   :: goblet_pb:'ResponseObject'(), % = 1
          matches = []           :: [goblet_pb:'Match'()] | undefined % = 2
+        }).
+-endif.
+
+-ifndef('MATCHCREATEREQ_PB_H').
+-define('MATCHCREATEREQ_PB_H', true).
+-record('MatchCreateReq',
+        {mode                   :: 'DEFAULT' | 'BLITZ' | 'STRATEGIC' | integer(), % = 1, enum MatchMode
+         players_max            :: non_neg_integer(), % = 2, 32 bits
+         extra                  :: iodata() | undefined % = 3
+        }).
+-endif.
+
+-ifndef('MATCHCREATERESP_PB_H').
+-define('MATCHCREATERESP_PB_H', true).
+-record('MatchCreateResp',
+        {resp                   :: goblet_pb:'ResponseObject'(), % = 1
+         match                  :: goblet_pb:'Match'() % = 2
         }).
 -endif.
 

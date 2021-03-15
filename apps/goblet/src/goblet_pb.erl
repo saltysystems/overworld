@@ -16,6 +16,8 @@
 -export([find_msg_def/1, fetch_msg_def/1]).
 -export([find_enum_def/1, fetch_enum_def/1]).
 -export([enum_symbol_by_value/2, enum_value_by_symbol/2]).
+-export([enum_symbol_by_value_MatchState/1, enum_value_by_symbol_MatchState/1]).
+-export([enum_symbol_by_value_MatchMode/1, enum_value_by_symbol_MatchMode/1]).
 -export(['enum_symbol_by_value_ResponseObject.Status'/1, 'enum_value_by_symbol_ResponseObject.Status'/1]).
 -export(['enum_symbol_by_value_AccountNewResp.Status'/1, 'enum_value_by_symbol_AccountNewResp.Status'/1]).
 -export(['enum_symbol_by_value_AccountLoginResp.Status'/1, 'enum_value_by_symbol_AccountLoginResp.Status'/1]).
@@ -54,13 +56,15 @@
 -include("gpb.hrl").
 
 %% enumerated types
+-type 'MatchState'() :: 'CREATING' | 'PLAYING' | 'FINISHING'.
+-type 'MatchMode'() :: 'DEFAULT' | 'BLITZ' | 'STRATEGIC'.
 -type 'ResponseObject.Status'() :: 'OK' | 'ERROR'.
 -type 'AccountNewResp.Status'() :: 'OK' | 'ERROR'.
 -type 'AccountLoginResp.Status'() :: 'OK' | 'ERROR'.
 -type 'PlayerNewResp.Status'() :: 'OK' | 'ERROR'.
 -type 'GameObject'() :: 'ROOM' | 'ENTITY' | 'SCRIPT'.
 -type 'ObjectGet.GameObject'() :: 'ROOM' | 'ENTITY' | 'SCRIPT'.
--export_type(['ResponseObject.Status'/0, 'AccountNewResp.Status'/0, 'AccountLoginResp.Status'/0, 'PlayerNewResp.Status'/0, 'GameObject'/0, 'ObjectGet.GameObject'/0]).
+-export_type(['MatchState'/0, 'MatchMode'/0, 'ResponseObject.Status'/0, 'AccountNewResp.Status'/0, 'AccountLoginResp.Status'/0, 'PlayerNewResp.Status'/0, 'GameObject'/0, 'ObjectGet.GameObject'/0]).
 
 %% message types
 -type 'ResponseObject'() :: #'ResponseObject'{}.
@@ -87,6 +91,10 @@
 
 -type 'LobbyInfo'() :: #'LobbyInfo'{}.
 
+-type 'MatchCreateReq'() :: #'MatchCreateReq'{}.
+
+-type 'MatchCreateResp'() :: #'MatchCreateResp'{}.
+
 -type 'ObjectGet'() :: #'ObjectGet'{}.
 
 -type 'ShellCommand'() :: #'ShellCommand'{}.
@@ -97,20 +105,20 @@
 
 -type 'LuaScript'() :: #'LuaScript'{}.
 
--export_type(['ResponseObject'/0, 'Match'/0, 'AccountNewReq'/0, 'AccountNewResp'/0, 'AccountLoginReq'/0, 'AccountLoginResp.Player'/0, 'AccountLoginResp'/0, 'PlayerNewReq'/0, 'PlayerNewResp'/0, 'PlayerAuthenticate'/0, 'PlayerLog'/0, 'LobbyInfo'/0, 'ObjectGet'/0, 'ShellCommand'/0, 'Room'/0, 'Entity'/0, 'LuaScript'/0]).
+-export_type(['ResponseObject'/0, 'Match'/0, 'AccountNewReq'/0, 'AccountNewResp'/0, 'AccountLoginReq'/0, 'AccountLoginResp.Player'/0, 'AccountLoginResp'/0, 'PlayerNewReq'/0, 'PlayerNewResp'/0, 'PlayerAuthenticate'/0, 'PlayerLog'/0, 'LobbyInfo'/0, 'MatchCreateReq'/0, 'MatchCreateResp'/0, 'ObjectGet'/0, 'ShellCommand'/0, 'Room'/0, 'Entity'/0, 'LuaScript'/0]).
 
--spec encode_msg(#'ResponseObject'{} | #'Match'{} | #'AccountNewReq'{} | #'AccountNewResp'{} | #'AccountLoginReq'{} | #'AccountLoginResp.Player'{} | #'AccountLoginResp'{} | #'PlayerNewReq'{} | #'PlayerNewResp'{} | #'PlayerAuthenticate'{} | #'PlayerLog'{} | #'LobbyInfo'{} | #'ObjectGet'{} | #'ShellCommand'{} | #'Room'{} | #'Entity'{} | #'LuaScript'{}) -> binary().
+-spec encode_msg(#'ResponseObject'{} | #'Match'{} | #'AccountNewReq'{} | #'AccountNewResp'{} | #'AccountLoginReq'{} | #'AccountLoginResp.Player'{} | #'AccountLoginResp'{} | #'PlayerNewReq'{} | #'PlayerNewResp'{} | #'PlayerAuthenticate'{} | #'PlayerLog'{} | #'LobbyInfo'{} | #'MatchCreateReq'{} | #'MatchCreateResp'{} | #'ObjectGet'{} | #'ShellCommand'{} | #'Room'{} | #'Entity'{} | #'LuaScript'{}) -> binary().
 encode_msg(Msg) when tuple_size(Msg) >= 1 ->
     encode_msg(Msg, element(1, Msg), []).
 
--spec encode_msg(#'ResponseObject'{} | #'Match'{} | #'AccountNewReq'{} | #'AccountNewResp'{} | #'AccountLoginReq'{} | #'AccountLoginResp.Player'{} | #'AccountLoginResp'{} | #'PlayerNewReq'{} | #'PlayerNewResp'{} | #'PlayerAuthenticate'{} | #'PlayerLog'{} | #'LobbyInfo'{} | #'ObjectGet'{} | #'ShellCommand'{} | #'Room'{} | #'Entity'{} | #'LuaScript'{}, atom() | list()) -> binary().
+-spec encode_msg(#'ResponseObject'{} | #'Match'{} | #'AccountNewReq'{} | #'AccountNewResp'{} | #'AccountLoginReq'{} | #'AccountLoginResp.Player'{} | #'AccountLoginResp'{} | #'PlayerNewReq'{} | #'PlayerNewResp'{} | #'PlayerAuthenticate'{} | #'PlayerLog'{} | #'LobbyInfo'{} | #'MatchCreateReq'{} | #'MatchCreateResp'{} | #'ObjectGet'{} | #'ShellCommand'{} | #'Room'{} | #'Entity'{} | #'LuaScript'{}, atom() | list()) -> binary().
 encode_msg(Msg, MsgName) when is_atom(MsgName) ->
     encode_msg(Msg, MsgName, []);
 encode_msg(Msg, Opts)
     when tuple_size(Msg) >= 1, is_list(Opts) ->
     encode_msg(Msg, element(1, Msg), Opts).
 
--spec encode_msg(#'ResponseObject'{} | #'Match'{} | #'AccountNewReq'{} | #'AccountNewResp'{} | #'AccountLoginReq'{} | #'AccountLoginResp.Player'{} | #'AccountLoginResp'{} | #'PlayerNewReq'{} | #'PlayerNewResp'{} | #'PlayerAuthenticate'{} | #'PlayerLog'{} | #'LobbyInfo'{} | #'ObjectGet'{} | #'ShellCommand'{} | #'Room'{} | #'Entity'{} | #'LuaScript'{}, atom(), list()) -> binary().
+-spec encode_msg(#'ResponseObject'{} | #'Match'{} | #'AccountNewReq'{} | #'AccountNewResp'{} | #'AccountLoginReq'{} | #'AccountLoginResp.Player'{} | #'AccountLoginResp'{} | #'PlayerNewReq'{} | #'PlayerNewResp'{} | #'PlayerAuthenticate'{} | #'PlayerLog'{} | #'LobbyInfo'{} | #'MatchCreateReq'{} | #'MatchCreateResp'{} | #'ObjectGet'{} | #'ShellCommand'{} | #'Room'{} | #'Entity'{} | #'LuaScript'{}, atom(), list()) -> binary().
 encode_msg(Msg, MsgName, Opts) ->
     case proplists:get_bool(verify, Opts) of
         true -> verify_msg(Msg, MsgName, Opts);
@@ -152,6 +160,12 @@ encode_msg(Msg, MsgName, Opts) ->
             encode_msg_PlayerLog(id(Msg, TrUserData), TrUserData);
         'LobbyInfo' ->
             encode_msg_LobbyInfo(id(Msg, TrUserData), TrUserData);
+        'MatchCreateReq' ->
+            encode_msg_MatchCreateReq(id(Msg, TrUserData),
+                                      TrUserData);
+        'MatchCreateResp' ->
+            encode_msg_MatchCreateResp(id(Msg, TrUserData),
+                                       TrUserData);
         'ObjectGet' ->
             encode_msg_ObjectGet(id(Msg, TrUserData), TrUserData);
         'ShellCommand' ->
@@ -201,7 +215,7 @@ encode_msg_Match(#'Match'{id = F1, state = F2,
          end,
     B2 = begin
              TrF2 = id(F2, TrUserData),
-             e_type_string(TrF2, <<B1/binary, 18>>, TrUserData)
+             e_enum_MatchState(TrF2, <<B1/binary, 16>>, TrUserData)
          end,
     B3 = begin
              TrF3 = id(F3, TrUserData),
@@ -217,7 +231,7 @@ encode_msg_Match(#'Match'{id = F1, state = F2,
          end,
     B6 = begin
              TrF6 = id(F6, TrUserData),
-             e_type_string(TrF6, <<B5/binary, 50>>, TrUserData)
+             e_enum_MatchMode(TrF6, <<B5/binary, 48>>, TrUserData)
          end,
     if F7 == undefined -> B6;
        true ->
@@ -412,6 +426,49 @@ encode_msg_LobbyInfo(#'LobbyInfo'{resp = F1,
         end
     end.
 
+encode_msg_MatchCreateReq(Msg, TrUserData) ->
+    encode_msg_MatchCreateReq(Msg, <<>>, TrUserData).
+
+
+encode_msg_MatchCreateReq(#'MatchCreateReq'{mode = F1,
+                                            players_max = F2, extra = F3},
+                          Bin, TrUserData) ->
+    B1 = begin
+             TrF1 = id(F1, TrUserData),
+             e_enum_MatchMode(TrF1, <<Bin/binary, 8>>, TrUserData)
+         end,
+    B2 = begin
+             TrF2 = id(F2, TrUserData),
+             e_varint(TrF2, <<B1/binary, 16>>, TrUserData)
+         end,
+    if F3 == undefined -> B2;
+       true ->
+           begin
+               TrF3 = id(F3, TrUserData),
+               e_type_bytes(TrF3, <<B2/binary, 26>>, TrUserData)
+           end
+    end.
+
+encode_msg_MatchCreateResp(Msg, TrUserData) ->
+    encode_msg_MatchCreateResp(Msg, <<>>, TrUserData).
+
+
+encode_msg_MatchCreateResp(#'MatchCreateResp'{resp = F1,
+                                              match = F2},
+                           Bin, TrUserData) ->
+    B1 = begin
+             TrF1 = id(F1, TrUserData),
+             e_mfield_MatchCreateResp_resp(TrF1,
+                                           <<Bin/binary, 10>>,
+                                           TrUserData)
+         end,
+    begin
+        TrF2 = id(F2, TrUserData),
+        e_mfield_MatchCreateResp_match(TrF2,
+                                       <<B1/binary, 18>>,
+                                       TrUserData)
+    end.
+
 encode_msg_ObjectGet(Msg, TrUserData) ->
     encode_msg_ObjectGet(Msg, <<>>, TrUserData).
 
@@ -589,6 +646,18 @@ e_field_LobbyInfo_matches([Elem | Rest], Bin,
     e_field_LobbyInfo_matches(Rest, Bin3, TrUserData);
 e_field_LobbyInfo_matches([], Bin, _TrUserData) -> Bin.
 
+e_mfield_MatchCreateResp_resp(Msg, Bin, TrUserData) ->
+    SubBin = encode_msg_ResponseObject(Msg,
+                                       <<>>,
+                                       TrUserData),
+    Bin2 = e_varint(byte_size(SubBin), Bin),
+    <<Bin2/binary, SubBin/binary>>.
+
+e_mfield_MatchCreateResp_match(Msg, Bin, TrUserData) ->
+    SubBin = encode_msg_Match(Msg, <<>>, TrUserData),
+    Bin2 = e_varint(byte_size(SubBin), Bin),
+    <<Bin2/binary, SubBin/binary>>.
+
 e_field_Room_link([Elem | Rest], Bin, TrUserData) ->
     Bin2 = <<Bin/binary, 42>>,
     Bin3 = e_type_string(id(Elem, TrUserData),
@@ -622,6 +691,24 @@ e_field_Room_script([Elem | Rest], Bin, TrUserData) ->
                                 TrUserData),
     e_field_Room_script(Rest, Bin3, TrUserData);
 e_field_Room_script([], Bin, _TrUserData) -> Bin.
+
+e_enum_MatchState('CREATING', Bin, _TrUserData) ->
+    <<Bin/binary, 0>>;
+e_enum_MatchState('PLAYING', Bin, _TrUserData) ->
+    <<Bin/binary, 1>>;
+e_enum_MatchState('FINISHING', Bin, _TrUserData) ->
+    <<Bin/binary, 2>>;
+e_enum_MatchState(V, Bin, _TrUserData) ->
+    e_varint(V, Bin).
+
+e_enum_MatchMode('DEFAULT', Bin, _TrUserData) ->
+    <<Bin/binary, 0>>;
+e_enum_MatchMode('BLITZ', Bin, _TrUserData) ->
+    <<Bin/binary, 1>>;
+e_enum_MatchMode('STRATEGIC', Bin, _TrUserData) ->
+    <<Bin/binary, 2>>;
+e_enum_MatchMode(V, Bin, _TrUserData) ->
+    e_varint(V, Bin).
 
 'e_enum_ResponseObject.Status'('OK', Bin,
                                _TrUserData) ->
@@ -821,6 +908,12 @@ decode_msg_2_doit('PlayerLog', Bin, TrUserData) ->
     id(decode_msg_PlayerLog(Bin, TrUserData), TrUserData);
 decode_msg_2_doit('LobbyInfo', Bin, TrUserData) ->
     id(decode_msg_LobbyInfo(Bin, TrUserData), TrUserData);
+decode_msg_2_doit('MatchCreateReq', Bin, TrUserData) ->
+    id(decode_msg_MatchCreateReq(Bin, TrUserData),
+       TrUserData);
+decode_msg_2_doit('MatchCreateResp', Bin, TrUserData) ->
+    id(decode_msg_MatchCreateResp(Bin, TrUserData),
+       TrUserData);
 decode_msg_2_doit('ObjectGet', Bin, TrUserData) ->
     id(decode_msg_ObjectGet(Bin, TrUserData), TrUserData);
 decode_msg_2_doit('ShellCommand', Bin, TrUserData) ->
@@ -1089,7 +1182,7 @@ dfp_read_field_def_Match(<<8, Rest/binary>>, Z1, Z2,
                      F@_6,
                      F@_7,
                      TrUserData);
-dfp_read_field_def_Match(<<18, Rest/binary>>, Z1, Z2,
+dfp_read_field_def_Match(<<16, Rest/binary>>, Z1, Z2,
                          F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7,
                          TrUserData) ->
     d_field_Match_state(Rest,
@@ -1145,7 +1238,7 @@ dfp_read_field_def_Match(<<40, Rest/binary>>, Z1, Z2,
                              F@_6,
                              F@_7,
                              TrUserData);
-dfp_read_field_def_Match(<<50, Rest/binary>>, Z1, Z2,
+dfp_read_field_def_Match(<<48, Rest/binary>>, Z1, Z2,
                          F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7,
                          TrUserData) ->
     d_field_Match_mode(Rest,
@@ -1224,7 +1317,7 @@ dg_read_field_def_Match(<<0:1, X:7, Rest/binary>>, N,
                              F@_6,
                              F@_7,
                              TrUserData);
-        18 ->
+        16 ->
             d_field_Match_state(Rest,
                                 0,
                                 0,
@@ -1272,7 +1365,7 @@ dg_read_field_def_Match(<<0:1, X:7, Rest/binary>>, N,
                                      F@_6,
                                      F@_7,
                                      TrUserData);
-        50 ->
+        48 ->
             d_field_Match_mode(Rest,
                                0,
                                0,
@@ -1412,11 +1505,14 @@ d_field_Match_state(<<1:1, X:7, Rest/binary>>, N, Acc,
                         TrUserData);
 d_field_Match_state(<<0:1, X:7, Rest/binary>>, N, Acc,
                     F@_1, _, F@_3, F@_4, F@_5, F@_6, F@_7, TrUserData) ->
-    {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
+    {NewFValue, RestF} = {id(d_enum_MatchState(begin
+                                                   <<Res:32/signed-native>> =
+                                                       <<(X bsl N +
+                                                              Acc):32/unsigned-native>>,
+                                                   id(Res, TrUserData)
+                                               end),
+                             TrUserData),
+                          Rest},
     dfp_read_field_def_Match(RestF,
                              0,
                              0,
@@ -1539,11 +1635,14 @@ d_field_Match_mode(<<1:1, X:7, Rest/binary>>, N, Acc,
                        TrUserData);
 d_field_Match_mode(<<0:1, X:7, Rest/binary>>, N, Acc,
                    F@_1, F@_2, F@_3, F@_4, F@_5, _, F@_7, TrUserData) ->
-    {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
+    {NewFValue, RestF} = {id(d_enum_MatchMode(begin
+                                                  <<Res:32/signed-native>> =
+                                                      <<(X bsl N +
+                                                             Acc):32/unsigned-native>>,
+                                                  id(Res, TrUserData)
+                                              end),
+                             TrUserData),
+                          Rest},
     dfp_read_field_def_Match(RestF,
                              0,
                              0,
@@ -3939,6 +4038,530 @@ skip_64_LobbyInfo(<<_:64, Rest/binary>>, Z1, Z2, F@_1,
                                  F@_2,
                                  TrUserData).
 
+decode_msg_MatchCreateReq(Bin, TrUserData) ->
+    dfp_read_field_def_MatchCreateReq(Bin,
+                                      0,
+                                      0,
+                                      id(undefined, TrUserData),
+                                      id(undefined, TrUserData),
+                                      id(undefined, TrUserData),
+                                      TrUserData).
+
+dfp_read_field_def_MatchCreateReq(<<8, Rest/binary>>,
+                                  Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
+    d_field_MatchCreateReq_mode(Rest,
+                                Z1,
+                                Z2,
+                                F@_1,
+                                F@_2,
+                                F@_3,
+                                TrUserData);
+dfp_read_field_def_MatchCreateReq(<<16, Rest/binary>>,
+                                  Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
+    d_field_MatchCreateReq_players_max(Rest,
+                                       Z1,
+                                       Z2,
+                                       F@_1,
+                                       F@_2,
+                                       F@_3,
+                                       TrUserData);
+dfp_read_field_def_MatchCreateReq(<<26, Rest/binary>>,
+                                  Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
+    d_field_MatchCreateReq_extra(Rest,
+                                 Z1,
+                                 Z2,
+                                 F@_1,
+                                 F@_2,
+                                 F@_3,
+                                 TrUserData);
+dfp_read_field_def_MatchCreateReq(<<>>, 0, 0, F@_1,
+                                  F@_2, F@_3, _) ->
+    #'MatchCreateReq'{mode = F@_1, players_max = F@_2,
+                      extra = F@_3};
+dfp_read_field_def_MatchCreateReq(Other, Z1, Z2, F@_1,
+                                  F@_2, F@_3, TrUserData) ->
+    dg_read_field_def_MatchCreateReq(Other,
+                                     Z1,
+                                     Z2,
+                                     F@_1,
+                                     F@_2,
+                                     F@_3,
+                                     TrUserData).
+
+dg_read_field_def_MatchCreateReq(<<1:1, X:7,
+                                   Rest/binary>>,
+                                 N, Acc, F@_1, F@_2, F@_3, TrUserData)
+    when N < 32 - 7 ->
+    dg_read_field_def_MatchCreateReq(Rest,
+                                     N + 7,
+                                     X bsl N + Acc,
+                                     F@_1,
+                                     F@_2,
+                                     F@_3,
+                                     TrUserData);
+dg_read_field_def_MatchCreateReq(<<0:1, X:7,
+                                   Rest/binary>>,
+                                 N, Acc, F@_1, F@_2, F@_3, TrUserData) ->
+    Key = X bsl N + Acc,
+    case Key of
+        8 ->
+            d_field_MatchCreateReq_mode(Rest,
+                                        0,
+                                        0,
+                                        F@_1,
+                                        F@_2,
+                                        F@_3,
+                                        TrUserData);
+        16 ->
+            d_field_MatchCreateReq_players_max(Rest,
+                                               0,
+                                               0,
+                                               F@_1,
+                                               F@_2,
+                                               F@_3,
+                                               TrUserData);
+        26 ->
+            d_field_MatchCreateReq_extra(Rest,
+                                         0,
+                                         0,
+                                         F@_1,
+                                         F@_2,
+                                         F@_3,
+                                         TrUserData);
+        _ ->
+            case Key band 7 of
+                0 ->
+                    skip_varint_MatchCreateReq(Rest,
+                                               0,
+                                               0,
+                                               F@_1,
+                                               F@_2,
+                                               F@_3,
+                                               TrUserData);
+                1 ->
+                    skip_64_MatchCreateReq(Rest,
+                                           0,
+                                           0,
+                                           F@_1,
+                                           F@_2,
+                                           F@_3,
+                                           TrUserData);
+                2 ->
+                    skip_length_delimited_MatchCreateReq(Rest,
+                                                         0,
+                                                         0,
+                                                         F@_1,
+                                                         F@_2,
+                                                         F@_3,
+                                                         TrUserData);
+                3 ->
+                    skip_group_MatchCreateReq(Rest,
+                                              Key bsr 3,
+                                              0,
+                                              F@_1,
+                                              F@_2,
+                                              F@_3,
+                                              TrUserData);
+                5 ->
+                    skip_32_MatchCreateReq(Rest,
+                                           0,
+                                           0,
+                                           F@_1,
+                                           F@_2,
+                                           F@_3,
+                                           TrUserData)
+            end
+    end;
+dg_read_field_def_MatchCreateReq(<<>>, 0, 0, F@_1, F@_2,
+                                 F@_3, _) ->
+    #'MatchCreateReq'{mode = F@_1, players_max = F@_2,
+                      extra = F@_3}.
+
+d_field_MatchCreateReq_mode(<<1:1, X:7, Rest/binary>>,
+                            N, Acc, F@_1, F@_2, F@_3, TrUserData)
+    when N < 57 ->
+    d_field_MatchCreateReq_mode(Rest,
+                                N + 7,
+                                X bsl N + Acc,
+                                F@_1,
+                                F@_2,
+                                F@_3,
+                                TrUserData);
+d_field_MatchCreateReq_mode(<<0:1, X:7, Rest/binary>>,
+                            N, Acc, _, F@_2, F@_3, TrUserData) ->
+    {NewFValue, RestF} = {id(d_enum_MatchMode(begin
+                                                  <<Res:32/signed-native>> =
+                                                      <<(X bsl N +
+                                                             Acc):32/unsigned-native>>,
+                                                  id(Res, TrUserData)
+                                              end),
+                             TrUserData),
+                          Rest},
+    dfp_read_field_def_MatchCreateReq(RestF,
+                                      0,
+                                      0,
+                                      NewFValue,
+                                      F@_2,
+                                      F@_3,
+                                      TrUserData).
+
+d_field_MatchCreateReq_players_max(<<1:1, X:7,
+                                     Rest/binary>>,
+                                   N, Acc, F@_1, F@_2, F@_3, TrUserData)
+    when N < 57 ->
+    d_field_MatchCreateReq_players_max(Rest,
+                                       N + 7,
+                                       X bsl N + Acc,
+                                       F@_1,
+                                       F@_2,
+                                       F@_3,
+                                       TrUserData);
+d_field_MatchCreateReq_players_max(<<0:1, X:7,
+                                     Rest/binary>>,
+                                   N, Acc, F@_1, _, F@_3, TrUserData) ->
+    {NewFValue, RestF} = {id(X bsl N + Acc, TrUserData),
+                          Rest},
+    dfp_read_field_def_MatchCreateReq(RestF,
+                                      0,
+                                      0,
+                                      F@_1,
+                                      NewFValue,
+                                      F@_3,
+                                      TrUserData).
+
+d_field_MatchCreateReq_extra(<<1:1, X:7, Rest/binary>>,
+                             N, Acc, F@_1, F@_2, F@_3, TrUserData)
+    when N < 57 ->
+    d_field_MatchCreateReq_extra(Rest,
+                                 N + 7,
+                                 X bsl N + Acc,
+                                 F@_1,
+                                 F@_2,
+                                 F@_3,
+                                 TrUserData);
+d_field_MatchCreateReq_extra(<<0:1, X:7, Rest/binary>>,
+                             N, Acc, F@_1, F@_2, _, TrUserData) ->
+    {NewFValue, RestF} = begin
+                             Len = X bsl N + Acc,
+                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
+                             {id(binary:copy(Bytes), TrUserData), Rest2}
+                         end,
+    dfp_read_field_def_MatchCreateReq(RestF,
+                                      0,
+                                      0,
+                                      F@_1,
+                                      F@_2,
+                                      NewFValue,
+                                      TrUserData).
+
+skip_varint_MatchCreateReq(<<1:1, _:7, Rest/binary>>,
+                           Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
+    skip_varint_MatchCreateReq(Rest,
+                               Z1,
+                               Z2,
+                               F@_1,
+                               F@_2,
+                               F@_3,
+                               TrUserData);
+skip_varint_MatchCreateReq(<<0:1, _:7, Rest/binary>>,
+                           Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
+    dfp_read_field_def_MatchCreateReq(Rest,
+                                      Z1,
+                                      Z2,
+                                      F@_1,
+                                      F@_2,
+                                      F@_3,
+                                      TrUserData).
+
+skip_length_delimited_MatchCreateReq(<<1:1, X:7,
+                                       Rest/binary>>,
+                                     N, Acc, F@_1, F@_2, F@_3, TrUserData)
+    when N < 57 ->
+    skip_length_delimited_MatchCreateReq(Rest,
+                                         N + 7,
+                                         X bsl N + Acc,
+                                         F@_1,
+                                         F@_2,
+                                         F@_3,
+                                         TrUserData);
+skip_length_delimited_MatchCreateReq(<<0:1, X:7,
+                                       Rest/binary>>,
+                                     N, Acc, F@_1, F@_2, F@_3, TrUserData) ->
+    Length = X bsl N + Acc,
+    <<_:Length/binary, Rest2/binary>> = Rest,
+    dfp_read_field_def_MatchCreateReq(Rest2,
+                                      0,
+                                      0,
+                                      F@_1,
+                                      F@_2,
+                                      F@_3,
+                                      TrUserData).
+
+skip_group_MatchCreateReq(Bin, FNum, Z2, F@_1, F@_2,
+                          F@_3, TrUserData) ->
+    {_, Rest} = read_group(Bin, FNum),
+    dfp_read_field_def_MatchCreateReq(Rest,
+                                      0,
+                                      Z2,
+                                      F@_1,
+                                      F@_2,
+                                      F@_3,
+                                      TrUserData).
+
+skip_32_MatchCreateReq(<<_:32, Rest/binary>>, Z1, Z2,
+                       F@_1, F@_2, F@_3, TrUserData) ->
+    dfp_read_field_def_MatchCreateReq(Rest,
+                                      Z1,
+                                      Z2,
+                                      F@_1,
+                                      F@_2,
+                                      F@_3,
+                                      TrUserData).
+
+skip_64_MatchCreateReq(<<_:64, Rest/binary>>, Z1, Z2,
+                       F@_1, F@_2, F@_3, TrUserData) ->
+    dfp_read_field_def_MatchCreateReq(Rest,
+                                      Z1,
+                                      Z2,
+                                      F@_1,
+                                      F@_2,
+                                      F@_3,
+                                      TrUserData).
+
+decode_msg_MatchCreateResp(Bin, TrUserData) ->
+    dfp_read_field_def_MatchCreateResp(Bin,
+                                       0,
+                                       0,
+                                       id(undefined, TrUserData),
+                                       id(undefined, TrUserData),
+                                       TrUserData).
+
+dfp_read_field_def_MatchCreateResp(<<10, Rest/binary>>,
+                                   Z1, Z2, F@_1, F@_2, TrUserData) ->
+    d_field_MatchCreateResp_resp(Rest,
+                                 Z1,
+                                 Z2,
+                                 F@_1,
+                                 F@_2,
+                                 TrUserData);
+dfp_read_field_def_MatchCreateResp(<<18, Rest/binary>>,
+                                   Z1, Z2, F@_1, F@_2, TrUserData) ->
+    d_field_MatchCreateResp_match(Rest,
+                                  Z1,
+                                  Z2,
+                                  F@_1,
+                                  F@_2,
+                                  TrUserData);
+dfp_read_field_def_MatchCreateResp(<<>>, 0, 0, F@_1,
+                                   F@_2, _) ->
+    #'MatchCreateResp'{resp = F@_1, match = F@_2};
+dfp_read_field_def_MatchCreateResp(Other, Z1, Z2, F@_1,
+                                   F@_2, TrUserData) ->
+    dg_read_field_def_MatchCreateResp(Other,
+                                      Z1,
+                                      Z2,
+                                      F@_1,
+                                      F@_2,
+                                      TrUserData).
+
+dg_read_field_def_MatchCreateResp(<<1:1, X:7,
+                                    Rest/binary>>,
+                                  N, Acc, F@_1, F@_2, TrUserData)
+    when N < 32 - 7 ->
+    dg_read_field_def_MatchCreateResp(Rest,
+                                      N + 7,
+                                      X bsl N + Acc,
+                                      F@_1,
+                                      F@_2,
+                                      TrUserData);
+dg_read_field_def_MatchCreateResp(<<0:1, X:7,
+                                    Rest/binary>>,
+                                  N, Acc, F@_1, F@_2, TrUserData) ->
+    Key = X bsl N + Acc,
+    case Key of
+        10 ->
+            d_field_MatchCreateResp_resp(Rest,
+                                         0,
+                                         0,
+                                         F@_1,
+                                         F@_2,
+                                         TrUserData);
+        18 ->
+            d_field_MatchCreateResp_match(Rest,
+                                          0,
+                                          0,
+                                          F@_1,
+                                          F@_2,
+                                          TrUserData);
+        _ ->
+            case Key band 7 of
+                0 ->
+                    skip_varint_MatchCreateResp(Rest,
+                                                0,
+                                                0,
+                                                F@_1,
+                                                F@_2,
+                                                TrUserData);
+                1 ->
+                    skip_64_MatchCreateResp(Rest,
+                                            0,
+                                            0,
+                                            F@_1,
+                                            F@_2,
+                                            TrUserData);
+                2 ->
+                    skip_length_delimited_MatchCreateResp(Rest,
+                                                          0,
+                                                          0,
+                                                          F@_1,
+                                                          F@_2,
+                                                          TrUserData);
+                3 ->
+                    skip_group_MatchCreateResp(Rest,
+                                               Key bsr 3,
+                                               0,
+                                               F@_1,
+                                               F@_2,
+                                               TrUserData);
+                5 ->
+                    skip_32_MatchCreateResp(Rest,
+                                            0,
+                                            0,
+                                            F@_1,
+                                            F@_2,
+                                            TrUserData)
+            end
+    end;
+dg_read_field_def_MatchCreateResp(<<>>, 0, 0, F@_1,
+                                  F@_2, _) ->
+    #'MatchCreateResp'{resp = F@_1, match = F@_2}.
+
+d_field_MatchCreateResp_resp(<<1:1, X:7, Rest/binary>>,
+                             N, Acc, F@_1, F@_2, TrUserData)
+    when N < 57 ->
+    d_field_MatchCreateResp_resp(Rest,
+                                 N + 7,
+                                 X bsl N + Acc,
+                                 F@_1,
+                                 F@_2,
+                                 TrUserData);
+d_field_MatchCreateResp_resp(<<0:1, X:7, Rest/binary>>,
+                             N, Acc, Prev, F@_2, TrUserData) ->
+    {NewFValue, RestF} = begin
+                             Len = X bsl N + Acc,
+                             <<Bs:Len/binary, Rest2/binary>> = Rest,
+                             {id(decode_msg_ResponseObject(Bs, TrUserData),
+                                 TrUserData),
+                              Rest2}
+                         end,
+    dfp_read_field_def_MatchCreateResp(RestF,
+                                       0,
+                                       0,
+                                       if Prev == undefined -> NewFValue;
+                                          true ->
+                                              merge_msg_ResponseObject(Prev,
+                                                                       NewFValue,
+                                                                       TrUserData)
+                                       end,
+                                       F@_2,
+                                       TrUserData).
+
+d_field_MatchCreateResp_match(<<1:1, X:7, Rest/binary>>,
+                              N, Acc, F@_1, F@_2, TrUserData)
+    when N < 57 ->
+    d_field_MatchCreateResp_match(Rest,
+                                  N + 7,
+                                  X bsl N + Acc,
+                                  F@_1,
+                                  F@_2,
+                                  TrUserData);
+d_field_MatchCreateResp_match(<<0:1, X:7, Rest/binary>>,
+                              N, Acc, F@_1, Prev, TrUserData) ->
+    {NewFValue, RestF} = begin
+                             Len = X bsl N + Acc,
+                             <<Bs:Len/binary, Rest2/binary>> = Rest,
+                             {id(decode_msg_Match(Bs, TrUserData), TrUserData),
+                              Rest2}
+                         end,
+    dfp_read_field_def_MatchCreateResp(RestF,
+                                       0,
+                                       0,
+                                       F@_1,
+                                       if Prev == undefined -> NewFValue;
+                                          true ->
+                                              merge_msg_Match(Prev,
+                                                              NewFValue,
+                                                              TrUserData)
+                                       end,
+                                       TrUserData).
+
+skip_varint_MatchCreateResp(<<1:1, _:7, Rest/binary>>,
+                            Z1, Z2, F@_1, F@_2, TrUserData) ->
+    skip_varint_MatchCreateResp(Rest,
+                                Z1,
+                                Z2,
+                                F@_1,
+                                F@_2,
+                                TrUserData);
+skip_varint_MatchCreateResp(<<0:1, _:7, Rest/binary>>,
+                            Z1, Z2, F@_1, F@_2, TrUserData) ->
+    dfp_read_field_def_MatchCreateResp(Rest,
+                                       Z1,
+                                       Z2,
+                                       F@_1,
+                                       F@_2,
+                                       TrUserData).
+
+skip_length_delimited_MatchCreateResp(<<1:1, X:7,
+                                        Rest/binary>>,
+                                      N, Acc, F@_1, F@_2, TrUserData)
+    when N < 57 ->
+    skip_length_delimited_MatchCreateResp(Rest,
+                                          N + 7,
+                                          X bsl N + Acc,
+                                          F@_1,
+                                          F@_2,
+                                          TrUserData);
+skip_length_delimited_MatchCreateResp(<<0:1, X:7,
+                                        Rest/binary>>,
+                                      N, Acc, F@_1, F@_2, TrUserData) ->
+    Length = X bsl N + Acc,
+    <<_:Length/binary, Rest2/binary>> = Rest,
+    dfp_read_field_def_MatchCreateResp(Rest2,
+                                       0,
+                                       0,
+                                       F@_1,
+                                       F@_2,
+                                       TrUserData).
+
+skip_group_MatchCreateResp(Bin, FNum, Z2, F@_1, F@_2,
+                           TrUserData) ->
+    {_, Rest} = read_group(Bin, FNum),
+    dfp_read_field_def_MatchCreateResp(Rest,
+                                       0,
+                                       Z2,
+                                       F@_1,
+                                       F@_2,
+                                       TrUserData).
+
+skip_32_MatchCreateResp(<<_:32, Rest/binary>>, Z1, Z2,
+                        F@_1, F@_2, TrUserData) ->
+    dfp_read_field_def_MatchCreateResp(Rest,
+                                       Z1,
+                                       Z2,
+                                       F@_1,
+                                       F@_2,
+                                       TrUserData).
+
+skip_64_MatchCreateResp(<<_:64, Rest/binary>>, Z1, Z2,
+                        F@_1, F@_2, TrUserData) ->
+    dfp_read_field_def_MatchCreateResp(Rest,
+                                       Z1,
+                                       Z2,
+                                       F@_1,
+                                       F@_2,
+                                       TrUserData).
+
 decode_msg_ObjectGet(Bin, TrUserData) ->
     dfp_read_field_def_ObjectGet(Bin,
                                  0,
@@ -5715,6 +6338,16 @@ skip_64_LuaScript(<<_:64, Rest/binary>>, Z1, Z2, F@_1,
                                  F@_3,
                                  TrUserData).
 
+d_enum_MatchState(0) -> 'CREATING';
+d_enum_MatchState(1) -> 'PLAYING';
+d_enum_MatchState(2) -> 'FINISHING';
+d_enum_MatchState(V) -> V.
+
+d_enum_MatchMode(0) -> 'DEFAULT';
+d_enum_MatchMode(1) -> 'BLITZ';
+d_enum_MatchMode(2) -> 'STRATEGIC';
+d_enum_MatchMode(V) -> V.
+
 'd_enum_ResponseObject.Status'(0) -> 'OK';
 'd_enum_ResponseObject.Status'(1) -> 'ERROR';
 'd_enum_ResponseObject.Status'(V) -> V.
@@ -5833,6 +6466,10 @@ merge_msgs(Prev, New, MsgName, Opts) ->
             merge_msg_PlayerLog(Prev, New, TrUserData);
         'LobbyInfo' ->
             merge_msg_LobbyInfo(Prev, New, TrUserData);
+        'MatchCreateReq' ->
+            merge_msg_MatchCreateReq(Prev, New, TrUserData);
+        'MatchCreateResp' ->
+            merge_msg_MatchCreateResp(Prev, New, TrUserData);
         'ObjectGet' ->
             merge_msg_ObjectGet(Prev, New, TrUserData);
         'ShellCommand' ->
@@ -5968,6 +6605,30 @@ merge_msg_LobbyInfo(#'LobbyInfo'{resp = PFresp,
                         NFmatches == undefined -> PFmatches
                      end}.
 
+-compile({nowarn_unused_function,merge_msg_MatchCreateReq/3}).
+merge_msg_MatchCreateReq(#'MatchCreateReq'{extra =
+                                               PFextra},
+                         #'MatchCreateReq'{mode = NFmode,
+                                           players_max = NFplayers_max,
+                                           extra = NFextra},
+                         _) ->
+    #'MatchCreateReq'{mode = NFmode,
+                      players_max = NFplayers_max,
+                      extra =
+                          if NFextra =:= undefined -> PFextra;
+                             true -> NFextra
+                          end}.
+
+-compile({nowarn_unused_function,merge_msg_MatchCreateResp/3}).
+merge_msg_MatchCreateResp(#'MatchCreateResp'{resp =
+                                                 PFresp,
+                                             match = PFmatch},
+                          #'MatchCreateResp'{resp = NFresp, match = NFmatch},
+                          TrUserData) ->
+    #'MatchCreateResp'{resp =
+                           merge_msg_ResponseObject(PFresp, NFresp, TrUserData),
+                       match = merge_msg_Match(PFmatch, NFmatch, TrUserData)}.
+
 -compile({nowarn_unused_function,merge_msg_ObjectGet/3}).
 merge_msg_ObjectGet(#'ObjectGet'{oid = PFoid,
                                  name = PFname},
@@ -6076,6 +6737,10 @@ verify_msg(Msg, MsgName, Opts) ->
             v_msg_PlayerLog(Msg, [MsgName], TrUserData);
         'LobbyInfo' ->
             v_msg_LobbyInfo(Msg, [MsgName], TrUserData);
+        'MatchCreateReq' ->
+            v_msg_MatchCreateReq(Msg, [MsgName], TrUserData);
+        'MatchCreateResp' ->
+            v_msg_MatchCreateResp(Msg, [MsgName], TrUserData);
         'ObjectGet' ->
             v_msg_ObjectGet(Msg, [MsgName], TrUserData);
         'ShellCommand' ->
@@ -6112,11 +6777,11 @@ v_msg_Match(#'Match'{id = F1, state = F2, players = F3,
                      extra = F7},
             Path, TrUserData) ->
     v_type_uint32(F1, [id | Path], TrUserData),
-    v_type_string(F2, [state | Path], TrUserData),
+    v_enum_MatchState(F2, [state | Path], TrUserData),
     v_type_uint32(F3, [players | Path], TrUserData),
     v_type_uint32(F4, [players_max | Path], TrUserData),
     v_type_uint32(F5, [start_time | Path], TrUserData),
-    v_type_string(F6, [mode | Path], TrUserData),
+    v_enum_MatchMode(F6, [mode | Path], TrUserData),
     if F7 == undefined -> ok;
        true -> v_type_bytes(F7, [extra | Path], TrUserData)
     end,
@@ -6272,6 +6937,35 @@ v_msg_LobbyInfo(#'LobbyInfo'{resp = F1, matches = F2},
 v_msg_LobbyInfo(X, Path, _TrUserData) ->
     mk_type_error({expected_msg, 'LobbyInfo'}, X, Path).
 
+-compile({nowarn_unused_function,v_msg_MatchCreateReq/3}).
+-dialyzer({nowarn_function,v_msg_MatchCreateReq/3}).
+v_msg_MatchCreateReq(#'MatchCreateReq'{mode = F1,
+                                       players_max = F2, extra = F3},
+                     Path, TrUserData) ->
+    v_enum_MatchMode(F1, [mode | Path], TrUserData),
+    v_type_uint32(F2, [players_max | Path], TrUserData),
+    if F3 == undefined -> ok;
+       true -> v_type_bytes(F3, [extra | Path], TrUserData)
+    end,
+    ok;
+v_msg_MatchCreateReq(X, Path, _TrUserData) ->
+    mk_type_error({expected_msg, 'MatchCreateReq'},
+                  X,
+                  Path).
+
+-compile({nowarn_unused_function,v_msg_MatchCreateResp/3}).
+-dialyzer({nowarn_function,v_msg_MatchCreateResp/3}).
+v_msg_MatchCreateResp(#'MatchCreateResp'{resp = F1,
+                                         match = F2},
+                      Path, TrUserData) ->
+    v_msg_ResponseObject(F1, [resp | Path], TrUserData),
+    v_msg_Match(F2, [match | Path], TrUserData),
+    ok;
+v_msg_MatchCreateResp(X, Path, _TrUserData) ->
+    mk_type_error({expected_msg, 'MatchCreateResp'},
+                  X,
+                  Path).
+
 -compile({nowarn_unused_function,v_msg_ObjectGet/3}).
 -dialyzer({nowarn_function,v_msg_ObjectGet/3}).
 v_msg_ObjectGet(#'ObjectGet'{id = F1, object = F2,
@@ -6367,6 +7061,29 @@ v_msg_LuaScript(#'LuaScript'{id = F1, name = F2,
     ok;
 v_msg_LuaScript(X, Path, _TrUserData) ->
     mk_type_error({expected_msg, 'LuaScript'}, X, Path).
+
+-compile({nowarn_unused_function,v_enum_MatchState/3}).
+-dialyzer({nowarn_function,v_enum_MatchState/3}).
+v_enum_MatchState('CREATING', _Path, _TrUserData) -> ok;
+v_enum_MatchState('PLAYING', _Path, _TrUserData) -> ok;
+v_enum_MatchState('FINISHING', _Path, _TrUserData) ->
+    ok;
+v_enum_MatchState(V, Path, TrUserData)
+    when is_integer(V) ->
+    v_type_sint32(V, Path, TrUserData);
+v_enum_MatchState(X, Path, _TrUserData) ->
+    mk_type_error({invalid_enum, 'MatchState'}, X, Path).
+
+-compile({nowarn_unused_function,v_enum_MatchMode/3}).
+-dialyzer({nowarn_function,v_enum_MatchMode/3}).
+v_enum_MatchMode('DEFAULT', _Path, _TrUserData) -> ok;
+v_enum_MatchMode('BLITZ', _Path, _TrUserData) -> ok;
+v_enum_MatchMode('STRATEGIC', _Path, _TrUserData) -> ok;
+v_enum_MatchMode(V, Path, TrUserData)
+    when is_integer(V) ->
+    v_type_sint32(V, Path, TrUserData);
+v_enum_MatchMode(X, Path, _TrUserData) ->
+    mk_type_error({invalid_enum, 'MatchMode'}, X, Path).
 
 -compile({nowarn_unused_function,'v_enum_ResponseObject.Status'/3}).
 -dialyzer({nowarn_function,'v_enum_ResponseObject.Status'/3}).
@@ -6560,7 +7277,11 @@ cons(Elem, Acc, _TrUserData) -> [Elem | Acc].
 
 
 get_msg_defs() ->
-    [{{enum, 'ResponseObject.Status'},
+    [{{enum, 'MatchState'},
+      [{'CREATING', 0}, {'PLAYING', 1}, {'FINISHING', 2}]},
+     {{enum, 'MatchMode'},
+      [{'DEFAULT', 0}, {'BLITZ', 1}, {'STRATEGIC', 2}]},
+     {{enum, 'ResponseObject.Status'},
       [{'OK', 0}, {'ERROR', 1}]},
      {{enum, 'AccountNewResp.Status'},
       [{'OK', 0}, {'ERROR', 1}]},
@@ -6581,16 +7302,18 @@ get_msg_defs() ->
      {{msg, 'Match'},
       [#field{name = id, fnum = 1, rnum = 2, type = uint32,
               occurrence = required, opts = []},
-       #field{name = state, fnum = 2, rnum = 3, type = string,
-              occurrence = required, opts = []},
+       #field{name = state, fnum = 2, rnum = 3,
+              type = {enum, 'MatchState'}, occurrence = required,
+              opts = []},
        #field{name = players, fnum = 3, rnum = 4,
               type = uint32, occurrence = required, opts = []},
        #field{name = players_max, fnum = 4, rnum = 5,
               type = uint32, occurrence = required, opts = []},
        #field{name = start_time, fnum = 5, rnum = 6,
               type = uint32, occurrence = required, opts = []},
-       #field{name = mode, fnum = 6, rnum = 7, type = string,
-              occurrence = required, opts = []},
+       #field{name = mode, fnum = 6, rnum = 7,
+              type = {enum, 'MatchMode'}, occurrence = required,
+              opts = []},
        #field{name = extra, fnum = 7, rnum = 8, type = bytes,
               occurrence = optional, opts = []}]},
      {{msg, 'AccountNewReq'},
@@ -6648,6 +7371,21 @@ get_msg_defs() ->
               opts = []},
        #field{name = matches, fnum = 2, rnum = 3,
               type = {msg, 'Match'}, occurrence = repeated,
+              opts = []}]},
+     {{msg, 'MatchCreateReq'},
+      [#field{name = mode, fnum = 1, rnum = 2,
+              type = {enum, 'MatchMode'}, occurrence = required,
+              opts = []},
+       #field{name = players_max, fnum = 2, rnum = 3,
+              type = uint32, occurrence = required, opts = []},
+       #field{name = extra, fnum = 3, rnum = 4, type = bytes,
+              occurrence = optional, opts = []}]},
+     {{msg, 'MatchCreateResp'},
+      [#field{name = resp, fnum = 1, rnum = 2,
+              type = {msg, 'ResponseObject'}, occurrence = required,
+              opts = []},
+       #field{name = match, fnum = 2, rnum = 3,
+              type = {msg, 'Match'}, occurrence = required,
               opts = []}]},
      {{msg, 'ObjectGet'},
       [#field{name = id, fnum = 1, rnum = 2, type = bytes,
@@ -6710,6 +7448,8 @@ get_msg_names() ->
      'PlayerAuthenticate',
      'PlayerLog',
      'LobbyInfo',
+     'MatchCreateReq',
+     'MatchCreateResp',
      'ObjectGet',
      'ShellCommand',
      'Room',
@@ -6733,6 +7473,8 @@ get_msg_or_group_names() ->
      'PlayerAuthenticate',
      'PlayerLog',
      'LobbyInfo',
+     'MatchCreateReq',
+     'MatchCreateResp',
      'ObjectGet',
      'ShellCommand',
      'Room',
@@ -6741,7 +7483,9 @@ get_msg_or_group_names() ->
 
 
 get_enum_names() ->
-    ['ResponseObject.Status',
+    ['MatchState',
+     'MatchMode',
+     'ResponseObject.Status',
      'AccountNewResp.Status',
      'AccountLoginResp.Status',
      'PlayerNewResp.Status',
@@ -6772,16 +7516,18 @@ find_msg_def('ResponseObject') ->
 find_msg_def('Match') ->
     [#field{name = id, fnum = 1, rnum = 2, type = uint32,
             occurrence = required, opts = []},
-     #field{name = state, fnum = 2, rnum = 3, type = string,
-            occurrence = required, opts = []},
+     #field{name = state, fnum = 2, rnum = 3,
+            type = {enum, 'MatchState'}, occurrence = required,
+            opts = []},
      #field{name = players, fnum = 3, rnum = 4,
             type = uint32, occurrence = required, opts = []},
      #field{name = players_max, fnum = 4, rnum = 5,
             type = uint32, occurrence = required, opts = []},
      #field{name = start_time, fnum = 5, rnum = 6,
             type = uint32, occurrence = required, opts = []},
-     #field{name = mode, fnum = 6, rnum = 7, type = string,
-            occurrence = required, opts = []},
+     #field{name = mode, fnum = 6, rnum = 7,
+            type = {enum, 'MatchMode'}, occurrence = required,
+            opts = []},
      #field{name = extra, fnum = 7, rnum = 8, type = bytes,
             occurrence = optional, opts = []}];
 find_msg_def('AccountNewReq') ->
@@ -6840,6 +7586,21 @@ find_msg_def('LobbyInfo') ->
      #field{name = matches, fnum = 2, rnum = 3,
             type = {msg, 'Match'}, occurrence = repeated,
             opts = []}];
+find_msg_def('MatchCreateReq') ->
+    [#field{name = mode, fnum = 1, rnum = 2,
+            type = {enum, 'MatchMode'}, occurrence = required,
+            opts = []},
+     #field{name = players_max, fnum = 2, rnum = 3,
+            type = uint32, occurrence = required, opts = []},
+     #field{name = extra, fnum = 3, rnum = 4, type = bytes,
+            occurrence = optional, opts = []}];
+find_msg_def('MatchCreateResp') ->
+    [#field{name = resp, fnum = 1, rnum = 2,
+            type = {msg, 'ResponseObject'}, occurrence = required,
+            opts = []},
+     #field{name = match, fnum = 2, rnum = 3,
+            type = {msg, 'Match'}, occurrence = required,
+            opts = []}];
 find_msg_def('ObjectGet') ->
     [#field{name = id, fnum = 1, rnum = 2, type = bytes,
             occurrence = required, opts = []},
@@ -6889,6 +7650,10 @@ find_msg_def('LuaScript') ->
 find_msg_def(_) -> error.
 
 
+find_enum_def('MatchState') ->
+    [{'CREATING', 0}, {'PLAYING', 1}, {'FINISHING', 2}];
+find_enum_def('MatchMode') ->
+    [{'DEFAULT', 0}, {'BLITZ', 1}, {'STRATEGIC', 2}];
 find_enum_def('ResponseObject.Status') ->
     [{'OK', 0}, {'ERROR', 1}];
 find_enum_def('AccountNewResp.Status') ->
@@ -6904,6 +7669,10 @@ find_enum_def('ObjectGet.GameObject') ->
 find_enum_def(_) -> error.
 
 
+enum_symbol_by_value('MatchState', Value) ->
+    enum_symbol_by_value_MatchState(Value);
+enum_symbol_by_value('MatchMode', Value) ->
+    enum_symbol_by_value_MatchMode(Value);
 enum_symbol_by_value('ResponseObject.Status', Value) ->
     'enum_symbol_by_value_ResponseObject.Status'(Value);
 enum_symbol_by_value('AccountNewResp.Status', Value) ->
@@ -6919,6 +7688,10 @@ enum_symbol_by_value('ObjectGet.GameObject', Value) ->
     'enum_symbol_by_value_ObjectGet.GameObject'(Value).
 
 
+enum_value_by_symbol('MatchState', Sym) ->
+    enum_value_by_symbol_MatchState(Sym);
+enum_value_by_symbol('MatchMode', Sym) ->
+    enum_value_by_symbol_MatchMode(Sym);
 enum_value_by_symbol('ResponseObject.Status', Sym) ->
     'enum_value_by_symbol_ResponseObject.Status'(Sym);
 enum_value_by_symbol('AccountNewResp.Status', Sym) ->
@@ -6932,6 +7705,24 @@ enum_value_by_symbol('GameObject', Sym) ->
 enum_value_by_symbol('ObjectGet.GameObject', Sym) ->
     'enum_value_by_symbol_ObjectGet.GameObject'(Sym).
 
+
+enum_symbol_by_value_MatchState(0) -> 'CREATING';
+enum_symbol_by_value_MatchState(1) -> 'PLAYING';
+enum_symbol_by_value_MatchState(2) -> 'FINISHING'.
+
+
+enum_value_by_symbol_MatchState('CREATING') -> 0;
+enum_value_by_symbol_MatchState('PLAYING') -> 1;
+enum_value_by_symbol_MatchState('FINISHING') -> 2.
+
+enum_symbol_by_value_MatchMode(0) -> 'DEFAULT';
+enum_symbol_by_value_MatchMode(1) -> 'BLITZ';
+enum_symbol_by_value_MatchMode(2) -> 'STRATEGIC'.
+
+
+enum_value_by_symbol_MatchMode('DEFAULT') -> 0;
+enum_value_by_symbol_MatchMode('BLITZ') -> 1;
+enum_value_by_symbol_MatchMode('STRATEGIC') -> 2.
 
 'enum_symbol_by_value_ResponseObject.Status'(0) -> 'OK';
 'enum_symbol_by_value_ResponseObject.Status'(1) ->
@@ -7056,6 +7847,8 @@ fqbin_to_msg_name(<<"goblet.PlayerNewResp">>) -> 'PlayerNewResp';
 fqbin_to_msg_name(<<"goblet.PlayerAuthenticate">>) -> 'PlayerAuthenticate';
 fqbin_to_msg_name(<<"goblet.PlayerLog">>) -> 'PlayerLog';
 fqbin_to_msg_name(<<"goblet.LobbyInfo">>) -> 'LobbyInfo';
+fqbin_to_msg_name(<<"goblet.MatchCreateReq">>) -> 'MatchCreateReq';
+fqbin_to_msg_name(<<"goblet.MatchCreateResp">>) -> 'MatchCreateResp';
 fqbin_to_msg_name(<<"goblet.ObjectGet">>) -> 'ObjectGet';
 fqbin_to_msg_name(<<"goblet.ShellCommand">>) -> 'ShellCommand';
 fqbin_to_msg_name(<<"goblet.Room">>) -> 'Room';
@@ -7076,6 +7869,8 @@ msg_name_to_fqbin('PlayerNewResp') -> <<"goblet.PlayerNewResp">>;
 msg_name_to_fqbin('PlayerAuthenticate') -> <<"goblet.PlayerAuthenticate">>;
 msg_name_to_fqbin('PlayerLog') -> <<"goblet.PlayerLog">>;
 msg_name_to_fqbin('LobbyInfo') -> <<"goblet.LobbyInfo">>;
+msg_name_to_fqbin('MatchCreateReq') -> <<"goblet.MatchCreateReq">>;
+msg_name_to_fqbin('MatchCreateResp') -> <<"goblet.MatchCreateResp">>;
 msg_name_to_fqbin('ObjectGet') -> <<"goblet.ObjectGet">>;
 msg_name_to_fqbin('ShellCommand') -> <<"goblet.ShellCommand">>;
 msg_name_to_fqbin('Room') -> <<"goblet.Room">>;
@@ -7084,6 +7879,8 @@ msg_name_to_fqbin('LuaScript') -> <<"goblet.LuaScript">>;
 msg_name_to_fqbin(E) -> error({gpb_error, {badmsg, E}}).
 
 
+fqbin_to_enum_name(<<"goblet.MatchState">>) -> 'MatchState';
+fqbin_to_enum_name(<<"goblet.MatchMode">>) -> 'MatchMode';
 fqbin_to_enum_name(<<"goblet.ResponseObject.Status">>) -> 'ResponseObject.Status';
 fqbin_to_enum_name(<<"goblet.AccountNewResp.Status">>) -> 'AccountNewResp.Status';
 fqbin_to_enum_name(<<"goblet.AccountLoginResp.Status">>) ->
@@ -7095,6 +7892,8 @@ fqbin_to_enum_name(E) ->
     error({gpb_error, {badenum, E}}).
 
 
+enum_name_to_fqbin('MatchState') -> <<"goblet.MatchState">>;
+enum_name_to_fqbin('MatchMode') -> <<"goblet.MatchMode">>;
 enum_name_to_fqbin('ResponseObject.Status') -> <<"goblet.ResponseObject.Status">>;
 enum_name_to_fqbin('AccountNewResp.Status') -> <<"goblet.AccountNewResp.Status">>;
 enum_name_to_fqbin('AccountLoginResp.Status') ->
@@ -7143,6 +7942,8 @@ get_msg_containment("goblet") ->
      'LobbyInfo',
      'LuaScript',
      'Match',
+     'MatchCreateReq',
+     'MatchCreateResp',
      'ObjectGet',
      'PlayerAuthenticate',
      'PlayerLog',
@@ -7174,6 +7975,8 @@ get_enum_containment("goblet") ->
     ['AccountLoginResp.Status',
      'AccountNewResp.Status',
      'GameObject',
+     'MatchMode',
+     'MatchState',
      'ObjectGet.GameObject',
      'PlayerNewResp.Status',
      'ResponseObject.Status'];
@@ -7182,9 +7985,11 @@ get_enum_containment(P) ->
 
 
 get_proto_by_msg_name_as_fqbin(<<"goblet.PlayerNewResp">>) -> "goblet";
+get_proto_by_msg_name_as_fqbin(<<"goblet.MatchCreateResp">>) -> "goblet";
 get_proto_by_msg_name_as_fqbin(<<"goblet.AccountNewResp">>) -> "goblet";
 get_proto_by_msg_name_as_fqbin(<<"goblet.AccountLoginResp">>) -> "goblet";
 get_proto_by_msg_name_as_fqbin(<<"goblet.PlayerNewReq">>) -> "goblet";
+get_proto_by_msg_name_as_fqbin(<<"goblet.MatchCreateReq">>) -> "goblet";
 get_proto_by_msg_name_as_fqbin(<<"goblet.AccountNewReq">>) -> "goblet";
 get_proto_by_msg_name_as_fqbin(<<"goblet.AccountLoginReq">>) -> "goblet";
 get_proto_by_msg_name_as_fqbin(<<"goblet.AccountLoginResp.Player">>) -> "goblet";
@@ -7213,6 +8018,8 @@ get_proto_by_enum_name_as_fqbin(<<"goblet.AccountNewResp.Status">>) -> "goblet";
 get_proto_by_enum_name_as_fqbin(<<"goblet.AccountLoginResp.Status">>) -> "goblet";
 get_proto_by_enum_name_as_fqbin(<<"goblet.ObjectGet.GameObject">>) -> "goblet";
 get_proto_by_enum_name_as_fqbin(<<"goblet.GameObject">>) -> "goblet";
+get_proto_by_enum_name_as_fqbin(<<"goblet.MatchState">>) -> "goblet";
+get_proto_by_enum_name_as_fqbin(<<"goblet.MatchMode">>) -> "goblet";
 get_proto_by_enum_name_as_fqbin(E) ->
     error({gpb_error, {badenum, E}}).
 

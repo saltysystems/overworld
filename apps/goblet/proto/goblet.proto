@@ -6,6 +6,18 @@ package goblet;
 // Goblet Objects                                      //
 /////////////////////////////////////////////////////////
 
+// Match bits
+enum MatchState {
+    CREATING = 0;
+    PLAYING = 1;
+    FINISHING = 2;
+}
+enum MatchMode {
+    DEFAULT = 0;
+    BLITZ = 1;
+    STRATEGIC = 2;
+}
+
 // General response message
 message ResponseObject {
 	enum Status {
@@ -19,11 +31,11 @@ message ResponseObject {
 // Match description
 message Match {
     required uint32 id = 1;
-    required string state = 2;
+    required MatchState state = 2;
     required uint32 players = 3;
     required uint32 players_max = 4;
     required uint32 start_time = 5;
-    required string mode = 6;
+    required MatchMode mode = 6;
     optional bytes extra = 7;
 }
 
@@ -91,6 +103,20 @@ message LobbyInfo {
     required ResponseObject resp = 1;
     repeated Match matches = 2;
 }
+
+message MatchCreateReq {
+    required MatchMode mode = 1;
+    required uint32 players_max = 2;
+    optional bytes extra = 3;
+}
+
+message MatchCreateResp {
+    required ResponseObject resp = 1;
+    required Match match = 2;
+}
+
+
+/// old?
 
 enum GameObject {
 	ROOM = 0;
