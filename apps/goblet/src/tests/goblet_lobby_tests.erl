@@ -11,8 +11,7 @@ add_remove_match_test() ->
     Players = 6,
     PlayersMax = 10,
     Mode = blitz,
-    Match = #'goblet_match'{players=Players, players_max=PlayersMax, mode=Mode},
-    {ok, ConfirmedMatch} = goblet_lobby:add_match(Match),
+    {ok, ConfirmedMatch} = goblet_lobby:create_match(Mode, PlayersMax),
     ?assertEqual(Players, ConfirmedMatch#goblet_match.players),
     ?assertEqual(PlayersMax, ConfirmedMatch#goblet_match.players_max),
     ?assertEqual(Mode, ConfirmedMatch#goblet_match.mode),
@@ -21,8 +20,7 @@ add_remove_match_test() ->
     Matches1 = goblet_lobby:get_matches(),
     ?assertEqual([ConfirmedMatch], Matches1),
 
-    Result = goblet_lobby:del_match(ConfirmedMatch),
+    Result = goblet_lobby:delete_match(ConfirmedMatch#goblet_match.id),
     ?assertEqual(ok, Result),
     Matches2 = goblet_lobby:get_matches(),
     ?assertEqual([], Matches2).
-    
