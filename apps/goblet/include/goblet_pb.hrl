@@ -15,14 +15,21 @@
         }).
 -endif.
 
+-ifndef('MATCH.PLAYER_PB_H').
+-define('MATCH.PLAYER_PB_H', true).
+-record('Match.Player',
+        {name                   :: iodata()         % = 1
+        }).
+-endif.
+
 -ifndef('MATCH_PB_H').
 -define('MATCH_PB_H', true).
 -record('Match',
         {id                     :: non_neg_integer(), % = 1, 32 bits
          state                  :: 'CREATING' | 'PLAYING' | 'FINISHING' | integer(), % = 2, enum MatchState
-         players                :: non_neg_integer(), % = 3, 32 bits
+         players = []           :: [goblet_pb:'Match.Player'()] | undefined, % = 3
          players_max            :: non_neg_integer(), % = 4, 32 bits
-         start_time             :: non_neg_integer(), % = 5, 32 bits
+         start_time             :: non_neg_integer(), % = 5, 64 bits
          mode                   :: 'DEFAULT' | 'BLITZ' | 'STRATEGIC' | integer(), % = 6, enum MatchMode
          extra                  :: iodata() | undefined % = 7
         }).
@@ -121,7 +128,7 @@
 -define('MATCHCREATERESP_PB_H', true).
 -record('MatchCreateResp',
         {resp                   :: goblet_pb:'ResponseObject'(), % = 1
-         match                  :: goblet_pb:'Match'() % = 2
+         match                  :: goblet_pb:'Match'() | undefined % = 2
         }).
 -endif.
 
