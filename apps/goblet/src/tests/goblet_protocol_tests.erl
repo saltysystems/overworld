@@ -5,7 +5,7 @@
 -include("goblet_pb.hrl").
 -include("goblet_opcode.hrl").
 
--record(session, {email=none, authenticated=false, player=none}).
+-record(session, {email=none, authenticated=false, statem = login, match = false}).
 
 player_log_test() ->
 	OriginalMessage = "Hello World",
@@ -63,13 +63,16 @@ account_login_test() ->
 player_new_test() ->
 	% mock the state
 	Email = "TestUser@doesntexist.notadomain",
-	State = #session{email=Email, authenticated=true},
+	State = #session{email=Email, authenticated=true, statem = lobby},
 	Message = goblet_pb:encode_msg(#'PlayerNewReq'{
 				name = "Chester The Tester",
 				title = "Rickety Mockup",
 				appearance = 1,
 				role = "interceptor"}),
-	goblet_protocol:player_new(Message, State).
+	{[RespOp, RespMsg], _State} = goblet_protocol:player_new(Message, State),
+    ?assertEqual(RespOp, <<?PLAYER_NEW:16>>),
+    RespObj = goblet_pb:decode_msg(RespMsg, 'PlayerNewResp'),
+    ?assertEqual(RespObj#'PlayerNewResp'.status, 'OK').
 
 lobby_info_test() ->
     State = #session{}, % shouldnt matter here
@@ -80,12 +83,13 @@ lobby_info_test() ->
     ?assertEqual(ResponseObj#'ResponseObject'.status, 'OK'),
     ?assertEqual(is_list(DecodedResp#'LobbyInfo'.matches), true).
 
-create_match_test() ->
-    State = #session{authenticated=true}, % shouldnt matter here
-    Mode = 'NORMAL',
+match_create_test() ->
+	Email = "TestUser@doesntexist.notadomain",
+	State = #session{email=Email, authenticated=true, statem = lobby},
+    Mode = 'DEFAULT',
     MaxPlayers = 6,
     Msg = goblet_pb:encode_msg(#'MatchCreateReq'{mode=Mode, players_max=MaxPlayers}),
-    {[RespOp, RespMsg], State} = goblet_protocol:create_match(Msg, State),
+    {[RespOp, RespMsg], State} = goblet_protocol:match_create(Msg, State),
     OpCode = <<?MATCH_CREATE:16>>,
     ?assertEqual(OpCode, RespOp),
     DecodedResp = goblet_pb:decode_msg(RespMsg, 'MatchCreateResp'),
