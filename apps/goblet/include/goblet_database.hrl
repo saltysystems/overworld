@@ -12,4 +12,4 @@
 -record(goblet_zone,{id, name, shortname}).
 
 % Records representing ephemeral objects, such as matches
--record(goblet_match, {id=-1, state, players, players_max, start_time, mode, extra= <<>>}).
+-record(goblet_match, {id=-1, state, players=[], players_max, start_time, mode, extra= <<>>}).
