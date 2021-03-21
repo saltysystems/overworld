@@ -1,6 +1,14 @@
 -module(goblet_protocol).
 
--export([decode/2, account_new/1, account_login/1, player_new/2, lobby_info/2]).
+-export([
+    decode/2,
+    account_new/1,
+    account_login/1,
+    player_new/2,
+    match_create/2,
+    lobby_info/2,
+    repack_match/1
+]).
 -export([player_log/1]).
 
 -include("goblet_opcode.hrl").
@@ -27,7 +35,7 @@
 decode(<<?VERSION:16, _T/binary>>, State) ->
     logger:notice("Got a version request~n"),
     {ok, State};
-decode(<<?ACCOUNT_NEW:16, T/binary>>, _State) -> 
+decode(<<?ACCOUNT_NEW:16, T/binary>>, _State) ->
     logger:notice("Got a new account request~n"),
     account_new(T);
 decode(<<?ACCOUNT_LOGIN:16, T/binary>>, _State) ->
@@ -123,22 +131,37 @@ lobby_info(_Message, State) ->
     OpCode = <<?LOBBY_INFO:16>>,
     {[OpCode, Msg], State}.
 
-
 %%----------------------------------------------------------------------------
 %% @doc Create a new match. Will only create matches for sessions where the
 %%      player is authenticated and in the 'lobby' state
 %% @end
 %%----------------------------------------------------------------------------
-match_create(Message, State) when State#session.authenticated =:= true, State#session.statem =:= lobby ->
-    Match = goblet_pb:decode_message(Message, 'MatchCreateReq'),
+-spec match_create(binary(), any()) -> {[binary(), ...], any()}.
+match_create(Message, State) when
+    State#session.authenticated =:= true, State#session.statem =:= lobby
+->
+    Match = goblet_pb:decode_msg(Message, 'MatchCreateReq'),
     Mode = Match#'MatchCreateReq'.mode,
     MaxPlayers = Match#'MatchCreateReq'.players_max,
-    Extra = case Match#'MatchCreateReq'.extra of
-        undefined -> <<>>;
-        Bytes -> Bytes
-    end,
-    goblet_lobby:create_match(Mode, MaxPlayers, Extra).
-    
+    Extra =
+        case Match#'MatchCreateReq'.extra of
+            undefined -> <<>>;
+            Bytes -> Bytes
+        end,
+    Msg =
+        case goblet_lobby:create_match(Mode, MaxPlayers, Extra) of
+            {ok, M} ->
+                Resp = #'ResponseObject'{status = 'OK'},
+                goblet_pb:encode_msg(#'MatchCreateResp'{resp = Resp, match = repack_match(M)});
+            {error, Error} ->
+                Resp = #'ResponseObject'{
+                    status = 'ERROR',
+                    error = atom_to_list(Error)
+                },
+                goblet_pb:encode_msg(#'MatchCreateResp'{resp = Resp})
+        end,
+    OpCode = <<?MATCH_CREATE:16>>,
+    {[OpCode, Msg], State}.
 
 %%----------------------------------------------------------------------------
 %% @doc Create a new player character
