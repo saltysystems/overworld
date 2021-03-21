@@ -30,11 +30,14 @@ message ResponseObject {
 
 // Match description
 message Match {
+    message Player {
+        required string name = 1;
+    }
     required uint32 id = 1;
     required MatchState state = 2;
-    required uint32 players = 3;
+    repeated Player players = 3;
     required uint32 players_max = 4;
-    required uint32 start_time = 5;
+    required uint64 start_time = 5;
     required MatchMode mode = 6;
     optional bytes extra = 7;
 }
@@ -112,7 +115,7 @@ message MatchCreateReq {
 
 message MatchCreateResp {
     required ResponseObject resp = 1;
-    required Match match = 2;
+    optional Match match = 2;
 }
 
 
