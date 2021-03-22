@@ -31,7 +31,8 @@
          players_max            :: non_neg_integer(), % = 4, 32 bits
          start_time             :: non_neg_integer(), % = 5, 64 bits
          mode                   :: 'DEFAULT' | 'BLITZ' | 'STRATEGIC' | integer(), % = 6, enum MatchMode
-         extra                  :: iodata() | undefined % = 7
+         duration               :: non_neg_integer(), % = 7, 32 bits
+         extra                  :: iodata() | undefined % = 8
         }).
 -endif.
 
@@ -132,52 +133,34 @@
         }).
 -endif.
 
--ifndef('OBJECTGET_PB_H').
--define('OBJECTGET_PB_H', true).
--record('ObjectGet',
-        {id                     :: iodata(),        % = 1
-         object                 :: 'ROOM' | 'ENTITY' | 'SCRIPT' | integer(), % = 2, enum ObjectGet.GameObject
-         oid                    :: iodata() | undefined, % = 3
-         name                   :: iodata() | undefined % = 4
+-ifndef('MATCHJOINREQ_PB_H').
+-define('MATCHJOINREQ_PB_H', true).
+-record('MatchJoinReq',
+        {player                 :: iodata(),        % = 1
+         matchid                :: non_neg_integer() % = 2, 32 bits
         }).
 -endif.
 
--ifndef('SHELLCOMMAND_PB_H').
--define('SHELLCOMMAND_PB_H', true).
--record('ShellCommand',
-        {id                     :: iodata(),        % = 1
-         command                :: iodata()         % = 2
+-ifndef('MATCHJOINRESP_PB_H').
+-define('MATCHJOINRESP_PB_H', true).
+-record('MatchJoinResp',
+        {resp                   :: goblet_pb:'ResponseObject'(), % = 1
+         match                  :: goblet_pb:'Match'() | undefined % = 2
         }).
 -endif.
 
--ifndef('ROOM_PB_H').
--define('ROOM_PB_H', true).
--record('Room',
-        {name                   :: iodata(),        % = 1
-         ownerid                :: iodata(),        % = 2
-         description            :: iodata(),        % = 3
-         backlink               :: boolean() | 0 | 1, % = 4
-         link = []              :: [iodata()] | undefined, % = 5
-         entity = []            :: [goblet_pb:'Entity'()] | undefined, % = 6
-         script = []            :: [goblet_pb:'LuaScript'()] | undefined % = 7
+-ifndef('MATCHLEAVEREQ_PB_H').
+-define('MATCHLEAVEREQ_PB_H', true).
+-record('MatchLeaveReq',
+        {player                 :: iodata(),        % = 1
+         matchid                :: non_neg_integer() % = 2, 32 bits
         }).
 -endif.
 
--ifndef('ENTITY_PB_H').
--define('ENTITY_PB_H', true).
--record('Entity',
-        {id                     :: iodata(),        % = 1
-         name                   :: iodata(),        % = 2
-         room                   :: iodata()         % = 3
-        }).
--endif.
-
--ifndef('LUASCRIPT_PB_H').
--define('LUASCRIPT_PB_H', true).
--record('LuaScript',
-        {id                     :: iodata(),        % = 1
-         name                   :: iodata() | undefined, % = 2
-         content                :: iodata()         % = 3
+-ifndef('MATCHLEAVERESP_PB_H').
+-define('MATCHLEAVERESP_PB_H', true).
+-record('MatchLeaveResp',
+        {resp                   :: goblet_pb:'ResponseObject'() % = 1
         }).
 -endif.
 
