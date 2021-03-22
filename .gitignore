@@ -1,2 +1,3 @@
 _build/
-
+apps/goblet/rebar.lock
+rebar.lock
