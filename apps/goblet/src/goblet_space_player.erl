@@ -5,7 +5,7 @@
 -spec new(list(), list(), pos_integer(), list(), list()) -> ok | {error, any()}.
 new(Name, ShipName, Appearance, Role, Account) ->
     case
-        run_checks([
+        goblet_util:run_checks([
             fun() -> is_valid_name(Name) end,
             fun() -> is_valid_ship_name(ShipName) end,
             fun() -> is_valid_appearance(Appearance) end,
@@ -19,15 +19,6 @@ new(Name, ShipName, Appearance, Role, Account) ->
     end.
 
 % Internal functions
--spec run_checks(list()) -> ok | any().
-run_checks([]) ->
-    ok;
-run_checks([H | T]) when is_function(H, 0) ->
-    case H() of
-        ok -> run_checks(T);
-        Error -> Error
-    end.
-
 is_valid_name(Name) when length(Name) < 64 ->
     ok;
 is_valid_name(_Name) ->
