@@ -77,7 +77,7 @@ player_new_test() ->
 lobby_info_test() ->
     State = #session{}, % shouldnt matter here
     {[RespOp, RespMsg], _State} = goblet_protocol:lobby_info(<<>>, State),
-    ?assertEqual(<<?LOBBY_INFO:16>>, RespOp),
+    ?assertEqual(<<?MATCH_LIST:16>>, RespOp),
     DecodedResp = goblet_pb:decode_msg(RespMsg, 'LobbyInfo'),
     ResponseObj = DecodedResp#'LobbyInfo'.resp,
     ?assertEqual(ResponseObj#'ResponseObject'.status, 'OK'),
@@ -97,4 +97,6 @@ match_create_test() ->
     ?assertEqual(ResponseObj#'ResponseObject'.status, 'OK'),
     M = DecodedResp#'MatchCreateResp'.match,
     ?assertEqual(MaxPlayers, M#'Match'.players_max),
-    ?assertEqual(Mode, M#'Match'.mode).
+    ?assertEqual(Mode, M#'Match'.mode),
+    % deconstruct the match
+    goblet_lobby:delete_match(M#'Match'.id).
