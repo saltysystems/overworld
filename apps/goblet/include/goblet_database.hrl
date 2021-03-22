@@ -10,6 +10,3 @@
 -record(goblet_object,{id, zone, coordinates}).
 -record(goblet_script,{id, name, content, scope}).
 -record(goblet_zone,{id, name, shortname}).
-
-% Records representing ephemeral objects, such as matches
--record(goblet_match, {id=-1, state, players=[], players_max, start_time, mode, extra= <<>>}).
