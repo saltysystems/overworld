@@ -232,7 +232,7 @@ match_leave(Message, State) when State#session.authenticated =:= true ->
     MatchID = Match#'MatchJoinReq'.matchid,
     Player = Match#'MatchJoinReq'.player,
     Msg = case goblet_lobby:leave_match(Player, MatchID) of 
-        {ok, M} -> 
+        ok -> 
             Resp = #'ResponseObject'{status = 'OK'},
             goblet_pb:encode_msg(#'MatchJoinResp'{resp=Resp});
         {error, Error} -> 

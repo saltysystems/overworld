@@ -81,8 +81,8 @@ is_valid_player(Name) ->
     end.
 
 -spec is_valid_player_account(list(), list()) -> true|false.
-is_valid_player_account(Player, Account) ->
-    case account_by_email(Account) of
+is_valid_player_account(Player, Email) ->
+    case account_by_email(Email) of
         {error, _} -> 
             false; % account doesn't exist at all
         Account ->  % check validity
