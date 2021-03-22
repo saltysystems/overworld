@@ -6,18 +6,19 @@
     account_login/1,
     player_new/2,
     match_create/2,
-    lobby_info/2,
-    repack_match/1
+    match_list/2,
+    match_join/2,
+    match_leave/2
 ]).
 -export([player_log/1]).
 
 -include("goblet_opcode.hrl").
--include("goblet_pb.hrl").
 -include("goblet_database.hrl").
+-include("goblet_pb.hrl").
 
 -include_lib("kernel/include/logger.hrl").
 
--record(session, {email = none, authenticated = false, statem = login, match = false}).
+-record(session, {email = none, authenticated = false, match = false}).
 
 %%============================================================================
 %% Goblet Protocol.
@@ -33,27 +34,42 @@
 %%----------------------------------------------------------------------------
 -spec decode(binary(), any()) -> {ok, any()} | {[binary(), ...], any()}.
 decode(<<?VERSION:16, _T/binary>>, State) ->
-    logger:notice("Got a version request~n"),
+    logger:notice("Version request~n"),
     {ok, State};
 decode(<<?ACCOUNT_NEW:16, T/binary>>, _State) ->
-    logger:notice("Got a new account request~n"),
+    logger:notice("New account request~n"),
     account_new(T);
 decode(<<?ACCOUNT_LOGIN:16, T/binary>>, _State) ->
-    logger:notice("Got an account login request~n"),
+    logger:notice("Account login request~n"),
     account_login(T);
-decode(<<?LOBBY_INFO:16, T/binary>>, State) ->
-    logger:notice("Got a lobby info request~n"),
-    lobby_info(T, State);
 decode(<<?PLAYER_NEW:16, T/binary>>, State) ->
-    logger:notice("Got a new player request~n"),
-    % Need to inspect the state for acct info
+    logger:notice("New player request~n~p", [State#session.email]),
     player_new(T, State);
+decode(<<?PLAYER_LIST:16, T/binary>>, State) ->
+    logger:notice("Player list request from ~p~n", [State#session.email]),
+    player_new(T, State);
+decode(<<?MATCH_LIST:16, T/binary>>, State) ->
+    logger:notice("Match list request from ~p~n", [State#session.email]),
+    match_list(T, State);
 decode(<<?MATCH_CREATE:16, T/binary>>, State) ->
-    logger:notice("Got a new match request~n"),
-    % Need to inspect the state for acct info
+    logger:notice("New match request from ~p~n", [State#session.email]),
     match_create(T, State);
+decode(<<?MATCH_JOIN:16, T/binary>>, State) ->
+    logger:notice("Match join request from ~p~n", [State#session.email]),
+    match_join(T, State);
+decode(<<?MATCH_LEAVE:16, T/binary>>, State) ->
+    logger:notice("Match leave requestfrom ~p~n", [State#session.email]),
+    match_leave(T, State);
+decode(<<?MATCH_START:16, T/binary>>, State) ->
+    logger:notice("Match start request from ~p~n", [State#session.email]);
+decode(<<?MATCH_STATE:16, T/binary>>, State) ->
+    logger:notice("Match state request from ~p~n", [State#session.email]);
+decode(<<?MATCH_PREPARE:16, T/binary>>, State) ->
+    logger:notice("Match prepare packet from ~p~n", [State#session.email]);
+decode(<<?MATCH_DECIDE:16, T/binary>>, State) ->
+    logger:notice("Match decision packet from ~p~n", [State#session.email]);
 decode(<<OpCode:16, _T/binary>>, State) ->
-    logger:notice("Got an unknown opcode: ~p", [OpCode]),
+    logger:notice("Got an unknown opcode ~p from ~p~n", [OpCode, State#session.email]),
     {ok, State}.
 
 %%----------------------------------------------------------------------------
@@ -84,10 +100,10 @@ account_new(Message) ->
                     status = 'ERROR',
                     error = atom_to_list(Error)
                 }),
-                {Reply, #session{authenticated = false, statem = lobby}};
+                {Reply, #session{authenticated = false}};
             _ ->
                 Reply = goblet_pb:encode_msg(#'AccountNewResp'{status = 'OK'}),
-                {Reply, #session{email = Email, authenticated = true, statem = lobby}}
+                {Reply, #session{email = Email, authenticated = true}}
         end,
     OpCode = <<?ACCOUNT_NEW:16>>,
     {[OpCode, Msg], NewState}.
@@ -107,7 +123,7 @@ account_login(Message) ->
                 Record = goblet_db:account_by_email(Email),
                 Players = Record#goblet_account.player_ids,
                 Reply = goblet_pb:encode_msg(#'AccountLoginResp'{status = 'OK', players = Players}),
-                {Reply, #session{email = Email, authenticated = true, statem = lobby}};
+                {Reply, #session{email = Email, authenticated = true}};
             false ->
                 Reply = goblet_pb:encode_msg(#'AccountLoginResp'{
                     status = 'ERROR',
@@ -122,24 +138,23 @@ account_login(Message) ->
 %% @doc Get the current lobby information
 %% @end
 %%----------------------------------------------------------------------------
--spec lobby_info(binary(), any()) -> {[binary(), ...], any()}.
-lobby_info(_Message, State) ->
+-spec match_list(binary(), any()) -> {[binary(), ...], any()}.
+match_list(_Message, State) ->
     Matches = goblet_lobby:get_matches(),
-    M1 = [repack_match(X) || X <- Matches],
+    % Convert the tuples back to records..
+    M1 = [ pack_match(X) || X <- Matches ],
     Resp = #'ResponseObject'{status = 'OK'},
     Msg = goblet_pb:encode_msg(#'LobbyInfo'{resp = Resp, matches = M1}),
-    OpCode = <<?LOBBY_INFO:16>>,
+    OpCode = <<?MATCH_LIST:16>>,
     {[OpCode, Msg], State}.
 
 %%----------------------------------------------------------------------------
 %% @doc Create a new match. Will only create matches for sessions where the
-%%      player is authenticated and in the 'lobby' state
+%%      player is authenticated.
 %% @end
 %%----------------------------------------------------------------------------
 -spec match_create(binary(), any()) -> {[binary(), ...], any()}.
-match_create(Message, State) when
-    State#session.authenticated =:= true, State#session.statem =:= lobby
-->
+match_create(Message, State) when State#session.authenticated =:= true ->
     Match = goblet_pb:decode_msg(Message, 'MatchCreateReq'),
     Mode = Match#'MatchCreateReq'.mode,
     MaxPlayers = Match#'MatchCreateReq'.players_max,
@@ -152,7 +167,7 @@ match_create(Message, State) when
         case goblet_lobby:create_match(Mode, MaxPlayers, Extra) of
             {ok, M} ->
                 Resp = #'ResponseObject'{status = 'OK'},
-                goblet_pb:encode_msg(#'MatchCreateResp'{resp = Resp, match = repack_match(M)});
+                goblet_pb:encode_msg(#'MatchCreateResp'{resp = Resp, match = pack_match(M)});
             {error, Error} ->
                 Resp = #'ResponseObject'{
                     status = 'ERROR',
@@ -162,6 +177,74 @@ match_create(Message, State) when
         end,
     OpCode = <<?MATCH_CREATE:16>>,
     {[OpCode, Msg], State}.
+
+
+%%----------------------------------------------------------------------------
+%% @doc Join a match. Will only join matches for sessions where the player is
+%%      authenticated.
+%% @end
+%%----------------------------------------------------------------------------
+-spec match_join(binary(), any()) -> {[binary(), ...], any()}.
+match_join(Message, State) when State#session.authenticated =:= true ->
+    Match = goblet_pb:decode_msg(Message, 'MatchJoinReq'),
+    MatchID = Match#'MatchJoinReq'.matchid,
+    Player = binary:bin_to_list(Match#'MatchJoinReq'.player),
+    IsValid = goblet_db:is_valid_player_account(Player, State#session.email),
+    match_join(MatchID, Player, State, IsValid).
+
+%%----------------------------------------------------------------------------
+%% @doc Only actually commit joining a match once it has been validated that
+%%      the proposed player actually belongs to the account for whom the 
+%%      session is validated.
+%% @end
+%%----------------------------------------------------------------------------
+match_join(MatchID, Player, State, true) ->
+    Msg = case goblet_lobby:join_match(Player, MatchID) of 
+        {ok, M} -> 
+            Resp = #'ResponseObject'{status = 'OK'},
+            goblet_pb:encode_msg(#'MatchJoinResp'{resp = Resp, match = pack_match(M)});
+        {error, Error} -> 
+            Resp = #'ResponseObject'{
+                status = 'ERROR',
+                error = atom_to_list(Error)
+            },
+            goblet_pb:encode_msg(#'MatchJoinResp'{resp=Resp})
+        end,
+    OpCode = <<?MATCH_JOIN:16>>,
+    {[OpCode, Msg], State};
+match_join(MatchID, Player, State, false) ->
+    Resp = #'ResponseObject'{
+        status = 'ERROR',
+        error = "player_account_mismatch"
+    },
+    Msg = goblet_pb:encode_msg(#'MatchJoinResp'{resp=Resp}),
+    OpCode = <<?MATCH_JOIN:16>>,
+    {[OpCode, Msg], State}. 
+
+%%----------------------------------------------------------------------------
+%% @doc Leave a match. Will only leave matches for sessions where the player is
+%%      authenticated.
+%% @end
+%%----------------------------------------------------------------------------
+-spec match_leave(binary(), any()) -> {[binary(), ...], any()}.
+match_leave(Message, State) when State#session.authenticated =:= true ->
+    Match = goblet_pb:decode_msg(Message, 'MatchLeaveReq'),
+    MatchID = Match#'MatchJoinReq'.matchid,
+    Player = Match#'MatchJoinReq'.player,
+    Msg = case goblet_lobby:leave_match(Player, MatchID) of 
+        {ok, M} -> 
+            Resp = #'ResponseObject'{status = 'OK'},
+            goblet_pb:encode_msg(#'MatchJoinResp'{resp=Resp});
+        {error, Error} -> 
+            Resp = #'ResponseObject'{
+                status = 'ERROR',
+                error = atom_to_list(Error)
+            },
+            goblet_pb:encode_msg(#'MatchJoinResp'{resp=Resp})
+        end,
+    OpCode = <<?MATCH_LEAVE:16>>,
+    {[OpCode, Msg], State}. 
+    
 
 %%----------------------------------------------------------------------------
 %% @doc Create a new player character
@@ -195,14 +278,14 @@ sanitize_message(Message) ->
     %      other client(s)
     Message.
 
-repack_match(Match) ->
-    % This is pointless and stupid.
+pack_match({Id, State, Players, PlayersMax, StartTime, Mode, Extra}) ->
     #'Match'{
-        id = Match#goblet_match.id,
-        state = Match#goblet_match.state,
-        players = Match#goblet_match.players,
-        players_max = Match#goblet_match.players_max,
-        start_time = Match#goblet_match.start_time,
-        mode = Match#goblet_match.mode,
-        extra = Match#goblet_match.extra
+        id = Id,
+        state = State,
+        players = Players,
+        players_max = PlayersMax,
+        start_time = StartTime,
+        duration = (erlang:system_time(second) - StartTime),
+        mode = Mode,
+        extra = Extra
     }.
