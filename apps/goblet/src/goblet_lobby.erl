@@ -1,4 +1,7 @@
 -module(goblet_lobby).
+
+-include_lib("eunit/include/eunit.hrl").
+
 -behaviour(gen_server).
 
 -define(SERVER, ?MODULE).
@@ -8,8 +11,11 @@
 
 -export([
     get_matches/0,
+    get_match/1,
     create_match/2,
     create_match/3,
+    join_match/2,
+    leave_match/2,
     start_match/1,
     delete_match/1
 ]).
@@ -24,7 +30,9 @@
     code_change/3
 ]).
 
--include("goblet_database.hrl").
+% Records representing ephemeral objects, such as matches
+-record(goblet_match, {id=-1, state, players=[], players_max, start_time, mode, extra= <<>>}).
+
 
 %%===================================================================
 %% API
@@ -36,29 +44,50 @@ stop() ->
     gen_server:stop(?SERVER).
 
 %%-------------------------------------------------------------------
-%% @doc Return a list of matches in record format
+%% @doc Return a list of matches. 
 %%-------------------------------------------------------------------
 -spec get_matches() -> list().
 get_matches() ->
     gen_server:call(?MODULE, get_matches).
 
 %%-------------------------------------------------------------------
+%% @doc Return a single match in tuple format.
+%%-------------------------------------------------------------------
+-spec get_match(integer()) -> tuple().
+get_match(MatchID) ->
+    gen_server:call(?MODULE, {get_match, MatchID}).
+
+%%-------------------------------------------------------------------
 %% @doc Add a match to the lobby server, return a record of the match
 %%      with updated fields (state, ID).
 %%-------------------------------------------------------------------
--spec create_match(atom(), pos_integer()) -> {ok, tuple()} | {error, atom()}.
+-spec create_match(atom(), integer()) -> {ok, tuple()} | {error, atom()}.
 create_match(Mode, MaxPlayers) ->
     create_match(Mode, MaxPlayers, <<>>).
 
--spec create_match(atom(), pos_integer(), binary()) -> {ok, tuple()} | {error, atom()}.
+-spec create_match(atom(), integer(), binary()) -> {ok, tuple()} | {error, atom()}.
 create_match(Mode, MaxPlayers, Extra) ->
     gen_server:call(?MODULE, {create_match, Mode, MaxPlayers, Extra}).
 
 %%-------------------------------------------------------------------
+%% @doc Join a player to a match, so long as it hasn't yet started.
+%%-------------------------------------------------------------------
+-spec join_match(list(), integer()) -> {ok, tuple()} | {error, atom()}.
+join_match(Player, MatchID) ->
+    gen_server:call(?MODULE, {join_match, Player, MatchID}).
+
+%%-------------------------------------------------------------------
+%% @doc Remove a player from an unstarted match
+%%-------------------------------------------------------------------
+-spec leave_match(list(), integer()) -> ok | {error, atom()}.
+leave_match(Player, MatchID) ->
+    gen_server:call(?MODULE, {leave_match, Player, MatchID}).
+
+%%-------------------------------------------------------------------
 %% @doc Add a match to the lobby server, return a record of the match
 %%      with updated fields (state, ID).
 %%-------------------------------------------------------------------
--spec start_match(pos_integer()) -> {ok, tuple()} | {error, tuple()}.
+-spec start_match(integer()) -> ok | {error, atom()}.
 start_match(MatchID) ->
     gen_server:call(?MODULE, {start_match, MatchID}).
 
@@ -66,9 +95,9 @@ start_match(MatchID) ->
 %% @doc Delete the match from the lobby server, if it exists. If
 %%      it does not, then do nothing.
 %%-------------------------------------------------------------------
--spec delete_match(pos_integer()) -> ok.
-delete_match(MatchInfo) ->
-    gen_server:call(?MODULE, {delete_match, MatchInfo}).
+-spec delete_match(integer()) -> ok.
+delete_match(MatchID) ->
+    gen_server:call(?MODULE, {delete_match, MatchID}).
 
 %%===================================================================
 %% gen_server Callbacks
@@ -79,10 +108,16 @@ init([]) ->
     {ok, {NextID, Matches}}.
 
 handle_call(get_matches, _From, {NextID, Matches}) ->
-    {reply, Matches, {NextID, Matches}};
+    % convert all matches into plain tuples before handing it to the caller
+    TupleMatches = [ repack_match(X) || X <- Matches ],
+    {reply, TupleMatches, {NextID, Matches}};
+handle_call({get_match, MatchID}, _From, {NextID, Matches}) ->
+    Match = match_find(MatchID, Matches),
+    Reply = match_get(Match),
+    {reply, Reply, {NextID, Matches}};
 handle_call({create_match, Mode, MaxPlayers, Extra}, _From, {ID, Matches}) ->
     MatchState = 'CREATING',
-    StartTime = erlang:system_time(),
+    StartTime = erlang:system_time(second),
     Match = #goblet_match{
         id = ID,
         state = MatchState,
@@ -92,7 +127,7 @@ handle_call({create_match, Mode, MaxPlayers, Extra}, _From, {ID, Matches}) ->
         extra = Extra
     },
     MatchList = [Match | Matches],
-    Reply = {ok, Match},
+    Reply = {ok, repack_match(Match)},
     % Reply with the match list, increment the next available MatchID
     {reply, Reply, {ID + 1, MatchList}};
 handle_call({start_match, MatchID}, _From, {NextID, Matches}) ->
@@ -104,6 +139,33 @@ handle_call({start_match, MatchID}, _From, {NextID, Matches}) ->
             {R, U} ->
                 {R, U}
         end,
+    {reply, Reply, {NextID, UpdatedMatches}};
+handle_call({join_match, Player, MatchID}, _From, {NextID, Matches}) ->
+    Match = match_find(MatchID, Matches),
+    {Reply, UpdatedMatch} =
+        case maybe_join(Player, Match) of
+            {ok, Match1} ->
+                {{ok, repack_match(Match1)}, Match1};
+            {{error, Error}, _} ->
+                {{error, Error}, Match}
+        end,
+    UpdatedMatches = match_update(UpdatedMatch, Match, Matches),
+    {reply, Reply, {NextID, UpdatedMatches}};
+handle_call({leave_match, Player, MatchID}, _From, {NextID, Matches}) ->
+    Match = match_find(MatchID, Matches),
+    {Reply, UpdatedMatch} = maybe_leave(Player, Match), % should basically never fail
+    UpdatedMatches = 
+        case UpdatedMatch#goblet_match.players of
+            [] ->
+                % if no one is in the match after the player leaves, go
+                % ahead and delete the original Match record from the
+                % Matches list 
+                match_del(Match, Matches);
+            _ ->
+                % otherwise update the Matches list with the latest &
+                % greatest record for the Match
+                match_update(UpdatedMatch, Match, Matches)
+        end, 
     {reply, Reply, {NextID, UpdatedMatches}};
 handle_call({delete_match, MatchID}, _From, {NextID, Matches}) ->
     Match = match_find(MatchID, Matches),
@@ -130,19 +192,156 @@ code_change(_OldVsn, State, _Extra) ->
 match_find(MatchID, Matches) ->
     lists:keyfind(MatchID, #goblet_match.id, Matches).
 
-match_del(Match, Matches) when Match == false ->
+match_get(false) ->
+    {error, no_such_match};
+match_get(Match) ->
+    {ok, repack_match(Match)}.
+
+match_del(false, Matches) ->
     % simply return the existing list of matches
     Matches;
 match_del(Match, Matches) ->
     MatchID = Match#goblet_match.id,
     lists:keydelete(MatchID, #goblet_match.id, Matches).
 
-maybe_start(Match, Matches) when Match == false ->
+match_update(_UpdatedMatch, false, Matches) ->
+    Matches;
+match_update(false, _Match, Matches) ->
+    Matches;
+match_update(UpdatedMatch, Match, Matches) ->
+    lists:keyreplace(Match#goblet_match.id, #goblet_match.id, Matches, UpdatedMatch).
+
+maybe_leave(_Player, false) ->
+    {ok, false};
+maybe_leave(Player, Match) ->
+    Players = Match#goblet_match.players,
+    UpdatedPlayers = lists:delete(Player, Players),
+    UpdatedMatch = Match#goblet_match{players=UpdatedPlayers},
+    {ok, UpdatedMatch}.
+
+maybe_join(_Player, false) ->
+    {{error, no_such_match}, false};
+maybe_join(_Player, Match) when length(Match#goblet_match.players) >= Match#goblet_match.players_max ->
+    {{error, match_full}, Match};
+maybe_join(Player, Match) ->
+    case goblet_util:run_checks([
+        fun() -> is_valid_player(Player) end,
+        fun() -> is_unstarted_match(Match) end,
+        fun() -> is_not_in_match(Player, Match) end
+    ]) of
+        ok -> 
+            Players = Match#goblet_match.players,
+            {ok, Match#goblet_match{players=[Player | Players]}};
+        Error -> 
+            {Error, Match}
+    end.
+
+is_unstarted_match(M) when M#goblet_match.state == 'CREATING' ->
+    ok;
+is_unstarted_match(_M) ->
+    {error, already_started}.
+
+is_valid_player(Player) -> 
+    case goblet_db:is_valid_player(Player) of
+        true -> ok;
+        false -> {error, invalid_player}
+    end.
+
+is_not_in_match(Player, Match) ->
+    case lists:member(Player, Match#goblet_match.players) of
+        false -> ok;
+        true -> {error, already_joined}
+    end.
+    
+
+maybe_start(false, Matches) ->
     {{error, no_such_match}, Matches};
 maybe_start(Match, Matches) when length(Match#goblet_match.players) == 0 ->
     {{error, empty_match}, Matches};
 maybe_start(Match, Matches) ->
     supervisor:start_child(goblet_instance_sup, [Match#goblet_match.players, Match#goblet_match.id]),
     UpdatedMatch = Match#goblet_match{state = 'PLAYING'},
-    lists:keyreplace(Match#goblet_match.id, #goblet_match.id, Matches, UpdatedMatch),
-    {ok, started}.
+    UpdatedMatches = match_update(UpdatedMatch, Match, Matches),
+    {ok, UpdatedMatches}.
+
+repack_match(Match) ->
+    {Match#goblet_match.id,
+     Match#goblet_match.state,
+     Match#goblet_match.players,
+     Match#goblet_match.players_max,
+     Match#goblet_match.start_time,
+     Match#goblet_match.mode,
+     Match#goblet_match.extra
+    }.
+
+%%===================================================================
+%% Unit Tests
+%%===================================================================
+
+get_matches_empty_test() ->
+    Matches = goblet_lobby:get_matches(),
+    ?assertEqual([], Matches).
+
+add_match_test() ->
+    {ok, ConfirmedMatch} = create_match('DEFAULT', 6),
+    {Id, State, Players, PlayerMax, _StartTime, Mode, _Extra} = ConfirmedMatch,
+    ?assertEqual('CREATING', State),
+    ?assertEqual([], Players),
+    ?assertEqual(6, PlayerMax),
+    ?assertEqual('DEFAULT', Mode),
+    Matches1 = get_matches(),
+    ?assertEqual([ConfirmedMatch], Matches1),
+    % we are bad at unit tests. this one relies on the first test
+    Result = delete_match(Id),
+    ?assertEqual(ok, Result),
+    Matches2 = get_matches(),
+    ?assertEqual([], Matches2).
+
+join_leave_match_test() ->
+    % Create a player
+    Name = "Chester Tester",
+    Email = "Test@localhost.localdomain",
+    _Resp0 = goblet_db:create_account(Email, "test"),
+    _Resp1 = goblet_db:create_player(Name, "Captain", 1, "destroyer", Email),
+    {ok, MatchParams} = create_match('DEFAULT', 6),
+    {MatchId, _S, _P, _PM, _ST, _M, _E} = MatchParams,
+    {ok, MatchParams2} = join_match(Name, MatchId),
+    {_, _S, Players, _PM, _ST, _M, _E} = MatchParams2,
+    ?assertEqual([Name], Players),
+    % Try to join again, just for fun
+    % TODO: fix me, dialyzer claims this can never succeed
+    {error, Error} = join_match(Name, MatchId),
+    ?assertEqual(Error, already_joined),
+    % attempt to leave the account
+    ?assertEqual(ok, leave_match(Name, MatchId)),
+    ?assertEqual({error, no_such_match}, get_match(MatchId)),
+    ?assertEqual(ok, goblet_db:delete_player(Name, Email)),
+    ?assertEqual(ok, goblet_db:delete_account(Email)).
+
+start_match_test() ->
+    % Create a player
+    Name = "Chester Tester",
+    Email = "Test@localhost.localdomain",
+    _Resp0 = goblet_db:create_account(Email, "test"),
+    _Resp1 = goblet_db:create_player(Name, "Captain", 1, "destroyer", Email),
+    {ok, MatchParams} = create_match('DEFAULT', 6),
+    {MatchId, _S, _P, _PM, _ST, _M, _E} = MatchParams,
+    {ok, _MatchParams2} = join_match(Name, MatchId),
+    % Who does the validation?
+    ok = start_match(MatchId),    
+    % Can we leave a match if its running?
+    ?assertEqual(ok, leave_match(Name, MatchId)),
+    ?assertEqual({error, no_such_match}, get_match(MatchId)),
+    ?assertEqual(ok, goblet_db:delete_player(Name, Email)),
+    ?assertEqual(ok, goblet_db:delete_account(Email)).
+    
+repack_match_test() ->
+    Id = 1,
+    State = 'CREATING',
+    Players = [],
+    PlayersMax = 6,
+    StartTime = erlang:system_time(second),
+    Mode = 'DEFAULT',
+    Extra = <<"ABCD">>,
+    M = #goblet_match{id=Id, state=State, players=Players, players_max=PlayersMax, start_time=StartTime, mode=Mode, extra=Extra},
+    ?assertEqual({Id, State, Players, PlayersMax, StartTime, Mode, Extra},repack_match(M)).
