@@ -39,7 +39,8 @@ message Match {
     required uint32 players_max = 4;
     required uint64 start_time = 5;
     required MatchMode mode = 6;
-    optional bytes extra = 7;
+    required uint32 duration = 7;
+    optional bytes extra = 8;
 }
 
 /////////////////////////////////////////////////////////
@@ -118,57 +119,21 @@ message MatchCreateResp {
     optional Match match = 2;
 }
 
-
-/// old?
-
-enum GameObject {
-	ROOM = 0;
-	ENTITY = 1;
-	SCRIPT = 2;
+message MatchJoinReq {
+    required string player = 1;
+    required uint32 matchid = 2;
 }
 
-message ObjectGet {                            
-        required bytes id = 1;          
-        enum GameObject {                      
-                ROOM = 0;           
-                ENTITY = 1;      
-                SCRIPT = 2;                    
-        }                                      
-        required GameObject object = 2;
-		// allow retrieval by id or name
-		optional bytes oid = 3;
-        optional string name = 4;
+message MatchJoinResp {
+    required ResponseObject resp = 1;
+    optional Match match = 2;
 }
 
-message ShellCommand {
-	required bytes id = 1; // player id
-	required string command = 2;
+message MatchLeaveReq {
+    required string player = 1;
+    required uint32 matchid = 2;
 }
 
-// messages
-message Room {
-	required string name = 1;
-    required bytes ownerid = 2;
-	required string description = 3;
-
-	required bool backlink = 4;
-	repeated string link = 5;
-	repeated Entity entity = 6;
-	repeated LuaScript script = 7;
-}
-
-message Entity { 
-	required bytes id = 1;
-	required string name = 2;
-	// name, qty ?
-	//map<string,uint32> stats = 3;
-	//map<string,uint32> inventory = 4;
-	required string room = 3;
-	//repeated LuaScript script = 4;
-}
-
-message LuaScript {
-	required bytes id = 1;
-	optional string name = 2;
-	required string content = 3;
+message MatchLeaveResp {
+    required ResponseObject resp = 1;
 }
