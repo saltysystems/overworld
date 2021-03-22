@@ -11,6 +11,8 @@
     delete_player/2,
     delete_orphaned_player/1,
     player_by_name/1,
+    is_valid_player/1,
+    is_valid_player_account/2,
     salt_and_hash/2
 ]).
 
@@ -70,6 +72,22 @@ player_by_name(Name) ->
         end
     end,
     mnesia:activity(transaction, Fun).
+
+-spec is_valid_player(list()) -> true|false.
+is_valid_player(Name) ->
+    case player_by_name(Name) of
+        {error, _} -> false;
+        _Player -> true
+    end.
+
+-spec is_valid_player_account(list(), list()) -> true|false.
+is_valid_player_account(Player, Account) ->
+    case account_by_email(Account) of
+        {error, _} -> 
+            false; % account doesn't exist at all
+        Account ->  % check validity
+            lists:member(Player, Account#goblet_account.player_ids)
+    end.
 
 -spec create_player(list(), list(), pos_integer(), list(), list()) -> ok | {error, atom()}.
 create_player(Name, Title, Appearance, Role, Account) ->
