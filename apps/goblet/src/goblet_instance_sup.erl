@@ -21,8 +21,8 @@ init([]) ->
     },
     ChildSpecs = [
         #{
-            id => goblet_instance_server,
-            start => {goblet_instance_server, start, []},
+            id => goblet_instance,
+            start => {goblet_instance, start, []},
             shutdown => brutal_kill
         }
     ],
