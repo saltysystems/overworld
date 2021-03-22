@@ -73,19 +73,21 @@ player_by_name(Name) ->
     end,
     mnesia:activity(transaction, Fun).
 
--spec is_valid_player(list()) -> true|false.
+-spec is_valid_player(list()) -> true | false.
 is_valid_player(Name) ->
     case player_by_name(Name) of
         {error, _} -> false;
         _Player -> true
     end.
 
--spec is_valid_player_account(list(), list()) -> true|false.
+-spec is_valid_player_account(list(), list()) -> true | false.
 is_valid_player_account(Player, Email) ->
     case account_by_email(Email) of
-        {error, _} -> 
-            false; % account doesn't exist at all
-        Account ->  % check validity
+        {error, _} ->
+            % account doesn't exist at all
+            false;
+        % check validity
+        Account ->
             lists:member(Player, Account#goblet_account.player_ids)
     end.
 

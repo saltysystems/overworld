@@ -31,8 +31,7 @@
 ]).
 
 % Records representing ephemeral objects, such as matches
--record(goblet_match, {id=-1, state, players=[], players_max, start_time, mode, extra= <<>>}).
-
+-record(goblet_match, {id = -1, state, players = [], players_max, start_time, mode, extra = <<>>}).
 
 %%===================================================================
 %% API
@@ -44,7 +43,7 @@ stop() ->
     gen_server:stop(?SERVER).
 
 %%-------------------------------------------------------------------
-%% @doc Return a list of matches. 
+%% @doc Return a list of matches.
 %%-------------------------------------------------------------------
 -spec get_matches() -> list().
 get_matches() ->
@@ -109,7 +108,7 @@ init([]) ->
 
 handle_call(get_matches, _From, {NextID, Matches}) ->
     % convert all matches into plain tuples before handing it to the caller
-    TupleMatches = [ repack_match(X) || X <- Matches ],
+    TupleMatches = [repack_match(X) || X <- Matches],
     {reply, TupleMatches, {NextID, Matches}};
 handle_call({get_match, MatchID}, _From, {NextID, Matches}) ->
     Match = match_find(MatchID, Matches),
@@ -153,19 +152,20 @@ handle_call({join_match, Player, MatchID}, _From, {NextID, Matches}) ->
     {reply, Reply, {NextID, UpdatedMatches}};
 handle_call({leave_match, Player, MatchID}, _From, {NextID, Matches}) ->
     Match = match_find(MatchID, Matches),
-    {Reply, UpdatedMatch} = maybe_leave(Player, Match), % should basically never fail
-    UpdatedMatches = 
+    % should basically never fail
+    {Reply, UpdatedMatch} = maybe_leave(Player, Match),
+    UpdatedMatches =
         case UpdatedMatch#goblet_match.players of
             [] ->
                 % if no one is in the match after the player leaves, go
                 % ahead and delete the original Match record from the
-                % Matches list 
+                % Matches list
                 match_del(Match, Matches);
             _ ->
                 % otherwise update the Matches list with the latest &
                 % greatest record for the Match
                 match_update(UpdatedMatch, Match, Matches)
-        end, 
+        end,
     {reply, Reply, {NextID, UpdatedMatches}};
 handle_call({delete_match, MatchID}, _From, {NextID, Matches}) ->
     Match = match_find(MatchID, Matches),
@@ -216,23 +216,27 @@ maybe_leave(_Player, false) ->
 maybe_leave(Player, Match) ->
     Players = Match#goblet_match.players,
     UpdatedPlayers = lists:delete(Player, Players),
-    UpdatedMatch = Match#goblet_match{players=UpdatedPlayers},
+    UpdatedMatch = Match#goblet_match{players = UpdatedPlayers},
     {ok, UpdatedMatch}.
 
 maybe_join(_Player, false) ->
     {{error, no_such_match}, false};
-maybe_join(_Player, Match) when length(Match#goblet_match.players) >= Match#goblet_match.players_max ->
+maybe_join(_Player, Match) when
+    length(Match#goblet_match.players) >= Match#goblet_match.players_max
+->
     {{error, match_full}, Match};
 maybe_join(Player, Match) ->
-    case goblet_util:run_checks([
-        fun() -> is_valid_player(Player) end,
-        fun() -> is_unstarted_match(Match) end,
-        fun() -> is_not_in_match(Player, Match) end
-    ]) of
-        ok -> 
+    case
+        goblet_util:run_checks([
+            fun() -> is_valid_player(Player) end,
+            fun() -> is_unstarted_match(Match) end,
+            fun() -> is_not_in_match(Player, Match) end
+        ])
+    of
+        ok ->
             Players = Match#goblet_match.players,
-            {ok, Match#goblet_match{players=[Player | Players]}};
-        Error -> 
+            {ok, Match#goblet_match{players = [Player | Players]}};
+        Error ->
             {Error, Match}
     end.
 
@@ -241,7 +245,7 @@ is_unstarted_match(M) when M#goblet_match.state == 'CREATING' ->
 is_unstarted_match(_M) ->
     {error, already_started}.
 
-is_valid_player(Player) -> 
+is_valid_player(Player) ->
     case goblet_db:is_valid_player(Player) of
         true -> ok;
         false -> {error, invalid_player}
@@ -252,7 +256,6 @@ is_not_in_match(Player, Match) ->
         false -> ok;
         true -> {error, already_joined}
     end.
-    
 
 maybe_start(false, Matches) ->
     {{error, no_such_match}, Matches};
@@ -265,14 +268,9 @@ maybe_start(Match, Matches) ->
     {ok, UpdatedMatches}.
 
 repack_match(Match) ->
-    {Match#goblet_match.id,
-     Match#goblet_match.state,
-     Match#goblet_match.players,
-     Match#goblet_match.players_max,
-     Match#goblet_match.start_time,
-     Match#goblet_match.mode,
-     Match#goblet_match.extra
-    }.
+    {Match#goblet_match.id, Match#goblet_match.state, Match#goblet_match.players,
+        Match#goblet_match.players_max, Match#goblet_match.start_time, Match#goblet_match.mode,
+        Match#goblet_match.extra}.
 
 %%===================================================================
 %% Unit Tests
@@ -328,13 +326,13 @@ start_match_test() ->
     {MatchId, _S, _P, _PM, _ST, _M, _E} = MatchParams,
     {ok, _MatchParams2} = join_match(Name, MatchId),
     % Who does the validation?
-    ok = start_match(MatchId),    
+    ok = start_match(MatchId),
     % Can we leave a match if its running?
     ?assertEqual(ok, leave_match(Name, MatchId)),
     ?assertEqual({error, no_such_match}, get_match(MatchId)),
     ?assertEqual(ok, goblet_db:delete_player(Name, Email)),
     ?assertEqual(ok, goblet_db:delete_account(Email)).
-    
+
 repack_match_test() ->
     Id = 1,
     State = 'CREATING',
@@ -343,5 +341,13 @@ repack_match_test() ->
     StartTime = erlang:system_time(second),
     Mode = 'DEFAULT',
     Extra = <<"ABCD">>,
-    M = #goblet_match{id=Id, state=State, players=Players, players_max=PlayersMax, start_time=StartTime, mode=Mode, extra=Extra},
-    ?assertEqual({Id, State, Players, PlayersMax, StartTime, Mode, Extra},repack_match(M)).
+    M = #goblet_match{
+        id = Id,
+        state = State,
+        players = Players,
+        players_max = PlayersMax,
+        start_time = StartTime,
+        mode = Mode,
+        extra = Extra
+    },
+    ?assertEqual({Id, State, Players, PlayersMax, StartTime, Mode, Extra}, repack_match(M)).
