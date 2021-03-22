@@ -18,10 +18,22 @@
 -export([enum_symbol_by_value/2, enum_value_by_symbol/2]).
 -export([enum_symbol_by_value_MatchState/1, enum_value_by_symbol_MatchState/1]).
 -export([enum_symbol_by_value_MatchMode/1, enum_value_by_symbol_MatchMode/1]).
--export(['enum_symbol_by_value_ResponseObject.Status'/1, 'enum_value_by_symbol_ResponseObject.Status'/1]).
--export(['enum_symbol_by_value_AccountNewResp.Status'/1, 'enum_value_by_symbol_AccountNewResp.Status'/1]).
--export(['enum_symbol_by_value_AccountLoginResp.Status'/1, 'enum_value_by_symbol_AccountLoginResp.Status'/1]).
--export(['enum_symbol_by_value_PlayerNewResp.Status'/1, 'enum_value_by_symbol_PlayerNewResp.Status'/1]).
+-export([
+    'enum_symbol_by_value_ResponseObject.Status'/1,
+    'enum_value_by_symbol_ResponseObject.Status'/1
+]).
+-export([
+    'enum_symbol_by_value_AccountNewResp.Status'/1,
+    'enum_value_by_symbol_AccountNewResp.Status'/1
+]).
+-export([
+    'enum_symbol_by_value_AccountLoginResp.Status'/1,
+    'enum_value_by_symbol_AccountLoginResp.Status'/1
+]).
+-export([
+    'enum_symbol_by_value_PlayerNewResp.Status'/1,
+    'enum_value_by_symbol_PlayerNewResp.Status'/1
+]).
 -export([get_service_names/0]).
 -export([get_service_def/1]).
 -export([get_rpc_names/1]).
@@ -60,7 +72,14 @@
 -type 'AccountNewResp.Status'() :: 'OK' | 'ERROR'.
 -type 'AccountLoginResp.Status'() :: 'OK' | 'ERROR'.
 -type 'PlayerNewResp.Status'() :: 'OK' | 'ERROR'.
--export_type(['MatchState'/0, 'MatchMode'/0, 'ResponseObject.Status'/0, 'AccountNewResp.Status'/0, 'AccountLoginResp.Status'/0, 'PlayerNewResp.Status'/0]).
+-export_type([
+    'MatchState'/0,
+    'MatchMode'/0,
+    'ResponseObject.Status'/0,
+    'AccountNewResp.Status'/0,
+    'AccountLoginResp.Status'/0,
+    'PlayerNewResp.Status'/0
+]).
 
 %% message types
 -type 'ResponseObject'() :: #'ResponseObject'{}.
@@ -101,20 +120,102 @@
 
 -type 'MatchLeaveResp'() :: #'MatchLeaveResp'{}.
 
--export_type(['ResponseObject'/0, 'Match.Player'/0, 'Match'/0, 'AccountNewReq'/0, 'AccountNewResp'/0, 'AccountLoginReq'/0, 'AccountLoginResp.Player'/0, 'AccountLoginResp'/0, 'PlayerNewReq'/0, 'PlayerNewResp'/0, 'PlayerAuthenticate'/0, 'PlayerLog'/0, 'LobbyInfo'/0, 'MatchCreateReq'/0, 'MatchCreateResp'/0, 'MatchJoinReq'/0, 'MatchJoinResp'/0, 'MatchLeaveReq'/0, 'MatchLeaveResp'/0]).
+-export_type([
+    'ResponseObject'/0,
+    'Match.Player'/0,
+    'Match'/0,
+    'AccountNewReq'/0,
+    'AccountNewResp'/0,
+    'AccountLoginReq'/0,
+    'AccountLoginResp.Player'/0,
+    'AccountLoginResp'/0,
+    'PlayerNewReq'/0,
+    'PlayerNewResp'/0,
+    'PlayerAuthenticate'/0,
+    'PlayerLog'/0,
+    'LobbyInfo'/0,
+    'MatchCreateReq'/0,
+    'MatchCreateResp'/0,
+    'MatchJoinReq'/0,
+    'MatchJoinResp'/0,
+    'MatchLeaveReq'/0,
+    'MatchLeaveResp'/0
+]).
 
--spec encode_msg(#'ResponseObject'{} | #'Match.Player'{} | #'Match'{} | #'AccountNewReq'{} | #'AccountNewResp'{} | #'AccountLoginReq'{} | #'AccountLoginResp.Player'{} | #'AccountLoginResp'{} | #'PlayerNewReq'{} | #'PlayerNewResp'{} | #'PlayerAuthenticate'{} | #'PlayerLog'{} | #'LobbyInfo'{} | #'MatchCreateReq'{} | #'MatchCreateResp'{} | #'MatchJoinReq'{} | #'MatchJoinResp'{} | #'MatchLeaveReq'{} | #'MatchLeaveResp'{}) -> binary().
+-spec encode_msg(
+    #'ResponseObject'{}
+    | #'Match.Player'{}
+    | #'Match'{}
+    | #'AccountNewReq'{}
+    | #'AccountNewResp'{}
+    | #'AccountLoginReq'{}
+    | #'AccountLoginResp.Player'{}
+    | #'AccountLoginResp'{}
+    | #'PlayerNewReq'{}
+    | #'PlayerNewResp'{}
+    | #'PlayerAuthenticate'{}
+    | #'PlayerLog'{}
+    | #'LobbyInfo'{}
+    | #'MatchCreateReq'{}
+    | #'MatchCreateResp'{}
+    | #'MatchJoinReq'{}
+    | #'MatchJoinResp'{}
+    | #'MatchLeaveReq'{}
+    | #'MatchLeaveResp'{}
+) -> binary().
 encode_msg(Msg) when tuple_size(Msg) >= 1 ->
     encode_msg(Msg, element(1, Msg), []).
 
--spec encode_msg(#'ResponseObject'{} | #'Match.Player'{} | #'Match'{} | #'AccountNewReq'{} | #'AccountNewResp'{} | #'AccountLoginReq'{} | #'AccountLoginResp.Player'{} | #'AccountLoginResp'{} | #'PlayerNewReq'{} | #'PlayerNewResp'{} | #'PlayerAuthenticate'{} | #'PlayerLog'{} | #'LobbyInfo'{} | #'MatchCreateReq'{} | #'MatchCreateResp'{} | #'MatchJoinReq'{} | #'MatchJoinResp'{} | #'MatchLeaveReq'{} | #'MatchLeaveResp'{}, atom() | list()) -> binary().
+-spec encode_msg(
+    #'ResponseObject'{}
+    | #'Match.Player'{}
+    | #'Match'{}
+    | #'AccountNewReq'{}
+    | #'AccountNewResp'{}
+    | #'AccountLoginReq'{}
+    | #'AccountLoginResp.Player'{}
+    | #'AccountLoginResp'{}
+    | #'PlayerNewReq'{}
+    | #'PlayerNewResp'{}
+    | #'PlayerAuthenticate'{}
+    | #'PlayerLog'{}
+    | #'LobbyInfo'{}
+    | #'MatchCreateReq'{}
+    | #'MatchCreateResp'{}
+    | #'MatchJoinReq'{}
+    | #'MatchJoinResp'{}
+    | #'MatchLeaveReq'{}
+    | #'MatchLeaveResp'{},
+    atom() | list()
+) -> binary().
 encode_msg(Msg, MsgName) when is_atom(MsgName) ->
     encode_msg(Msg, MsgName, []);
-encode_msg(Msg, Opts)
-    when tuple_size(Msg) >= 1, is_list(Opts) ->
+encode_msg(Msg, Opts) when tuple_size(Msg) >= 1, is_list(Opts) ->
     encode_msg(Msg, element(1, Msg), Opts).
 
--spec encode_msg(#'ResponseObject'{} | #'Match.Player'{} | #'Match'{} | #'AccountNewReq'{} | #'AccountNewResp'{} | #'AccountLoginReq'{} | #'AccountLoginResp.Player'{} | #'AccountLoginResp'{} | #'PlayerNewReq'{} | #'PlayerNewResp'{} | #'PlayerAuthenticate'{} | #'PlayerLog'{} | #'LobbyInfo'{} | #'MatchCreateReq'{} | #'MatchCreateResp'{} | #'MatchJoinReq'{} | #'MatchJoinResp'{} | #'MatchLeaveReq'{} | #'MatchLeaveResp'{}, atom(), list()) -> binary().
+-spec encode_msg(
+    #'ResponseObject'{}
+    | #'Match.Player'{}
+    | #'Match'{}
+    | #'AccountNewReq'{}
+    | #'AccountNewResp'{}
+    | #'AccountLoginReq'{}
+    | #'AccountLoginResp.Player'{}
+    | #'AccountLoginResp'{}
+    | #'PlayerNewReq'{}
+    | #'PlayerNewResp'{}
+    | #'PlayerAuthenticate'{}
+    | #'PlayerLog'{}
+    | #'LobbyInfo'{}
+    | #'MatchCreateReq'{}
+    | #'MatchCreateResp'{}
+    | #'MatchJoinReq'{}
+    | #'MatchJoinResp'{}
+    | #'MatchLeaveReq'{}
+    | #'MatchLeaveResp'{},
+    atom(),
+    list()
+) -> binary().
 encode_msg(Msg, MsgName, Opts) ->
     case proplists:get_bool(verify, Opts) of
         true -> verify_msg(Msg, MsgName, Opts);
@@ -123,90 +224,133 @@ encode_msg(Msg, MsgName, Opts) ->
     TrUserData = proplists:get_value(user_data, Opts),
     case MsgName of
         'ResponseObject' ->
-            encode_msg_ResponseObject(id(Msg, TrUserData),
-                                      TrUserData);
+            encode_msg_ResponseObject(
+                id(Msg, TrUserData),
+                TrUserData
+            );
         'Match.Player' ->
-            'encode_msg_Match.Player'(id(Msg, TrUserData),
-                                      TrUserData);
+            'encode_msg_Match.Player'(
+                id(Msg, TrUserData),
+                TrUserData
+            );
         'Match' ->
             encode_msg_Match(id(Msg, TrUserData), TrUserData);
         'AccountNewReq' ->
-            encode_msg_AccountNewReq(id(Msg, TrUserData),
-                                     TrUserData);
+            encode_msg_AccountNewReq(
+                id(Msg, TrUserData),
+                TrUserData
+            );
         'AccountNewResp' ->
-            encode_msg_AccountNewResp(id(Msg, TrUserData),
-                                      TrUserData);
+            encode_msg_AccountNewResp(
+                id(Msg, TrUserData),
+                TrUserData
+            );
         'AccountLoginReq' ->
-            encode_msg_AccountLoginReq(id(Msg, TrUserData),
-                                       TrUserData);
+            encode_msg_AccountLoginReq(
+                id(Msg, TrUserData),
+                TrUserData
+            );
         'AccountLoginResp.Player' ->
-            'encode_msg_AccountLoginResp.Player'(id(Msg,
-                                                    TrUserData),
-                                                 TrUserData);
+            'encode_msg_AccountLoginResp.Player'(
+                id(
+                    Msg,
+                    TrUserData
+                ),
+                TrUserData
+            );
         'AccountLoginResp' ->
-            encode_msg_AccountLoginResp(id(Msg, TrUserData),
-                                        TrUserData);
+            encode_msg_AccountLoginResp(
+                id(Msg, TrUserData),
+                TrUserData
+            );
         'PlayerNewReq' ->
-            encode_msg_PlayerNewReq(id(Msg, TrUserData),
-                                    TrUserData);
+            encode_msg_PlayerNewReq(
+                id(Msg, TrUserData),
+                TrUserData
+            );
         'PlayerNewResp' ->
-            encode_msg_PlayerNewResp(id(Msg, TrUserData),
-                                     TrUserData);
+            encode_msg_PlayerNewResp(
+                id(Msg, TrUserData),
+                TrUserData
+            );
         'PlayerAuthenticate' ->
-            encode_msg_PlayerAuthenticate(id(Msg, TrUserData),
-                                          TrUserData);
+            encode_msg_PlayerAuthenticate(
+                id(Msg, TrUserData),
+                TrUserData
+            );
         'PlayerLog' ->
             encode_msg_PlayerLog(id(Msg, TrUserData), TrUserData);
         'LobbyInfo' ->
             encode_msg_LobbyInfo(id(Msg, TrUserData), TrUserData);
         'MatchCreateReq' ->
-            encode_msg_MatchCreateReq(id(Msg, TrUserData),
-                                      TrUserData);
+            encode_msg_MatchCreateReq(
+                id(Msg, TrUserData),
+                TrUserData
+            );
         'MatchCreateResp' ->
-            encode_msg_MatchCreateResp(id(Msg, TrUserData),
-                                       TrUserData);
+            encode_msg_MatchCreateResp(
+                id(Msg, TrUserData),
+                TrUserData
+            );
         'MatchJoinReq' ->
-            encode_msg_MatchJoinReq(id(Msg, TrUserData),
-                                    TrUserData);
+            encode_msg_MatchJoinReq(
+                id(Msg, TrUserData),
+                TrUserData
+            );
         'MatchJoinResp' ->
-            encode_msg_MatchJoinResp(id(Msg, TrUserData),
-                                     TrUserData);
+            encode_msg_MatchJoinResp(
+                id(Msg, TrUserData),
+                TrUserData
+            );
         'MatchLeaveReq' ->
-            encode_msg_MatchLeaveReq(id(Msg, TrUserData),
-                                     TrUserData);
+            encode_msg_MatchLeaveReq(
+                id(Msg, TrUserData),
+                TrUserData
+            );
         'MatchLeaveResp' ->
-            encode_msg_MatchLeaveResp(id(Msg, TrUserData),
-                                      TrUserData)
+            encode_msg_MatchLeaveResp(
+                id(Msg, TrUserData),
+                TrUserData
+            )
     end.
-
 
 encode_msg_ResponseObject(Msg, TrUserData) ->
     encode_msg_ResponseObject(Msg, <<>>, TrUserData).
 
-
-encode_msg_ResponseObject(#'ResponseObject'{status = F1,
-                                            error = F2},
-                          Bin, TrUserData) ->
+encode_msg_ResponseObject(
+    #'ResponseObject'{
+        status = F1,
+        error = F2
+    },
+    Bin,
+    TrUserData
+) ->
     B1 = begin
-             TrF1 = id(F1, TrUserData),
-             'e_enum_ResponseObject.Status'(TrF1,
-                                            <<Bin/binary, 8>>,
-                                            TrUserData)
-         end,
-    if F2 == undefined -> B1;
-       true ->
-           begin
-               TrF2 = id(F2, TrUserData),
-               e_type_string(TrF2, <<B1/binary, 18>>, TrUserData)
-           end
+        TrF1 = id(F1, TrUserData),
+        'e_enum_ResponseObject.Status'(
+            TrF1,
+            <<Bin/binary, 8>>,
+            TrUserData
+        )
+    end,
+    if
+        F2 == undefined ->
+            B1;
+        true ->
+            begin
+                TrF2 = id(F2, TrUserData),
+                e_type_string(TrF2, <<B1/binary, 18>>, TrUserData)
+            end
     end.
 
 'encode_msg_Match.Player'(Msg, TrUserData) ->
     'encode_msg_Match.Player'(Msg, <<>>, TrUserData).
 
-
-'encode_msg_Match.Player'(#'Match.Player'{name = F1},
-                          Bin, TrUserData) ->
+'encode_msg_Match.Player'(
+    #'Match.Player'{name = F1},
+    Bin,
+    TrUserData
+) ->
     begin
         TrF1 = id(F1, TrUserData),
         e_type_string(TrF1, <<Bin/binary, 10>>, TrUserData)
@@ -215,60 +359,76 @@ encode_msg_ResponseObject(#'ResponseObject'{status = F1,
 encode_msg_Match(Msg, TrUserData) ->
     encode_msg_Match(Msg, <<>>, TrUserData).
 
-
-encode_msg_Match(#'Match'{id = F1, state = F2,
-                          players = F3, players_max = F4, start_time = F5,
-                          mode = F6, duration = F7, extra = F8},
-                 Bin, TrUserData) ->
+encode_msg_Match(
+    #'Match'{
+        id = F1,
+        state = F2,
+        players = F3,
+        players_max = F4,
+        start_time = F5,
+        mode = F6,
+        duration = F7,
+        extra = F8
+    },
+    Bin,
+    TrUserData
+) ->
     B1 = begin
-             TrF1 = id(F1, TrUserData),
-             e_varint(TrF1, <<Bin/binary, 8>>, TrUserData)
-         end,
+        TrF1 = id(F1, TrUserData),
+        e_varint(TrF1, <<Bin/binary, 8>>, TrUserData)
+    end,
     B2 = begin
-             TrF2 = id(F2, TrUserData),
-             e_enum_MatchState(TrF2, <<B1/binary, 16>>, TrUserData)
-         end,
+        TrF2 = id(F2, TrUserData),
+        e_enum_MatchState(TrF2, <<B1/binary, 16>>, TrUserData)
+    end,
     B3 = begin
-             TrF3 = id(F3, TrUserData),
-             if TrF3 == [] -> B2;
-                true -> e_field_Match_players(TrF3, B2, TrUserData)
-             end
-         end,
+        TrF3 = id(F3, TrUserData),
+        if
+            TrF3 == [] -> B2;
+            true -> e_field_Match_players(TrF3, B2, TrUserData)
+        end
+    end,
     B4 = begin
-             TrF4 = id(F4, TrUserData),
-             e_varint(TrF4, <<B3/binary, 32>>, TrUserData)
-         end,
+        TrF4 = id(F4, TrUserData),
+        e_varint(TrF4, <<B3/binary, 32>>, TrUserData)
+    end,
     B5 = begin
-             TrF5 = id(F5, TrUserData),
-             e_varint(TrF5, <<B4/binary, 40>>, TrUserData)
-         end,
+        TrF5 = id(F5, TrUserData),
+        e_varint(TrF5, <<B4/binary, 40>>, TrUserData)
+    end,
     B6 = begin
-             TrF6 = id(F6, TrUserData),
-             e_enum_MatchMode(TrF6, <<B5/binary, 48>>, TrUserData)
-         end,
+        TrF6 = id(F6, TrUserData),
+        e_enum_MatchMode(TrF6, <<B5/binary, 48>>, TrUserData)
+    end,
     B7 = begin
-             TrF7 = id(F7, TrUserData),
-             e_varint(TrF7, <<B6/binary, 56>>, TrUserData)
-         end,
-    if F8 == undefined -> B7;
-       true ->
-           begin
-               TrF8 = id(F8, TrUserData),
-               e_type_bytes(TrF8, <<B7/binary, 66>>, TrUserData)
-           end
+        TrF7 = id(F7, TrUserData),
+        e_varint(TrF7, <<B6/binary, 56>>, TrUserData)
+    end,
+    if
+        F8 == undefined ->
+            B7;
+        true ->
+            begin
+                TrF8 = id(F8, TrUserData),
+                e_type_bytes(TrF8, <<B7/binary, 66>>, TrUserData)
+            end
     end.
 
 encode_msg_AccountNewReq(Msg, TrUserData) ->
     encode_msg_AccountNewReq(Msg, <<>>, TrUserData).
 
-
-encode_msg_AccountNewReq(#'AccountNewReq'{email = F1,
-                                          password = F2},
-                         Bin, TrUserData) ->
+encode_msg_AccountNewReq(
+    #'AccountNewReq'{
+        email = F1,
+        password = F2
+    },
+    Bin,
+    TrUserData
+) ->
     B1 = begin
-             TrF1 = id(F1, TrUserData),
-             e_type_string(TrF1, <<Bin/binary, 10>>, TrUserData)
-         end,
+        TrF1 = id(F1, TrUserData),
+        e_type_string(TrF1, <<Bin/binary, 10>>, TrUserData)
+    end,
     begin
         TrF2 = id(F2, TrUserData),
         e_type_string(TrF2, <<B1/binary, 18>>, TrUserData)
@@ -277,50 +437,68 @@ encode_msg_AccountNewReq(#'AccountNewReq'{email = F1,
 encode_msg_AccountNewResp(Msg, TrUserData) ->
     encode_msg_AccountNewResp(Msg, <<>>, TrUserData).
 
-
-encode_msg_AccountNewResp(#'AccountNewResp'{status = F1,
-                                            error = F2},
-                          Bin, TrUserData) ->
+encode_msg_AccountNewResp(
+    #'AccountNewResp'{
+        status = F1,
+        error = F2
+    },
+    Bin,
+    TrUserData
+) ->
     B1 = begin
-             TrF1 = id(F1, TrUserData),
-             'e_enum_AccountNewResp.Status'(TrF1,
-                                            <<Bin/binary, 8>>,
-                                            TrUserData)
-         end,
-    if F2 == undefined -> B1;
-       true ->
-           begin
-               TrF2 = id(F2, TrUserData),
-               e_type_string(TrF2, <<B1/binary, 18>>, TrUserData)
-           end
+        TrF1 = id(F1, TrUserData),
+        'e_enum_AccountNewResp.Status'(
+            TrF1,
+            <<Bin/binary, 8>>,
+            TrUserData
+        )
+    end,
+    if
+        F2 == undefined ->
+            B1;
+        true ->
+            begin
+                TrF2 = id(F2, TrUserData),
+                e_type_string(TrF2, <<B1/binary, 18>>, TrUserData)
+            end
     end.
 
 encode_msg_AccountLoginReq(Msg, TrUserData) ->
     encode_msg_AccountLoginReq(Msg, <<>>, TrUserData).
 
-
-encode_msg_AccountLoginReq(#'AccountLoginReq'{email =
-                                                  F1,
-                                              password = F2},
-                           Bin, TrUserData) ->
+encode_msg_AccountLoginReq(
+    #'AccountLoginReq'{
+        email =
+            F1,
+        password = F2
+    },
+    Bin,
+    TrUserData
+) ->
     B1 = begin
-             TrF1 = id(F1, TrUserData),
-             e_type_string(TrF1, <<Bin/binary, 10>>, TrUserData)
-         end,
+        TrF1 = id(F1, TrUserData),
+        e_type_string(TrF1, <<Bin/binary, 10>>, TrUserData)
+    end,
     begin
         TrF2 = id(F2, TrUserData),
         e_type_string(TrF2, <<B1/binary, 18>>, TrUserData)
     end.
 
 'encode_msg_AccountLoginResp.Player'(Msg, TrUserData) ->
-    'encode_msg_AccountLoginResp.Player'(Msg,
-                                         <<>>,
-                                         TrUserData).
+    'encode_msg_AccountLoginResp.Player'(
+        Msg,
+        <<>>,
+        TrUserData
+    ).
 
-
-'encode_msg_AccountLoginResp.Player'(#'AccountLoginResp.Player'{name
-                                                                    = F1},
-                                     Bin, TrUserData) ->
+'encode_msg_AccountLoginResp.Player'(
+    #'AccountLoginResp.Player'{
+        name =
+            F1
+    },
+    Bin,
+    TrUserData
+) ->
     begin
         TrF1 = id(F1, TrUserData),
         e_type_string(TrF1, <<Bin/binary, 10>>, TrUserData)
@@ -329,51 +507,66 @@ encode_msg_AccountLoginReq(#'AccountLoginReq'{email =
 encode_msg_AccountLoginResp(Msg, TrUserData) ->
     encode_msg_AccountLoginResp(Msg, <<>>, TrUserData).
 
-
-encode_msg_AccountLoginResp(#'AccountLoginResp'{status =
-                                                    F1,
-                                                players = F2, error = F3},
-                            Bin, TrUserData) ->
+encode_msg_AccountLoginResp(
+    #'AccountLoginResp'{
+        status =
+            F1,
+        players = F2,
+        error = F3
+    },
+    Bin,
+    TrUserData
+) ->
     B1 = begin
-             TrF1 = id(F1, TrUserData),
-             'e_enum_AccountLoginResp.Status'(TrF1,
-                                              <<Bin/binary, 8>>,
-                                              TrUserData)
-         end,
+        TrF1 = id(F1, TrUserData),
+        'e_enum_AccountLoginResp.Status'(
+            TrF1,
+            <<Bin/binary, 8>>,
+            TrUserData
+        )
+    end,
     B2 = begin
-             TrF2 = id(F2, TrUserData),
-             if TrF2 == [] -> B1;
-                true ->
-                    e_field_AccountLoginResp_players(TrF2, B1, TrUserData)
-             end
-         end,
-    if F3 == undefined -> B2;
-       true ->
-           begin
-               TrF3 = id(F3, TrUserData),
-               e_type_string(TrF3, <<B2/binary, 26>>, TrUserData)
-           end
+        TrF2 = id(F2, TrUserData),
+        if
+            TrF2 == [] -> B1;
+            true -> e_field_AccountLoginResp_players(TrF2, B1, TrUserData)
+        end
+    end,
+    if
+        F3 == undefined ->
+            B2;
+        true ->
+            begin
+                TrF3 = id(F3, TrUserData),
+                e_type_string(TrF3, <<B2/binary, 26>>, TrUserData)
+            end
     end.
 
 encode_msg_PlayerNewReq(Msg, TrUserData) ->
     encode_msg_PlayerNewReq(Msg, <<>>, TrUserData).
 
-
-encode_msg_PlayerNewReq(#'PlayerNewReq'{name = F1,
-                                        title = F2, appearance = F3, role = F4},
-                        Bin, TrUserData) ->
+encode_msg_PlayerNewReq(
+    #'PlayerNewReq'{
+        name = F1,
+        title = F2,
+        appearance = F3,
+        role = F4
+    },
+    Bin,
+    TrUserData
+) ->
     B1 = begin
-             TrF1 = id(F1, TrUserData),
-             e_type_string(TrF1, <<Bin/binary, 10>>, TrUserData)
-         end,
+        TrF1 = id(F1, TrUserData),
+        e_type_string(TrF1, <<Bin/binary, 10>>, TrUserData)
+    end,
     B2 = begin
-             TrF2 = id(F2, TrUserData),
-             e_type_string(TrF2, <<B1/binary, 18>>, TrUserData)
-         end,
+        TrF2 = id(F2, TrUserData),
+        e_type_string(TrF2, <<B1/binary, 18>>, TrUserData)
+    end,
     B3 = begin
-             TrF3 = id(F3, TrUserData),
-             e_varint(TrF3, <<B2/binary, 24>>, TrUserData)
-         end,
+        TrF3 = id(F3, TrUserData),
+        e_varint(TrF3, <<B2/binary, 24>>, TrUserData)
+    end,
     begin
         TrF4 = id(F4, TrUserData),
         e_type_string(TrF4, <<B3/binary, 34>>, TrUserData)
@@ -382,31 +575,43 @@ encode_msg_PlayerNewReq(#'PlayerNewReq'{name = F1,
 encode_msg_PlayerNewResp(Msg, TrUserData) ->
     encode_msg_PlayerNewResp(Msg, <<>>, TrUserData).
 
-
-encode_msg_PlayerNewResp(#'PlayerNewResp'{status = F1,
-                                          error = F2},
-                         Bin, TrUserData) ->
+encode_msg_PlayerNewResp(
+    #'PlayerNewResp'{
+        status = F1,
+        error = F2
+    },
+    Bin,
+    TrUserData
+) ->
     B1 = begin
-             TrF1 = id(F1, TrUserData),
-             'e_enum_PlayerNewResp.Status'(TrF1,
-                                           <<Bin/binary, 8>>,
-                                           TrUserData)
-         end,
-    if F2 == undefined -> B1;
-       true ->
-           begin
-               TrF2 = id(F2, TrUserData),
-               e_type_string(TrF2, <<B1/binary, 26>>, TrUserData)
-           end
+        TrF1 = id(F1, TrUserData),
+        'e_enum_PlayerNewResp.Status'(
+            TrF1,
+            <<Bin/binary, 8>>,
+            TrUserData
+        )
+    end,
+    if
+        F2 == undefined ->
+            B1;
+        true ->
+            begin
+                TrF2 = id(F2, TrUserData),
+                e_type_string(TrF2, <<B1/binary, 26>>, TrUserData)
+            end
     end.
 
 encode_msg_PlayerAuthenticate(Msg, TrUserData) ->
     encode_msg_PlayerAuthenticate(Msg, <<>>, TrUserData).
 
-
-encode_msg_PlayerAuthenticate(#'PlayerAuthenticate'{id =
-                                                        F1},
-                              Bin, TrUserData) ->
+encode_msg_PlayerAuthenticate(
+    #'PlayerAuthenticate'{
+        id =
+            F1
+    },
+    Bin,
+    TrUserData
+) ->
     begin
         TrF1 = id(F1, TrUserData),
         e_type_bytes(TrF1, <<Bin/binary, 10>>, TrUserData)
@@ -415,9 +620,11 @@ encode_msg_PlayerAuthenticate(#'PlayerAuthenticate'{id =
 encode_msg_PlayerLog(Msg, TrUserData) ->
     encode_msg_PlayerLog(Msg, <<>>, TrUserData).
 
-
-encode_msg_PlayerLog(#'PlayerLog'{msg = F1}, Bin,
-                     TrUserData) ->
+encode_msg_PlayerLog(
+    #'PlayerLog'{msg = F1},
+    Bin,
+    TrUserData
+) ->
     begin
         TrF1 = id(F1, TrUserData),
         e_type_string(TrF1, <<Bin/binary, 18>>, TrUserData)
@@ -426,80 +633,108 @@ encode_msg_PlayerLog(#'PlayerLog'{msg = F1}, Bin,
 encode_msg_LobbyInfo(Msg, TrUserData) ->
     encode_msg_LobbyInfo(Msg, <<>>, TrUserData).
 
-
-encode_msg_LobbyInfo(#'LobbyInfo'{resp = F1,
-                                  matches = F2},
-                     Bin, TrUserData) ->
+encode_msg_LobbyInfo(
+    #'LobbyInfo'{
+        resp = F1,
+        matches = F2
+    },
+    Bin,
+    TrUserData
+) ->
     B1 = begin
-             TrF1 = id(F1, TrUserData),
-             e_mfield_LobbyInfo_resp(TrF1,
-                                     <<Bin/binary, 10>>,
-                                     TrUserData)
-         end,
+        TrF1 = id(F1, TrUserData),
+        e_mfield_LobbyInfo_resp(
+            TrF1,
+            <<Bin/binary, 10>>,
+            TrUserData
+        )
+    end,
     begin
         TrF2 = id(F2, TrUserData),
-        if TrF2 == [] -> B1;
-           true -> e_field_LobbyInfo_matches(TrF2, B1, TrUserData)
+        if
+            TrF2 == [] -> B1;
+            true -> e_field_LobbyInfo_matches(TrF2, B1, TrUserData)
         end
     end.
 
 encode_msg_MatchCreateReq(Msg, TrUserData) ->
     encode_msg_MatchCreateReq(Msg, <<>>, TrUserData).
 
-
-encode_msg_MatchCreateReq(#'MatchCreateReq'{mode = F1,
-                                            players_max = F2, extra = F3},
-                          Bin, TrUserData) ->
+encode_msg_MatchCreateReq(
+    #'MatchCreateReq'{
+        mode = F1,
+        players_max = F2,
+        extra = F3
+    },
+    Bin,
+    TrUserData
+) ->
     B1 = begin
-             TrF1 = id(F1, TrUserData),
-             e_enum_MatchMode(TrF1, <<Bin/binary, 8>>, TrUserData)
-         end,
+        TrF1 = id(F1, TrUserData),
+        e_enum_MatchMode(TrF1, <<Bin/binary, 8>>, TrUserData)
+    end,
     B2 = begin
-             TrF2 = id(F2, TrUserData),
-             e_varint(TrF2, <<B1/binary, 16>>, TrUserData)
-         end,
-    if F3 == undefined -> B2;
-       true ->
-           begin
-               TrF3 = id(F3, TrUserData),
-               e_type_bytes(TrF3, <<B2/binary, 26>>, TrUserData)
-           end
+        TrF2 = id(F2, TrUserData),
+        e_varint(TrF2, <<B1/binary, 16>>, TrUserData)
+    end,
+    if
+        F3 == undefined ->
+            B2;
+        true ->
+            begin
+                TrF3 = id(F3, TrUserData),
+                e_type_bytes(TrF3, <<B2/binary, 26>>, TrUserData)
+            end
     end.
 
 encode_msg_MatchCreateResp(Msg, TrUserData) ->
     encode_msg_MatchCreateResp(Msg, <<>>, TrUserData).
 
-
-encode_msg_MatchCreateResp(#'MatchCreateResp'{resp = F1,
-                                              match = F2},
-                           Bin, TrUserData) ->
+encode_msg_MatchCreateResp(
+    #'MatchCreateResp'{
+        resp = F1,
+        match = F2
+    },
+    Bin,
+    TrUserData
+) ->
     B1 = begin
-             TrF1 = id(F1, TrUserData),
-             e_mfield_MatchCreateResp_resp(TrF1,
-                                           <<Bin/binary, 10>>,
-                                           TrUserData)
-         end,
-    if F2 == undefined -> B1;
-       true ->
-           begin
-               TrF2 = id(F2, TrUserData),
-               e_mfield_MatchCreateResp_match(TrF2,
-                                              <<B1/binary, 18>>,
-                                              TrUserData)
-           end
+        TrF1 = id(F1, TrUserData),
+        e_mfield_MatchCreateResp_resp(
+            TrF1,
+            <<Bin/binary, 10>>,
+            TrUserData
+        )
+    end,
+    if
+        F2 == undefined ->
+            B1;
+        true ->
+            begin
+                TrF2 = id(F2, TrUserData),
+                e_mfield_MatchCreateResp_match(
+                    TrF2,
+                    <<B1/binary, 18>>,
+                    TrUserData
+                )
+            end
     end.
 
 encode_msg_MatchJoinReq(Msg, TrUserData) ->
     encode_msg_MatchJoinReq(Msg, <<>>, TrUserData).
 
-
-encode_msg_MatchJoinReq(#'MatchJoinReq'{player = F1,
-                                        matchid = F2},
-                        Bin, TrUserData) ->
+encode_msg_MatchJoinReq(
+    #'MatchJoinReq'{
+        player = F1,
+        matchid = F2
+    },
+    Bin,
+    TrUserData
+) ->
     B1 = begin
-             TrF1 = id(F1, TrUserData),
-             e_type_string(TrF1, <<Bin/binary, 10>>, TrUserData)
-         end,
+        TrF1 = id(F1, TrUserData),
+        e_type_string(TrF1, <<Bin/binary, 10>>, TrUserData)
+    end,
     begin
         TrF2 = id(F2, TrUserData),
         e_varint(TrF2, <<B1/binary, 16>>, TrUserData)
@@ -508,37 +743,51 @@ encode_msg_MatchJoinReq(#'MatchJoinReq'{player = F1,
 encode_msg_MatchJoinResp(Msg, TrUserData) ->
     encode_msg_MatchJoinResp(Msg, <<>>, TrUserData).
 
-
-encode_msg_MatchJoinResp(#'MatchJoinResp'{resp = F1,
-                                          match = F2},
-                         Bin, TrUserData) ->
+encode_msg_MatchJoinResp(
+    #'MatchJoinResp'{
+        resp = F1,
+        match = F2
+    },
+    Bin,
+    TrUserData
+) ->
     B1 = begin
-             TrF1 = id(F1, TrUserData),
-             e_mfield_MatchJoinResp_resp(TrF1,
-                                         <<Bin/binary, 10>>,
-                                         TrUserData)
-         end,
-    if F2 == undefined -> B1;
-       true ->
-           begin
-               TrF2 = id(F2, TrUserData),
-               e_mfield_MatchJoinResp_match(TrF2,
-                                            <<B1/binary, 18>>,
-                                            TrUserData)
-           end
+        TrF1 = id(F1, TrUserData),
+        e_mfield_MatchJoinResp_resp(
+            TrF1,
+            <<Bin/binary, 10>>,
+            TrUserData
+        )
+    end,
+    if
+        F2 == undefined ->
+            B1;
+        true ->
+            begin
+                TrF2 = id(F2, TrUserData),
+                e_mfield_MatchJoinResp_match(
+                    TrF2,
+                    <<B1/binary, 18>>,
+                    TrUserData
+                )
+            end
     end.
 
 encode_msg_MatchLeaveReq(Msg, TrUserData) ->
     encode_msg_MatchLeaveReq(Msg, <<>>, TrUserData).
 
-
-encode_msg_MatchLeaveReq(#'MatchLeaveReq'{player = F1,
-                                          matchid = F2},
-                         Bin, TrUserData) ->
+encode_msg_MatchLeaveReq(
+    #'MatchLeaveReq'{
+        player = F1,
+        matchid = F2
+    },
+    Bin,
+    TrUserData
+) ->
     B1 = begin
-             TrF1 = id(F1, TrUserData),
-             e_type_string(TrF1, <<Bin/binary, 10>>, TrUserData)
-         end,
+        TrF1 = id(F1, TrUserData),
+        e_type_string(TrF1, <<Bin/binary, 10>>, TrUserData)
+    end,
     begin
         TrF2 = id(F2, TrUserData),
         e_varint(TrF2, <<B1/binary, 16>>, TrUserData)
@@ -547,57 +796,85 @@ encode_msg_MatchLeaveReq(#'MatchLeaveReq'{player = F1,
 encode_msg_MatchLeaveResp(Msg, TrUserData) ->
     encode_msg_MatchLeaveResp(Msg, <<>>, TrUserData).
 
-
-encode_msg_MatchLeaveResp(#'MatchLeaveResp'{resp = F1},
-                          Bin, TrUserData) ->
+encode_msg_MatchLeaveResp(
+    #'MatchLeaveResp'{resp = F1},
+    Bin,
+    TrUserData
+) ->
     begin
         TrF1 = id(F1, TrUserData),
-        e_mfield_MatchLeaveResp_resp(TrF1,
-                                     <<Bin/binary, 10>>,
-                                     TrUserData)
+        e_mfield_MatchLeaveResp_resp(
+            TrF1,
+            <<Bin/binary, 10>>,
+            TrUserData
+        )
     end.
 
 e_mfield_Match_players(Msg, Bin, TrUserData) ->
-    SubBin = 'encode_msg_Match.Player'(Msg,
-                                       <<>>,
-                                       TrUserData),
+    SubBin = 'encode_msg_Match.Player'(
+        Msg,
+        <<>>,
+        TrUserData
+    ),
     Bin2 = e_varint(byte_size(SubBin), Bin),
     <<Bin2/binary, SubBin/binary>>.
 
 e_field_Match_players([Elem | Rest], Bin, TrUserData) ->
     Bin2 = <<Bin/binary, 26>>,
-    Bin3 = e_mfield_Match_players(id(Elem, TrUserData),
-                                  Bin2,
-                                  TrUserData),
+    Bin3 = e_mfield_Match_players(
+        id(Elem, TrUserData),
+        Bin2,
+        TrUserData
+    ),
     e_field_Match_players(Rest, Bin3, TrUserData);
-e_field_Match_players([], Bin, _TrUserData) -> Bin.
+e_field_Match_players([], Bin, _TrUserData) ->
+    Bin.
 
-e_mfield_AccountLoginResp_players(Msg, Bin,
-                                  TrUserData) ->
-    SubBin = 'encode_msg_AccountLoginResp.Player'(Msg,
-                                                  <<>>,
-                                                  TrUserData),
+e_mfield_AccountLoginResp_players(
+    Msg,
+    Bin,
+    TrUserData
+) ->
+    SubBin = 'encode_msg_AccountLoginResp.Player'(
+        Msg,
+        <<>>,
+        TrUserData
+    ),
     Bin2 = e_varint(byte_size(SubBin), Bin),
     <<Bin2/binary, SubBin/binary>>.
 
-e_field_AccountLoginResp_players([Elem | Rest], Bin,
-                                 TrUserData) ->
+e_field_AccountLoginResp_players(
+    [Elem | Rest],
+    Bin,
+    TrUserData
+) ->
     Bin2 = <<Bin/binary, 18>>,
-    Bin3 = e_mfield_AccountLoginResp_players(id(Elem,
-                                                TrUserData),
-                                             Bin2,
-                                             TrUserData),
-    e_field_AccountLoginResp_players(Rest,
-                                     Bin3,
-                                     TrUserData);
-e_field_AccountLoginResp_players([], Bin,
-                                 _TrUserData) ->
+    Bin3 = e_mfield_AccountLoginResp_players(
+        id(
+            Elem,
+            TrUserData
+        ),
+        Bin2,
+        TrUserData
+    ),
+    e_field_AccountLoginResp_players(
+        Rest,
+        Bin3,
+        TrUserData
+    );
+e_field_AccountLoginResp_players(
+    [],
+    Bin,
+    _TrUserData
+) ->
     Bin.
 
 e_mfield_LobbyInfo_resp(Msg, Bin, TrUserData) ->
-    SubBin = encode_msg_ResponseObject(Msg,
-                                       <<>>,
-                                       TrUserData),
+    SubBin = encode_msg_ResponseObject(
+        Msg,
+        <<>>,
+        TrUserData
+    ),
     Bin2 = e_varint(byte_size(SubBin), Bin),
     <<Bin2/binary, SubBin/binary>>.
 
@@ -606,19 +883,27 @@ e_mfield_LobbyInfo_matches(Msg, Bin, TrUserData) ->
     Bin2 = e_varint(byte_size(SubBin), Bin),
     <<Bin2/binary, SubBin/binary>>.
 
-e_field_LobbyInfo_matches([Elem | Rest], Bin,
-                          TrUserData) ->
+e_field_LobbyInfo_matches(
+    [Elem | Rest],
+    Bin,
+    TrUserData
+) ->
     Bin2 = <<Bin/binary, 18>>,
-    Bin3 = e_mfield_LobbyInfo_matches(id(Elem, TrUserData),
-                                      Bin2,
-                                      TrUserData),
+    Bin3 = e_mfield_LobbyInfo_matches(
+        id(Elem, TrUserData),
+        Bin2,
+        TrUserData
+    ),
     e_field_LobbyInfo_matches(Rest, Bin3, TrUserData);
-e_field_LobbyInfo_matches([], Bin, _TrUserData) -> Bin.
+e_field_LobbyInfo_matches([], Bin, _TrUserData) ->
+    Bin.
 
 e_mfield_MatchCreateResp_resp(Msg, Bin, TrUserData) ->
-    SubBin = encode_msg_ResponseObject(Msg,
-                                       <<>>,
-                                       TrUserData),
+    SubBin = encode_msg_ResponseObject(
+        Msg,
+        <<>>,
+        TrUserData
+    ),
     Bin2 = e_varint(byte_size(SubBin), Bin),
     <<Bin2/binary, SubBin/binary>>.
 
@@ -628,9 +913,11 @@ e_mfield_MatchCreateResp_match(Msg, Bin, TrUserData) ->
     <<Bin2/binary, SubBin/binary>>.
 
 e_mfield_MatchJoinResp_resp(Msg, Bin, TrUserData) ->
-    SubBin = encode_msg_ResponseObject(Msg,
-                                       <<>>,
-                                       TrUserData),
+    SubBin = encode_msg_ResponseObject(
+        Msg,
+        <<>>,
+        TrUserData
+    ),
     Bin2 = e_varint(byte_size(SubBin), Bin),
     <<Bin2/binary, SubBin/binary>>.
 
@@ -640,9 +927,11 @@ e_mfield_MatchJoinResp_match(Msg, Bin, TrUserData) ->
     <<Bin2/binary, SubBin/binary>>.
 
 e_mfield_MatchLeaveResp_resp(Msg, Bin, TrUserData) ->
-    SubBin = encode_msg_ResponseObject(Msg,
-                                       <<>>,
-                                       TrUserData),
+    SubBin = encode_msg_ResponseObject(
+        Msg,
+        <<>>,
+        TrUserData
+    ),
     Bin2 = e_varint(byte_size(SubBin), Bin),
     <<Bin2/binary, SubBin/binary>>.
 
@@ -664,105 +953,124 @@ e_enum_MatchMode('STRATEGIC', Bin, _TrUserData) ->
 e_enum_MatchMode(V, Bin, _TrUserData) ->
     e_varint(V, Bin).
 
-'e_enum_ResponseObject.Status'('OK', Bin,
-                               _TrUserData) ->
+'e_enum_ResponseObject.Status'(
+    'OK',
+    Bin,
+    _TrUserData
+) ->
     <<Bin/binary, 0>>;
-'e_enum_ResponseObject.Status'('ERROR', Bin,
-                               _TrUserData) ->
+'e_enum_ResponseObject.Status'(
+    'ERROR',
+    Bin,
+    _TrUserData
+) ->
     <<Bin/binary, 1>>;
 'e_enum_ResponseObject.Status'(V, Bin, _TrUserData) ->
     e_varint(V, Bin).
 
-'e_enum_AccountNewResp.Status'('OK', Bin,
-                               _TrUserData) ->
+'e_enum_AccountNewResp.Status'(
+    'OK',
+    Bin,
+    _TrUserData
+) ->
     <<Bin/binary, 0>>;
-'e_enum_AccountNewResp.Status'('ERROR', Bin,
-                               _TrUserData) ->
+'e_enum_AccountNewResp.Status'(
+    'ERROR',
+    Bin,
+    _TrUserData
+) ->
     <<Bin/binary, 1>>;
 'e_enum_AccountNewResp.Status'(V, Bin, _TrUserData) ->
     e_varint(V, Bin).
 
-'e_enum_AccountLoginResp.Status'('OK', Bin,
-                                 _TrUserData) ->
+'e_enum_AccountLoginResp.Status'(
+    'OK',
+    Bin,
+    _TrUserData
+) ->
     <<Bin/binary, 0>>;
-'e_enum_AccountLoginResp.Status'('ERROR', Bin,
-                                 _TrUserData) ->
+'e_enum_AccountLoginResp.Status'(
+    'ERROR',
+    Bin,
+    _TrUserData
+) ->
     <<Bin/binary, 1>>;
 'e_enum_AccountLoginResp.Status'(V, Bin, _TrUserData) ->
     e_varint(V, Bin).
 
 'e_enum_PlayerNewResp.Status'('OK', Bin, _TrUserData) ->
     <<Bin/binary, 0>>;
-'e_enum_PlayerNewResp.Status'('ERROR', Bin,
-                              _TrUserData) ->
+'e_enum_PlayerNewResp.Status'(
+    'ERROR',
+    Bin,
+    _TrUserData
+) ->
     <<Bin/binary, 1>>;
 'e_enum_PlayerNewResp.Status'(V, Bin, _TrUserData) ->
     e_varint(V, Bin).
 
--compile({nowarn_unused_function,e_type_sint/3}).
+-compile({nowarn_unused_function, e_type_sint/3}).
 e_type_sint(Value, Bin, _TrUserData) when Value >= 0 ->
     e_varint(Value * 2, Bin);
 e_type_sint(Value, Bin, _TrUserData) ->
     e_varint(Value * -2 - 1, Bin).
 
--compile({nowarn_unused_function,e_type_int32/3}).
-e_type_int32(Value, Bin, _TrUserData)
-    when 0 =< Value, Value =< 127 ->
+-compile({nowarn_unused_function, e_type_int32/3}).
+e_type_int32(Value, Bin, _TrUserData) when 0 =< Value, Value =< 127 ->
     <<Bin/binary, Value>>;
 e_type_int32(Value, Bin, _TrUserData) ->
     <<N:64/unsigned-native>> = <<Value:64/signed-native>>,
     e_varint(N, Bin).
 
--compile({nowarn_unused_function,e_type_int64/3}).
-e_type_int64(Value, Bin, _TrUserData)
-    when 0 =< Value, Value =< 127 ->
+-compile({nowarn_unused_function, e_type_int64/3}).
+e_type_int64(Value, Bin, _TrUserData) when 0 =< Value, Value =< 127 ->
     <<Bin/binary, Value>>;
 e_type_int64(Value, Bin, _TrUserData) ->
     <<N:64/unsigned-native>> = <<Value:64/signed-native>>,
     e_varint(N, Bin).
 
--compile({nowarn_unused_function,e_type_bool/3}).
+-compile({nowarn_unused_function, e_type_bool/3}).
 e_type_bool(true, Bin, _TrUserData) ->
     <<Bin/binary, 1>>;
 e_type_bool(false, Bin, _TrUserData) ->
     <<Bin/binary, 0>>;
-e_type_bool(1, Bin, _TrUserData) -> <<Bin/binary, 1>>;
-e_type_bool(0, Bin, _TrUserData) -> <<Bin/binary, 0>>.
+e_type_bool(1, Bin, _TrUserData) ->
+    <<Bin/binary, 1>>;
+e_type_bool(0, Bin, _TrUserData) ->
+    <<Bin/binary, 0>>.
 
--compile({nowarn_unused_function,e_type_string/3}).
+-compile({nowarn_unused_function, e_type_string/3}).
 e_type_string(S, Bin, _TrUserData) ->
     Utf8 = unicode:characters_to_binary(S),
     Bin2 = e_varint(byte_size(Utf8), Bin),
     <<Bin2/binary, Utf8/binary>>.
 
--compile({nowarn_unused_function,e_type_bytes/3}).
-e_type_bytes(Bytes, Bin, _TrUserData)
-    when is_binary(Bytes) ->
+-compile({nowarn_unused_function, e_type_bytes/3}).
+e_type_bytes(Bytes, Bin, _TrUserData) when is_binary(Bytes) ->
     Bin2 = e_varint(byte_size(Bytes), Bin),
     <<Bin2/binary, Bytes/binary>>;
-e_type_bytes(Bytes, Bin, _TrUserData)
-    when is_list(Bytes) ->
+e_type_bytes(Bytes, Bin, _TrUserData) when is_list(Bytes) ->
     BytesBin = iolist_to_binary(Bytes),
     Bin2 = e_varint(byte_size(BytesBin), Bin),
     <<Bin2/binary, BytesBin/binary>>.
 
--compile({nowarn_unused_function,e_type_fixed32/3}).
+-compile({nowarn_unused_function, e_type_fixed32/3}).
 e_type_fixed32(Value, Bin, _TrUserData) ->
     <<Bin/binary, Value:32/little>>.
 
--compile({nowarn_unused_function,e_type_sfixed32/3}).
+-compile({nowarn_unused_function, e_type_sfixed32/3}).
 e_type_sfixed32(Value, Bin, _TrUserData) ->
     <<Bin/binary, Value:32/little-signed>>.
 
--compile({nowarn_unused_function,e_type_fixed64/3}).
+-compile({nowarn_unused_function, e_type_fixed64/3}).
 e_type_fixed64(Value, Bin, _TrUserData) ->
     <<Bin/binary, Value:64/little>>.
 
--compile({nowarn_unused_function,e_type_sfixed64/3}).
+-compile({nowarn_unused_function, e_type_sfixed64/3}).
 e_type_sfixed64(Value, Bin, _TrUserData) ->
     <<Bin/binary, Value:64/little-signed>>.
 
--compile({nowarn_unused_function,e_type_float/3}).
+-compile({nowarn_unused_function, e_type_float/3}).
 e_type_float(V, Bin, _) when is_number(V) ->
     <<Bin/binary, V:32/little-float>>;
 e_type_float(infinity, Bin, _) ->
@@ -772,7 +1080,7 @@ e_type_float('-infinity', Bin, _) ->
 e_type_float(nan, Bin, _) ->
     <<Bin/binary, 0:16, 192, 127>>.
 
--compile({nowarn_unused_function,e_type_double/3}).
+-compile({nowarn_unused_function, e_type_double/3}).
 e_type_double(V, Bin, _) when is_number(V) ->
     <<Bin/binary, V:64/little-float>>;
 e_type_double(infinity, Bin, _) ->
@@ -782,15 +1090,15 @@ e_type_double('-infinity', Bin, _) ->
 e_type_double(nan, Bin, _) ->
     <<Bin/binary, 0:48, 248, 127>>.
 
--compile({nowarn_unused_function,e_varint/3}).
+-compile({nowarn_unused_function, e_varint/3}).
 e_varint(N, Bin, _TrUserData) -> e_varint(N, Bin).
 
--compile({nowarn_unused_function,e_varint/2}).
-e_varint(N, Bin) when N =< 127 -> <<Bin/binary, N>>;
+-compile({nowarn_unused_function, e_varint/2}).
+e_varint(N, Bin) when N =< 127 ->
+    <<Bin/binary, N>>;
 e_varint(N, Bin) ->
     Bin2 = <<Bin/binary, (N band 127 bor 128)>>,
     e_varint(N bsr 7, Bin2).
-
 
 decode_msg(Bin, MsgName) when is_binary(Bin) ->
     decode_msg(Bin, MsgName, []).
@@ -801,373 +1109,604 @@ decode_msg(Bin, MsgName, Opts) when is_binary(Bin) ->
 
 -ifdef('OTP_RELEASE').
 decode_msg_1_catch(Bin, MsgName, TrUserData) ->
-    try decode_msg_2_doit(MsgName, Bin, TrUserData)
-    catch Class:Reason:StackTrace -> error({gpb_error,{decoding_failure, {Bin, MsgName, {Class, Reason, StackTrace}}}})
+    try
+        decode_msg_2_doit(MsgName, Bin, TrUserData)
+    catch
+        Class:Reason:StackTrace ->
+            error({gpb_error, {decoding_failure, {Bin, MsgName, {Class, Reason, StackTrace}}}})
     end.
 -else.
 decode_msg_1_catch(Bin, MsgName, TrUserData) ->
-    try decode_msg_2_doit(MsgName, Bin, TrUserData)
-    catch Class:Reason ->
-        StackTrace = erlang:get_stacktrace(),
-        error({gpb_error,{decoding_failure, {Bin, MsgName, {Class, Reason, StackTrace}}}})
+    try
+        decode_msg_2_doit(MsgName, Bin, TrUserData)
+    catch
+        Class:Reason ->
+            StackTrace = erlang:get_stacktrace(),
+            error({gpb_error, {decoding_failure, {Bin, MsgName, {Class, Reason, StackTrace}}}})
     end.
 -endif.
 
 decode_msg_2_doit('ResponseObject', Bin, TrUserData) ->
-    id(decode_msg_ResponseObject(Bin, TrUserData),
-       TrUserData);
+    id(
+        decode_msg_ResponseObject(Bin, TrUserData),
+        TrUserData
+    );
 decode_msg_2_doit('Match.Player', Bin, TrUserData) ->
-    id('decode_msg_Match.Player'(Bin, TrUserData),
-       TrUserData);
+    id(
+        'decode_msg_Match.Player'(Bin, TrUserData),
+        TrUserData
+    );
 decode_msg_2_doit('Match', Bin, TrUserData) ->
     id(decode_msg_Match(Bin, TrUserData), TrUserData);
 decode_msg_2_doit('AccountNewReq', Bin, TrUserData) ->
-    id(decode_msg_AccountNewReq(Bin, TrUserData),
-       TrUserData);
+    id(
+        decode_msg_AccountNewReq(Bin, TrUserData),
+        TrUserData
+    );
 decode_msg_2_doit('AccountNewResp', Bin, TrUserData) ->
-    id(decode_msg_AccountNewResp(Bin, TrUserData),
-       TrUserData);
+    id(
+        decode_msg_AccountNewResp(Bin, TrUserData),
+        TrUserData
+    );
 decode_msg_2_doit('AccountLoginReq', Bin, TrUserData) ->
-    id(decode_msg_AccountLoginReq(Bin, TrUserData),
-       TrUserData);
-decode_msg_2_doit('AccountLoginResp.Player', Bin,
-                  TrUserData) ->
-    id('decode_msg_AccountLoginResp.Player'(Bin,
-                                            TrUserData),
-       TrUserData);
-decode_msg_2_doit('AccountLoginResp', Bin,
-                  TrUserData) ->
-    id(decode_msg_AccountLoginResp(Bin, TrUserData),
-       TrUserData);
+    id(
+        decode_msg_AccountLoginReq(Bin, TrUserData),
+        TrUserData
+    );
+decode_msg_2_doit(
+    'AccountLoginResp.Player',
+    Bin,
+    TrUserData
+) ->
+    id(
+        'decode_msg_AccountLoginResp.Player'(
+            Bin,
+            TrUserData
+        ),
+        TrUserData
+    );
+decode_msg_2_doit(
+    'AccountLoginResp',
+    Bin,
+    TrUserData
+) ->
+    id(
+        decode_msg_AccountLoginResp(Bin, TrUserData),
+        TrUserData
+    );
 decode_msg_2_doit('PlayerNewReq', Bin, TrUserData) ->
-    id(decode_msg_PlayerNewReq(Bin, TrUserData),
-       TrUserData);
+    id(
+        decode_msg_PlayerNewReq(Bin, TrUserData),
+        TrUserData
+    );
 decode_msg_2_doit('PlayerNewResp', Bin, TrUserData) ->
-    id(decode_msg_PlayerNewResp(Bin, TrUserData),
-       TrUserData);
-decode_msg_2_doit('PlayerAuthenticate', Bin,
-                  TrUserData) ->
-    id(decode_msg_PlayerAuthenticate(Bin, TrUserData),
-       TrUserData);
+    id(
+        decode_msg_PlayerNewResp(Bin, TrUserData),
+        TrUserData
+    );
+decode_msg_2_doit(
+    'PlayerAuthenticate',
+    Bin,
+    TrUserData
+) ->
+    id(
+        decode_msg_PlayerAuthenticate(Bin, TrUserData),
+        TrUserData
+    );
 decode_msg_2_doit('PlayerLog', Bin, TrUserData) ->
     id(decode_msg_PlayerLog(Bin, TrUserData), TrUserData);
 decode_msg_2_doit('LobbyInfo', Bin, TrUserData) ->
     id(decode_msg_LobbyInfo(Bin, TrUserData), TrUserData);
 decode_msg_2_doit('MatchCreateReq', Bin, TrUserData) ->
-    id(decode_msg_MatchCreateReq(Bin, TrUserData),
-       TrUserData);
+    id(
+        decode_msg_MatchCreateReq(Bin, TrUserData),
+        TrUserData
+    );
 decode_msg_2_doit('MatchCreateResp', Bin, TrUserData) ->
-    id(decode_msg_MatchCreateResp(Bin, TrUserData),
-       TrUserData);
+    id(
+        decode_msg_MatchCreateResp(Bin, TrUserData),
+        TrUserData
+    );
 decode_msg_2_doit('MatchJoinReq', Bin, TrUserData) ->
-    id(decode_msg_MatchJoinReq(Bin, TrUserData),
-       TrUserData);
+    id(
+        decode_msg_MatchJoinReq(Bin, TrUserData),
+        TrUserData
+    );
 decode_msg_2_doit('MatchJoinResp', Bin, TrUserData) ->
-    id(decode_msg_MatchJoinResp(Bin, TrUserData),
-       TrUserData);
+    id(
+        decode_msg_MatchJoinResp(Bin, TrUserData),
+        TrUserData
+    );
 decode_msg_2_doit('MatchLeaveReq', Bin, TrUserData) ->
-    id(decode_msg_MatchLeaveReq(Bin, TrUserData),
-       TrUserData);
+    id(
+        decode_msg_MatchLeaveReq(Bin, TrUserData),
+        TrUserData
+    );
 decode_msg_2_doit('MatchLeaveResp', Bin, TrUserData) ->
-    id(decode_msg_MatchLeaveResp(Bin, TrUserData),
-       TrUserData).
-
-
+    id(
+        decode_msg_MatchLeaveResp(Bin, TrUserData),
+        TrUserData
+    ).
 
 decode_msg_ResponseObject(Bin, TrUserData) ->
-    dfp_read_field_def_ResponseObject(Bin,
-                                      0,
-                                      0,
-                                      id(undefined, TrUserData),
-                                      id(undefined, TrUserData),
-                                      TrUserData).
+    dfp_read_field_def_ResponseObject(
+        Bin,
+        0,
+        0,
+        id(undefined, TrUserData),
+        id(undefined, TrUserData),
+        TrUserData
+    ).
 
-dfp_read_field_def_ResponseObject(<<8, Rest/binary>>,
-                                  Z1, Z2, F@_1, F@_2, TrUserData) ->
-    d_field_ResponseObject_status(Rest,
-                                  Z1,
-                                  Z2,
-                                  F@_1,
-                                  F@_2,
-                                  TrUserData);
-dfp_read_field_def_ResponseObject(<<18, Rest/binary>>,
-                                  Z1, Z2, F@_1, F@_2, TrUserData) ->
-    d_field_ResponseObject_error(Rest,
-                                 Z1,
-                                 Z2,
-                                 F@_1,
-                                 F@_2,
-                                 TrUserData);
-dfp_read_field_def_ResponseObject(<<>>, 0, 0, F@_1,
-                                  F@_2, _) ->
+dfp_read_field_def_ResponseObject(
+    <<8, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    d_field_ResponseObject_status(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dfp_read_field_def_ResponseObject(
+    <<18, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    d_field_ResponseObject_error(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dfp_read_field_def_ResponseObject(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    F@_2,
+    _
+) ->
     #'ResponseObject'{status = F@_1, error = F@_2};
-dfp_read_field_def_ResponseObject(Other, Z1, Z2, F@_1,
-                                  F@_2, TrUserData) ->
-    dg_read_field_def_ResponseObject(Other,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData).
+dfp_read_field_def_ResponseObject(
+    Other,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dg_read_field_def_ResponseObject(
+        Other,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-dg_read_field_def_ResponseObject(<<1:1, X:7,
-                                   Rest/binary>>,
-                                 N, Acc, F@_1, F@_2, TrUserData)
-    when N < 32 - 7 ->
-    dg_read_field_def_ResponseObject(Rest,
-                                     N + 7,
-                                     X bsl N + Acc,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData);
-dg_read_field_def_ResponseObject(<<0:1, X:7,
-                                   Rest/binary>>,
-                                 N, Acc, F@_1, F@_2, TrUserData) ->
+dg_read_field_def_ResponseObject(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 32 - 7 ->
+    dg_read_field_def_ResponseObject(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dg_read_field_def_ResponseObject(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     Key = X bsl N + Acc,
     case Key of
         8 ->
-            d_field_ResponseObject_status(Rest,
-                                          0,
-                                          0,
-                                          F@_1,
-                                          F@_2,
-                                          TrUserData);
+            d_field_ResponseObject_status(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                TrUserData
+            );
         18 ->
-            d_field_ResponseObject_error(Rest,
-                                         0,
-                                         0,
-                                         F@_1,
-                                         F@_2,
-                                         TrUserData);
+            d_field_ResponseObject_error(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                TrUserData
+            );
         _ ->
             case Key band 7 of
                 0 ->
-                    skip_varint_ResponseObject(Rest,
-                                               0,
-                                               0,
-                                               F@_1,
-                                               F@_2,
-                                               TrUserData);
+                    skip_varint_ResponseObject(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 1 ->
-                    skip_64_ResponseObject(Rest,
-                                           0,
-                                           0,
-                                           F@_1,
-                                           F@_2,
-                                           TrUserData);
+                    skip_64_ResponseObject(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 2 ->
-                    skip_length_delimited_ResponseObject(Rest,
-                                                         0,
-                                                         0,
-                                                         F@_1,
-                                                         F@_2,
-                                                         TrUserData);
+                    skip_length_delimited_ResponseObject(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 3 ->
-                    skip_group_ResponseObject(Rest,
-                                              Key bsr 3,
-                                              0,
-                                              F@_1,
-                                              F@_2,
-                                              TrUserData);
+                    skip_group_ResponseObject(
+                        Rest,
+                        Key bsr 3,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 5 ->
-                    skip_32_ResponseObject(Rest,
-                                           0,
-                                           0,
-                                           F@_1,
-                                           F@_2,
-                                           TrUserData)
+                    skip_32_ResponseObject(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    )
             end
     end;
-dg_read_field_def_ResponseObject(<<>>, 0, 0, F@_1, F@_2,
-                                 _) ->
+dg_read_field_def_ResponseObject(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    F@_2,
+    _
+) ->
     #'ResponseObject'{status = F@_1, error = F@_2}.
 
-d_field_ResponseObject_status(<<1:1, X:7, Rest/binary>>,
-                              N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    d_field_ResponseObject_status(Rest,
-                                  N + 7,
-                                  X bsl N + Acc,
-                                  F@_1,
-                                  F@_2,
-                                  TrUserData);
-d_field_ResponseObject_status(<<0:1, X:7, Rest/binary>>,
-                              N, Acc, _, F@_2, TrUserData) ->
+d_field_ResponseObject_status(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    d_field_ResponseObject_status(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+d_field_ResponseObject_status(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    _,
+    F@_2,
+    TrUserData
+) ->
     {NewFValue, RestF} =
-        {id('d_enum_ResponseObject.Status'(begin
-                                               <<Res:32/signed-native>> = <<(X
-                                                                                 bsl
-                                                                                 N
-                                                                                 +
-                                                                                 Acc):32/unsigned-native>>,
-                                               id(Res, TrUserData)
-                                           end),
-            TrUserData),
-         Rest},
-    dfp_read_field_def_ResponseObject(RestF,
-                                      0,
-                                      0,
-                                      NewFValue,
-                                      F@_2,
-                                      TrUserData).
+        {id(
+                'd_enum_ResponseObject.Status'(begin
+                    <<Res:32/signed-native>> =
+                        <<(X bsl
+                                N +
+                                Acc):32/unsigned-native>>,
+                    id(Res, TrUserData)
+                end),
+                TrUserData
+            ),
+            Rest},
+    dfp_read_field_def_ResponseObject(
+        RestF,
+        0,
+        0,
+        NewFValue,
+        F@_2,
+        TrUserData
+    ).
 
-d_field_ResponseObject_error(<<1:1, X:7, Rest/binary>>,
-                             N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    d_field_ResponseObject_error(Rest,
-                                 N + 7,
-                                 X bsl N + Acc,
-                                 F@_1,
-                                 F@_2,
-                                 TrUserData);
-d_field_ResponseObject_error(<<0:1, X:7, Rest/binary>>,
-                             N, Acc, F@_1, _, TrUserData) ->
+d_field_ResponseObject_error(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    d_field_ResponseObject_error(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+d_field_ResponseObject_error(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    _,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_ResponseObject(RestF,
-                                      0,
-                                      0,
-                                      F@_1,
-                                      NewFValue,
-                                      TrUserData).
+        Len = X bsl N + Acc,
+        <<Bytes:Len/binary, Rest2/binary>> = Rest,
+        {id(binary:copy(Bytes), TrUserData), Rest2}
+    end,
+    dfp_read_field_def_ResponseObject(
+        RestF,
+        0,
+        0,
+        F@_1,
+        NewFValue,
+        TrUserData
+    ).
 
-skip_varint_ResponseObject(<<1:1, _:7, Rest/binary>>,
-                           Z1, Z2, F@_1, F@_2, TrUserData) ->
-    skip_varint_ResponseObject(Rest,
-                               Z1,
-                               Z2,
-                               F@_1,
-                               F@_2,
-                               TrUserData);
-skip_varint_ResponseObject(<<0:1, _:7, Rest/binary>>,
-                           Z1, Z2, F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_ResponseObject(Rest,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      F@_2,
-                                      TrUserData).
+skip_varint_ResponseObject(
+    <<1:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    skip_varint_ResponseObject(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+skip_varint_ResponseObject(
+    <<0:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_ResponseObject(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_length_delimited_ResponseObject(<<1:1, X:7,
-                                       Rest/binary>>,
-                                     N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    skip_length_delimited_ResponseObject(Rest,
-                                         N + 7,
-                                         X bsl N + Acc,
-                                         F@_1,
-                                         F@_2,
-                                         TrUserData);
-skip_length_delimited_ResponseObject(<<0:1, X:7,
-                                       Rest/binary>>,
-                                     N, Acc, F@_1, F@_2, TrUserData) ->
+skip_length_delimited_ResponseObject(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    skip_length_delimited_ResponseObject(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+skip_length_delimited_ResponseObject(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     Length = X bsl N + Acc,
     <<_:Length/binary, Rest2/binary>> = Rest,
-    dfp_read_field_def_ResponseObject(Rest2,
-                                      0,
-                                      0,
-                                      F@_1,
-                                      F@_2,
-                                      TrUserData).
+    dfp_read_field_def_ResponseObject(
+        Rest2,
+        0,
+        0,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_group_ResponseObject(Bin, FNum, Z2, F@_1, F@_2,
-                          TrUserData) ->
+skip_group_ResponseObject(
+    Bin,
+    FNum,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     {_, Rest} = read_group(Bin, FNum),
-    dfp_read_field_def_ResponseObject(Rest,
-                                      0,
-                                      Z2,
-                                      F@_1,
-                                      F@_2,
-                                      TrUserData).
+    dfp_read_field_def_ResponseObject(
+        Rest,
+        0,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_32_ResponseObject(<<_:32, Rest/binary>>, Z1, Z2,
-                       F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_ResponseObject(Rest,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      F@_2,
-                                      TrUserData).
+skip_32_ResponseObject(
+    <<_:32, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_ResponseObject(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_64_ResponseObject(<<_:64, Rest/binary>>, Z1, Z2,
-                       F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_ResponseObject(Rest,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      F@_2,
-                                      TrUserData).
+skip_64_ResponseObject(
+    <<_:64, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_ResponseObject(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
 'decode_msg_Match.Player'(Bin, TrUserData) ->
-    'dfp_read_field_def_Match.Player'(Bin,
-                                      0,
-                                      0,
-                                      id(undefined, TrUserData),
-                                      TrUserData).
+    'dfp_read_field_def_Match.Player'(
+        Bin,
+        0,
+        0,
+        id(undefined, TrUserData),
+        TrUserData
+    ).
 
-'dfp_read_field_def_Match.Player'(<<10, Rest/binary>>,
-                                  Z1, Z2, F@_1, TrUserData) ->
-    'd_field_Match.Player_name'(Rest,
-                                Z1,
-                                Z2,
-                                F@_1,
-                                TrUserData);
-'dfp_read_field_def_Match.Player'(<<>>, 0, 0, F@_1,
-                                  _) ->
+'dfp_read_field_def_Match.Player'(
+    <<10, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    'd_field_Match.Player_name'(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    );
+'dfp_read_field_def_Match.Player'(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    _
+) ->
     #'Match.Player'{name = F@_1};
-'dfp_read_field_def_Match.Player'(Other, Z1, Z2, F@_1,
-                                  TrUserData) ->
-    'dg_read_field_def_Match.Player'(Other,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     TrUserData).
+'dfp_read_field_def_Match.Player'(
+    Other,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    'dg_read_field_def_Match.Player'(
+        Other,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
-'dg_read_field_def_Match.Player'(<<1:1, X:7,
-                                   Rest/binary>>,
-                                 N, Acc, F@_1, TrUserData)
-    when N < 32 - 7 ->
-    'dg_read_field_def_Match.Player'(Rest,
-                                     N + 7,
-                                     X bsl N + Acc,
-                                     F@_1,
-                                     TrUserData);
-'dg_read_field_def_Match.Player'(<<0:1, X:7,
-                                   Rest/binary>>,
-                                 N, Acc, F@_1, TrUserData) ->
+'dg_read_field_def_Match.Player'(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) when N < 32 - 7 ->
+    'dg_read_field_def_Match.Player'(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        TrUserData
+    );
+'dg_read_field_def_Match.Player'(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) ->
     Key = X bsl N + Acc,
     case Key of
         10 ->
-            'd_field_Match.Player_name'(Rest,
-                                        0,
-                                        0,
-                                        F@_1,
-                                        TrUserData);
+            'd_field_Match.Player_name'(
+                Rest,
+                0,
+                0,
+                F@_1,
+                TrUserData
+            );
         _ ->
             case Key band 7 of
                 0 ->
-                    'skip_varint_Match.Player'(Rest,
-                                               0,
-                                               0,
-                                               F@_1,
-                                               TrUserData);
+                    'skip_varint_Match.Player'(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        TrUserData
+                    );
                 1 ->
                     'skip_64_Match.Player'(Rest, 0, 0, F@_1, TrUserData);
                 2 ->
-                    'skip_length_delimited_Match.Player'(Rest,
-                                                         0,
-                                                         0,
-                                                         F@_1,
-                                                         TrUserData);
+                    'skip_length_delimited_Match.Player'(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        TrUserData
+                    );
                 3 ->
-                    'skip_group_Match.Player'(Rest,
-                                              Key bsr 3,
-                                              0,
-                                              F@_1,
-                                              TrUserData);
+                    'skip_group_Match.Player'(
+                        Rest,
+                        Key bsr 3,
+                        0,
+                        F@_1,
+                        TrUserData
+                    );
                 5 ->
                     'skip_32_Match.Player'(Rest, 0, 0, F@_1, TrUserData)
             end
@@ -1175,2771 +1714,4587 @@ skip_64_ResponseObject(<<_:64, Rest/binary>>, Z1, Z2,
 'dg_read_field_def_Match.Player'(<<>>, 0, 0, F@_1, _) ->
     #'Match.Player'{name = F@_1}.
 
-'d_field_Match.Player_name'(<<1:1, X:7, Rest/binary>>,
-                            N, Acc, F@_1, TrUserData)
-    when N < 57 ->
-    'd_field_Match.Player_name'(Rest,
-                                N + 7,
-                                X bsl N + Acc,
-                                F@_1,
-                                TrUserData);
-'d_field_Match.Player_name'(<<0:1, X:7, Rest/binary>>,
-                            N, Acc, _, TrUserData) ->
+'d_field_Match.Player_name'(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) when N < 57 ->
+    'd_field_Match.Player_name'(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        TrUserData
+    );
+'d_field_Match.Player_name'(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    _,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    'dfp_read_field_def_Match.Player'(RestF,
-                                      0,
-                                      0,
-                                      NewFValue,
-                                      TrUserData).
+        Len = X bsl N + Acc,
+        <<Bytes:Len/binary, Rest2/binary>> = Rest,
+        {id(binary:copy(Bytes), TrUserData), Rest2}
+    end,
+    'dfp_read_field_def_Match.Player'(
+        RestF,
+        0,
+        0,
+        NewFValue,
+        TrUserData
+    ).
 
-'skip_varint_Match.Player'(<<1:1, _:7, Rest/binary>>,
-                           Z1, Z2, F@_1, TrUserData) ->
-    'skip_varint_Match.Player'(Rest,
-                               Z1,
-                               Z2,
-                               F@_1,
-                               TrUserData);
-'skip_varint_Match.Player'(<<0:1, _:7, Rest/binary>>,
-                           Z1, Z2, F@_1, TrUserData) ->
-    'dfp_read_field_def_Match.Player'(Rest,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      TrUserData).
+'skip_varint_Match.Player'(
+    <<1:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    'skip_varint_Match.Player'(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    );
+'skip_varint_Match.Player'(
+    <<0:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    'dfp_read_field_def_Match.Player'(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
-'skip_length_delimited_Match.Player'(<<1:1, X:7,
-                                       Rest/binary>>,
-                                     N, Acc, F@_1, TrUserData)
-    when N < 57 ->
-    'skip_length_delimited_Match.Player'(Rest,
-                                         N + 7,
-                                         X bsl N + Acc,
-                                         F@_1,
-                                         TrUserData);
-'skip_length_delimited_Match.Player'(<<0:1, X:7,
-                                       Rest/binary>>,
-                                     N, Acc, F@_1, TrUserData) ->
+'skip_length_delimited_Match.Player'(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) when N < 57 ->
+    'skip_length_delimited_Match.Player'(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        TrUserData
+    );
+'skip_length_delimited_Match.Player'(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) ->
     Length = X bsl N + Acc,
     <<_:Length/binary, Rest2/binary>> = Rest,
-    'dfp_read_field_def_Match.Player'(Rest2,
-                                      0,
-                                      0,
-                                      F@_1,
-                                      TrUserData).
+    'dfp_read_field_def_Match.Player'(
+        Rest2,
+        0,
+        0,
+        F@_1,
+        TrUserData
+    ).
 
-'skip_group_Match.Player'(Bin, FNum, Z2, F@_1,
-                          TrUserData) ->
+'skip_group_Match.Player'(
+    Bin,
+    FNum,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
     {_, Rest} = read_group(Bin, FNum),
-    'dfp_read_field_def_Match.Player'(Rest,
-                                      0,
-                                      Z2,
-                                      F@_1,
-                                      TrUserData).
+    'dfp_read_field_def_Match.Player'(
+        Rest,
+        0,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
-'skip_32_Match.Player'(<<_:32, Rest/binary>>, Z1, Z2,
-                       F@_1, TrUserData) ->
-    'dfp_read_field_def_Match.Player'(Rest,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      TrUserData).
+'skip_32_Match.Player'(
+    <<_:32, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    'dfp_read_field_def_Match.Player'(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
-'skip_64_Match.Player'(<<_:64, Rest/binary>>, Z1, Z2,
-                       F@_1, TrUserData) ->
-    'dfp_read_field_def_Match.Player'(Rest,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      TrUserData).
+'skip_64_Match.Player'(
+    <<_:64, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    'dfp_read_field_def_Match.Player'(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
 decode_msg_Match(Bin, TrUserData) ->
-    dfp_read_field_def_Match(Bin,
-                             0,
-                             0,
-                             id(undefined, TrUserData),
-                             id(undefined, TrUserData),
-                             id([], TrUserData),
-                             id(undefined, TrUserData),
-                             id(undefined, TrUserData),
-                             id(undefined, TrUserData),
-                             id(undefined, TrUserData),
-                             id(undefined, TrUserData),
-                             TrUserData).
+    dfp_read_field_def_Match(
+        Bin,
+        0,
+        0,
+        id(undefined, TrUserData),
+        id(undefined, TrUserData),
+        id([], TrUserData),
+        id(undefined, TrUserData),
+        id(undefined, TrUserData),
+        id(undefined, TrUserData),
+        id(undefined, TrUserData),
+        id(undefined, TrUserData),
+        TrUserData
+    ).
 
-dfp_read_field_def_Match(<<8, Rest/binary>>, Z1, Z2,
-                         F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7, F@_8,
-                         TrUserData) ->
-    d_field_Match_id(Rest,
-                     Z1,
-                     Z2,
-                     F@_1,
-                     F@_2,
-                     F@_3,
-                     F@_4,
-                     F@_5,
-                     F@_6,
-                     F@_7,
-                     F@_8,
-                     TrUserData);
-dfp_read_field_def_Match(<<16, Rest/binary>>, Z1, Z2,
-                         F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7, F@_8,
-                         TrUserData) ->
-    d_field_Match_state(Rest,
-                        Z1,
-                        Z2,
-                        F@_1,
-                        F@_2,
-                        F@_3,
-                        F@_4,
-                        F@_5,
-                        F@_6,
-                        F@_7,
-                        F@_8,
-                        TrUserData);
-dfp_read_field_def_Match(<<26, Rest/binary>>, Z1, Z2,
-                         F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7, F@_8,
-                         TrUserData) ->
-    d_field_Match_players(Rest,
-                          Z1,
-                          Z2,
-                          F@_1,
-                          F@_2,
-                          F@_3,
-                          F@_4,
-                          F@_5,
-                          F@_6,
-                          F@_7,
-                          F@_8,
-                          TrUserData);
-dfp_read_field_def_Match(<<32, Rest/binary>>, Z1, Z2,
-                         F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7, F@_8,
-                         TrUserData) ->
-    d_field_Match_players_max(Rest,
-                              Z1,
-                              Z2,
-                              F@_1,
-                              F@_2,
-                              F@_3,
-                              F@_4,
-                              F@_5,
-                              F@_6,
-                              F@_7,
-                              F@_8,
-                              TrUserData);
-dfp_read_field_def_Match(<<40, Rest/binary>>, Z1, Z2,
-                         F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7, F@_8,
-                         TrUserData) ->
-    d_field_Match_start_time(Rest,
-                             Z1,
-                             Z2,
-                             F@_1,
-                             F@_2,
-                             F@_3,
-                             F@_4,
-                             F@_5,
-                             F@_6,
-                             F@_7,
-                             F@_8,
-                             TrUserData);
-dfp_read_field_def_Match(<<48, Rest/binary>>, Z1, Z2,
-                         F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7, F@_8,
-                         TrUserData) ->
-    d_field_Match_mode(Rest,
-                       Z1,
-                       Z2,
-                       F@_1,
-                       F@_2,
-                       F@_3,
-                       F@_4,
-                       F@_5,
-                       F@_6,
-                       F@_7,
-                       F@_8,
-                       TrUserData);
-dfp_read_field_def_Match(<<56, Rest/binary>>, Z1, Z2,
-                         F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7, F@_8,
-                         TrUserData) ->
-    d_field_Match_duration(Rest,
-                           Z1,
-                           Z2,
-                           F@_1,
-                           F@_2,
-                           F@_3,
-                           F@_4,
-                           F@_5,
-                           F@_6,
-                           F@_7,
-                           F@_8,
-                           TrUserData);
-dfp_read_field_def_Match(<<66, Rest/binary>>, Z1, Z2,
-                         F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7, F@_8,
-                         TrUserData) ->
-    d_field_Match_extra(Rest,
-                        Z1,
-                        Z2,
-                        F@_1,
-                        F@_2,
-                        F@_3,
-                        F@_4,
-                        F@_5,
-                        F@_6,
-                        F@_7,
-                        F@_8,
-                        TrUserData);
-dfp_read_field_def_Match(<<>>, 0, 0, F@_1, F@_2, R1,
-                         F@_4, F@_5, F@_6, F@_7, F@_8, TrUserData) ->
-    #'Match'{id = F@_1, state = F@_2,
-             players = lists_reverse(R1, TrUserData),
-             players_max = F@_4, start_time = F@_5, mode = F@_6,
-             duration = F@_7, extra = F@_8};
-dfp_read_field_def_Match(Other, Z1, Z2, F@_1, F@_2,
-                         F@_3, F@_4, F@_5, F@_6, F@_7, F@_8, TrUserData) ->
-    dg_read_field_def_Match(Other,
-                            Z1,
-                            Z2,
-                            F@_1,
-                            F@_2,
-                            F@_3,
-                            F@_4,
-                            F@_5,
-                            F@_6,
-                            F@_7,
-                            F@_8,
-                            TrUserData).
+dfp_read_field_def_Match(
+    <<8, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) ->
+    d_field_Match_id(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    );
+dfp_read_field_def_Match(
+    <<16, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) ->
+    d_field_Match_state(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    );
+dfp_read_field_def_Match(
+    <<26, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) ->
+    d_field_Match_players(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    );
+dfp_read_field_def_Match(
+    <<32, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) ->
+    d_field_Match_players_max(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    );
+dfp_read_field_def_Match(
+    <<40, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) ->
+    d_field_Match_start_time(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    );
+dfp_read_field_def_Match(
+    <<48, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) ->
+    d_field_Match_mode(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    );
+dfp_read_field_def_Match(
+    <<56, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) ->
+    d_field_Match_duration(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    );
+dfp_read_field_def_Match(
+    <<66, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) ->
+    d_field_Match_extra(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    );
+dfp_read_field_def_Match(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    F@_2,
+    R1,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) ->
+    #'Match'{
+        id = F@_1,
+        state = F@_2,
+        players = lists_reverse(R1, TrUserData),
+        players_max = F@_4,
+        start_time = F@_5,
+        mode = F@_6,
+        duration = F@_7,
+        extra = F@_8
+    };
+dfp_read_field_def_Match(
+    Other,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) ->
+    dg_read_field_def_Match(
+        Other,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    ).
 
-dg_read_field_def_Match(<<1:1, X:7, Rest/binary>>, N,
-                        Acc, F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7, F@_8,
-                        TrUserData)
-    when N < 32 - 7 ->
-    dg_read_field_def_Match(Rest,
-                            N + 7,
-                            X bsl N + Acc,
-                            F@_1,
-                            F@_2,
-                            F@_3,
-                            F@_4,
-                            F@_5,
-                            F@_6,
-                            F@_7,
-                            F@_8,
-                            TrUserData);
-dg_read_field_def_Match(<<0:1, X:7, Rest/binary>>, N,
-                        Acc, F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7, F@_8,
-                        TrUserData) ->
+dg_read_field_def_Match(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) when N < 32 - 7 ->
+    dg_read_field_def_Match(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    );
+dg_read_field_def_Match(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) ->
     Key = X bsl N + Acc,
     case Key of
         8 ->
-            d_field_Match_id(Rest,
-                             0,
-                             0,
-                             F@_1,
-                             F@_2,
-                             F@_3,
-                             F@_4,
-                             F@_5,
-                             F@_6,
-                             F@_7,
-                             F@_8,
-                             TrUserData);
+            d_field_Match_id(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                F@_3,
+                F@_4,
+                F@_5,
+                F@_6,
+                F@_7,
+                F@_8,
+                TrUserData
+            );
         16 ->
-            d_field_Match_state(Rest,
-                                0,
-                                0,
-                                F@_1,
-                                F@_2,
-                                F@_3,
-                                F@_4,
-                                F@_5,
-                                F@_6,
-                                F@_7,
-                                F@_8,
-                                TrUserData);
+            d_field_Match_state(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                F@_3,
+                F@_4,
+                F@_5,
+                F@_6,
+                F@_7,
+                F@_8,
+                TrUserData
+            );
         26 ->
-            d_field_Match_players(Rest,
-                                  0,
-                                  0,
-                                  F@_1,
-                                  F@_2,
-                                  F@_3,
-                                  F@_4,
-                                  F@_5,
-                                  F@_6,
-                                  F@_7,
-                                  F@_8,
-                                  TrUserData);
+            d_field_Match_players(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                F@_3,
+                F@_4,
+                F@_5,
+                F@_6,
+                F@_7,
+                F@_8,
+                TrUserData
+            );
         32 ->
-            d_field_Match_players_max(Rest,
-                                      0,
-                                      0,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      F@_4,
-                                      F@_5,
-                                      F@_6,
-                                      F@_7,
-                                      F@_8,
-                                      TrUserData);
+            d_field_Match_players_max(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                F@_3,
+                F@_4,
+                F@_5,
+                F@_6,
+                F@_7,
+                F@_8,
+                TrUserData
+            );
         40 ->
-            d_field_Match_start_time(Rest,
-                                     0,
-                                     0,
-                                     F@_1,
-                                     F@_2,
-                                     F@_3,
-                                     F@_4,
-                                     F@_5,
-                                     F@_6,
-                                     F@_7,
-                                     F@_8,
-                                     TrUserData);
+            d_field_Match_start_time(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                F@_3,
+                F@_4,
+                F@_5,
+                F@_6,
+                F@_7,
+                F@_8,
+                TrUserData
+            );
         48 ->
-            d_field_Match_mode(Rest,
-                               0,
-                               0,
-                               F@_1,
-                               F@_2,
-                               F@_3,
-                               F@_4,
-                               F@_5,
-                               F@_6,
-                               F@_7,
-                               F@_8,
-                               TrUserData);
+            d_field_Match_mode(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                F@_3,
+                F@_4,
+                F@_5,
+                F@_6,
+                F@_7,
+                F@_8,
+                TrUserData
+            );
         56 ->
-            d_field_Match_duration(Rest,
-                                   0,
-                                   0,
-                                   F@_1,
-                                   F@_2,
-                                   F@_3,
-                                   F@_4,
-                                   F@_5,
-                                   F@_6,
-                                   F@_7,
-                                   F@_8,
-                                   TrUserData);
+            d_field_Match_duration(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                F@_3,
+                F@_4,
+                F@_5,
+                F@_6,
+                F@_7,
+                F@_8,
+                TrUserData
+            );
         66 ->
-            d_field_Match_extra(Rest,
-                                0,
-                                0,
-                                F@_1,
-                                F@_2,
-                                F@_3,
-                                F@_4,
-                                F@_5,
-                                F@_6,
-                                F@_7,
-                                F@_8,
-                                TrUserData);
+            d_field_Match_extra(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                F@_3,
+                F@_4,
+                F@_5,
+                F@_6,
+                F@_7,
+                F@_8,
+                TrUserData
+            );
         _ ->
             case Key band 7 of
                 0 ->
-                    skip_varint_Match(Rest,
-                                      0,
-                                      0,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      F@_4,
-                                      F@_5,
-                                      F@_6,
-                                      F@_7,
-                                      F@_8,
-                                      TrUserData);
+                    skip_varint_Match(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        F@_3,
+                        F@_4,
+                        F@_5,
+                        F@_6,
+                        F@_7,
+                        F@_8,
+                        TrUserData
+                    );
                 1 ->
-                    skip_64_Match(Rest,
-                                  0,
-                                  0,
-                                  F@_1,
-                                  F@_2,
-                                  F@_3,
-                                  F@_4,
-                                  F@_5,
-                                  F@_6,
-                                  F@_7,
-                                  F@_8,
-                                  TrUserData);
+                    skip_64_Match(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        F@_3,
+                        F@_4,
+                        F@_5,
+                        F@_6,
+                        F@_7,
+                        F@_8,
+                        TrUserData
+                    );
                 2 ->
-                    skip_length_delimited_Match(Rest,
-                                                0,
-                                                0,
-                                                F@_1,
-                                                F@_2,
-                                                F@_3,
-                                                F@_4,
-                                                F@_5,
-                                                F@_6,
-                                                F@_7,
-                                                F@_8,
-                                                TrUserData);
+                    skip_length_delimited_Match(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        F@_3,
+                        F@_4,
+                        F@_5,
+                        F@_6,
+                        F@_7,
+                        F@_8,
+                        TrUserData
+                    );
                 3 ->
-                    skip_group_Match(Rest,
-                                     Key bsr 3,
-                                     0,
-                                     F@_1,
-                                     F@_2,
-                                     F@_3,
-                                     F@_4,
-                                     F@_5,
-                                     F@_6,
-                                     F@_7,
-                                     F@_8,
-                                     TrUserData);
+                    skip_group_Match(
+                        Rest,
+                        Key bsr 3,
+                        0,
+                        F@_1,
+                        F@_2,
+                        F@_3,
+                        F@_4,
+                        F@_5,
+                        F@_6,
+                        F@_7,
+                        F@_8,
+                        TrUserData
+                    );
                 5 ->
-                    skip_32_Match(Rest,
-                                  0,
-                                  0,
-                                  F@_1,
-                                  F@_2,
-                                  F@_3,
-                                  F@_4,
-                                  F@_5,
-                                  F@_6,
-                                  F@_7,
-                                  F@_8,
-                                  TrUserData)
+                    skip_32_Match(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        F@_3,
+                        F@_4,
+                        F@_5,
+                        F@_6,
+                        F@_7,
+                        F@_8,
+                        TrUserData
+                    )
             end
     end;
-dg_read_field_def_Match(<<>>, 0, 0, F@_1, F@_2, R1,
-                        F@_4, F@_5, F@_6, F@_7, F@_8, TrUserData) ->
-    #'Match'{id = F@_1, state = F@_2,
-             players = lists_reverse(R1, TrUserData),
-             players_max = F@_4, start_time = F@_5, mode = F@_6,
-             duration = F@_7, extra = F@_8}.
+dg_read_field_def_Match(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    F@_2,
+    R1,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) ->
+    #'Match'{
+        id = F@_1,
+        state = F@_2,
+        players = lists_reverse(R1, TrUserData),
+        players_max = F@_4,
+        start_time = F@_5,
+        mode = F@_6,
+        duration = F@_7,
+        extra = F@_8
+    }.
 
-d_field_Match_id(<<1:1, X:7, Rest/binary>>, N, Acc,
-                 F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7, F@_8,
-                 TrUserData)
-    when N < 57 ->
-    d_field_Match_id(Rest,
-                     N + 7,
-                     X bsl N + Acc,
-                     F@_1,
-                     F@_2,
-                     F@_3,
-                     F@_4,
-                     F@_5,
-                     F@_6,
-                     F@_7,
-                     F@_8,
-                     TrUserData);
-d_field_Match_id(<<0:1, X:7, Rest/binary>>, N, Acc, _,
-                 F@_2, F@_3, F@_4, F@_5, F@_6, F@_7, F@_8, TrUserData) ->
-    {NewFValue, RestF} = {id(X bsl N + Acc, TrUserData),
-                          Rest},
-    dfp_read_field_def_Match(RestF,
-                             0,
-                             0,
-                             NewFValue,
-                             F@_2,
-                             F@_3,
-                             F@_4,
-                             F@_5,
-                             F@_6,
-                             F@_7,
-                             F@_8,
-                             TrUserData).
+d_field_Match_id(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) when N < 57 ->
+    d_field_Match_id(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    );
+d_field_Match_id(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    _,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) ->
+    {NewFValue, RestF} = {id(X bsl N + Acc, TrUserData), Rest},
+    dfp_read_field_def_Match(
+        RestF,
+        0,
+        0,
+        NewFValue,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    ).
 
-d_field_Match_state(<<1:1, X:7, Rest/binary>>, N, Acc,
-                    F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7, F@_8,
-                    TrUserData)
-    when N < 57 ->
-    d_field_Match_state(Rest,
-                        N + 7,
-                        X bsl N + Acc,
-                        F@_1,
-                        F@_2,
-                        F@_3,
-                        F@_4,
-                        F@_5,
-                        F@_6,
-                        F@_7,
-                        F@_8,
-                        TrUserData);
-d_field_Match_state(<<0:1, X:7, Rest/binary>>, N, Acc,
-                    F@_1, _, F@_3, F@_4, F@_5, F@_6, F@_7, F@_8,
-                    TrUserData) ->
-    {NewFValue, RestF} = {id(d_enum_MatchState(begin
-                                                   <<Res:32/signed-native>> =
-                                                       <<(X bsl N +
-                                                              Acc):32/unsigned-native>>,
-                                                   id(Res, TrUserData)
-                                               end),
-                             TrUserData),
-                          Rest},
-    dfp_read_field_def_Match(RestF,
-                             0,
-                             0,
-                             F@_1,
-                             NewFValue,
-                             F@_3,
-                             F@_4,
-                             F@_5,
-                             F@_6,
-                             F@_7,
-                             F@_8,
-                             TrUserData).
+d_field_Match_state(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) when N < 57 ->
+    d_field_Match_state(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    );
+d_field_Match_state(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    _,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) ->
+    {NewFValue, RestF} =
+        {id(
+                d_enum_MatchState(begin
+                    <<Res:32/signed-native>> =
+                        <<(X bsl N +
+                                Acc):32/unsigned-native>>,
+                    id(Res, TrUserData)
+                end),
+                TrUserData
+            ),
+            Rest},
+    dfp_read_field_def_Match(
+        RestF,
+        0,
+        0,
+        F@_1,
+        NewFValue,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    ).
 
-d_field_Match_players(<<1:1, X:7, Rest/binary>>, N, Acc,
-                      F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7, F@_8,
-                      TrUserData)
-    when N < 57 ->
-    d_field_Match_players(Rest,
-                          N + 7,
-                          X bsl N + Acc,
-                          F@_1,
-                          F@_2,
-                          F@_3,
-                          F@_4,
-                          F@_5,
-                          F@_6,
-                          F@_7,
-                          F@_8,
-                          TrUserData);
-d_field_Match_players(<<0:1, X:7, Rest/binary>>, N, Acc,
-                      F@_1, F@_2, Prev, F@_4, F@_5, F@_6, F@_7, F@_8,
-                      TrUserData) ->
+d_field_Match_players(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) when N < 57 ->
+    d_field_Match_players(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    );
+d_field_Match_players(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    Prev,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bs:Len/binary, Rest2/binary>> = Rest,
-                             {id('decode_msg_Match.Player'(Bs, TrUserData),
-                                 TrUserData),
-                              Rest2}
-                         end,
-    dfp_read_field_def_Match(RestF,
-                             0,
-                             0,
-                             F@_1,
-                             F@_2,
-                             cons(NewFValue, Prev, TrUserData),
-                             F@_4,
-                             F@_5,
-                             F@_6,
-                             F@_7,
-                             F@_8,
-                             TrUserData).
+        Len = X bsl N + Acc,
+        <<Bs:Len/binary, Rest2/binary>> = Rest,
+        {id(
+                'decode_msg_Match.Player'(Bs, TrUserData),
+                TrUserData
+            ),
+            Rest2}
+    end,
+    dfp_read_field_def_Match(
+        RestF,
+        0,
+        0,
+        F@_1,
+        F@_2,
+        cons(NewFValue, Prev, TrUserData),
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    ).
 
-d_field_Match_players_max(<<1:1, X:7, Rest/binary>>, N,
-                          Acc, F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7, F@_8,
-                          TrUserData)
-    when N < 57 ->
-    d_field_Match_players_max(Rest,
-                              N + 7,
-                              X bsl N + Acc,
-                              F@_1,
-                              F@_2,
-                              F@_3,
-                              F@_4,
-                              F@_5,
-                              F@_6,
-                              F@_7,
-                              F@_8,
-                              TrUserData);
-d_field_Match_players_max(<<0:1, X:7, Rest/binary>>, N,
-                          Acc, F@_1, F@_2, F@_3, _, F@_5, F@_6, F@_7, F@_8,
-                          TrUserData) ->
-    {NewFValue, RestF} = {id(X bsl N + Acc, TrUserData),
-                          Rest},
-    dfp_read_field_def_Match(RestF,
-                             0,
-                             0,
-                             F@_1,
-                             F@_2,
-                             F@_3,
-                             NewFValue,
-                             F@_5,
-                             F@_6,
-                             F@_7,
-                             F@_8,
-                             TrUserData).
+d_field_Match_players_max(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) when N < 57 ->
+    d_field_Match_players_max(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    );
+d_field_Match_players_max(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    _,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) ->
+    {NewFValue, RestF} = {id(X bsl N + Acc, TrUserData), Rest},
+    dfp_read_field_def_Match(
+        RestF,
+        0,
+        0,
+        F@_1,
+        F@_2,
+        F@_3,
+        NewFValue,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    ).
 
-d_field_Match_start_time(<<1:1, X:7, Rest/binary>>, N,
-                         Acc, F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7, F@_8,
-                         TrUserData)
-    when N < 57 ->
-    d_field_Match_start_time(Rest,
-                             N + 7,
-                             X bsl N + Acc,
-                             F@_1,
-                             F@_2,
-                             F@_3,
-                             F@_4,
-                             F@_5,
-                             F@_6,
-                             F@_7,
-                             F@_8,
-                             TrUserData);
-d_field_Match_start_time(<<0:1, X:7, Rest/binary>>, N,
-                         Acc, F@_1, F@_2, F@_3, F@_4, _, F@_6, F@_7, F@_8,
-                         TrUserData) ->
-    {NewFValue, RestF} = {id(X bsl N + Acc, TrUserData),
-                          Rest},
-    dfp_read_field_def_Match(RestF,
-                             0,
-                             0,
-                             F@_1,
-                             F@_2,
-                             F@_3,
-                             F@_4,
-                             NewFValue,
-                             F@_6,
-                             F@_7,
-                             F@_8,
-                             TrUserData).
+d_field_Match_start_time(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) when N < 57 ->
+    d_field_Match_start_time(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    );
+d_field_Match_start_time(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    _,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) ->
+    {NewFValue, RestF} = {id(X bsl N + Acc, TrUserData), Rest},
+    dfp_read_field_def_Match(
+        RestF,
+        0,
+        0,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        NewFValue,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    ).
 
-d_field_Match_mode(<<1:1, X:7, Rest/binary>>, N, Acc,
-                   F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7, F@_8,
-                   TrUserData)
-    when N < 57 ->
-    d_field_Match_mode(Rest,
-                       N + 7,
-                       X bsl N + Acc,
-                       F@_1,
-                       F@_2,
-                       F@_3,
-                       F@_4,
-                       F@_5,
-                       F@_6,
-                       F@_7,
-                       F@_8,
-                       TrUserData);
-d_field_Match_mode(<<0:1, X:7, Rest/binary>>, N, Acc,
-                   F@_1, F@_2, F@_3, F@_4, F@_5, _, F@_7, F@_8,
-                   TrUserData) ->
-    {NewFValue, RestF} = {id(d_enum_MatchMode(begin
-                                                  <<Res:32/signed-native>> =
-                                                      <<(X bsl N +
-                                                             Acc):32/unsigned-native>>,
-                                                  id(Res, TrUserData)
-                                              end),
-                             TrUserData),
-                          Rest},
-    dfp_read_field_def_Match(RestF,
-                             0,
-                             0,
-                             F@_1,
-                             F@_2,
-                             F@_3,
-                             F@_4,
-                             F@_5,
-                             NewFValue,
-                             F@_7,
-                             F@_8,
-                             TrUserData).
+d_field_Match_mode(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) when N < 57 ->
+    d_field_Match_mode(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    );
+d_field_Match_mode(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    _,
+    F@_7,
+    F@_8,
+    TrUserData
+) ->
+    {NewFValue, RestF} =
+        {id(
+                d_enum_MatchMode(begin
+                    <<Res:32/signed-native>> =
+                        <<(X bsl N +
+                                Acc):32/unsigned-native>>,
+                    id(Res, TrUserData)
+                end),
+                TrUserData
+            ),
+            Rest},
+    dfp_read_field_def_Match(
+        RestF,
+        0,
+        0,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        NewFValue,
+        F@_7,
+        F@_8,
+        TrUserData
+    ).
 
-d_field_Match_duration(<<1:1, X:7, Rest/binary>>, N,
-                       Acc, F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7, F@_8,
-                       TrUserData)
-    when N < 57 ->
-    d_field_Match_duration(Rest,
-                           N + 7,
-                           X bsl N + Acc,
-                           F@_1,
-                           F@_2,
-                           F@_3,
-                           F@_4,
-                           F@_5,
-                           F@_6,
-                           F@_7,
-                           F@_8,
-                           TrUserData);
-d_field_Match_duration(<<0:1, X:7, Rest/binary>>, N,
-                       Acc, F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, _, F@_8,
-                       TrUserData) ->
-    {NewFValue, RestF} = {id(X bsl N + Acc, TrUserData),
-                          Rest},
-    dfp_read_field_def_Match(RestF,
-                             0,
-                             0,
-                             F@_1,
-                             F@_2,
-                             F@_3,
-                             F@_4,
-                             F@_5,
-                             F@_6,
-                             NewFValue,
-                             F@_8,
-                             TrUserData).
+d_field_Match_duration(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) when N < 57 ->
+    d_field_Match_duration(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    );
+d_field_Match_duration(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    _,
+    F@_8,
+    TrUserData
+) ->
+    {NewFValue, RestF} = {id(X bsl N + Acc, TrUserData), Rest},
+    dfp_read_field_def_Match(
+        RestF,
+        0,
+        0,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        NewFValue,
+        F@_8,
+        TrUserData
+    ).
 
-d_field_Match_extra(<<1:1, X:7, Rest/binary>>, N, Acc,
-                    F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7, F@_8,
-                    TrUserData)
-    when N < 57 ->
-    d_field_Match_extra(Rest,
-                        N + 7,
-                        X bsl N + Acc,
-                        F@_1,
-                        F@_2,
-                        F@_3,
-                        F@_4,
-                        F@_5,
-                        F@_6,
-                        F@_7,
-                        F@_8,
-                        TrUserData);
-d_field_Match_extra(<<0:1, X:7, Rest/binary>>, N, Acc,
-                    F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7, _,
-                    TrUserData) ->
+d_field_Match_extra(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) when N < 57 ->
+    d_field_Match_extra(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    );
+d_field_Match_extra(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    _,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_Match(RestF,
-                             0,
-                             0,
-                             F@_1,
-                             F@_2,
-                             F@_3,
-                             F@_4,
-                             F@_5,
-                             F@_6,
-                             F@_7,
-                             NewFValue,
-                             TrUserData).
+        Len = X bsl N + Acc,
+        <<Bytes:Len/binary, Rest2/binary>> = Rest,
+        {id(binary:copy(Bytes), TrUserData), Rest2}
+    end,
+    dfp_read_field_def_Match(
+        RestF,
+        0,
+        0,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        NewFValue,
+        TrUserData
+    ).
 
-skip_varint_Match(<<1:1, _:7, Rest/binary>>, Z1, Z2,
-                  F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7, F@_8,
-                  TrUserData) ->
-    skip_varint_Match(Rest,
-                      Z1,
-                      Z2,
-                      F@_1,
-                      F@_2,
-                      F@_3,
-                      F@_4,
-                      F@_5,
-                      F@_6,
-                      F@_7,
-                      F@_8,
-                      TrUserData);
-skip_varint_Match(<<0:1, _:7, Rest/binary>>, Z1, Z2,
-                  F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7, F@_8,
-                  TrUserData) ->
-    dfp_read_field_def_Match(Rest,
-                             Z1,
-                             Z2,
-                             F@_1,
-                             F@_2,
-                             F@_3,
-                             F@_4,
-                             F@_5,
-                             F@_6,
-                             F@_7,
-                             F@_8,
-                             TrUserData).
+skip_varint_Match(
+    <<1:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) ->
+    skip_varint_Match(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    );
+skip_varint_Match(
+    <<0:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) ->
+    dfp_read_field_def_Match(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    ).
 
-skip_length_delimited_Match(<<1:1, X:7, Rest/binary>>,
-                            N, Acc, F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7,
-                            F@_8, TrUserData)
-    when N < 57 ->
-    skip_length_delimited_Match(Rest,
-                                N + 7,
-                                X bsl N + Acc,
-                                F@_1,
-                                F@_2,
-                                F@_3,
-                                F@_4,
-                                F@_5,
-                                F@_6,
-                                F@_7,
-                                F@_8,
-                                TrUserData);
-skip_length_delimited_Match(<<0:1, X:7, Rest/binary>>,
-                            N, Acc, F@_1, F@_2, F@_3, F@_4, F@_5, F@_6, F@_7,
-                            F@_8, TrUserData) ->
+skip_length_delimited_Match(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) when N < 57 ->
+    skip_length_delimited_Match(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    );
+skip_length_delimited_Match(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) ->
     Length = X bsl N + Acc,
     <<_:Length/binary, Rest2/binary>> = Rest,
-    dfp_read_field_def_Match(Rest2,
-                             0,
-                             0,
-                             F@_1,
-                             F@_2,
-                             F@_3,
-                             F@_4,
-                             F@_5,
-                             F@_6,
-                             F@_7,
-                             F@_8,
-                             TrUserData).
+    dfp_read_field_def_Match(
+        Rest2,
+        0,
+        0,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    ).
 
-skip_group_Match(Bin, FNum, Z2, F@_1, F@_2, F@_3, F@_4,
-                 F@_5, F@_6, F@_7, F@_8, TrUserData) ->
+skip_group_Match(
+    Bin,
+    FNum,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) ->
     {_, Rest} = read_group(Bin, FNum),
-    dfp_read_field_def_Match(Rest,
-                             0,
-                             Z2,
-                             F@_1,
-                             F@_2,
-                             F@_3,
-                             F@_4,
-                             F@_5,
-                             F@_6,
-                             F@_7,
-                             F@_8,
-                             TrUserData).
+    dfp_read_field_def_Match(
+        Rest,
+        0,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    ).
 
-skip_32_Match(<<_:32, Rest/binary>>, Z1, Z2, F@_1, F@_2,
-              F@_3, F@_4, F@_5, F@_6, F@_7, F@_8, TrUserData) ->
-    dfp_read_field_def_Match(Rest,
-                             Z1,
-                             Z2,
-                             F@_1,
-                             F@_2,
-                             F@_3,
-                             F@_4,
-                             F@_5,
-                             F@_6,
-                             F@_7,
-                             F@_8,
-                             TrUserData).
+skip_32_Match(
+    <<_:32, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) ->
+    dfp_read_field_def_Match(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    ).
 
-skip_64_Match(<<_:64, Rest/binary>>, Z1, Z2, F@_1, F@_2,
-              F@_3, F@_4, F@_5, F@_6, F@_7, F@_8, TrUserData) ->
-    dfp_read_field_def_Match(Rest,
-                             Z1,
-                             Z2,
-                             F@_1,
-                             F@_2,
-                             F@_3,
-                             F@_4,
-                             F@_5,
-                             F@_6,
-                             F@_7,
-                             F@_8,
-                             TrUserData).
+skip_64_Match(
+    <<_:64, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    F@_5,
+    F@_6,
+    F@_7,
+    F@_8,
+    TrUserData
+) ->
+    dfp_read_field_def_Match(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        F@_5,
+        F@_6,
+        F@_7,
+        F@_8,
+        TrUserData
+    ).
 
 decode_msg_AccountNewReq(Bin, TrUserData) ->
-    dfp_read_field_def_AccountNewReq(Bin,
-                                     0,
-                                     0,
-                                     id(undefined, TrUserData),
-                                     id(undefined, TrUserData),
-                                     TrUserData).
+    dfp_read_field_def_AccountNewReq(
+        Bin,
+        0,
+        0,
+        id(undefined, TrUserData),
+        id(undefined, TrUserData),
+        TrUserData
+    ).
 
-dfp_read_field_def_AccountNewReq(<<10, Rest/binary>>,
-                                 Z1, Z2, F@_1, F@_2, TrUserData) ->
-    d_field_AccountNewReq_email(Rest,
-                                Z1,
-                                Z2,
-                                F@_1,
-                                F@_2,
-                                TrUserData);
-dfp_read_field_def_AccountNewReq(<<18, Rest/binary>>,
-                                 Z1, Z2, F@_1, F@_2, TrUserData) ->
-    d_field_AccountNewReq_password(Rest,
-                                   Z1,
-                                   Z2,
-                                   F@_1,
-                                   F@_2,
-                                   TrUserData);
-dfp_read_field_def_AccountNewReq(<<>>, 0, 0, F@_1, F@_2,
-                                 _) ->
+dfp_read_field_def_AccountNewReq(
+    <<10, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    d_field_AccountNewReq_email(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dfp_read_field_def_AccountNewReq(
+    <<18, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    d_field_AccountNewReq_password(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dfp_read_field_def_AccountNewReq(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    F@_2,
+    _
+) ->
     #'AccountNewReq'{email = F@_1, password = F@_2};
-dfp_read_field_def_AccountNewReq(Other, Z1, Z2, F@_1,
-                                 F@_2, TrUserData) ->
-    dg_read_field_def_AccountNewReq(Other,
-                                    Z1,
-                                    Z2,
-                                    F@_1,
-                                    F@_2,
-                                    TrUserData).
+dfp_read_field_def_AccountNewReq(
+    Other,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dg_read_field_def_AccountNewReq(
+        Other,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-dg_read_field_def_AccountNewReq(<<1:1, X:7,
-                                  Rest/binary>>,
-                                N, Acc, F@_1, F@_2, TrUserData)
-    when N < 32 - 7 ->
-    dg_read_field_def_AccountNewReq(Rest,
-                                    N + 7,
-                                    X bsl N + Acc,
-                                    F@_1,
-                                    F@_2,
-                                    TrUserData);
-dg_read_field_def_AccountNewReq(<<0:1, X:7,
-                                  Rest/binary>>,
-                                N, Acc, F@_1, F@_2, TrUserData) ->
+dg_read_field_def_AccountNewReq(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 32 - 7 ->
+    dg_read_field_def_AccountNewReq(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dg_read_field_def_AccountNewReq(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     Key = X bsl N + Acc,
     case Key of
         10 ->
-            d_field_AccountNewReq_email(Rest,
-                                        0,
-                                        0,
-                                        F@_1,
-                                        F@_2,
-                                        TrUserData);
+            d_field_AccountNewReq_email(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                TrUserData
+            );
         18 ->
-            d_field_AccountNewReq_password(Rest,
-                                           0,
-                                           0,
-                                           F@_1,
-                                           F@_2,
-                                           TrUserData);
+            d_field_AccountNewReq_password(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                TrUserData
+            );
         _ ->
             case Key band 7 of
                 0 ->
-                    skip_varint_AccountNewReq(Rest,
-                                              0,
-                                              0,
-                                              F@_1,
-                                              F@_2,
-                                              TrUserData);
+                    skip_varint_AccountNewReq(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 1 ->
-                    skip_64_AccountNewReq(Rest,
-                                          0,
-                                          0,
-                                          F@_1,
-                                          F@_2,
-                                          TrUserData);
+                    skip_64_AccountNewReq(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 2 ->
-                    skip_length_delimited_AccountNewReq(Rest,
-                                                        0,
-                                                        0,
-                                                        F@_1,
-                                                        F@_2,
-                                                        TrUserData);
+                    skip_length_delimited_AccountNewReq(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 3 ->
-                    skip_group_AccountNewReq(Rest,
-                                             Key bsr 3,
-                                             0,
-                                             F@_1,
-                                             F@_2,
-                                             TrUserData);
+                    skip_group_AccountNewReq(
+                        Rest,
+                        Key bsr 3,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 5 ->
-                    skip_32_AccountNewReq(Rest,
-                                          0,
-                                          0,
-                                          F@_1,
-                                          F@_2,
-                                          TrUserData)
+                    skip_32_AccountNewReq(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    )
             end
     end;
-dg_read_field_def_AccountNewReq(<<>>, 0, 0, F@_1, F@_2,
-                                _) ->
+dg_read_field_def_AccountNewReq(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    F@_2,
+    _
+) ->
     #'AccountNewReq'{email = F@_1, password = F@_2}.
 
-d_field_AccountNewReq_email(<<1:1, X:7, Rest/binary>>,
-                            N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    d_field_AccountNewReq_email(Rest,
-                                N + 7,
-                                X bsl N + Acc,
-                                F@_1,
-                                F@_2,
-                                TrUserData);
-d_field_AccountNewReq_email(<<0:1, X:7, Rest/binary>>,
-                            N, Acc, _, F@_2, TrUserData) ->
+d_field_AccountNewReq_email(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    d_field_AccountNewReq_email(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+d_field_AccountNewReq_email(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    _,
+    F@_2,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_AccountNewReq(RestF,
-                                     0,
-                                     0,
-                                     NewFValue,
-                                     F@_2,
-                                     TrUserData).
+        Len = X bsl N + Acc,
+        <<Bytes:Len/binary, Rest2/binary>> = Rest,
+        {id(binary:copy(Bytes), TrUserData), Rest2}
+    end,
+    dfp_read_field_def_AccountNewReq(
+        RestF,
+        0,
+        0,
+        NewFValue,
+        F@_2,
+        TrUserData
+    ).
 
-d_field_AccountNewReq_password(<<1:1, X:7,
-                                 Rest/binary>>,
-                               N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    d_field_AccountNewReq_password(Rest,
-                                   N + 7,
-                                   X bsl N + Acc,
-                                   F@_1,
-                                   F@_2,
-                                   TrUserData);
-d_field_AccountNewReq_password(<<0:1, X:7,
-                                 Rest/binary>>,
-                               N, Acc, F@_1, _, TrUserData) ->
+d_field_AccountNewReq_password(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    d_field_AccountNewReq_password(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+d_field_AccountNewReq_password(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    _,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_AccountNewReq(RestF,
-                                     0,
-                                     0,
-                                     F@_1,
-                                     NewFValue,
-                                     TrUserData).
+        Len = X bsl N + Acc,
+        <<Bytes:Len/binary, Rest2/binary>> = Rest,
+        {id(binary:copy(Bytes), TrUserData), Rest2}
+    end,
+    dfp_read_field_def_AccountNewReq(
+        RestF,
+        0,
+        0,
+        F@_1,
+        NewFValue,
+        TrUserData
+    ).
 
-skip_varint_AccountNewReq(<<1:1, _:7, Rest/binary>>, Z1,
-                          Z2, F@_1, F@_2, TrUserData) ->
-    skip_varint_AccountNewReq(Rest,
-                              Z1,
-                              Z2,
-                              F@_1,
-                              F@_2,
-                              TrUserData);
-skip_varint_AccountNewReq(<<0:1, _:7, Rest/binary>>, Z1,
-                          Z2, F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_AccountNewReq(Rest,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData).
+skip_varint_AccountNewReq(
+    <<1:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    skip_varint_AccountNewReq(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+skip_varint_AccountNewReq(
+    <<0:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_AccountNewReq(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_length_delimited_AccountNewReq(<<1:1, X:7,
-                                      Rest/binary>>,
-                                    N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    skip_length_delimited_AccountNewReq(Rest,
-                                        N + 7,
-                                        X bsl N + Acc,
-                                        F@_1,
-                                        F@_2,
-                                        TrUserData);
-skip_length_delimited_AccountNewReq(<<0:1, X:7,
-                                      Rest/binary>>,
-                                    N, Acc, F@_1, F@_2, TrUserData) ->
+skip_length_delimited_AccountNewReq(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    skip_length_delimited_AccountNewReq(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+skip_length_delimited_AccountNewReq(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     Length = X bsl N + Acc,
     <<_:Length/binary, Rest2/binary>> = Rest,
-    dfp_read_field_def_AccountNewReq(Rest2,
-                                     0,
-                                     0,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData).
+    dfp_read_field_def_AccountNewReq(
+        Rest2,
+        0,
+        0,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_group_AccountNewReq(Bin, FNum, Z2, F@_1, F@_2,
-                         TrUserData) ->
+skip_group_AccountNewReq(
+    Bin,
+    FNum,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     {_, Rest} = read_group(Bin, FNum),
-    dfp_read_field_def_AccountNewReq(Rest,
-                                     0,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData).
+    dfp_read_field_def_AccountNewReq(
+        Rest,
+        0,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_32_AccountNewReq(<<_:32, Rest/binary>>, Z1, Z2,
-                      F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_AccountNewReq(Rest,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData).
+skip_32_AccountNewReq(
+    <<_:32, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_AccountNewReq(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_64_AccountNewReq(<<_:64, Rest/binary>>, Z1, Z2,
-                      F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_AccountNewReq(Rest,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData).
+skip_64_AccountNewReq(
+    <<_:64, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_AccountNewReq(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
 decode_msg_AccountNewResp(Bin, TrUserData) ->
-    dfp_read_field_def_AccountNewResp(Bin,
-                                      0,
-                                      0,
-                                      id(undefined, TrUserData),
-                                      id(undefined, TrUserData),
-                                      TrUserData).
+    dfp_read_field_def_AccountNewResp(
+        Bin,
+        0,
+        0,
+        id(undefined, TrUserData),
+        id(undefined, TrUserData),
+        TrUserData
+    ).
 
-dfp_read_field_def_AccountNewResp(<<8, Rest/binary>>,
-                                  Z1, Z2, F@_1, F@_2, TrUserData) ->
-    d_field_AccountNewResp_status(Rest,
-                                  Z1,
-                                  Z2,
-                                  F@_1,
-                                  F@_2,
-                                  TrUserData);
-dfp_read_field_def_AccountNewResp(<<18, Rest/binary>>,
-                                  Z1, Z2, F@_1, F@_2, TrUserData) ->
-    d_field_AccountNewResp_error(Rest,
-                                 Z1,
-                                 Z2,
-                                 F@_1,
-                                 F@_2,
-                                 TrUserData);
-dfp_read_field_def_AccountNewResp(<<>>, 0, 0, F@_1,
-                                  F@_2, _) ->
+dfp_read_field_def_AccountNewResp(
+    <<8, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    d_field_AccountNewResp_status(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dfp_read_field_def_AccountNewResp(
+    <<18, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    d_field_AccountNewResp_error(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dfp_read_field_def_AccountNewResp(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    F@_2,
+    _
+) ->
     #'AccountNewResp'{status = F@_1, error = F@_2};
-dfp_read_field_def_AccountNewResp(Other, Z1, Z2, F@_1,
-                                  F@_2, TrUserData) ->
-    dg_read_field_def_AccountNewResp(Other,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData).
+dfp_read_field_def_AccountNewResp(
+    Other,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dg_read_field_def_AccountNewResp(
+        Other,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-dg_read_field_def_AccountNewResp(<<1:1, X:7,
-                                   Rest/binary>>,
-                                 N, Acc, F@_1, F@_2, TrUserData)
-    when N < 32 - 7 ->
-    dg_read_field_def_AccountNewResp(Rest,
-                                     N + 7,
-                                     X bsl N + Acc,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData);
-dg_read_field_def_AccountNewResp(<<0:1, X:7,
-                                   Rest/binary>>,
-                                 N, Acc, F@_1, F@_2, TrUserData) ->
+dg_read_field_def_AccountNewResp(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 32 - 7 ->
+    dg_read_field_def_AccountNewResp(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dg_read_field_def_AccountNewResp(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     Key = X bsl N + Acc,
     case Key of
         8 ->
-            d_field_AccountNewResp_status(Rest,
-                                          0,
-                                          0,
-                                          F@_1,
-                                          F@_2,
-                                          TrUserData);
+            d_field_AccountNewResp_status(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                TrUserData
+            );
         18 ->
-            d_field_AccountNewResp_error(Rest,
-                                         0,
-                                         0,
-                                         F@_1,
-                                         F@_2,
-                                         TrUserData);
+            d_field_AccountNewResp_error(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                TrUserData
+            );
         _ ->
             case Key band 7 of
                 0 ->
-                    skip_varint_AccountNewResp(Rest,
-                                               0,
-                                               0,
-                                               F@_1,
-                                               F@_2,
-                                               TrUserData);
+                    skip_varint_AccountNewResp(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 1 ->
-                    skip_64_AccountNewResp(Rest,
-                                           0,
-                                           0,
-                                           F@_1,
-                                           F@_2,
-                                           TrUserData);
+                    skip_64_AccountNewResp(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 2 ->
-                    skip_length_delimited_AccountNewResp(Rest,
-                                                         0,
-                                                         0,
-                                                         F@_1,
-                                                         F@_2,
-                                                         TrUserData);
+                    skip_length_delimited_AccountNewResp(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 3 ->
-                    skip_group_AccountNewResp(Rest,
-                                              Key bsr 3,
-                                              0,
-                                              F@_1,
-                                              F@_2,
-                                              TrUserData);
+                    skip_group_AccountNewResp(
+                        Rest,
+                        Key bsr 3,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 5 ->
-                    skip_32_AccountNewResp(Rest,
-                                           0,
-                                           0,
-                                           F@_1,
-                                           F@_2,
-                                           TrUserData)
+                    skip_32_AccountNewResp(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    )
             end
     end;
-dg_read_field_def_AccountNewResp(<<>>, 0, 0, F@_1, F@_2,
-                                 _) ->
+dg_read_field_def_AccountNewResp(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    F@_2,
+    _
+) ->
     #'AccountNewResp'{status = F@_1, error = F@_2}.
 
-d_field_AccountNewResp_status(<<1:1, X:7, Rest/binary>>,
-                              N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    d_field_AccountNewResp_status(Rest,
-                                  N + 7,
-                                  X bsl N + Acc,
-                                  F@_1,
-                                  F@_2,
-                                  TrUserData);
-d_field_AccountNewResp_status(<<0:1, X:7, Rest/binary>>,
-                              N, Acc, _, F@_2, TrUserData) ->
+d_field_AccountNewResp_status(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    d_field_AccountNewResp_status(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+d_field_AccountNewResp_status(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    _,
+    F@_2,
+    TrUserData
+) ->
     {NewFValue, RestF} =
-        {id('d_enum_AccountNewResp.Status'(begin
-                                               <<Res:32/signed-native>> = <<(X
-                                                                                 bsl
-                                                                                 N
-                                                                                 +
-                                                                                 Acc):32/unsigned-native>>,
-                                               id(Res, TrUserData)
-                                           end),
-            TrUserData),
-         Rest},
-    dfp_read_field_def_AccountNewResp(RestF,
-                                      0,
-                                      0,
-                                      NewFValue,
-                                      F@_2,
-                                      TrUserData).
+        {id(
+                'd_enum_AccountNewResp.Status'(begin
+                    <<Res:32/signed-native>> =
+                        <<(X bsl
+                                N +
+                                Acc):32/unsigned-native>>,
+                    id(Res, TrUserData)
+                end),
+                TrUserData
+            ),
+            Rest},
+    dfp_read_field_def_AccountNewResp(
+        RestF,
+        0,
+        0,
+        NewFValue,
+        F@_2,
+        TrUserData
+    ).
 
-d_field_AccountNewResp_error(<<1:1, X:7, Rest/binary>>,
-                             N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    d_field_AccountNewResp_error(Rest,
-                                 N + 7,
-                                 X bsl N + Acc,
-                                 F@_1,
-                                 F@_2,
-                                 TrUserData);
-d_field_AccountNewResp_error(<<0:1, X:7, Rest/binary>>,
-                             N, Acc, F@_1, _, TrUserData) ->
+d_field_AccountNewResp_error(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    d_field_AccountNewResp_error(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+d_field_AccountNewResp_error(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    _,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_AccountNewResp(RestF,
-                                      0,
-                                      0,
-                                      F@_1,
-                                      NewFValue,
-                                      TrUserData).
+        Len = X bsl N + Acc,
+        <<Bytes:Len/binary, Rest2/binary>> = Rest,
+        {id(binary:copy(Bytes), TrUserData), Rest2}
+    end,
+    dfp_read_field_def_AccountNewResp(
+        RestF,
+        0,
+        0,
+        F@_1,
+        NewFValue,
+        TrUserData
+    ).
 
-skip_varint_AccountNewResp(<<1:1, _:7, Rest/binary>>,
-                           Z1, Z2, F@_1, F@_2, TrUserData) ->
-    skip_varint_AccountNewResp(Rest,
-                               Z1,
-                               Z2,
-                               F@_1,
-                               F@_2,
-                               TrUserData);
-skip_varint_AccountNewResp(<<0:1, _:7, Rest/binary>>,
-                           Z1, Z2, F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_AccountNewResp(Rest,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      F@_2,
-                                      TrUserData).
+skip_varint_AccountNewResp(
+    <<1:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    skip_varint_AccountNewResp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+skip_varint_AccountNewResp(
+    <<0:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_AccountNewResp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_length_delimited_AccountNewResp(<<1:1, X:7,
-                                       Rest/binary>>,
-                                     N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    skip_length_delimited_AccountNewResp(Rest,
-                                         N + 7,
-                                         X bsl N + Acc,
-                                         F@_1,
-                                         F@_2,
-                                         TrUserData);
-skip_length_delimited_AccountNewResp(<<0:1, X:7,
-                                       Rest/binary>>,
-                                     N, Acc, F@_1, F@_2, TrUserData) ->
+skip_length_delimited_AccountNewResp(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    skip_length_delimited_AccountNewResp(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+skip_length_delimited_AccountNewResp(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     Length = X bsl N + Acc,
     <<_:Length/binary, Rest2/binary>> = Rest,
-    dfp_read_field_def_AccountNewResp(Rest2,
-                                      0,
-                                      0,
-                                      F@_1,
-                                      F@_2,
-                                      TrUserData).
+    dfp_read_field_def_AccountNewResp(
+        Rest2,
+        0,
+        0,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_group_AccountNewResp(Bin, FNum, Z2, F@_1, F@_2,
-                          TrUserData) ->
+skip_group_AccountNewResp(
+    Bin,
+    FNum,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     {_, Rest} = read_group(Bin, FNum),
-    dfp_read_field_def_AccountNewResp(Rest,
-                                      0,
-                                      Z2,
-                                      F@_1,
-                                      F@_2,
-                                      TrUserData).
+    dfp_read_field_def_AccountNewResp(
+        Rest,
+        0,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_32_AccountNewResp(<<_:32, Rest/binary>>, Z1, Z2,
-                       F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_AccountNewResp(Rest,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      F@_2,
-                                      TrUserData).
+skip_32_AccountNewResp(
+    <<_:32, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_AccountNewResp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_64_AccountNewResp(<<_:64, Rest/binary>>, Z1, Z2,
-                       F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_AccountNewResp(Rest,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      F@_2,
-                                      TrUserData).
+skip_64_AccountNewResp(
+    <<_:64, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_AccountNewResp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
 decode_msg_AccountLoginReq(Bin, TrUserData) ->
-    dfp_read_field_def_AccountLoginReq(Bin,
-                                       0,
-                                       0,
-                                       id(undefined, TrUserData),
-                                       id(undefined, TrUserData),
-                                       TrUserData).
+    dfp_read_field_def_AccountLoginReq(
+        Bin,
+        0,
+        0,
+        id(undefined, TrUserData),
+        id(undefined, TrUserData),
+        TrUserData
+    ).
 
-dfp_read_field_def_AccountLoginReq(<<10, Rest/binary>>,
-                                   Z1, Z2, F@_1, F@_2, TrUserData) ->
-    d_field_AccountLoginReq_email(Rest,
-                                  Z1,
-                                  Z2,
-                                  F@_1,
-                                  F@_2,
-                                  TrUserData);
-dfp_read_field_def_AccountLoginReq(<<18, Rest/binary>>,
-                                   Z1, Z2, F@_1, F@_2, TrUserData) ->
-    d_field_AccountLoginReq_password(Rest,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData);
-dfp_read_field_def_AccountLoginReq(<<>>, 0, 0, F@_1,
-                                   F@_2, _) ->
+dfp_read_field_def_AccountLoginReq(
+    <<10, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    d_field_AccountLoginReq_email(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dfp_read_field_def_AccountLoginReq(
+    <<18, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    d_field_AccountLoginReq_password(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dfp_read_field_def_AccountLoginReq(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    F@_2,
+    _
+) ->
     #'AccountLoginReq'{email = F@_1, password = F@_2};
-dfp_read_field_def_AccountLoginReq(Other, Z1, Z2, F@_1,
-                                   F@_2, TrUserData) ->
-    dg_read_field_def_AccountLoginReq(Other,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      F@_2,
-                                      TrUserData).
+dfp_read_field_def_AccountLoginReq(
+    Other,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dg_read_field_def_AccountLoginReq(
+        Other,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-dg_read_field_def_AccountLoginReq(<<1:1, X:7,
-                                    Rest/binary>>,
-                                  N, Acc, F@_1, F@_2, TrUserData)
-    when N < 32 - 7 ->
-    dg_read_field_def_AccountLoginReq(Rest,
-                                      N + 7,
-                                      X bsl N + Acc,
-                                      F@_1,
-                                      F@_2,
-                                      TrUserData);
-dg_read_field_def_AccountLoginReq(<<0:1, X:7,
-                                    Rest/binary>>,
-                                  N, Acc, F@_1, F@_2, TrUserData) ->
+dg_read_field_def_AccountLoginReq(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 32 - 7 ->
+    dg_read_field_def_AccountLoginReq(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dg_read_field_def_AccountLoginReq(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     Key = X bsl N + Acc,
     case Key of
         10 ->
-            d_field_AccountLoginReq_email(Rest,
-                                          0,
-                                          0,
-                                          F@_1,
-                                          F@_2,
-                                          TrUserData);
+            d_field_AccountLoginReq_email(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                TrUserData
+            );
         18 ->
-            d_field_AccountLoginReq_password(Rest,
-                                             0,
-                                             0,
-                                             F@_1,
-                                             F@_2,
-                                             TrUserData);
+            d_field_AccountLoginReq_password(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                TrUserData
+            );
         _ ->
             case Key band 7 of
                 0 ->
-                    skip_varint_AccountLoginReq(Rest,
-                                                0,
-                                                0,
-                                                F@_1,
-                                                F@_2,
-                                                TrUserData);
+                    skip_varint_AccountLoginReq(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 1 ->
-                    skip_64_AccountLoginReq(Rest,
-                                            0,
-                                            0,
-                                            F@_1,
-                                            F@_2,
-                                            TrUserData);
+                    skip_64_AccountLoginReq(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 2 ->
-                    skip_length_delimited_AccountLoginReq(Rest,
-                                                          0,
-                                                          0,
-                                                          F@_1,
-                                                          F@_2,
-                                                          TrUserData);
+                    skip_length_delimited_AccountLoginReq(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 3 ->
-                    skip_group_AccountLoginReq(Rest,
-                                               Key bsr 3,
-                                               0,
-                                               F@_1,
-                                               F@_2,
-                                               TrUserData);
+                    skip_group_AccountLoginReq(
+                        Rest,
+                        Key bsr 3,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 5 ->
-                    skip_32_AccountLoginReq(Rest,
-                                            0,
-                                            0,
-                                            F@_1,
-                                            F@_2,
-                                            TrUserData)
+                    skip_32_AccountLoginReq(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    )
             end
     end;
-dg_read_field_def_AccountLoginReq(<<>>, 0, 0, F@_1,
-                                  F@_2, _) ->
+dg_read_field_def_AccountLoginReq(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    F@_2,
+    _
+) ->
     #'AccountLoginReq'{email = F@_1, password = F@_2}.
 
-d_field_AccountLoginReq_email(<<1:1, X:7, Rest/binary>>,
-                              N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    d_field_AccountLoginReq_email(Rest,
-                                  N + 7,
-                                  X bsl N + Acc,
-                                  F@_1,
-                                  F@_2,
-                                  TrUserData);
-d_field_AccountLoginReq_email(<<0:1, X:7, Rest/binary>>,
-                              N, Acc, _, F@_2, TrUserData) ->
+d_field_AccountLoginReq_email(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    d_field_AccountLoginReq_email(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+d_field_AccountLoginReq_email(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    _,
+    F@_2,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_AccountLoginReq(RestF,
-                                       0,
-                                       0,
-                                       NewFValue,
-                                       F@_2,
-                                       TrUserData).
+        Len = X bsl N + Acc,
+        <<Bytes:Len/binary, Rest2/binary>> = Rest,
+        {id(binary:copy(Bytes), TrUserData), Rest2}
+    end,
+    dfp_read_field_def_AccountLoginReq(
+        RestF,
+        0,
+        0,
+        NewFValue,
+        F@_2,
+        TrUserData
+    ).
 
-d_field_AccountLoginReq_password(<<1:1, X:7,
-                                   Rest/binary>>,
-                                 N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    d_field_AccountLoginReq_password(Rest,
-                                     N + 7,
-                                     X bsl N + Acc,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData);
-d_field_AccountLoginReq_password(<<0:1, X:7,
-                                   Rest/binary>>,
-                                 N, Acc, F@_1, _, TrUserData) ->
+d_field_AccountLoginReq_password(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    d_field_AccountLoginReq_password(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+d_field_AccountLoginReq_password(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    _,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_AccountLoginReq(RestF,
-                                       0,
-                                       0,
-                                       F@_1,
-                                       NewFValue,
-                                       TrUserData).
+        Len = X bsl N + Acc,
+        <<Bytes:Len/binary, Rest2/binary>> = Rest,
+        {id(binary:copy(Bytes), TrUserData), Rest2}
+    end,
+    dfp_read_field_def_AccountLoginReq(
+        RestF,
+        0,
+        0,
+        F@_1,
+        NewFValue,
+        TrUserData
+    ).
 
-skip_varint_AccountLoginReq(<<1:1, _:7, Rest/binary>>,
-                            Z1, Z2, F@_1, F@_2, TrUserData) ->
-    skip_varint_AccountLoginReq(Rest,
-                                Z1,
-                                Z2,
-                                F@_1,
-                                F@_2,
-                                TrUserData);
-skip_varint_AccountLoginReq(<<0:1, _:7, Rest/binary>>,
-                            Z1, Z2, F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_AccountLoginReq(Rest,
-                                       Z1,
-                                       Z2,
-                                       F@_1,
-                                       F@_2,
-                                       TrUserData).
+skip_varint_AccountLoginReq(
+    <<1:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    skip_varint_AccountLoginReq(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+skip_varint_AccountLoginReq(
+    <<0:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_AccountLoginReq(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_length_delimited_AccountLoginReq(<<1:1, X:7,
-                                        Rest/binary>>,
-                                      N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    skip_length_delimited_AccountLoginReq(Rest,
-                                          N + 7,
-                                          X bsl N + Acc,
-                                          F@_1,
-                                          F@_2,
-                                          TrUserData);
-skip_length_delimited_AccountLoginReq(<<0:1, X:7,
-                                        Rest/binary>>,
-                                      N, Acc, F@_1, F@_2, TrUserData) ->
+skip_length_delimited_AccountLoginReq(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    skip_length_delimited_AccountLoginReq(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+skip_length_delimited_AccountLoginReq(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     Length = X bsl N + Acc,
     <<_:Length/binary, Rest2/binary>> = Rest,
-    dfp_read_field_def_AccountLoginReq(Rest2,
-                                       0,
-                                       0,
-                                       F@_1,
-                                       F@_2,
-                                       TrUserData).
+    dfp_read_field_def_AccountLoginReq(
+        Rest2,
+        0,
+        0,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_group_AccountLoginReq(Bin, FNum, Z2, F@_1, F@_2,
-                           TrUserData) ->
+skip_group_AccountLoginReq(
+    Bin,
+    FNum,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     {_, Rest} = read_group(Bin, FNum),
-    dfp_read_field_def_AccountLoginReq(Rest,
-                                       0,
-                                       Z2,
-                                       F@_1,
-                                       F@_2,
-                                       TrUserData).
+    dfp_read_field_def_AccountLoginReq(
+        Rest,
+        0,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_32_AccountLoginReq(<<_:32, Rest/binary>>, Z1, Z2,
-                        F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_AccountLoginReq(Rest,
-                                       Z1,
-                                       Z2,
-                                       F@_1,
-                                       F@_2,
-                                       TrUserData).
+skip_32_AccountLoginReq(
+    <<_:32, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_AccountLoginReq(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_64_AccountLoginReq(<<_:64, Rest/binary>>, Z1, Z2,
-                        F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_AccountLoginReq(Rest,
-                                       Z1,
-                                       Z2,
-                                       F@_1,
-                                       F@_2,
-                                       TrUserData).
+skip_64_AccountLoginReq(
+    <<_:64, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_AccountLoginReq(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
 'decode_msg_AccountLoginResp.Player'(Bin, TrUserData) ->
-    'dfp_read_field_def_AccountLoginResp.Player'(Bin,
-                                                 0,
-                                                 0,
-                                                 id(undefined, TrUserData),
-                                                 TrUserData).
+    'dfp_read_field_def_AccountLoginResp.Player'(
+        Bin,
+        0,
+        0,
+        id(undefined, TrUserData),
+        TrUserData
+    ).
 
-'dfp_read_field_def_AccountLoginResp.Player'(<<10,
-                                               Rest/binary>>,
-                                             Z1, Z2, F@_1, TrUserData) ->
-    'd_field_AccountLoginResp.Player_name'(Rest,
-                                           Z1,
-                                           Z2,
-                                           F@_1,
-                                           TrUserData);
-'dfp_read_field_def_AccountLoginResp.Player'(<<>>, 0, 0,
-                                             F@_1, _) ->
+'dfp_read_field_def_AccountLoginResp.Player'(
+    <<10, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    'd_field_AccountLoginResp.Player_name'(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    );
+'dfp_read_field_def_AccountLoginResp.Player'(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    _
+) ->
     #'AccountLoginResp.Player'{name = F@_1};
-'dfp_read_field_def_AccountLoginResp.Player'(Other, Z1,
-                                             Z2, F@_1, TrUserData) ->
-    'dg_read_field_def_AccountLoginResp.Player'(Other,
-                                                Z1,
-                                                Z2,
-                                                F@_1,
-                                                TrUserData).
+'dfp_read_field_def_AccountLoginResp.Player'(
+    Other,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    'dg_read_field_def_AccountLoginResp.Player'(
+        Other,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
-'dg_read_field_def_AccountLoginResp.Player'(<<1:1, X:7,
-                                              Rest/binary>>,
-                                            N, Acc, F@_1, TrUserData)
-    when N < 32 - 7 ->
-    'dg_read_field_def_AccountLoginResp.Player'(Rest,
-                                                N + 7,
-                                                X bsl N + Acc,
-                                                F@_1,
-                                                TrUserData);
-'dg_read_field_def_AccountLoginResp.Player'(<<0:1, X:7,
-                                              Rest/binary>>,
-                                            N, Acc, F@_1, TrUserData) ->
+'dg_read_field_def_AccountLoginResp.Player'(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) when N < 32 - 7 ->
+    'dg_read_field_def_AccountLoginResp.Player'(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        TrUserData
+    );
+'dg_read_field_def_AccountLoginResp.Player'(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) ->
     Key = X bsl N + Acc,
     case Key of
         10 ->
-            'd_field_AccountLoginResp.Player_name'(Rest,
-                                                   0,
-                                                   0,
-                                                   F@_1,
-                                                   TrUserData);
+            'd_field_AccountLoginResp.Player_name'(
+                Rest,
+                0,
+                0,
+                F@_1,
+                TrUserData
+            );
         _ ->
             case Key band 7 of
                 0 ->
-                    'skip_varint_AccountLoginResp.Player'(Rest,
-                                                          0,
-                                                          0,
-                                                          F@_1,
-                                                          TrUserData);
+                    'skip_varint_AccountLoginResp.Player'(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        TrUserData
+                    );
                 1 ->
-                    'skip_64_AccountLoginResp.Player'(Rest,
-                                                      0,
-                                                      0,
-                                                      F@_1,
-                                                      TrUserData);
+                    'skip_64_AccountLoginResp.Player'(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        TrUserData
+                    );
                 2 ->
-                    'skip_length_delimited_AccountLoginResp.Player'(Rest,
-                                                                    0,
-                                                                    0,
-                                                                    F@_1,
-                                                                    TrUserData);
+                    'skip_length_delimited_AccountLoginResp.Player'(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        TrUserData
+                    );
                 3 ->
-                    'skip_group_AccountLoginResp.Player'(Rest,
-                                                         Key bsr 3,
-                                                         0,
-                                                         F@_1,
-                                                         TrUserData);
+                    'skip_group_AccountLoginResp.Player'(
+                        Rest,
+                        Key bsr 3,
+                        0,
+                        F@_1,
+                        TrUserData
+                    );
                 5 ->
-                    'skip_32_AccountLoginResp.Player'(Rest,
-                                                      0,
-                                                      0,
-                                                      F@_1,
-                                                      TrUserData)
+                    'skip_32_AccountLoginResp.Player'(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        TrUserData
+                    )
             end
     end;
-'dg_read_field_def_AccountLoginResp.Player'(<<>>, 0, 0,
-                                            F@_1, _) ->
+'dg_read_field_def_AccountLoginResp.Player'(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    _
+) ->
     #'AccountLoginResp.Player'{name = F@_1}.
 
-'d_field_AccountLoginResp.Player_name'(<<1:1, X:7,
-                                         Rest/binary>>,
-                                       N, Acc, F@_1, TrUserData)
-    when N < 57 ->
-    'd_field_AccountLoginResp.Player_name'(Rest,
-                                           N + 7,
-                                           X bsl N + Acc,
-                                           F@_1,
-                                           TrUserData);
-'d_field_AccountLoginResp.Player_name'(<<0:1, X:7,
-                                         Rest/binary>>,
-                                       N, Acc, _, TrUserData) ->
+'d_field_AccountLoginResp.Player_name'(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) when N < 57 ->
+    'd_field_AccountLoginResp.Player_name'(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        TrUserData
+    );
+'d_field_AccountLoginResp.Player_name'(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    _,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    'dfp_read_field_def_AccountLoginResp.Player'(RestF,
-                                                 0,
-                                                 0,
-                                                 NewFValue,
-                                                 TrUserData).
+        Len = X bsl N + Acc,
+        <<Bytes:Len/binary, Rest2/binary>> = Rest,
+        {id(binary:copy(Bytes), TrUserData), Rest2}
+    end,
+    'dfp_read_field_def_AccountLoginResp.Player'(
+        RestF,
+        0,
+        0,
+        NewFValue,
+        TrUserData
+    ).
 
-'skip_varint_AccountLoginResp.Player'(<<1:1, _:7,
-                                        Rest/binary>>,
-                                      Z1, Z2, F@_1, TrUserData) ->
-    'skip_varint_AccountLoginResp.Player'(Rest,
-                                          Z1,
-                                          Z2,
-                                          F@_1,
-                                          TrUserData);
-'skip_varint_AccountLoginResp.Player'(<<0:1, _:7,
-                                        Rest/binary>>,
-                                      Z1, Z2, F@_1, TrUserData) ->
-    'dfp_read_field_def_AccountLoginResp.Player'(Rest,
-                                                 Z1,
-                                                 Z2,
-                                                 F@_1,
-                                                 TrUserData).
+'skip_varint_AccountLoginResp.Player'(
+    <<1:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    'skip_varint_AccountLoginResp.Player'(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    );
+'skip_varint_AccountLoginResp.Player'(
+    <<0:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    'dfp_read_field_def_AccountLoginResp.Player'(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
-'skip_length_delimited_AccountLoginResp.Player'(<<1:1,
-                                                  X:7, Rest/binary>>,
-                                                N, Acc, F@_1, TrUserData)
-    when N < 57 ->
-    'skip_length_delimited_AccountLoginResp.Player'(Rest,
-                                                    N + 7,
-                                                    X bsl N + Acc,
-                                                    F@_1,
-                                                    TrUserData);
-'skip_length_delimited_AccountLoginResp.Player'(<<0:1,
-                                                  X:7, Rest/binary>>,
-                                                N, Acc, F@_1, TrUserData) ->
+'skip_length_delimited_AccountLoginResp.Player'(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) when N < 57 ->
+    'skip_length_delimited_AccountLoginResp.Player'(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        TrUserData
+    );
+'skip_length_delimited_AccountLoginResp.Player'(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) ->
     Length = X bsl N + Acc,
     <<_:Length/binary, Rest2/binary>> = Rest,
-    'dfp_read_field_def_AccountLoginResp.Player'(Rest2,
-                                                 0,
-                                                 0,
-                                                 F@_1,
-                                                 TrUserData).
+    'dfp_read_field_def_AccountLoginResp.Player'(
+        Rest2,
+        0,
+        0,
+        F@_1,
+        TrUserData
+    ).
 
-'skip_group_AccountLoginResp.Player'(Bin, FNum, Z2,
-                                     F@_1, TrUserData) ->
+'skip_group_AccountLoginResp.Player'(
+    Bin,
+    FNum,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
     {_, Rest} = read_group(Bin, FNum),
-    'dfp_read_field_def_AccountLoginResp.Player'(Rest,
-                                                 0,
-                                                 Z2,
-                                                 F@_1,
-                                                 TrUserData).
+    'dfp_read_field_def_AccountLoginResp.Player'(
+        Rest,
+        0,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
-'skip_32_AccountLoginResp.Player'(<<_:32, Rest/binary>>,
-                                  Z1, Z2, F@_1, TrUserData) ->
-    'dfp_read_field_def_AccountLoginResp.Player'(Rest,
-                                                 Z1,
-                                                 Z2,
-                                                 F@_1,
-                                                 TrUserData).
+'skip_32_AccountLoginResp.Player'(
+    <<_:32, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    'dfp_read_field_def_AccountLoginResp.Player'(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
-'skip_64_AccountLoginResp.Player'(<<_:64, Rest/binary>>,
-                                  Z1, Z2, F@_1, TrUserData) ->
-    'dfp_read_field_def_AccountLoginResp.Player'(Rest,
-                                                 Z1,
-                                                 Z2,
-                                                 F@_1,
-                                                 TrUserData).
+'skip_64_AccountLoginResp.Player'(
+    <<_:64, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    'dfp_read_field_def_AccountLoginResp.Player'(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
 decode_msg_AccountLoginResp(Bin, TrUserData) ->
-    dfp_read_field_def_AccountLoginResp(Bin,
-                                        0,
-                                        0,
-                                        id(undefined, TrUserData),
-                                        id([], TrUserData),
-                                        id(undefined, TrUserData),
-                                        TrUserData).
+    dfp_read_field_def_AccountLoginResp(
+        Bin,
+        0,
+        0,
+        id(undefined, TrUserData),
+        id([], TrUserData),
+        id(undefined, TrUserData),
+        TrUserData
+    ).
 
-dfp_read_field_def_AccountLoginResp(<<8, Rest/binary>>,
-                                    Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
-    d_field_AccountLoginResp_status(Rest,
-                                    Z1,
-                                    Z2,
-                                    F@_1,
-                                    F@_2,
-                                    F@_3,
-                                    TrUserData);
-dfp_read_field_def_AccountLoginResp(<<18, Rest/binary>>,
-                                    Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
-    d_field_AccountLoginResp_players(Rest,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     F@_3,
-                                     TrUserData);
-dfp_read_field_def_AccountLoginResp(<<26, Rest/binary>>,
-                                    Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
-    d_field_AccountLoginResp_error(Rest,
-                                   Z1,
-                                   Z2,
-                                   F@_1,
-                                   F@_2,
-                                   F@_3,
-                                   TrUserData);
-dfp_read_field_def_AccountLoginResp(<<>>, 0, 0, F@_1,
-                                    R1, F@_3, TrUserData) ->
-    #'AccountLoginResp'{status = F@_1,
-                        players = lists_reverse(R1, TrUserData), error = F@_3};
-dfp_read_field_def_AccountLoginResp(Other, Z1, Z2, F@_1,
-                                    F@_2, F@_3, TrUserData) ->
-    dg_read_field_def_AccountLoginResp(Other,
-                                       Z1,
-                                       Z2,
-                                       F@_1,
-                                       F@_2,
-                                       F@_3,
-                                       TrUserData).
+dfp_read_field_def_AccountLoginResp(
+    <<8, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) ->
+    d_field_AccountLoginResp_status(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    );
+dfp_read_field_def_AccountLoginResp(
+    <<18, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) ->
+    d_field_AccountLoginResp_players(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    );
+dfp_read_field_def_AccountLoginResp(
+    <<26, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) ->
+    d_field_AccountLoginResp_error(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    );
+dfp_read_field_def_AccountLoginResp(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    R1,
+    F@_3,
+    TrUserData
+) ->
+    #'AccountLoginResp'{
+        status = F@_1,
+        players = lists_reverse(R1, TrUserData),
+        error = F@_3
+    };
+dfp_read_field_def_AccountLoginResp(
+    Other,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) ->
+    dg_read_field_def_AccountLoginResp(
+        Other,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    ).
 
-dg_read_field_def_AccountLoginResp(<<1:1, X:7,
-                                     Rest/binary>>,
-                                   N, Acc, F@_1, F@_2, F@_3, TrUserData)
-    when N < 32 - 7 ->
-    dg_read_field_def_AccountLoginResp(Rest,
-                                       N + 7,
-                                       X bsl N + Acc,
-                                       F@_1,
-                                       F@_2,
-                                       F@_3,
-                                       TrUserData);
-dg_read_field_def_AccountLoginResp(<<0:1, X:7,
-                                     Rest/binary>>,
-                                   N, Acc, F@_1, F@_2, F@_3, TrUserData) ->
+dg_read_field_def_AccountLoginResp(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) when N < 32 - 7 ->
+    dg_read_field_def_AccountLoginResp(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    );
+dg_read_field_def_AccountLoginResp(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) ->
     Key = X bsl N + Acc,
     case Key of
         8 ->
-            d_field_AccountLoginResp_status(Rest,
-                                            0,
-                                            0,
-                                            F@_1,
-                                            F@_2,
-                                            F@_3,
-                                            TrUserData);
+            d_field_AccountLoginResp_status(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                F@_3,
+                TrUserData
+            );
         18 ->
-            d_field_AccountLoginResp_players(Rest,
-                                             0,
-                                             0,
-                                             F@_1,
-                                             F@_2,
-                                             F@_3,
-                                             TrUserData);
+            d_field_AccountLoginResp_players(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                F@_3,
+                TrUserData
+            );
         26 ->
-            d_field_AccountLoginResp_error(Rest,
-                                           0,
-                                           0,
-                                           F@_1,
-                                           F@_2,
-                                           F@_3,
-                                           TrUserData);
+            d_field_AccountLoginResp_error(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                F@_3,
+                TrUserData
+            );
         _ ->
             case Key band 7 of
                 0 ->
-                    skip_varint_AccountLoginResp(Rest,
-                                                 0,
-                                                 0,
-                                                 F@_1,
-                                                 F@_2,
-                                                 F@_3,
-                                                 TrUserData);
+                    skip_varint_AccountLoginResp(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        F@_3,
+                        TrUserData
+                    );
                 1 ->
-                    skip_64_AccountLoginResp(Rest,
-                                             0,
-                                             0,
-                                             F@_1,
-                                             F@_2,
-                                             F@_3,
-                                             TrUserData);
+                    skip_64_AccountLoginResp(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        F@_3,
+                        TrUserData
+                    );
                 2 ->
-                    skip_length_delimited_AccountLoginResp(Rest,
-                                                           0,
-                                                           0,
-                                                           F@_1,
-                                                           F@_2,
-                                                           F@_3,
-                                                           TrUserData);
+                    skip_length_delimited_AccountLoginResp(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        F@_3,
+                        TrUserData
+                    );
                 3 ->
-                    skip_group_AccountLoginResp(Rest,
-                                                Key bsr 3,
-                                                0,
-                                                F@_1,
-                                                F@_2,
-                                                F@_3,
-                                                TrUserData);
+                    skip_group_AccountLoginResp(
+                        Rest,
+                        Key bsr 3,
+                        0,
+                        F@_1,
+                        F@_2,
+                        F@_3,
+                        TrUserData
+                    );
                 5 ->
-                    skip_32_AccountLoginResp(Rest,
-                                             0,
-                                             0,
-                                             F@_1,
-                                             F@_2,
-                                             F@_3,
-                                             TrUserData)
+                    skip_32_AccountLoginResp(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        F@_3,
+                        TrUserData
+                    )
             end
     end;
-dg_read_field_def_AccountLoginResp(<<>>, 0, 0, F@_1, R1,
-                                   F@_3, TrUserData) ->
-    #'AccountLoginResp'{status = F@_1,
-                        players = lists_reverse(R1, TrUserData), error = F@_3}.
+dg_read_field_def_AccountLoginResp(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    R1,
+    F@_3,
+    TrUserData
+) ->
+    #'AccountLoginResp'{
+        status = F@_1,
+        players = lists_reverse(R1, TrUserData),
+        error = F@_3
+    }.
 
-d_field_AccountLoginResp_status(<<1:1, X:7,
-                                  Rest/binary>>,
-                                N, Acc, F@_1, F@_2, F@_3, TrUserData)
-    when N < 57 ->
-    d_field_AccountLoginResp_status(Rest,
-                                    N + 7,
-                                    X bsl N + Acc,
-                                    F@_1,
-                                    F@_2,
-                                    F@_3,
-                                    TrUserData);
-d_field_AccountLoginResp_status(<<0:1, X:7,
-                                  Rest/binary>>,
-                                N, Acc, _, F@_2, F@_3, TrUserData) ->
+d_field_AccountLoginResp_status(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) when N < 57 ->
+    d_field_AccountLoginResp_status(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    );
+d_field_AccountLoginResp_status(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    _,
+    F@_2,
+    F@_3,
+    TrUserData
+) ->
     {NewFValue, RestF} =
-        {id('d_enum_AccountLoginResp.Status'(begin
-                                                 <<Res:32/signed-native>> = <<(X
-                                                                                   bsl
-                                                                                   N
-                                                                                   +
-                                                                                   Acc):32/unsigned-native>>,
-                                                 id(Res, TrUserData)
-                                             end),
-            TrUserData),
-         Rest},
-    dfp_read_field_def_AccountLoginResp(RestF,
-                                        0,
-                                        0,
-                                        NewFValue,
-                                        F@_2,
-                                        F@_3,
-                                        TrUserData).
+        {id(
+                'd_enum_AccountLoginResp.Status'(begin
+                    <<Res:32/signed-native>> =
+                        <<(X bsl
+                                N +
+                                Acc):32/unsigned-native>>,
+                    id(Res, TrUserData)
+                end),
+                TrUserData
+            ),
+            Rest},
+    dfp_read_field_def_AccountLoginResp(
+        RestF,
+        0,
+        0,
+        NewFValue,
+        F@_2,
+        F@_3,
+        TrUserData
+    ).
 
-d_field_AccountLoginResp_players(<<1:1, X:7,
-                                   Rest/binary>>,
-                                 N, Acc, F@_1, F@_2, F@_3, TrUserData)
-    when N < 57 ->
-    d_field_AccountLoginResp_players(Rest,
-                                     N + 7,
-                                     X bsl N + Acc,
-                                     F@_1,
-                                     F@_2,
-                                     F@_3,
-                                     TrUserData);
-d_field_AccountLoginResp_players(<<0:1, X:7,
-                                   Rest/binary>>,
-                                 N, Acc, F@_1, Prev, F@_3, TrUserData) ->
+d_field_AccountLoginResp_players(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) when N < 57 ->
+    d_field_AccountLoginResp_players(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    );
+d_field_AccountLoginResp_players(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    Prev,
+    F@_3,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bs:Len/binary, Rest2/binary>> = Rest,
-                             {id('decode_msg_AccountLoginResp.Player'(Bs,
-                                                                      TrUserData),
-                                 TrUserData),
-                              Rest2}
-                         end,
-    dfp_read_field_def_AccountLoginResp(RestF,
-                                        0,
-                                        0,
-                                        F@_1,
-                                        cons(NewFValue, Prev, TrUserData),
-                                        F@_3,
-                                        TrUserData).
+        Len = X bsl N + Acc,
+        <<Bs:Len/binary, Rest2/binary>> = Rest,
+        {id(
+                'decode_msg_AccountLoginResp.Player'(
+                    Bs,
+                    TrUserData
+                ),
+                TrUserData
+            ),
+            Rest2}
+    end,
+    dfp_read_field_def_AccountLoginResp(
+        RestF,
+        0,
+        0,
+        F@_1,
+        cons(NewFValue, Prev, TrUserData),
+        F@_3,
+        TrUserData
+    ).
 
-d_field_AccountLoginResp_error(<<1:1, X:7,
-                                 Rest/binary>>,
-                               N, Acc, F@_1, F@_2, F@_3, TrUserData)
-    when N < 57 ->
-    d_field_AccountLoginResp_error(Rest,
-                                   N + 7,
-                                   X bsl N + Acc,
-                                   F@_1,
-                                   F@_2,
-                                   F@_3,
-                                   TrUserData);
-d_field_AccountLoginResp_error(<<0:1, X:7,
-                                 Rest/binary>>,
-                               N, Acc, F@_1, F@_2, _, TrUserData) ->
+d_field_AccountLoginResp_error(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) when N < 57 ->
+    d_field_AccountLoginResp_error(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    );
+d_field_AccountLoginResp_error(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    _,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_AccountLoginResp(RestF,
-                                        0,
-                                        0,
-                                        F@_1,
-                                        F@_2,
-                                        NewFValue,
-                                        TrUserData).
+        Len = X bsl N + Acc,
+        <<Bytes:Len/binary, Rest2/binary>> = Rest,
+        {id(binary:copy(Bytes), TrUserData), Rest2}
+    end,
+    dfp_read_field_def_AccountLoginResp(
+        RestF,
+        0,
+        0,
+        F@_1,
+        F@_2,
+        NewFValue,
+        TrUserData
+    ).
 
-skip_varint_AccountLoginResp(<<1:1, _:7, Rest/binary>>,
-                             Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
-    skip_varint_AccountLoginResp(Rest,
-                                 Z1,
-                                 Z2,
-                                 F@_1,
-                                 F@_2,
-                                 F@_3,
-                                 TrUserData);
-skip_varint_AccountLoginResp(<<0:1, _:7, Rest/binary>>,
-                             Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
-    dfp_read_field_def_AccountLoginResp(Rest,
-                                        Z1,
-                                        Z2,
-                                        F@_1,
-                                        F@_2,
-                                        F@_3,
-                                        TrUserData).
+skip_varint_AccountLoginResp(
+    <<1:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) ->
+    skip_varint_AccountLoginResp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    );
+skip_varint_AccountLoginResp(
+    <<0:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) ->
+    dfp_read_field_def_AccountLoginResp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    ).
 
-skip_length_delimited_AccountLoginResp(<<1:1, X:7,
-                                         Rest/binary>>,
-                                       N, Acc, F@_1, F@_2, F@_3, TrUserData)
-    when N < 57 ->
-    skip_length_delimited_AccountLoginResp(Rest,
-                                           N + 7,
-                                           X bsl N + Acc,
-                                           F@_1,
-                                           F@_2,
-                                           F@_3,
-                                           TrUserData);
-skip_length_delimited_AccountLoginResp(<<0:1, X:7,
-                                         Rest/binary>>,
-                                       N, Acc, F@_1, F@_2, F@_3, TrUserData) ->
+skip_length_delimited_AccountLoginResp(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) when N < 57 ->
+    skip_length_delimited_AccountLoginResp(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    );
+skip_length_delimited_AccountLoginResp(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) ->
     Length = X bsl N + Acc,
     <<_:Length/binary, Rest2/binary>> = Rest,
-    dfp_read_field_def_AccountLoginResp(Rest2,
-                                        0,
-                                        0,
-                                        F@_1,
-                                        F@_2,
-                                        F@_3,
-                                        TrUserData).
+    dfp_read_field_def_AccountLoginResp(
+        Rest2,
+        0,
+        0,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    ).
 
-skip_group_AccountLoginResp(Bin, FNum, Z2, F@_1, F@_2,
-                            F@_3, TrUserData) ->
+skip_group_AccountLoginResp(
+    Bin,
+    FNum,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) ->
     {_, Rest} = read_group(Bin, FNum),
-    dfp_read_field_def_AccountLoginResp(Rest,
-                                        0,
-                                        Z2,
-                                        F@_1,
-                                        F@_2,
-                                        F@_3,
-                                        TrUserData).
+    dfp_read_field_def_AccountLoginResp(
+        Rest,
+        0,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    ).
 
-skip_32_AccountLoginResp(<<_:32, Rest/binary>>, Z1, Z2,
-                         F@_1, F@_2, F@_3, TrUserData) ->
-    dfp_read_field_def_AccountLoginResp(Rest,
-                                        Z1,
-                                        Z2,
-                                        F@_1,
-                                        F@_2,
-                                        F@_3,
-                                        TrUserData).
+skip_32_AccountLoginResp(
+    <<_:32, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) ->
+    dfp_read_field_def_AccountLoginResp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    ).
 
-skip_64_AccountLoginResp(<<_:64, Rest/binary>>, Z1, Z2,
-                         F@_1, F@_2, F@_3, TrUserData) ->
-    dfp_read_field_def_AccountLoginResp(Rest,
-                                        Z1,
-                                        Z2,
-                                        F@_1,
-                                        F@_2,
-                                        F@_3,
-                                        TrUserData).
+skip_64_AccountLoginResp(
+    <<_:64, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) ->
+    dfp_read_field_def_AccountLoginResp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    ).
 
 decode_msg_PlayerNewReq(Bin, TrUserData) ->
-    dfp_read_field_def_PlayerNewReq(Bin,
-                                    0,
-                                    0,
-                                    id(undefined, TrUserData),
-                                    id(undefined, TrUserData),
-                                    id(undefined, TrUserData),
-                                    id(undefined, TrUserData),
-                                    TrUserData).
+    dfp_read_field_def_PlayerNewReq(
+        Bin,
+        0,
+        0,
+        id(undefined, TrUserData),
+        id(undefined, TrUserData),
+        id(undefined, TrUserData),
+        id(undefined, TrUserData),
+        TrUserData
+    ).
 
-dfp_read_field_def_PlayerNewReq(<<10, Rest/binary>>, Z1,
-                                Z2, F@_1, F@_2, F@_3, F@_4, TrUserData) ->
-    d_field_PlayerNewReq_name(Rest,
-                              Z1,
-                              Z2,
-                              F@_1,
-                              F@_2,
-                              F@_3,
-                              F@_4,
-                              TrUserData);
-dfp_read_field_def_PlayerNewReq(<<18, Rest/binary>>, Z1,
-                                Z2, F@_1, F@_2, F@_3, F@_4, TrUserData) ->
-    d_field_PlayerNewReq_title(Rest,
-                               Z1,
-                               Z2,
-                               F@_1,
-                               F@_2,
-                               F@_3,
-                               F@_4,
-                               TrUserData);
-dfp_read_field_def_PlayerNewReq(<<24, Rest/binary>>, Z1,
-                                Z2, F@_1, F@_2, F@_3, F@_4, TrUserData) ->
-    d_field_PlayerNewReq_appearance(Rest,
-                                    Z1,
-                                    Z2,
-                                    F@_1,
-                                    F@_2,
-                                    F@_3,
-                                    F@_4,
-                                    TrUserData);
-dfp_read_field_def_PlayerNewReq(<<34, Rest/binary>>, Z1,
-                                Z2, F@_1, F@_2, F@_3, F@_4, TrUserData) ->
-    d_field_PlayerNewReq_role(Rest,
-                              Z1,
-                              Z2,
-                              F@_1,
-                              F@_2,
-                              F@_3,
-                              F@_4,
-                              TrUserData);
-dfp_read_field_def_PlayerNewReq(<<>>, 0, 0, F@_1, F@_2,
-                                F@_3, F@_4, _) ->
-    #'PlayerNewReq'{name = F@_1, title = F@_2,
-                    appearance = F@_3, role = F@_4};
-dfp_read_field_def_PlayerNewReq(Other, Z1, Z2, F@_1,
-                                F@_2, F@_3, F@_4, TrUserData) ->
-    dg_read_field_def_PlayerNewReq(Other,
-                                   Z1,
-                                   Z2,
-                                   F@_1,
-                                   F@_2,
-                                   F@_3,
-                                   F@_4,
-                                   TrUserData).
+dfp_read_field_def_PlayerNewReq(
+    <<10, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    TrUserData
+) ->
+    d_field_PlayerNewReq_name(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        TrUserData
+    );
+dfp_read_field_def_PlayerNewReq(
+    <<18, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    TrUserData
+) ->
+    d_field_PlayerNewReq_title(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        TrUserData
+    );
+dfp_read_field_def_PlayerNewReq(
+    <<24, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    TrUserData
+) ->
+    d_field_PlayerNewReq_appearance(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        TrUserData
+    );
+dfp_read_field_def_PlayerNewReq(
+    <<34, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    TrUserData
+) ->
+    d_field_PlayerNewReq_role(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        TrUserData
+    );
+dfp_read_field_def_PlayerNewReq(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    _
+) ->
+    #'PlayerNewReq'{
+        name = F@_1,
+        title = F@_2,
+        appearance = F@_3,
+        role = F@_4
+    };
+dfp_read_field_def_PlayerNewReq(
+    Other,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    TrUserData
+) ->
+    dg_read_field_def_PlayerNewReq(
+        Other,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        TrUserData
+    ).
 
-dg_read_field_def_PlayerNewReq(<<1:1, X:7,
-                                 Rest/binary>>,
-                               N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
-    when N < 32 - 7 ->
-    dg_read_field_def_PlayerNewReq(Rest,
-                                   N + 7,
-                                   X bsl N + Acc,
-                                   F@_1,
-                                   F@_2,
-                                   F@_3,
-                                   F@_4,
-                                   TrUserData);
-dg_read_field_def_PlayerNewReq(<<0:1, X:7,
-                                 Rest/binary>>,
-                               N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData) ->
+dg_read_field_def_PlayerNewReq(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    TrUserData
+) when N < 32 - 7 ->
+    dg_read_field_def_PlayerNewReq(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        TrUserData
+    );
+dg_read_field_def_PlayerNewReq(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    TrUserData
+) ->
     Key = X bsl N + Acc,
     case Key of
         10 ->
-            d_field_PlayerNewReq_name(Rest,
-                                      0,
-                                      0,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      F@_4,
-                                      TrUserData);
+            d_field_PlayerNewReq_name(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                F@_3,
+                F@_4,
+                TrUserData
+            );
         18 ->
-            d_field_PlayerNewReq_title(Rest,
-                                       0,
-                                       0,
-                                       F@_1,
-                                       F@_2,
-                                       F@_3,
-                                       F@_4,
-                                       TrUserData);
+            d_field_PlayerNewReq_title(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                F@_3,
+                F@_4,
+                TrUserData
+            );
         24 ->
-            d_field_PlayerNewReq_appearance(Rest,
-                                            0,
-                                            0,
-                                            F@_1,
-                                            F@_2,
-                                            F@_3,
-                                            F@_4,
-                                            TrUserData);
+            d_field_PlayerNewReq_appearance(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                F@_3,
+                F@_4,
+                TrUserData
+            );
         34 ->
-            d_field_PlayerNewReq_role(Rest,
-                                      0,
-                                      0,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      F@_4,
-                                      TrUserData);
+            d_field_PlayerNewReq_role(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                F@_3,
+                F@_4,
+                TrUserData
+            );
         _ ->
             case Key band 7 of
                 0 ->
-                    skip_varint_PlayerNewReq(Rest,
-                                             0,
-                                             0,
-                                             F@_1,
-                                             F@_2,
-                                             F@_3,
-                                             F@_4,
-                                             TrUserData);
+                    skip_varint_PlayerNewReq(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        F@_3,
+                        F@_4,
+                        TrUserData
+                    );
                 1 ->
-                    skip_64_PlayerNewReq(Rest,
-                                         0,
-                                         0,
-                                         F@_1,
-                                         F@_2,
-                                         F@_3,
-                                         F@_4,
-                                         TrUserData);
+                    skip_64_PlayerNewReq(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        F@_3,
+                        F@_4,
+                        TrUserData
+                    );
                 2 ->
-                    skip_length_delimited_PlayerNewReq(Rest,
-                                                       0,
-                                                       0,
-                                                       F@_1,
-                                                       F@_2,
-                                                       F@_3,
-                                                       F@_4,
-                                                       TrUserData);
+                    skip_length_delimited_PlayerNewReq(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        F@_3,
+                        F@_4,
+                        TrUserData
+                    );
                 3 ->
-                    skip_group_PlayerNewReq(Rest,
-                                            Key bsr 3,
-                                            0,
-                                            F@_1,
-                                            F@_2,
-                                            F@_3,
-                                            F@_4,
-                                            TrUserData);
+                    skip_group_PlayerNewReq(
+                        Rest,
+                        Key bsr 3,
+                        0,
+                        F@_1,
+                        F@_2,
+                        F@_3,
+                        F@_4,
+                        TrUserData
+                    );
                 5 ->
-                    skip_32_PlayerNewReq(Rest,
-                                         0,
-                                         0,
-                                         F@_1,
-                                         F@_2,
-                                         F@_3,
-                                         F@_4,
-                                         TrUserData)
+                    skip_32_PlayerNewReq(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        F@_3,
+                        F@_4,
+                        TrUserData
+                    )
             end
     end;
-dg_read_field_def_PlayerNewReq(<<>>, 0, 0, F@_1, F@_2,
-                               F@_3, F@_4, _) ->
-    #'PlayerNewReq'{name = F@_1, title = F@_2,
-                    appearance = F@_3, role = F@_4}.
+dg_read_field_def_PlayerNewReq(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    _
+) ->
+    #'PlayerNewReq'{
+        name = F@_1,
+        title = F@_2,
+        appearance = F@_3,
+        role = F@_4
+    }.
 
-d_field_PlayerNewReq_name(<<1:1, X:7, Rest/binary>>, N,
-                          Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
-    when N < 57 ->
-    d_field_PlayerNewReq_name(Rest,
-                              N + 7,
-                              X bsl N + Acc,
-                              F@_1,
-                              F@_2,
-                              F@_3,
-                              F@_4,
-                              TrUserData);
-d_field_PlayerNewReq_name(<<0:1, X:7, Rest/binary>>, N,
-                          Acc, _, F@_2, F@_3, F@_4, TrUserData) ->
+d_field_PlayerNewReq_name(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    TrUserData
+) when N < 57 ->
+    d_field_PlayerNewReq_name(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        TrUserData
+    );
+d_field_PlayerNewReq_name(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    _,
+    F@_2,
+    F@_3,
+    F@_4,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_PlayerNewReq(RestF,
-                                    0,
-                                    0,
-                                    NewFValue,
-                                    F@_2,
-                                    F@_3,
-                                    F@_4,
-                                    TrUserData).
+        Len = X bsl N + Acc,
+        <<Bytes:Len/binary, Rest2/binary>> = Rest,
+        {id(binary:copy(Bytes), TrUserData), Rest2}
+    end,
+    dfp_read_field_def_PlayerNewReq(
+        RestF,
+        0,
+        0,
+        NewFValue,
+        F@_2,
+        F@_3,
+        F@_4,
+        TrUserData
+    ).
 
-d_field_PlayerNewReq_title(<<1:1, X:7, Rest/binary>>, N,
-                           Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
-    when N < 57 ->
-    d_field_PlayerNewReq_title(Rest,
-                               N + 7,
-                               X bsl N + Acc,
-                               F@_1,
-                               F@_2,
-                               F@_3,
-                               F@_4,
-                               TrUserData);
-d_field_PlayerNewReq_title(<<0:1, X:7, Rest/binary>>, N,
-                           Acc, F@_1, _, F@_3, F@_4, TrUserData) ->
+d_field_PlayerNewReq_title(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    TrUserData
+) when N < 57 ->
+    d_field_PlayerNewReq_title(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        TrUserData
+    );
+d_field_PlayerNewReq_title(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    _,
+    F@_3,
+    F@_4,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_PlayerNewReq(RestF,
-                                    0,
-                                    0,
-                                    F@_1,
-                                    NewFValue,
-                                    F@_3,
-                                    F@_4,
-                                    TrUserData).
+        Len = X bsl N + Acc,
+        <<Bytes:Len/binary, Rest2/binary>> = Rest,
+        {id(binary:copy(Bytes), TrUserData), Rest2}
+    end,
+    dfp_read_field_def_PlayerNewReq(
+        RestF,
+        0,
+        0,
+        F@_1,
+        NewFValue,
+        F@_3,
+        F@_4,
+        TrUserData
+    ).
 
-d_field_PlayerNewReq_appearance(<<1:1, X:7,
-                                  Rest/binary>>,
-                                N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
-    when N < 57 ->
-    d_field_PlayerNewReq_appearance(Rest,
-                                    N + 7,
-                                    X bsl N + Acc,
-                                    F@_1,
-                                    F@_2,
-                                    F@_3,
-                                    F@_4,
-                                    TrUserData);
-d_field_PlayerNewReq_appearance(<<0:1, X:7,
-                                  Rest/binary>>,
-                                N, Acc, F@_1, F@_2, _, F@_4, TrUserData) ->
-    {NewFValue, RestF} = {id(X bsl N + Acc, TrUserData),
-                          Rest},
-    dfp_read_field_def_PlayerNewReq(RestF,
-                                    0,
-                                    0,
-                                    F@_1,
-                                    F@_2,
-                                    NewFValue,
-                                    F@_4,
-                                    TrUserData).
+d_field_PlayerNewReq_appearance(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    TrUserData
+) when N < 57 ->
+    d_field_PlayerNewReq_appearance(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        TrUserData
+    );
+d_field_PlayerNewReq_appearance(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    _,
+    F@_4,
+    TrUserData
+) ->
+    {NewFValue, RestF} = {id(X bsl N + Acc, TrUserData), Rest},
+    dfp_read_field_def_PlayerNewReq(
+        RestF,
+        0,
+        0,
+        F@_1,
+        F@_2,
+        NewFValue,
+        F@_4,
+        TrUserData
+    ).
 
-d_field_PlayerNewReq_role(<<1:1, X:7, Rest/binary>>, N,
-                          Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
-    when N < 57 ->
-    d_field_PlayerNewReq_role(Rest,
-                              N + 7,
-                              X bsl N + Acc,
-                              F@_1,
-                              F@_2,
-                              F@_3,
-                              F@_4,
-                              TrUserData);
-d_field_PlayerNewReq_role(<<0:1, X:7, Rest/binary>>, N,
-                          Acc, F@_1, F@_2, F@_3, _, TrUserData) ->
+d_field_PlayerNewReq_role(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    TrUserData
+) when N < 57 ->
+    d_field_PlayerNewReq_role(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        TrUserData
+    );
+d_field_PlayerNewReq_role(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    _,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_PlayerNewReq(RestF,
-                                    0,
-                                    0,
-                                    F@_1,
-                                    F@_2,
-                                    F@_3,
-                                    NewFValue,
-                                    TrUserData).
+        Len = X bsl N + Acc,
+        <<Bytes:Len/binary, Rest2/binary>> = Rest,
+        {id(binary:copy(Bytes), TrUserData), Rest2}
+    end,
+    dfp_read_field_def_PlayerNewReq(
+        RestF,
+        0,
+        0,
+        F@_1,
+        F@_2,
+        F@_3,
+        NewFValue,
+        TrUserData
+    ).
 
-skip_varint_PlayerNewReq(<<1:1, _:7, Rest/binary>>, Z1,
-                         Z2, F@_1, F@_2, F@_3, F@_4, TrUserData) ->
-    skip_varint_PlayerNewReq(Rest,
-                             Z1,
-                             Z2,
-                             F@_1,
-                             F@_2,
-                             F@_3,
-                             F@_4,
-                             TrUserData);
-skip_varint_PlayerNewReq(<<0:1, _:7, Rest/binary>>, Z1,
-                         Z2, F@_1, F@_2, F@_3, F@_4, TrUserData) ->
-    dfp_read_field_def_PlayerNewReq(Rest,
-                                    Z1,
-                                    Z2,
-                                    F@_1,
-                                    F@_2,
-                                    F@_3,
-                                    F@_4,
-                                    TrUserData).
+skip_varint_PlayerNewReq(
+    <<1:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    TrUserData
+) ->
+    skip_varint_PlayerNewReq(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        TrUserData
+    );
+skip_varint_PlayerNewReq(
+    <<0:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    TrUserData
+) ->
+    dfp_read_field_def_PlayerNewReq(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        TrUserData
+    ).
 
-skip_length_delimited_PlayerNewReq(<<1:1, X:7,
-                                     Rest/binary>>,
-                                   N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
-    when N < 57 ->
-    skip_length_delimited_PlayerNewReq(Rest,
-                                       N + 7,
-                                       X bsl N + Acc,
-                                       F@_1,
-                                       F@_2,
-                                       F@_3,
-                                       F@_4,
-                                       TrUserData);
-skip_length_delimited_PlayerNewReq(<<0:1, X:7,
-                                     Rest/binary>>,
-                                   N, Acc, F@_1, F@_2, F@_3, F@_4,
-                                   TrUserData) ->
+skip_length_delimited_PlayerNewReq(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    TrUserData
+) when N < 57 ->
+    skip_length_delimited_PlayerNewReq(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        TrUserData
+    );
+skip_length_delimited_PlayerNewReq(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    TrUserData
+) ->
     Length = X bsl N + Acc,
     <<_:Length/binary, Rest2/binary>> = Rest,
-    dfp_read_field_def_PlayerNewReq(Rest2,
-                                    0,
-                                    0,
-                                    F@_1,
-                                    F@_2,
-                                    F@_3,
-                                    F@_4,
-                                    TrUserData).
+    dfp_read_field_def_PlayerNewReq(
+        Rest2,
+        0,
+        0,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        TrUserData
+    ).
 
-skip_group_PlayerNewReq(Bin, FNum, Z2, F@_1, F@_2, F@_3,
-                        F@_4, TrUserData) ->
+skip_group_PlayerNewReq(
+    Bin,
+    FNum,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    TrUserData
+) ->
     {_, Rest} = read_group(Bin, FNum),
-    dfp_read_field_def_PlayerNewReq(Rest,
-                                    0,
-                                    Z2,
-                                    F@_1,
-                                    F@_2,
-                                    F@_3,
-                                    F@_4,
-                                    TrUserData).
+    dfp_read_field_def_PlayerNewReq(
+        Rest,
+        0,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        TrUserData
+    ).
 
-skip_32_PlayerNewReq(<<_:32, Rest/binary>>, Z1, Z2,
-                     F@_1, F@_2, F@_3, F@_4, TrUserData) ->
-    dfp_read_field_def_PlayerNewReq(Rest,
-                                    Z1,
-                                    Z2,
-                                    F@_1,
-                                    F@_2,
-                                    F@_3,
-                                    F@_4,
-                                    TrUserData).
+skip_32_PlayerNewReq(
+    <<_:32, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    TrUserData
+) ->
+    dfp_read_field_def_PlayerNewReq(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        TrUserData
+    ).
 
-skip_64_PlayerNewReq(<<_:64, Rest/binary>>, Z1, Z2,
-                     F@_1, F@_2, F@_3, F@_4, TrUserData) ->
-    dfp_read_field_def_PlayerNewReq(Rest,
-                                    Z1,
-                                    Z2,
-                                    F@_1,
-                                    F@_2,
-                                    F@_3,
-                                    F@_4,
-                                    TrUserData).
+skip_64_PlayerNewReq(
+    <<_:64, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    F@_4,
+    TrUserData
+) ->
+    dfp_read_field_def_PlayerNewReq(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        F@_4,
+        TrUserData
+    ).
 
 decode_msg_PlayerNewResp(Bin, TrUserData) ->
-    dfp_read_field_def_PlayerNewResp(Bin,
-                                     0,
-                                     0,
-                                     id(undefined, TrUserData),
-                                     id(undefined, TrUserData),
-                                     TrUserData).
+    dfp_read_field_def_PlayerNewResp(
+        Bin,
+        0,
+        0,
+        id(undefined, TrUserData),
+        id(undefined, TrUserData),
+        TrUserData
+    ).
 
-dfp_read_field_def_PlayerNewResp(<<8, Rest/binary>>, Z1,
-                                 Z2, F@_1, F@_2, TrUserData) ->
-    d_field_PlayerNewResp_status(Rest,
-                                 Z1,
-                                 Z2,
-                                 F@_1,
-                                 F@_2,
-                                 TrUserData);
-dfp_read_field_def_PlayerNewResp(<<26, Rest/binary>>,
-                                 Z1, Z2, F@_1, F@_2, TrUserData) ->
-    d_field_PlayerNewResp_error(Rest,
-                                Z1,
-                                Z2,
-                                F@_1,
-                                F@_2,
-                                TrUserData);
-dfp_read_field_def_PlayerNewResp(<<>>, 0, 0, F@_1, F@_2,
-                                 _) ->
+dfp_read_field_def_PlayerNewResp(
+    <<8, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    d_field_PlayerNewResp_status(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dfp_read_field_def_PlayerNewResp(
+    <<26, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    d_field_PlayerNewResp_error(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dfp_read_field_def_PlayerNewResp(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    F@_2,
+    _
+) ->
     #'PlayerNewResp'{status = F@_1, error = F@_2};
-dfp_read_field_def_PlayerNewResp(Other, Z1, Z2, F@_1,
-                                 F@_2, TrUserData) ->
-    dg_read_field_def_PlayerNewResp(Other,
-                                    Z1,
-                                    Z2,
-                                    F@_1,
-                                    F@_2,
-                                    TrUserData).
+dfp_read_field_def_PlayerNewResp(
+    Other,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dg_read_field_def_PlayerNewResp(
+        Other,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-dg_read_field_def_PlayerNewResp(<<1:1, X:7,
-                                  Rest/binary>>,
-                                N, Acc, F@_1, F@_2, TrUserData)
-    when N < 32 - 7 ->
-    dg_read_field_def_PlayerNewResp(Rest,
-                                    N + 7,
-                                    X bsl N + Acc,
-                                    F@_1,
-                                    F@_2,
-                                    TrUserData);
-dg_read_field_def_PlayerNewResp(<<0:1, X:7,
-                                  Rest/binary>>,
-                                N, Acc, F@_1, F@_2, TrUserData) ->
+dg_read_field_def_PlayerNewResp(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 32 - 7 ->
+    dg_read_field_def_PlayerNewResp(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dg_read_field_def_PlayerNewResp(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     Key = X bsl N + Acc,
     case Key of
         8 ->
-            d_field_PlayerNewResp_status(Rest,
-                                         0,
-                                         0,
-                                         F@_1,
-                                         F@_2,
-                                         TrUserData);
+            d_field_PlayerNewResp_status(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                TrUserData
+            );
         26 ->
-            d_field_PlayerNewResp_error(Rest,
-                                        0,
-                                        0,
-                                        F@_1,
-                                        F@_2,
-                                        TrUserData);
+            d_field_PlayerNewResp_error(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                TrUserData
+            );
         _ ->
             case Key band 7 of
                 0 ->
-                    skip_varint_PlayerNewResp(Rest,
-                                              0,
-                                              0,
-                                              F@_1,
-                                              F@_2,
-                                              TrUserData);
+                    skip_varint_PlayerNewResp(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 1 ->
-                    skip_64_PlayerNewResp(Rest,
-                                          0,
-                                          0,
-                                          F@_1,
-                                          F@_2,
-                                          TrUserData);
+                    skip_64_PlayerNewResp(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 2 ->
-                    skip_length_delimited_PlayerNewResp(Rest,
-                                                        0,
-                                                        0,
-                                                        F@_1,
-                                                        F@_2,
-                                                        TrUserData);
+                    skip_length_delimited_PlayerNewResp(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 3 ->
-                    skip_group_PlayerNewResp(Rest,
-                                             Key bsr 3,
-                                             0,
-                                             F@_1,
-                                             F@_2,
-                                             TrUserData);
+                    skip_group_PlayerNewResp(
+                        Rest,
+                        Key bsr 3,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 5 ->
-                    skip_32_PlayerNewResp(Rest,
-                                          0,
-                                          0,
-                                          F@_1,
-                                          F@_2,
-                                          TrUserData)
+                    skip_32_PlayerNewResp(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    )
             end
     end;
-dg_read_field_def_PlayerNewResp(<<>>, 0, 0, F@_1, F@_2,
-                                _) ->
+dg_read_field_def_PlayerNewResp(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    F@_2,
+    _
+) ->
     #'PlayerNewResp'{status = F@_1, error = F@_2}.
 
-d_field_PlayerNewResp_status(<<1:1, X:7, Rest/binary>>,
-                             N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    d_field_PlayerNewResp_status(Rest,
-                                 N + 7,
-                                 X bsl N + Acc,
-                                 F@_1,
-                                 F@_2,
-                                 TrUserData);
-d_field_PlayerNewResp_status(<<0:1, X:7, Rest/binary>>,
-                             N, Acc, _, F@_2, TrUserData) ->
+d_field_PlayerNewResp_status(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    d_field_PlayerNewResp_status(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+d_field_PlayerNewResp_status(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    _,
+    F@_2,
+    TrUserData
+) ->
     {NewFValue, RestF} =
-        {id('d_enum_PlayerNewResp.Status'(begin
-                                              <<Res:32/signed-native>> = <<(X
-                                                                                bsl
-                                                                                N
-                                                                                +
-                                                                                Acc):32/unsigned-native>>,
-                                              id(Res, TrUserData)
-                                          end),
-            TrUserData),
-         Rest},
-    dfp_read_field_def_PlayerNewResp(RestF,
-                                     0,
-                                     0,
-                                     NewFValue,
-                                     F@_2,
-                                     TrUserData).
+        {id(
+                'd_enum_PlayerNewResp.Status'(begin
+                    <<Res:32/signed-native>> =
+                        <<(X bsl
+                                N +
+                                Acc):32/unsigned-native>>,
+                    id(Res, TrUserData)
+                end),
+                TrUserData
+            ),
+            Rest},
+    dfp_read_field_def_PlayerNewResp(
+        RestF,
+        0,
+        0,
+        NewFValue,
+        F@_2,
+        TrUserData
+    ).
 
-d_field_PlayerNewResp_error(<<1:1, X:7, Rest/binary>>,
-                            N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    d_field_PlayerNewResp_error(Rest,
-                                N + 7,
-                                X bsl N + Acc,
-                                F@_1,
-                                F@_2,
-                                TrUserData);
-d_field_PlayerNewResp_error(<<0:1, X:7, Rest/binary>>,
-                            N, Acc, F@_1, _, TrUserData) ->
+d_field_PlayerNewResp_error(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    d_field_PlayerNewResp_error(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+d_field_PlayerNewResp_error(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    _,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_PlayerNewResp(RestF,
-                                     0,
-                                     0,
-                                     F@_1,
-                                     NewFValue,
-                                     TrUserData).
+        Len = X bsl N + Acc,
+        <<Bytes:Len/binary, Rest2/binary>> = Rest,
+        {id(binary:copy(Bytes), TrUserData), Rest2}
+    end,
+    dfp_read_field_def_PlayerNewResp(
+        RestF,
+        0,
+        0,
+        F@_1,
+        NewFValue,
+        TrUserData
+    ).
 
-skip_varint_PlayerNewResp(<<1:1, _:7, Rest/binary>>, Z1,
-                          Z2, F@_1, F@_2, TrUserData) ->
-    skip_varint_PlayerNewResp(Rest,
-                              Z1,
-                              Z2,
-                              F@_1,
-                              F@_2,
-                              TrUserData);
-skip_varint_PlayerNewResp(<<0:1, _:7, Rest/binary>>, Z1,
-                          Z2, F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_PlayerNewResp(Rest,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData).
+skip_varint_PlayerNewResp(
+    <<1:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    skip_varint_PlayerNewResp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+skip_varint_PlayerNewResp(
+    <<0:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_PlayerNewResp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_length_delimited_PlayerNewResp(<<1:1, X:7,
-                                      Rest/binary>>,
-                                    N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    skip_length_delimited_PlayerNewResp(Rest,
-                                        N + 7,
-                                        X bsl N + Acc,
-                                        F@_1,
-                                        F@_2,
-                                        TrUserData);
-skip_length_delimited_PlayerNewResp(<<0:1, X:7,
-                                      Rest/binary>>,
-                                    N, Acc, F@_1, F@_2, TrUserData) ->
+skip_length_delimited_PlayerNewResp(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    skip_length_delimited_PlayerNewResp(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+skip_length_delimited_PlayerNewResp(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     Length = X bsl N + Acc,
     <<_:Length/binary, Rest2/binary>> = Rest,
-    dfp_read_field_def_PlayerNewResp(Rest2,
-                                     0,
-                                     0,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData).
+    dfp_read_field_def_PlayerNewResp(
+        Rest2,
+        0,
+        0,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_group_PlayerNewResp(Bin, FNum, Z2, F@_1, F@_2,
-                         TrUserData) ->
+skip_group_PlayerNewResp(
+    Bin,
+    FNum,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     {_, Rest} = read_group(Bin, FNum),
-    dfp_read_field_def_PlayerNewResp(Rest,
-                                     0,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData).
+    dfp_read_field_def_PlayerNewResp(
+        Rest,
+        0,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_32_PlayerNewResp(<<_:32, Rest/binary>>, Z1, Z2,
-                      F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_PlayerNewResp(Rest,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData).
+skip_32_PlayerNewResp(
+    <<_:32, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_PlayerNewResp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_64_PlayerNewResp(<<_:64, Rest/binary>>, Z1, Z2,
-                      F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_PlayerNewResp(Rest,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData).
+skip_64_PlayerNewResp(
+    <<_:64, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_PlayerNewResp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
 decode_msg_PlayerAuthenticate(Bin, TrUserData) ->
-    dfp_read_field_def_PlayerAuthenticate(Bin,
-                                          0,
-                                          0,
-                                          id(undefined, TrUserData),
-                                          TrUserData).
+    dfp_read_field_def_PlayerAuthenticate(
+        Bin,
+        0,
+        0,
+        id(undefined, TrUserData),
+        TrUserData
+    ).
 
-dfp_read_field_def_PlayerAuthenticate(<<10,
-                                        Rest/binary>>,
-                                      Z1, Z2, F@_1, TrUserData) ->
-    d_field_PlayerAuthenticate_id(Rest,
-                                  Z1,
-                                  Z2,
-                                  F@_1,
-                                  TrUserData);
-dfp_read_field_def_PlayerAuthenticate(<<>>, 0, 0, F@_1,
-                                      _) ->
+dfp_read_field_def_PlayerAuthenticate(
+    <<10, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    d_field_PlayerAuthenticate_id(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    );
+dfp_read_field_def_PlayerAuthenticate(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    _
+) ->
     #'PlayerAuthenticate'{id = F@_1};
-dfp_read_field_def_PlayerAuthenticate(Other, Z1, Z2,
-                                      F@_1, TrUserData) ->
-    dg_read_field_def_PlayerAuthenticate(Other,
-                                         Z1,
-                                         Z2,
-                                         F@_1,
-                                         TrUserData).
+dfp_read_field_def_PlayerAuthenticate(
+    Other,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    dg_read_field_def_PlayerAuthenticate(
+        Other,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
-dg_read_field_def_PlayerAuthenticate(<<1:1, X:7,
-                                       Rest/binary>>,
-                                     N, Acc, F@_1, TrUserData)
-    when N < 32 - 7 ->
-    dg_read_field_def_PlayerAuthenticate(Rest,
-                                         N + 7,
-                                         X bsl N + Acc,
-                                         F@_1,
-                                         TrUserData);
-dg_read_field_def_PlayerAuthenticate(<<0:1, X:7,
-                                       Rest/binary>>,
-                                     N, Acc, F@_1, TrUserData) ->
+dg_read_field_def_PlayerAuthenticate(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) when N < 32 - 7 ->
+    dg_read_field_def_PlayerAuthenticate(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        TrUserData
+    );
+dg_read_field_def_PlayerAuthenticate(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) ->
     Key = X bsl N + Acc,
     case Key of
         10 ->
-            d_field_PlayerAuthenticate_id(Rest,
-                                          0,
-                                          0,
-                                          F@_1,
-                                          TrUserData);
+            d_field_PlayerAuthenticate_id(
+                Rest,
+                0,
+                0,
+                F@_1,
+                TrUserData
+            );
         _ ->
             case Key band 7 of
                 0 ->
-                    skip_varint_PlayerAuthenticate(Rest,
-                                                   0,
-                                                   0,
-                                                   F@_1,
-                                                   TrUserData);
+                    skip_varint_PlayerAuthenticate(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        TrUserData
+                    );
                 1 ->
-                    skip_64_PlayerAuthenticate(Rest,
-                                               0,
-                                               0,
-                                               F@_1,
-                                               TrUserData);
+                    skip_64_PlayerAuthenticate(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        TrUserData
+                    );
                 2 ->
-                    skip_length_delimited_PlayerAuthenticate(Rest,
-                                                             0,
-                                                             0,
-                                                             F@_1,
-                                                             TrUserData);
+                    skip_length_delimited_PlayerAuthenticate(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        TrUserData
+                    );
                 3 ->
-                    skip_group_PlayerAuthenticate(Rest,
-                                                  Key bsr 3,
-                                                  0,
-                                                  F@_1,
-                                                  TrUserData);
+                    skip_group_PlayerAuthenticate(
+                        Rest,
+                        Key bsr 3,
+                        0,
+                        F@_1,
+                        TrUserData
+                    );
                 5 ->
                     skip_32_PlayerAuthenticate(Rest, 0, 0, F@_1, TrUserData)
             end
     end;
-dg_read_field_def_PlayerAuthenticate(<<>>, 0, 0, F@_1,
-                                     _) ->
+dg_read_field_def_PlayerAuthenticate(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    _
+) ->
     #'PlayerAuthenticate'{id = F@_1}.
 
-d_field_PlayerAuthenticate_id(<<1:1, X:7, Rest/binary>>,
-                              N, Acc, F@_1, TrUserData)
-    when N < 57 ->
-    d_field_PlayerAuthenticate_id(Rest,
-                                  N + 7,
-                                  X bsl N + Acc,
-                                  F@_1,
-                                  TrUserData);
-d_field_PlayerAuthenticate_id(<<0:1, X:7, Rest/binary>>,
-                              N, Acc, _, TrUserData) ->
+d_field_PlayerAuthenticate_id(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) when N < 57 ->
+    d_field_PlayerAuthenticate_id(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        TrUserData
+    );
+d_field_PlayerAuthenticate_id(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    _,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_PlayerAuthenticate(RestF,
-                                          0,
-                                          0,
-                                          NewFValue,
-                                          TrUserData).
+        Len = X bsl N + Acc,
+        <<Bytes:Len/binary, Rest2/binary>> = Rest,
+        {id(binary:copy(Bytes), TrUserData), Rest2}
+    end,
+    dfp_read_field_def_PlayerAuthenticate(
+        RestF,
+        0,
+        0,
+        NewFValue,
+        TrUserData
+    ).
 
-skip_varint_PlayerAuthenticate(<<1:1, _:7,
-                                 Rest/binary>>,
-                               Z1, Z2, F@_1, TrUserData) ->
-    skip_varint_PlayerAuthenticate(Rest,
-                                   Z1,
-                                   Z2,
-                                   F@_1,
-                                   TrUserData);
-skip_varint_PlayerAuthenticate(<<0:1, _:7,
-                                 Rest/binary>>,
-                               Z1, Z2, F@_1, TrUserData) ->
-    dfp_read_field_def_PlayerAuthenticate(Rest,
-                                          Z1,
-                                          Z2,
-                                          F@_1,
-                                          TrUserData).
+skip_varint_PlayerAuthenticate(
+    <<1:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    skip_varint_PlayerAuthenticate(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    );
+skip_varint_PlayerAuthenticate(
+    <<0:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    dfp_read_field_def_PlayerAuthenticate(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
-skip_length_delimited_PlayerAuthenticate(<<1:1, X:7,
-                                           Rest/binary>>,
-                                         N, Acc, F@_1, TrUserData)
-    when N < 57 ->
-    skip_length_delimited_PlayerAuthenticate(Rest,
-                                             N + 7,
-                                             X bsl N + Acc,
-                                             F@_1,
-                                             TrUserData);
-skip_length_delimited_PlayerAuthenticate(<<0:1, X:7,
-                                           Rest/binary>>,
-                                         N, Acc, F@_1, TrUserData) ->
+skip_length_delimited_PlayerAuthenticate(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) when N < 57 ->
+    skip_length_delimited_PlayerAuthenticate(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        TrUserData
+    );
+skip_length_delimited_PlayerAuthenticate(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) ->
     Length = X bsl N + Acc,
     <<_:Length/binary, Rest2/binary>> = Rest,
-    dfp_read_field_def_PlayerAuthenticate(Rest2,
-                                          0,
-                                          0,
-                                          F@_1,
-                                          TrUserData).
+    dfp_read_field_def_PlayerAuthenticate(
+        Rest2,
+        0,
+        0,
+        F@_1,
+        TrUserData
+    ).
 
-skip_group_PlayerAuthenticate(Bin, FNum, Z2, F@_1,
-                              TrUserData) ->
+skip_group_PlayerAuthenticate(
+    Bin,
+    FNum,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
     {_, Rest} = read_group(Bin, FNum),
-    dfp_read_field_def_PlayerAuthenticate(Rest,
-                                          0,
-                                          Z2,
-                                          F@_1,
-                                          TrUserData).
+    dfp_read_field_def_PlayerAuthenticate(
+        Rest,
+        0,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
-skip_32_PlayerAuthenticate(<<_:32, Rest/binary>>, Z1,
-                           Z2, F@_1, TrUserData) ->
-    dfp_read_field_def_PlayerAuthenticate(Rest,
-                                          Z1,
-                                          Z2,
-                                          F@_1,
-                                          TrUserData).
+skip_32_PlayerAuthenticate(
+    <<_:32, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    dfp_read_field_def_PlayerAuthenticate(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
-skip_64_PlayerAuthenticate(<<_:64, Rest/binary>>, Z1,
-                           Z2, F@_1, TrUserData) ->
-    dfp_read_field_def_PlayerAuthenticate(Rest,
-                                          Z1,
-                                          Z2,
-                                          F@_1,
-                                          TrUserData).
+skip_64_PlayerAuthenticate(
+    <<_:64, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    dfp_read_field_def_PlayerAuthenticate(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
 decode_msg_PlayerLog(Bin, TrUserData) ->
-    dfp_read_field_def_PlayerLog(Bin,
-                                 0,
-                                 0,
-                                 id(undefined, TrUserData),
-                                 TrUserData).
+    dfp_read_field_def_PlayerLog(
+        Bin,
+        0,
+        0,
+        id(undefined, TrUserData),
+        TrUserData
+    ).
 
-dfp_read_field_def_PlayerLog(<<18, Rest/binary>>, Z1,
-                             Z2, F@_1, TrUserData) ->
+dfp_read_field_def_PlayerLog(
+    <<18, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
     d_field_PlayerLog_msg(Rest, Z1, Z2, F@_1, TrUserData);
 dfp_read_field_def_PlayerLog(<<>>, 0, 0, F@_1, _) ->
     #'PlayerLog'{msg = F@_1};
-dfp_read_field_def_PlayerLog(Other, Z1, Z2, F@_1,
-                             TrUserData) ->
-    dg_read_field_def_PlayerLog(Other,
-                                Z1,
-                                Z2,
-                                F@_1,
-                                TrUserData).
+dfp_read_field_def_PlayerLog(
+    Other,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    dg_read_field_def_PlayerLog(
+        Other,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
-dg_read_field_def_PlayerLog(<<1:1, X:7, Rest/binary>>,
-                            N, Acc, F@_1, TrUserData)
-    when N < 32 - 7 ->
-    dg_read_field_def_PlayerLog(Rest,
-                                N + 7,
-                                X bsl N + Acc,
-                                F@_1,
-                                TrUserData);
-dg_read_field_def_PlayerLog(<<0:1, X:7, Rest/binary>>,
-                            N, Acc, F@_1, TrUserData) ->
+dg_read_field_def_PlayerLog(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) when N < 32 - 7 ->
+    dg_read_field_def_PlayerLog(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        TrUserData
+    );
+dg_read_field_def_PlayerLog(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) ->
     Key = X bsl N + Acc,
     case Key of
         18 ->
@@ -3948,1576 +6303,2621 @@ dg_read_field_def_PlayerLog(<<0:1, X:7, Rest/binary>>,
             case Key band 7 of
                 0 ->
                     skip_varint_PlayerLog(Rest, 0, 0, F@_1, TrUserData);
-                1 -> skip_64_PlayerLog(Rest, 0, 0, F@_1, TrUserData);
+                1 ->
+                    skip_64_PlayerLog(Rest, 0, 0, F@_1, TrUserData);
                 2 ->
-                    skip_length_delimited_PlayerLog(Rest,
-                                                    0,
-                                                    0,
-                                                    F@_1,
-                                                    TrUserData);
+                    skip_length_delimited_PlayerLog(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        TrUserData
+                    );
                 3 ->
-                    skip_group_PlayerLog(Rest,
-                                         Key bsr 3,
-                                         0,
-                                         F@_1,
-                                         TrUserData);
-                5 -> skip_32_PlayerLog(Rest, 0, 0, F@_1, TrUserData)
+                    skip_group_PlayerLog(
+                        Rest,
+                        Key bsr 3,
+                        0,
+                        F@_1,
+                        TrUserData
+                    );
+                5 ->
+                    skip_32_PlayerLog(Rest, 0, 0, F@_1, TrUserData)
             end
     end;
 dg_read_field_def_PlayerLog(<<>>, 0, 0, F@_1, _) ->
     #'PlayerLog'{msg = F@_1}.
 
-d_field_PlayerLog_msg(<<1:1, X:7, Rest/binary>>, N, Acc,
-                      F@_1, TrUserData)
-    when N < 57 ->
-    d_field_PlayerLog_msg(Rest,
-                          N + 7,
-                          X bsl N + Acc,
-                          F@_1,
-                          TrUserData);
-d_field_PlayerLog_msg(<<0:1, X:7, Rest/binary>>, N, Acc,
-                      _, TrUserData) ->
+d_field_PlayerLog_msg(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) when N < 57 ->
+    d_field_PlayerLog_msg(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        TrUserData
+    );
+d_field_PlayerLog_msg(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    _,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_PlayerLog(RestF,
-                                 0,
-                                 0,
-                                 NewFValue,
-                                 TrUserData).
+        Len = X bsl N + Acc,
+        <<Bytes:Len/binary, Rest2/binary>> = Rest,
+        {id(binary:copy(Bytes), TrUserData), Rest2}
+    end,
+    dfp_read_field_def_PlayerLog(
+        RestF,
+        0,
+        0,
+        NewFValue,
+        TrUserData
+    ).
 
-skip_varint_PlayerLog(<<1:1, _:7, Rest/binary>>, Z1, Z2,
-                      F@_1, TrUserData) ->
+skip_varint_PlayerLog(
+    <<1:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
     skip_varint_PlayerLog(Rest, Z1, Z2, F@_1, TrUserData);
-skip_varint_PlayerLog(<<0:1, _:7, Rest/binary>>, Z1, Z2,
-                      F@_1, TrUserData) ->
-    dfp_read_field_def_PlayerLog(Rest,
-                                 Z1,
-                                 Z2,
-                                 F@_1,
-                                 TrUserData).
+skip_varint_PlayerLog(
+    <<0:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    dfp_read_field_def_PlayerLog(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
-skip_length_delimited_PlayerLog(<<1:1, X:7,
-                                  Rest/binary>>,
-                                N, Acc, F@_1, TrUserData)
-    when N < 57 ->
-    skip_length_delimited_PlayerLog(Rest,
-                                    N + 7,
-                                    X bsl N + Acc,
-                                    F@_1,
-                                    TrUserData);
-skip_length_delimited_PlayerLog(<<0:1, X:7,
-                                  Rest/binary>>,
-                                N, Acc, F@_1, TrUserData) ->
+skip_length_delimited_PlayerLog(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) when N < 57 ->
+    skip_length_delimited_PlayerLog(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        TrUserData
+    );
+skip_length_delimited_PlayerLog(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) ->
     Length = X bsl N + Acc,
     <<_:Length/binary, Rest2/binary>> = Rest,
-    dfp_read_field_def_PlayerLog(Rest2,
-                                 0,
-                                 0,
-                                 F@_1,
-                                 TrUserData).
+    dfp_read_field_def_PlayerLog(
+        Rest2,
+        0,
+        0,
+        F@_1,
+        TrUserData
+    ).
 
 skip_group_PlayerLog(Bin, FNum, Z2, F@_1, TrUserData) ->
     {_, Rest} = read_group(Bin, FNum),
-    dfp_read_field_def_PlayerLog(Rest,
-                                 0,
-                                 Z2,
-                                 F@_1,
-                                 TrUserData).
+    dfp_read_field_def_PlayerLog(
+        Rest,
+        0,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
-skip_32_PlayerLog(<<_:32, Rest/binary>>, Z1, Z2, F@_1,
-                  TrUserData) ->
-    dfp_read_field_def_PlayerLog(Rest,
-                                 Z1,
-                                 Z2,
-                                 F@_1,
-                                 TrUserData).
+skip_32_PlayerLog(
+    <<_:32, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    dfp_read_field_def_PlayerLog(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
-skip_64_PlayerLog(<<_:64, Rest/binary>>, Z1, Z2, F@_1,
-                  TrUserData) ->
-    dfp_read_field_def_PlayerLog(Rest,
-                                 Z1,
-                                 Z2,
-                                 F@_1,
-                                 TrUserData).
+skip_64_PlayerLog(
+    <<_:64, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    dfp_read_field_def_PlayerLog(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
 decode_msg_LobbyInfo(Bin, TrUserData) ->
-    dfp_read_field_def_LobbyInfo(Bin,
-                                 0,
-                                 0,
-                                 id(undefined, TrUserData),
-                                 id([], TrUserData),
-                                 TrUserData).
+    dfp_read_field_def_LobbyInfo(
+        Bin,
+        0,
+        0,
+        id(undefined, TrUserData),
+        id([], TrUserData),
+        TrUserData
+    ).
 
-dfp_read_field_def_LobbyInfo(<<10, Rest/binary>>, Z1,
-                             Z2, F@_1, F@_2, TrUserData) ->
-    d_field_LobbyInfo_resp(Rest,
-                           Z1,
-                           Z2,
-                           F@_1,
-                           F@_2,
-                           TrUserData);
-dfp_read_field_def_LobbyInfo(<<18, Rest/binary>>, Z1,
-                             Z2, F@_1, F@_2, TrUserData) ->
-    d_field_LobbyInfo_matches(Rest,
-                              Z1,
-                              Z2,
-                              F@_1,
-                              F@_2,
-                              TrUserData);
-dfp_read_field_def_LobbyInfo(<<>>, 0, 0, F@_1, R1,
-                             TrUserData) ->
-    #'LobbyInfo'{resp = F@_1,
-                 matches = lists_reverse(R1, TrUserData)};
-dfp_read_field_def_LobbyInfo(Other, Z1, Z2, F@_1, F@_2,
-                             TrUserData) ->
-    dg_read_field_def_LobbyInfo(Other,
-                                Z1,
-                                Z2,
-                                F@_1,
-                                F@_2,
-                                TrUserData).
+dfp_read_field_def_LobbyInfo(
+    <<10, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    d_field_LobbyInfo_resp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dfp_read_field_def_LobbyInfo(
+    <<18, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    d_field_LobbyInfo_matches(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dfp_read_field_def_LobbyInfo(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    R1,
+    TrUserData
+) ->
+    #'LobbyInfo'{
+        resp = F@_1,
+        matches = lists_reverse(R1, TrUserData)
+    };
+dfp_read_field_def_LobbyInfo(
+    Other,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dg_read_field_def_LobbyInfo(
+        Other,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-dg_read_field_def_LobbyInfo(<<1:1, X:7, Rest/binary>>,
-                            N, Acc, F@_1, F@_2, TrUserData)
-    when N < 32 - 7 ->
-    dg_read_field_def_LobbyInfo(Rest,
-                                N + 7,
-                                X bsl N + Acc,
-                                F@_1,
-                                F@_2,
-                                TrUserData);
-dg_read_field_def_LobbyInfo(<<0:1, X:7, Rest/binary>>,
-                            N, Acc, F@_1, F@_2, TrUserData) ->
+dg_read_field_def_LobbyInfo(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 32 - 7 ->
+    dg_read_field_def_LobbyInfo(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dg_read_field_def_LobbyInfo(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     Key = X bsl N + Acc,
     case Key of
         10 ->
-            d_field_LobbyInfo_resp(Rest,
-                                   0,
-                                   0,
-                                   F@_1,
-                                   F@_2,
-                                   TrUserData);
+            d_field_LobbyInfo_resp(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                TrUserData
+            );
         18 ->
-            d_field_LobbyInfo_matches(Rest,
-                                      0,
-                                      0,
-                                      F@_1,
-                                      F@_2,
-                                      TrUserData);
+            d_field_LobbyInfo_matches(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                TrUserData
+            );
         _ ->
             case Key band 7 of
                 0 ->
-                    skip_varint_LobbyInfo(Rest,
-                                          0,
-                                          0,
-                                          F@_1,
-                                          F@_2,
-                                          TrUserData);
+                    skip_varint_LobbyInfo(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 1 ->
                     skip_64_LobbyInfo(Rest, 0, 0, F@_1, F@_2, TrUserData);
                 2 ->
-                    skip_length_delimited_LobbyInfo(Rest,
-                                                    0,
-                                                    0,
-                                                    F@_1,
-                                                    F@_2,
-                                                    TrUserData);
+                    skip_length_delimited_LobbyInfo(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 3 ->
-                    skip_group_LobbyInfo(Rest,
-                                         Key bsr 3,
-                                         0,
-                                         F@_1,
-                                         F@_2,
-                                         TrUserData);
+                    skip_group_LobbyInfo(
+                        Rest,
+                        Key bsr 3,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 5 ->
                     skip_32_LobbyInfo(Rest, 0, 0, F@_1, F@_2, TrUserData)
             end
     end;
-dg_read_field_def_LobbyInfo(<<>>, 0, 0, F@_1, R1,
-                            TrUserData) ->
-    #'LobbyInfo'{resp = F@_1,
-                 matches = lists_reverse(R1, TrUserData)}.
+dg_read_field_def_LobbyInfo(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    R1,
+    TrUserData
+) ->
+    #'LobbyInfo'{
+        resp = F@_1,
+        matches = lists_reverse(R1, TrUserData)
+    }.
 
-d_field_LobbyInfo_resp(<<1:1, X:7, Rest/binary>>, N,
-                       Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    d_field_LobbyInfo_resp(Rest,
-                           N + 7,
-                           X bsl N + Acc,
-                           F@_1,
-                           F@_2,
-                           TrUserData);
-d_field_LobbyInfo_resp(<<0:1, X:7, Rest/binary>>, N,
-                       Acc, Prev, F@_2, TrUserData) ->
+d_field_LobbyInfo_resp(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    d_field_LobbyInfo_resp(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+d_field_LobbyInfo_resp(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    Prev,
+    F@_2,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bs:Len/binary, Rest2/binary>> = Rest,
-                             {id(decode_msg_ResponseObject(Bs, TrUserData),
-                                 TrUserData),
-                              Rest2}
-                         end,
-    dfp_read_field_def_LobbyInfo(RestF,
-                                 0,
-                                 0,
-                                 if Prev == undefined -> NewFValue;
-                                    true ->
-                                        merge_msg_ResponseObject(Prev,
-                                                                 NewFValue,
-                                                                 TrUserData)
-                                 end,
-                                 F@_2,
-                                 TrUserData).
+        Len = X bsl N + Acc,
+        <<Bs:Len/binary, Rest2/binary>> = Rest,
+        {id(
+                decode_msg_ResponseObject(Bs, TrUserData),
+                TrUserData
+            ),
+            Rest2}
+    end,
+    dfp_read_field_def_LobbyInfo(
+        RestF,
+        0,
+        0,
+        if
+            Prev == undefined ->
+                NewFValue;
+            true ->
+                merge_msg_ResponseObject(
+                    Prev,
+                    NewFValue,
+                    TrUserData
+                )
+        end,
+        F@_2,
+        TrUserData
+    ).
 
-d_field_LobbyInfo_matches(<<1:1, X:7, Rest/binary>>, N,
-                          Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    d_field_LobbyInfo_matches(Rest,
-                              N + 7,
-                              X bsl N + Acc,
-                              F@_1,
-                              F@_2,
-                              TrUserData);
-d_field_LobbyInfo_matches(<<0:1, X:7, Rest/binary>>, N,
-                          Acc, F@_1, Prev, TrUserData) ->
+d_field_LobbyInfo_matches(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    d_field_LobbyInfo_matches(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+d_field_LobbyInfo_matches(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    Prev,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bs:Len/binary, Rest2/binary>> = Rest,
-                             {id(decode_msg_Match(Bs, TrUserData), TrUserData),
-                              Rest2}
-                         end,
-    dfp_read_field_def_LobbyInfo(RestF,
-                                 0,
-                                 0,
-                                 F@_1,
-                                 cons(NewFValue, Prev, TrUserData),
-                                 TrUserData).
+        Len = X bsl N + Acc,
+        <<Bs:Len/binary, Rest2/binary>> = Rest,
+        {id(decode_msg_Match(Bs, TrUserData), TrUserData), Rest2}
+    end,
+    dfp_read_field_def_LobbyInfo(
+        RestF,
+        0,
+        0,
+        F@_1,
+        cons(NewFValue, Prev, TrUserData),
+        TrUserData
+    ).
 
-skip_varint_LobbyInfo(<<1:1, _:7, Rest/binary>>, Z1, Z2,
-                      F@_1, F@_2, TrUserData) ->
-    skip_varint_LobbyInfo(Rest,
-                          Z1,
-                          Z2,
-                          F@_1,
-                          F@_2,
-                          TrUserData);
-skip_varint_LobbyInfo(<<0:1, _:7, Rest/binary>>, Z1, Z2,
-                      F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_LobbyInfo(Rest,
-                                 Z1,
-                                 Z2,
-                                 F@_1,
-                                 F@_2,
-                                 TrUserData).
+skip_varint_LobbyInfo(
+    <<1:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    skip_varint_LobbyInfo(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+skip_varint_LobbyInfo(
+    <<0:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_LobbyInfo(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_length_delimited_LobbyInfo(<<1:1, X:7,
-                                  Rest/binary>>,
-                                N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    skip_length_delimited_LobbyInfo(Rest,
-                                    N + 7,
-                                    X bsl N + Acc,
-                                    F@_1,
-                                    F@_2,
-                                    TrUserData);
-skip_length_delimited_LobbyInfo(<<0:1, X:7,
-                                  Rest/binary>>,
-                                N, Acc, F@_1, F@_2, TrUserData) ->
+skip_length_delimited_LobbyInfo(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    skip_length_delimited_LobbyInfo(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+skip_length_delimited_LobbyInfo(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     Length = X bsl N + Acc,
     <<_:Length/binary, Rest2/binary>> = Rest,
-    dfp_read_field_def_LobbyInfo(Rest2,
-                                 0,
-                                 0,
-                                 F@_1,
-                                 F@_2,
-                                 TrUserData).
+    dfp_read_field_def_LobbyInfo(
+        Rest2,
+        0,
+        0,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_group_LobbyInfo(Bin, FNum, Z2, F@_1, F@_2,
-                     TrUserData) ->
+skip_group_LobbyInfo(
+    Bin,
+    FNum,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     {_, Rest} = read_group(Bin, FNum),
-    dfp_read_field_def_LobbyInfo(Rest,
-                                 0,
-                                 Z2,
-                                 F@_1,
-                                 F@_2,
-                                 TrUserData).
+    dfp_read_field_def_LobbyInfo(
+        Rest,
+        0,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_32_LobbyInfo(<<_:32, Rest/binary>>, Z1, Z2, F@_1,
-                  F@_2, TrUserData) ->
-    dfp_read_field_def_LobbyInfo(Rest,
-                                 Z1,
-                                 Z2,
-                                 F@_1,
-                                 F@_2,
-                                 TrUserData).
+skip_32_LobbyInfo(
+    <<_:32, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_LobbyInfo(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_64_LobbyInfo(<<_:64, Rest/binary>>, Z1, Z2, F@_1,
-                  F@_2, TrUserData) ->
-    dfp_read_field_def_LobbyInfo(Rest,
-                                 Z1,
-                                 Z2,
-                                 F@_1,
-                                 F@_2,
-                                 TrUserData).
+skip_64_LobbyInfo(
+    <<_:64, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_LobbyInfo(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
 decode_msg_MatchCreateReq(Bin, TrUserData) ->
-    dfp_read_field_def_MatchCreateReq(Bin,
-                                      0,
-                                      0,
-                                      id(undefined, TrUserData),
-                                      id(undefined, TrUserData),
-                                      id(undefined, TrUserData),
-                                      TrUserData).
+    dfp_read_field_def_MatchCreateReq(
+        Bin,
+        0,
+        0,
+        id(undefined, TrUserData),
+        id(undefined, TrUserData),
+        id(undefined, TrUserData),
+        TrUserData
+    ).
 
-dfp_read_field_def_MatchCreateReq(<<8, Rest/binary>>,
-                                  Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
-    d_field_MatchCreateReq_mode(Rest,
-                                Z1,
-                                Z2,
-                                F@_1,
-                                F@_2,
-                                F@_3,
-                                TrUserData);
-dfp_read_field_def_MatchCreateReq(<<16, Rest/binary>>,
-                                  Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
-    d_field_MatchCreateReq_players_max(Rest,
-                                       Z1,
-                                       Z2,
-                                       F@_1,
-                                       F@_2,
-                                       F@_3,
-                                       TrUserData);
-dfp_read_field_def_MatchCreateReq(<<26, Rest/binary>>,
-                                  Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
-    d_field_MatchCreateReq_extra(Rest,
-                                 Z1,
-                                 Z2,
-                                 F@_1,
-                                 F@_2,
-                                 F@_3,
-                                 TrUserData);
-dfp_read_field_def_MatchCreateReq(<<>>, 0, 0, F@_1,
-                                  F@_2, F@_3, _) ->
-    #'MatchCreateReq'{mode = F@_1, players_max = F@_2,
-                      extra = F@_3};
-dfp_read_field_def_MatchCreateReq(Other, Z1, Z2, F@_1,
-                                  F@_2, F@_3, TrUserData) ->
-    dg_read_field_def_MatchCreateReq(Other,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     F@_3,
-                                     TrUserData).
+dfp_read_field_def_MatchCreateReq(
+    <<8, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) ->
+    d_field_MatchCreateReq_mode(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    );
+dfp_read_field_def_MatchCreateReq(
+    <<16, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) ->
+    d_field_MatchCreateReq_players_max(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    );
+dfp_read_field_def_MatchCreateReq(
+    <<26, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) ->
+    d_field_MatchCreateReq_extra(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    );
+dfp_read_field_def_MatchCreateReq(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    F@_2,
+    F@_3,
+    _
+) ->
+    #'MatchCreateReq'{
+        mode = F@_1,
+        players_max = F@_2,
+        extra = F@_3
+    };
+dfp_read_field_def_MatchCreateReq(
+    Other,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) ->
+    dg_read_field_def_MatchCreateReq(
+        Other,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    ).
 
-dg_read_field_def_MatchCreateReq(<<1:1, X:7,
-                                   Rest/binary>>,
-                                 N, Acc, F@_1, F@_2, F@_3, TrUserData)
-    when N < 32 - 7 ->
-    dg_read_field_def_MatchCreateReq(Rest,
-                                     N + 7,
-                                     X bsl N + Acc,
-                                     F@_1,
-                                     F@_2,
-                                     F@_3,
-                                     TrUserData);
-dg_read_field_def_MatchCreateReq(<<0:1, X:7,
-                                   Rest/binary>>,
-                                 N, Acc, F@_1, F@_2, F@_3, TrUserData) ->
+dg_read_field_def_MatchCreateReq(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) when N < 32 - 7 ->
+    dg_read_field_def_MatchCreateReq(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    );
+dg_read_field_def_MatchCreateReq(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) ->
     Key = X bsl N + Acc,
     case Key of
         8 ->
-            d_field_MatchCreateReq_mode(Rest,
-                                        0,
-                                        0,
-                                        F@_1,
-                                        F@_2,
-                                        F@_3,
-                                        TrUserData);
+            d_field_MatchCreateReq_mode(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                F@_3,
+                TrUserData
+            );
         16 ->
-            d_field_MatchCreateReq_players_max(Rest,
-                                               0,
-                                               0,
-                                               F@_1,
-                                               F@_2,
-                                               F@_3,
-                                               TrUserData);
+            d_field_MatchCreateReq_players_max(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                F@_3,
+                TrUserData
+            );
         26 ->
-            d_field_MatchCreateReq_extra(Rest,
-                                         0,
-                                         0,
-                                         F@_1,
-                                         F@_2,
-                                         F@_3,
-                                         TrUserData);
+            d_field_MatchCreateReq_extra(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                F@_3,
+                TrUserData
+            );
         _ ->
             case Key band 7 of
                 0 ->
-                    skip_varint_MatchCreateReq(Rest,
-                                               0,
-                                               0,
-                                               F@_1,
-                                               F@_2,
-                                               F@_3,
-                                               TrUserData);
+                    skip_varint_MatchCreateReq(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        F@_3,
+                        TrUserData
+                    );
                 1 ->
-                    skip_64_MatchCreateReq(Rest,
-                                           0,
-                                           0,
-                                           F@_1,
-                                           F@_2,
-                                           F@_3,
-                                           TrUserData);
+                    skip_64_MatchCreateReq(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        F@_3,
+                        TrUserData
+                    );
                 2 ->
-                    skip_length_delimited_MatchCreateReq(Rest,
-                                                         0,
-                                                         0,
-                                                         F@_1,
-                                                         F@_2,
-                                                         F@_3,
-                                                         TrUserData);
+                    skip_length_delimited_MatchCreateReq(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        F@_3,
+                        TrUserData
+                    );
                 3 ->
-                    skip_group_MatchCreateReq(Rest,
-                                              Key bsr 3,
-                                              0,
-                                              F@_1,
-                                              F@_2,
-                                              F@_3,
-                                              TrUserData);
+                    skip_group_MatchCreateReq(
+                        Rest,
+                        Key bsr 3,
+                        0,
+                        F@_1,
+                        F@_2,
+                        F@_3,
+                        TrUserData
+                    );
                 5 ->
-                    skip_32_MatchCreateReq(Rest,
-                                           0,
-                                           0,
-                                           F@_1,
-                                           F@_2,
-                                           F@_3,
-                                           TrUserData)
+                    skip_32_MatchCreateReq(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        F@_3,
+                        TrUserData
+                    )
             end
     end;
-dg_read_field_def_MatchCreateReq(<<>>, 0, 0, F@_1, F@_2,
-                                 F@_3, _) ->
-    #'MatchCreateReq'{mode = F@_1, players_max = F@_2,
-                      extra = F@_3}.
+dg_read_field_def_MatchCreateReq(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    F@_2,
+    F@_3,
+    _
+) ->
+    #'MatchCreateReq'{
+        mode = F@_1,
+        players_max = F@_2,
+        extra = F@_3
+    }.
 
-d_field_MatchCreateReq_mode(<<1:1, X:7, Rest/binary>>,
-                            N, Acc, F@_1, F@_2, F@_3, TrUserData)
-    when N < 57 ->
-    d_field_MatchCreateReq_mode(Rest,
-                                N + 7,
-                                X bsl N + Acc,
-                                F@_1,
-                                F@_2,
-                                F@_3,
-                                TrUserData);
-d_field_MatchCreateReq_mode(<<0:1, X:7, Rest/binary>>,
-                            N, Acc, _, F@_2, F@_3, TrUserData) ->
-    {NewFValue, RestF} = {id(d_enum_MatchMode(begin
-                                                  <<Res:32/signed-native>> =
-                                                      <<(X bsl N +
-                                                             Acc):32/unsigned-native>>,
-                                                  id(Res, TrUserData)
-                                              end),
-                             TrUserData),
-                          Rest},
-    dfp_read_field_def_MatchCreateReq(RestF,
-                                      0,
-                                      0,
-                                      NewFValue,
-                                      F@_2,
-                                      F@_3,
-                                      TrUserData).
+d_field_MatchCreateReq_mode(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) when N < 57 ->
+    d_field_MatchCreateReq_mode(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    );
+d_field_MatchCreateReq_mode(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    _,
+    F@_2,
+    F@_3,
+    TrUserData
+) ->
+    {NewFValue, RestF} =
+        {id(
+                d_enum_MatchMode(begin
+                    <<Res:32/signed-native>> =
+                        <<(X bsl N +
+                                Acc):32/unsigned-native>>,
+                    id(Res, TrUserData)
+                end),
+                TrUserData
+            ),
+            Rest},
+    dfp_read_field_def_MatchCreateReq(
+        RestF,
+        0,
+        0,
+        NewFValue,
+        F@_2,
+        F@_3,
+        TrUserData
+    ).
 
-d_field_MatchCreateReq_players_max(<<1:1, X:7,
-                                     Rest/binary>>,
-                                   N, Acc, F@_1, F@_2, F@_3, TrUserData)
-    when N < 57 ->
-    d_field_MatchCreateReq_players_max(Rest,
-                                       N + 7,
-                                       X bsl N + Acc,
-                                       F@_1,
-                                       F@_2,
-                                       F@_3,
-                                       TrUserData);
-d_field_MatchCreateReq_players_max(<<0:1, X:7,
-                                     Rest/binary>>,
-                                   N, Acc, F@_1, _, F@_3, TrUserData) ->
-    {NewFValue, RestF} = {id(X bsl N + Acc, TrUserData),
-                          Rest},
-    dfp_read_field_def_MatchCreateReq(RestF,
-                                      0,
-                                      0,
-                                      F@_1,
-                                      NewFValue,
-                                      F@_3,
-                                      TrUserData).
+d_field_MatchCreateReq_players_max(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) when N < 57 ->
+    d_field_MatchCreateReq_players_max(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    );
+d_field_MatchCreateReq_players_max(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    _,
+    F@_3,
+    TrUserData
+) ->
+    {NewFValue, RestF} = {id(X bsl N + Acc, TrUserData), Rest},
+    dfp_read_field_def_MatchCreateReq(
+        RestF,
+        0,
+        0,
+        F@_1,
+        NewFValue,
+        F@_3,
+        TrUserData
+    ).
 
-d_field_MatchCreateReq_extra(<<1:1, X:7, Rest/binary>>,
-                             N, Acc, F@_1, F@_2, F@_3, TrUserData)
-    when N < 57 ->
-    d_field_MatchCreateReq_extra(Rest,
-                                 N + 7,
-                                 X bsl N + Acc,
-                                 F@_1,
-                                 F@_2,
-                                 F@_3,
-                                 TrUserData);
-d_field_MatchCreateReq_extra(<<0:1, X:7, Rest/binary>>,
-                             N, Acc, F@_1, F@_2, _, TrUserData) ->
+d_field_MatchCreateReq_extra(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) when N < 57 ->
+    d_field_MatchCreateReq_extra(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    );
+d_field_MatchCreateReq_extra(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    _,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_MatchCreateReq(RestF,
-                                      0,
-                                      0,
-                                      F@_1,
-                                      F@_2,
-                                      NewFValue,
-                                      TrUserData).
+        Len = X bsl N + Acc,
+        <<Bytes:Len/binary, Rest2/binary>> = Rest,
+        {id(binary:copy(Bytes), TrUserData), Rest2}
+    end,
+    dfp_read_field_def_MatchCreateReq(
+        RestF,
+        0,
+        0,
+        F@_1,
+        F@_2,
+        NewFValue,
+        TrUserData
+    ).
 
-skip_varint_MatchCreateReq(<<1:1, _:7, Rest/binary>>,
-                           Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
-    skip_varint_MatchCreateReq(Rest,
-                               Z1,
-                               Z2,
-                               F@_1,
-                               F@_2,
-                               F@_3,
-                               TrUserData);
-skip_varint_MatchCreateReq(<<0:1, _:7, Rest/binary>>,
-                           Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
-    dfp_read_field_def_MatchCreateReq(Rest,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      TrUserData).
+skip_varint_MatchCreateReq(
+    <<1:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) ->
+    skip_varint_MatchCreateReq(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    );
+skip_varint_MatchCreateReq(
+    <<0:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) ->
+    dfp_read_field_def_MatchCreateReq(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    ).
 
-skip_length_delimited_MatchCreateReq(<<1:1, X:7,
-                                       Rest/binary>>,
-                                     N, Acc, F@_1, F@_2, F@_3, TrUserData)
-    when N < 57 ->
-    skip_length_delimited_MatchCreateReq(Rest,
-                                         N + 7,
-                                         X bsl N + Acc,
-                                         F@_1,
-                                         F@_2,
-                                         F@_3,
-                                         TrUserData);
-skip_length_delimited_MatchCreateReq(<<0:1, X:7,
-                                       Rest/binary>>,
-                                     N, Acc, F@_1, F@_2, F@_3, TrUserData) ->
+skip_length_delimited_MatchCreateReq(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) when N < 57 ->
+    skip_length_delimited_MatchCreateReq(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    );
+skip_length_delimited_MatchCreateReq(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) ->
     Length = X bsl N + Acc,
     <<_:Length/binary, Rest2/binary>> = Rest,
-    dfp_read_field_def_MatchCreateReq(Rest2,
-                                      0,
-                                      0,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      TrUserData).
+    dfp_read_field_def_MatchCreateReq(
+        Rest2,
+        0,
+        0,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    ).
 
-skip_group_MatchCreateReq(Bin, FNum, Z2, F@_1, F@_2,
-                          F@_3, TrUserData) ->
+skip_group_MatchCreateReq(
+    Bin,
+    FNum,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) ->
     {_, Rest} = read_group(Bin, FNum),
-    dfp_read_field_def_MatchCreateReq(Rest,
-                                      0,
-                                      Z2,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      TrUserData).
+    dfp_read_field_def_MatchCreateReq(
+        Rest,
+        0,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    ).
 
-skip_32_MatchCreateReq(<<_:32, Rest/binary>>, Z1, Z2,
-                       F@_1, F@_2, F@_3, TrUserData) ->
-    dfp_read_field_def_MatchCreateReq(Rest,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      TrUserData).
+skip_32_MatchCreateReq(
+    <<_:32, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) ->
+    dfp_read_field_def_MatchCreateReq(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    ).
 
-skip_64_MatchCreateReq(<<_:64, Rest/binary>>, Z1, Z2,
-                       F@_1, F@_2, F@_3, TrUserData) ->
-    dfp_read_field_def_MatchCreateReq(Rest,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      TrUserData).
+skip_64_MatchCreateReq(
+    <<_:64, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    F@_3,
+    TrUserData
+) ->
+    dfp_read_field_def_MatchCreateReq(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        F@_3,
+        TrUserData
+    ).
 
 decode_msg_MatchCreateResp(Bin, TrUserData) ->
-    dfp_read_field_def_MatchCreateResp(Bin,
-                                       0,
-                                       0,
-                                       id(undefined, TrUserData),
-                                       id(undefined, TrUserData),
-                                       TrUserData).
+    dfp_read_field_def_MatchCreateResp(
+        Bin,
+        0,
+        0,
+        id(undefined, TrUserData),
+        id(undefined, TrUserData),
+        TrUserData
+    ).
 
-dfp_read_field_def_MatchCreateResp(<<10, Rest/binary>>,
-                                   Z1, Z2, F@_1, F@_2, TrUserData) ->
-    d_field_MatchCreateResp_resp(Rest,
-                                 Z1,
-                                 Z2,
-                                 F@_1,
-                                 F@_2,
-                                 TrUserData);
-dfp_read_field_def_MatchCreateResp(<<18, Rest/binary>>,
-                                   Z1, Z2, F@_1, F@_2, TrUserData) ->
-    d_field_MatchCreateResp_match(Rest,
-                                  Z1,
-                                  Z2,
-                                  F@_1,
-                                  F@_2,
-                                  TrUserData);
-dfp_read_field_def_MatchCreateResp(<<>>, 0, 0, F@_1,
-                                   F@_2, _) ->
+dfp_read_field_def_MatchCreateResp(
+    <<10, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    d_field_MatchCreateResp_resp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dfp_read_field_def_MatchCreateResp(
+    <<18, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    d_field_MatchCreateResp_match(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dfp_read_field_def_MatchCreateResp(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    F@_2,
+    _
+) ->
     #'MatchCreateResp'{resp = F@_1, match = F@_2};
-dfp_read_field_def_MatchCreateResp(Other, Z1, Z2, F@_1,
-                                   F@_2, TrUserData) ->
-    dg_read_field_def_MatchCreateResp(Other,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      F@_2,
-                                      TrUserData).
+dfp_read_field_def_MatchCreateResp(
+    Other,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dg_read_field_def_MatchCreateResp(
+        Other,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-dg_read_field_def_MatchCreateResp(<<1:1, X:7,
-                                    Rest/binary>>,
-                                  N, Acc, F@_1, F@_2, TrUserData)
-    when N < 32 - 7 ->
-    dg_read_field_def_MatchCreateResp(Rest,
-                                      N + 7,
-                                      X bsl N + Acc,
-                                      F@_1,
-                                      F@_2,
-                                      TrUserData);
-dg_read_field_def_MatchCreateResp(<<0:1, X:7,
-                                    Rest/binary>>,
-                                  N, Acc, F@_1, F@_2, TrUserData) ->
+dg_read_field_def_MatchCreateResp(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 32 - 7 ->
+    dg_read_field_def_MatchCreateResp(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dg_read_field_def_MatchCreateResp(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     Key = X bsl N + Acc,
     case Key of
         10 ->
-            d_field_MatchCreateResp_resp(Rest,
-                                         0,
-                                         0,
-                                         F@_1,
-                                         F@_2,
-                                         TrUserData);
+            d_field_MatchCreateResp_resp(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                TrUserData
+            );
         18 ->
-            d_field_MatchCreateResp_match(Rest,
-                                          0,
-                                          0,
-                                          F@_1,
-                                          F@_2,
-                                          TrUserData);
+            d_field_MatchCreateResp_match(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                TrUserData
+            );
         _ ->
             case Key band 7 of
                 0 ->
-                    skip_varint_MatchCreateResp(Rest,
-                                                0,
-                                                0,
-                                                F@_1,
-                                                F@_2,
-                                                TrUserData);
+                    skip_varint_MatchCreateResp(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 1 ->
-                    skip_64_MatchCreateResp(Rest,
-                                            0,
-                                            0,
-                                            F@_1,
-                                            F@_2,
-                                            TrUserData);
+                    skip_64_MatchCreateResp(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 2 ->
-                    skip_length_delimited_MatchCreateResp(Rest,
-                                                          0,
-                                                          0,
-                                                          F@_1,
-                                                          F@_2,
-                                                          TrUserData);
+                    skip_length_delimited_MatchCreateResp(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 3 ->
-                    skip_group_MatchCreateResp(Rest,
-                                               Key bsr 3,
-                                               0,
-                                               F@_1,
-                                               F@_2,
-                                               TrUserData);
+                    skip_group_MatchCreateResp(
+                        Rest,
+                        Key bsr 3,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 5 ->
-                    skip_32_MatchCreateResp(Rest,
-                                            0,
-                                            0,
-                                            F@_1,
-                                            F@_2,
-                                            TrUserData)
+                    skip_32_MatchCreateResp(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    )
             end
     end;
-dg_read_field_def_MatchCreateResp(<<>>, 0, 0, F@_1,
-                                  F@_2, _) ->
+dg_read_field_def_MatchCreateResp(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    F@_2,
+    _
+) ->
     #'MatchCreateResp'{resp = F@_1, match = F@_2}.
 
-d_field_MatchCreateResp_resp(<<1:1, X:7, Rest/binary>>,
-                             N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    d_field_MatchCreateResp_resp(Rest,
-                                 N + 7,
-                                 X bsl N + Acc,
-                                 F@_1,
-                                 F@_2,
-                                 TrUserData);
-d_field_MatchCreateResp_resp(<<0:1, X:7, Rest/binary>>,
-                             N, Acc, Prev, F@_2, TrUserData) ->
+d_field_MatchCreateResp_resp(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    d_field_MatchCreateResp_resp(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+d_field_MatchCreateResp_resp(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    Prev,
+    F@_2,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bs:Len/binary, Rest2/binary>> = Rest,
-                             {id(decode_msg_ResponseObject(Bs, TrUserData),
-                                 TrUserData),
-                              Rest2}
-                         end,
-    dfp_read_field_def_MatchCreateResp(RestF,
-                                       0,
-                                       0,
-                                       if Prev == undefined -> NewFValue;
-                                          true ->
-                                              merge_msg_ResponseObject(Prev,
-                                                                       NewFValue,
-                                                                       TrUserData)
-                                       end,
-                                       F@_2,
-                                       TrUserData).
+        Len = X bsl N + Acc,
+        <<Bs:Len/binary, Rest2/binary>> = Rest,
+        {id(
+                decode_msg_ResponseObject(Bs, TrUserData),
+                TrUserData
+            ),
+            Rest2}
+    end,
+    dfp_read_field_def_MatchCreateResp(
+        RestF,
+        0,
+        0,
+        if
+            Prev == undefined ->
+                NewFValue;
+            true ->
+                merge_msg_ResponseObject(
+                    Prev,
+                    NewFValue,
+                    TrUserData
+                )
+        end,
+        F@_2,
+        TrUserData
+    ).
 
-d_field_MatchCreateResp_match(<<1:1, X:7, Rest/binary>>,
-                              N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    d_field_MatchCreateResp_match(Rest,
-                                  N + 7,
-                                  X bsl N + Acc,
-                                  F@_1,
-                                  F@_2,
-                                  TrUserData);
-d_field_MatchCreateResp_match(<<0:1, X:7, Rest/binary>>,
-                              N, Acc, F@_1, Prev, TrUserData) ->
+d_field_MatchCreateResp_match(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    d_field_MatchCreateResp_match(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+d_field_MatchCreateResp_match(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    Prev,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bs:Len/binary, Rest2/binary>> = Rest,
-                             {id(decode_msg_Match(Bs, TrUserData), TrUserData),
-                              Rest2}
-                         end,
-    dfp_read_field_def_MatchCreateResp(RestF,
-                                       0,
-                                       0,
-                                       F@_1,
-                                       if Prev == undefined -> NewFValue;
-                                          true ->
-                                              merge_msg_Match(Prev,
-                                                              NewFValue,
-                                                              TrUserData)
-                                       end,
-                                       TrUserData).
+        Len = X bsl N + Acc,
+        <<Bs:Len/binary, Rest2/binary>> = Rest,
+        {id(decode_msg_Match(Bs, TrUserData), TrUserData), Rest2}
+    end,
+    dfp_read_field_def_MatchCreateResp(
+        RestF,
+        0,
+        0,
+        F@_1,
+        if
+            Prev == undefined ->
+                NewFValue;
+            true ->
+                merge_msg_Match(
+                    Prev,
+                    NewFValue,
+                    TrUserData
+                )
+        end,
+        TrUserData
+    ).
 
-skip_varint_MatchCreateResp(<<1:1, _:7, Rest/binary>>,
-                            Z1, Z2, F@_1, F@_2, TrUserData) ->
-    skip_varint_MatchCreateResp(Rest,
-                                Z1,
-                                Z2,
-                                F@_1,
-                                F@_2,
-                                TrUserData);
-skip_varint_MatchCreateResp(<<0:1, _:7, Rest/binary>>,
-                            Z1, Z2, F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_MatchCreateResp(Rest,
-                                       Z1,
-                                       Z2,
-                                       F@_1,
-                                       F@_2,
-                                       TrUserData).
+skip_varint_MatchCreateResp(
+    <<1:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    skip_varint_MatchCreateResp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+skip_varint_MatchCreateResp(
+    <<0:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_MatchCreateResp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_length_delimited_MatchCreateResp(<<1:1, X:7,
-                                        Rest/binary>>,
-                                      N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    skip_length_delimited_MatchCreateResp(Rest,
-                                          N + 7,
-                                          X bsl N + Acc,
-                                          F@_1,
-                                          F@_2,
-                                          TrUserData);
-skip_length_delimited_MatchCreateResp(<<0:1, X:7,
-                                        Rest/binary>>,
-                                      N, Acc, F@_1, F@_2, TrUserData) ->
+skip_length_delimited_MatchCreateResp(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    skip_length_delimited_MatchCreateResp(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+skip_length_delimited_MatchCreateResp(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     Length = X bsl N + Acc,
     <<_:Length/binary, Rest2/binary>> = Rest,
-    dfp_read_field_def_MatchCreateResp(Rest2,
-                                       0,
-                                       0,
-                                       F@_1,
-                                       F@_2,
-                                       TrUserData).
+    dfp_read_field_def_MatchCreateResp(
+        Rest2,
+        0,
+        0,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_group_MatchCreateResp(Bin, FNum, Z2, F@_1, F@_2,
-                           TrUserData) ->
+skip_group_MatchCreateResp(
+    Bin,
+    FNum,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     {_, Rest} = read_group(Bin, FNum),
-    dfp_read_field_def_MatchCreateResp(Rest,
-                                       0,
-                                       Z2,
-                                       F@_1,
-                                       F@_2,
-                                       TrUserData).
+    dfp_read_field_def_MatchCreateResp(
+        Rest,
+        0,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_32_MatchCreateResp(<<_:32, Rest/binary>>, Z1, Z2,
-                        F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_MatchCreateResp(Rest,
-                                       Z1,
-                                       Z2,
-                                       F@_1,
-                                       F@_2,
-                                       TrUserData).
+skip_32_MatchCreateResp(
+    <<_:32, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_MatchCreateResp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_64_MatchCreateResp(<<_:64, Rest/binary>>, Z1, Z2,
-                        F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_MatchCreateResp(Rest,
-                                       Z1,
-                                       Z2,
-                                       F@_1,
-                                       F@_2,
-                                       TrUserData).
+skip_64_MatchCreateResp(
+    <<_:64, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_MatchCreateResp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
 decode_msg_MatchJoinReq(Bin, TrUserData) ->
-    dfp_read_field_def_MatchJoinReq(Bin,
-                                    0,
-                                    0,
-                                    id(undefined, TrUserData),
-                                    id(undefined, TrUserData),
-                                    TrUserData).
+    dfp_read_field_def_MatchJoinReq(
+        Bin,
+        0,
+        0,
+        id(undefined, TrUserData),
+        id(undefined, TrUserData),
+        TrUserData
+    ).
 
-dfp_read_field_def_MatchJoinReq(<<10, Rest/binary>>, Z1,
-                                Z2, F@_1, F@_2, TrUserData) ->
-    d_field_MatchJoinReq_player(Rest,
-                                Z1,
-                                Z2,
-                                F@_1,
-                                F@_2,
-                                TrUserData);
-dfp_read_field_def_MatchJoinReq(<<16, Rest/binary>>, Z1,
-                                Z2, F@_1, F@_2, TrUserData) ->
-    d_field_MatchJoinReq_matchid(Rest,
-                                 Z1,
-                                 Z2,
-                                 F@_1,
-                                 F@_2,
-                                 TrUserData);
-dfp_read_field_def_MatchJoinReq(<<>>, 0, 0, F@_1, F@_2,
-                                _) ->
+dfp_read_field_def_MatchJoinReq(
+    <<10, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    d_field_MatchJoinReq_player(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dfp_read_field_def_MatchJoinReq(
+    <<16, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    d_field_MatchJoinReq_matchid(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dfp_read_field_def_MatchJoinReq(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    F@_2,
+    _
+) ->
     #'MatchJoinReq'{player = F@_1, matchid = F@_2};
-dfp_read_field_def_MatchJoinReq(Other, Z1, Z2, F@_1,
-                                F@_2, TrUserData) ->
-    dg_read_field_def_MatchJoinReq(Other,
-                                   Z1,
-                                   Z2,
-                                   F@_1,
-                                   F@_2,
-                                   TrUserData).
+dfp_read_field_def_MatchJoinReq(
+    Other,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dg_read_field_def_MatchJoinReq(
+        Other,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-dg_read_field_def_MatchJoinReq(<<1:1, X:7,
-                                 Rest/binary>>,
-                               N, Acc, F@_1, F@_2, TrUserData)
-    when N < 32 - 7 ->
-    dg_read_field_def_MatchJoinReq(Rest,
-                                   N + 7,
-                                   X bsl N + Acc,
-                                   F@_1,
-                                   F@_2,
-                                   TrUserData);
-dg_read_field_def_MatchJoinReq(<<0:1, X:7,
-                                 Rest/binary>>,
-                               N, Acc, F@_1, F@_2, TrUserData) ->
+dg_read_field_def_MatchJoinReq(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 32 - 7 ->
+    dg_read_field_def_MatchJoinReq(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dg_read_field_def_MatchJoinReq(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     Key = X bsl N + Acc,
     case Key of
         10 ->
-            d_field_MatchJoinReq_player(Rest,
-                                        0,
-                                        0,
-                                        F@_1,
-                                        F@_2,
-                                        TrUserData);
+            d_field_MatchJoinReq_player(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                TrUserData
+            );
         16 ->
-            d_field_MatchJoinReq_matchid(Rest,
-                                         0,
-                                         0,
-                                         F@_1,
-                                         F@_2,
-                                         TrUserData);
+            d_field_MatchJoinReq_matchid(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                TrUserData
+            );
         _ ->
             case Key band 7 of
                 0 ->
-                    skip_varint_MatchJoinReq(Rest,
-                                             0,
-                                             0,
-                                             F@_1,
-                                             F@_2,
-                                             TrUserData);
+                    skip_varint_MatchJoinReq(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 1 ->
-                    skip_64_MatchJoinReq(Rest,
-                                         0,
-                                         0,
-                                         F@_1,
-                                         F@_2,
-                                         TrUserData);
+                    skip_64_MatchJoinReq(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 2 ->
-                    skip_length_delimited_MatchJoinReq(Rest,
-                                                       0,
-                                                       0,
-                                                       F@_1,
-                                                       F@_2,
-                                                       TrUserData);
+                    skip_length_delimited_MatchJoinReq(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 3 ->
-                    skip_group_MatchJoinReq(Rest,
-                                            Key bsr 3,
-                                            0,
-                                            F@_1,
-                                            F@_2,
-                                            TrUserData);
+                    skip_group_MatchJoinReq(
+                        Rest,
+                        Key bsr 3,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 5 ->
                     skip_32_MatchJoinReq(Rest, 0, 0, F@_1, F@_2, TrUserData)
             end
     end;
-dg_read_field_def_MatchJoinReq(<<>>, 0, 0, F@_1, F@_2,
-                               _) ->
+dg_read_field_def_MatchJoinReq(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    F@_2,
+    _
+) ->
     #'MatchJoinReq'{player = F@_1, matchid = F@_2}.
 
-d_field_MatchJoinReq_player(<<1:1, X:7, Rest/binary>>,
-                            N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    d_field_MatchJoinReq_player(Rest,
-                                N + 7,
-                                X bsl N + Acc,
-                                F@_1,
-                                F@_2,
-                                TrUserData);
-d_field_MatchJoinReq_player(<<0:1, X:7, Rest/binary>>,
-                            N, Acc, _, F@_2, TrUserData) ->
+d_field_MatchJoinReq_player(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    d_field_MatchJoinReq_player(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+d_field_MatchJoinReq_player(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    _,
+    F@_2,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_MatchJoinReq(RestF,
-                                    0,
-                                    0,
-                                    NewFValue,
-                                    F@_2,
-                                    TrUserData).
+        Len = X bsl N + Acc,
+        <<Bytes:Len/binary, Rest2/binary>> = Rest,
+        {id(binary:copy(Bytes), TrUserData), Rest2}
+    end,
+    dfp_read_field_def_MatchJoinReq(
+        RestF,
+        0,
+        0,
+        NewFValue,
+        F@_2,
+        TrUserData
+    ).
 
-d_field_MatchJoinReq_matchid(<<1:1, X:7, Rest/binary>>,
-                             N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    d_field_MatchJoinReq_matchid(Rest,
-                                 N + 7,
-                                 X bsl N + Acc,
-                                 F@_1,
-                                 F@_2,
-                                 TrUserData);
-d_field_MatchJoinReq_matchid(<<0:1, X:7, Rest/binary>>,
-                             N, Acc, F@_1, _, TrUserData) ->
-    {NewFValue, RestF} = {id(X bsl N + Acc, TrUserData),
-                          Rest},
-    dfp_read_field_def_MatchJoinReq(RestF,
-                                    0,
-                                    0,
-                                    F@_1,
-                                    NewFValue,
-                                    TrUserData).
+d_field_MatchJoinReq_matchid(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    d_field_MatchJoinReq_matchid(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+d_field_MatchJoinReq_matchid(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    _,
+    TrUserData
+) ->
+    {NewFValue, RestF} = {id(X bsl N + Acc, TrUserData), Rest},
+    dfp_read_field_def_MatchJoinReq(
+        RestF,
+        0,
+        0,
+        F@_1,
+        NewFValue,
+        TrUserData
+    ).
 
-skip_varint_MatchJoinReq(<<1:1, _:7, Rest/binary>>, Z1,
-                         Z2, F@_1, F@_2, TrUserData) ->
-    skip_varint_MatchJoinReq(Rest,
-                             Z1,
-                             Z2,
-                             F@_1,
-                             F@_2,
-                             TrUserData);
-skip_varint_MatchJoinReq(<<0:1, _:7, Rest/binary>>, Z1,
-                         Z2, F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_MatchJoinReq(Rest,
-                                    Z1,
-                                    Z2,
-                                    F@_1,
-                                    F@_2,
-                                    TrUserData).
+skip_varint_MatchJoinReq(
+    <<1:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    skip_varint_MatchJoinReq(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+skip_varint_MatchJoinReq(
+    <<0:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_MatchJoinReq(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_length_delimited_MatchJoinReq(<<1:1, X:7,
-                                     Rest/binary>>,
-                                   N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    skip_length_delimited_MatchJoinReq(Rest,
-                                       N + 7,
-                                       X bsl N + Acc,
-                                       F@_1,
-                                       F@_2,
-                                       TrUserData);
-skip_length_delimited_MatchJoinReq(<<0:1, X:7,
-                                     Rest/binary>>,
-                                   N, Acc, F@_1, F@_2, TrUserData) ->
+skip_length_delimited_MatchJoinReq(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    skip_length_delimited_MatchJoinReq(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+skip_length_delimited_MatchJoinReq(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     Length = X bsl N + Acc,
     <<_:Length/binary, Rest2/binary>> = Rest,
-    dfp_read_field_def_MatchJoinReq(Rest2,
-                                    0,
-                                    0,
-                                    F@_1,
-                                    F@_2,
-                                    TrUserData).
+    dfp_read_field_def_MatchJoinReq(
+        Rest2,
+        0,
+        0,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_group_MatchJoinReq(Bin, FNum, Z2, F@_1, F@_2,
-                        TrUserData) ->
+skip_group_MatchJoinReq(
+    Bin,
+    FNum,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     {_, Rest} = read_group(Bin, FNum),
-    dfp_read_field_def_MatchJoinReq(Rest,
-                                    0,
-                                    Z2,
-                                    F@_1,
-                                    F@_2,
-                                    TrUserData).
+    dfp_read_field_def_MatchJoinReq(
+        Rest,
+        0,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_32_MatchJoinReq(<<_:32, Rest/binary>>, Z1, Z2,
-                     F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_MatchJoinReq(Rest,
-                                    Z1,
-                                    Z2,
-                                    F@_1,
-                                    F@_2,
-                                    TrUserData).
+skip_32_MatchJoinReq(
+    <<_:32, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_MatchJoinReq(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_64_MatchJoinReq(<<_:64, Rest/binary>>, Z1, Z2,
-                     F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_MatchJoinReq(Rest,
-                                    Z1,
-                                    Z2,
-                                    F@_1,
-                                    F@_2,
-                                    TrUserData).
+skip_64_MatchJoinReq(
+    <<_:64, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_MatchJoinReq(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
 decode_msg_MatchJoinResp(Bin, TrUserData) ->
-    dfp_read_field_def_MatchJoinResp(Bin,
-                                     0,
-                                     0,
-                                     id(undefined, TrUserData),
-                                     id(undefined, TrUserData),
-                                     TrUserData).
+    dfp_read_field_def_MatchJoinResp(
+        Bin,
+        0,
+        0,
+        id(undefined, TrUserData),
+        id(undefined, TrUserData),
+        TrUserData
+    ).
 
-dfp_read_field_def_MatchJoinResp(<<10, Rest/binary>>,
-                                 Z1, Z2, F@_1, F@_2, TrUserData) ->
-    d_field_MatchJoinResp_resp(Rest,
-                               Z1,
-                               Z2,
-                               F@_1,
-                               F@_2,
-                               TrUserData);
-dfp_read_field_def_MatchJoinResp(<<18, Rest/binary>>,
-                                 Z1, Z2, F@_1, F@_2, TrUserData) ->
-    d_field_MatchJoinResp_match(Rest,
-                                Z1,
-                                Z2,
-                                F@_1,
-                                F@_2,
-                                TrUserData);
-dfp_read_field_def_MatchJoinResp(<<>>, 0, 0, F@_1, F@_2,
-                                 _) ->
+dfp_read_field_def_MatchJoinResp(
+    <<10, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    d_field_MatchJoinResp_resp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dfp_read_field_def_MatchJoinResp(
+    <<18, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    d_field_MatchJoinResp_match(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dfp_read_field_def_MatchJoinResp(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    F@_2,
+    _
+) ->
     #'MatchJoinResp'{resp = F@_1, match = F@_2};
-dfp_read_field_def_MatchJoinResp(Other, Z1, Z2, F@_1,
-                                 F@_2, TrUserData) ->
-    dg_read_field_def_MatchJoinResp(Other,
-                                    Z1,
-                                    Z2,
-                                    F@_1,
-                                    F@_2,
-                                    TrUserData).
+dfp_read_field_def_MatchJoinResp(
+    Other,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dg_read_field_def_MatchJoinResp(
+        Other,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-dg_read_field_def_MatchJoinResp(<<1:1, X:7,
-                                  Rest/binary>>,
-                                N, Acc, F@_1, F@_2, TrUserData)
-    when N < 32 - 7 ->
-    dg_read_field_def_MatchJoinResp(Rest,
-                                    N + 7,
-                                    X bsl N + Acc,
-                                    F@_1,
-                                    F@_2,
-                                    TrUserData);
-dg_read_field_def_MatchJoinResp(<<0:1, X:7,
-                                  Rest/binary>>,
-                                N, Acc, F@_1, F@_2, TrUserData) ->
+dg_read_field_def_MatchJoinResp(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 32 - 7 ->
+    dg_read_field_def_MatchJoinResp(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dg_read_field_def_MatchJoinResp(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     Key = X bsl N + Acc,
     case Key of
         10 ->
-            d_field_MatchJoinResp_resp(Rest,
-                                       0,
-                                       0,
-                                       F@_1,
-                                       F@_2,
-                                       TrUserData);
+            d_field_MatchJoinResp_resp(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                TrUserData
+            );
         18 ->
-            d_field_MatchJoinResp_match(Rest,
-                                        0,
-                                        0,
-                                        F@_1,
-                                        F@_2,
-                                        TrUserData);
+            d_field_MatchJoinResp_match(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                TrUserData
+            );
         _ ->
             case Key band 7 of
                 0 ->
-                    skip_varint_MatchJoinResp(Rest,
-                                              0,
-                                              0,
-                                              F@_1,
-                                              F@_2,
-                                              TrUserData);
+                    skip_varint_MatchJoinResp(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 1 ->
-                    skip_64_MatchJoinResp(Rest,
-                                          0,
-                                          0,
-                                          F@_1,
-                                          F@_2,
-                                          TrUserData);
+                    skip_64_MatchJoinResp(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 2 ->
-                    skip_length_delimited_MatchJoinResp(Rest,
-                                                        0,
-                                                        0,
-                                                        F@_1,
-                                                        F@_2,
-                                                        TrUserData);
+                    skip_length_delimited_MatchJoinResp(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 3 ->
-                    skip_group_MatchJoinResp(Rest,
-                                             Key bsr 3,
-                                             0,
-                                             F@_1,
-                                             F@_2,
-                                             TrUserData);
+                    skip_group_MatchJoinResp(
+                        Rest,
+                        Key bsr 3,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 5 ->
-                    skip_32_MatchJoinResp(Rest,
-                                          0,
-                                          0,
-                                          F@_1,
-                                          F@_2,
-                                          TrUserData)
+                    skip_32_MatchJoinResp(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    )
             end
     end;
-dg_read_field_def_MatchJoinResp(<<>>, 0, 0, F@_1, F@_2,
-                                _) ->
+dg_read_field_def_MatchJoinResp(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    F@_2,
+    _
+) ->
     #'MatchJoinResp'{resp = F@_1, match = F@_2}.
 
-d_field_MatchJoinResp_resp(<<1:1, X:7, Rest/binary>>, N,
-                           Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    d_field_MatchJoinResp_resp(Rest,
-                               N + 7,
-                               X bsl N + Acc,
-                               F@_1,
-                               F@_2,
-                               TrUserData);
-d_field_MatchJoinResp_resp(<<0:1, X:7, Rest/binary>>, N,
-                           Acc, Prev, F@_2, TrUserData) ->
+d_field_MatchJoinResp_resp(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    d_field_MatchJoinResp_resp(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+d_field_MatchJoinResp_resp(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    Prev,
+    F@_2,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bs:Len/binary, Rest2/binary>> = Rest,
-                             {id(decode_msg_ResponseObject(Bs, TrUserData),
-                                 TrUserData),
-                              Rest2}
-                         end,
-    dfp_read_field_def_MatchJoinResp(RestF,
-                                     0,
-                                     0,
-                                     if Prev == undefined -> NewFValue;
-                                        true ->
-                                            merge_msg_ResponseObject(Prev,
-                                                                     NewFValue,
-                                                                     TrUserData)
-                                     end,
-                                     F@_2,
-                                     TrUserData).
+        Len = X bsl N + Acc,
+        <<Bs:Len/binary, Rest2/binary>> = Rest,
+        {id(
+                decode_msg_ResponseObject(Bs, TrUserData),
+                TrUserData
+            ),
+            Rest2}
+    end,
+    dfp_read_field_def_MatchJoinResp(
+        RestF,
+        0,
+        0,
+        if
+            Prev == undefined ->
+                NewFValue;
+            true ->
+                merge_msg_ResponseObject(
+                    Prev,
+                    NewFValue,
+                    TrUserData
+                )
+        end,
+        F@_2,
+        TrUserData
+    ).
 
-d_field_MatchJoinResp_match(<<1:1, X:7, Rest/binary>>,
-                            N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    d_field_MatchJoinResp_match(Rest,
-                                N + 7,
-                                X bsl N + Acc,
-                                F@_1,
-                                F@_2,
-                                TrUserData);
-d_field_MatchJoinResp_match(<<0:1, X:7, Rest/binary>>,
-                            N, Acc, F@_1, Prev, TrUserData) ->
+d_field_MatchJoinResp_match(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    d_field_MatchJoinResp_match(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+d_field_MatchJoinResp_match(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    Prev,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bs:Len/binary, Rest2/binary>> = Rest,
-                             {id(decode_msg_Match(Bs, TrUserData), TrUserData),
-                              Rest2}
-                         end,
-    dfp_read_field_def_MatchJoinResp(RestF,
-                                     0,
-                                     0,
-                                     F@_1,
-                                     if Prev == undefined -> NewFValue;
-                                        true ->
-                                            merge_msg_Match(Prev,
-                                                            NewFValue,
-                                                            TrUserData)
-                                     end,
-                                     TrUserData).
+        Len = X bsl N + Acc,
+        <<Bs:Len/binary, Rest2/binary>> = Rest,
+        {id(decode_msg_Match(Bs, TrUserData), TrUserData), Rest2}
+    end,
+    dfp_read_field_def_MatchJoinResp(
+        RestF,
+        0,
+        0,
+        F@_1,
+        if
+            Prev == undefined ->
+                NewFValue;
+            true ->
+                merge_msg_Match(
+                    Prev,
+                    NewFValue,
+                    TrUserData
+                )
+        end,
+        TrUserData
+    ).
 
-skip_varint_MatchJoinResp(<<1:1, _:7, Rest/binary>>, Z1,
-                          Z2, F@_1, F@_2, TrUserData) ->
-    skip_varint_MatchJoinResp(Rest,
-                              Z1,
-                              Z2,
-                              F@_1,
-                              F@_2,
-                              TrUserData);
-skip_varint_MatchJoinResp(<<0:1, _:7, Rest/binary>>, Z1,
-                          Z2, F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_MatchJoinResp(Rest,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData).
+skip_varint_MatchJoinResp(
+    <<1:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    skip_varint_MatchJoinResp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+skip_varint_MatchJoinResp(
+    <<0:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_MatchJoinResp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_length_delimited_MatchJoinResp(<<1:1, X:7,
-                                      Rest/binary>>,
-                                    N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    skip_length_delimited_MatchJoinResp(Rest,
-                                        N + 7,
-                                        X bsl N + Acc,
-                                        F@_1,
-                                        F@_2,
-                                        TrUserData);
-skip_length_delimited_MatchJoinResp(<<0:1, X:7,
-                                      Rest/binary>>,
-                                    N, Acc, F@_1, F@_2, TrUserData) ->
+skip_length_delimited_MatchJoinResp(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    skip_length_delimited_MatchJoinResp(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+skip_length_delimited_MatchJoinResp(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     Length = X bsl N + Acc,
     <<_:Length/binary, Rest2/binary>> = Rest,
-    dfp_read_field_def_MatchJoinResp(Rest2,
-                                     0,
-                                     0,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData).
+    dfp_read_field_def_MatchJoinResp(
+        Rest2,
+        0,
+        0,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_group_MatchJoinResp(Bin, FNum, Z2, F@_1, F@_2,
-                         TrUserData) ->
+skip_group_MatchJoinResp(
+    Bin,
+    FNum,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     {_, Rest} = read_group(Bin, FNum),
-    dfp_read_field_def_MatchJoinResp(Rest,
-                                     0,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData).
+    dfp_read_field_def_MatchJoinResp(
+        Rest,
+        0,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_32_MatchJoinResp(<<_:32, Rest/binary>>, Z1, Z2,
-                      F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_MatchJoinResp(Rest,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData).
+skip_32_MatchJoinResp(
+    <<_:32, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_MatchJoinResp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_64_MatchJoinResp(<<_:64, Rest/binary>>, Z1, Z2,
-                      F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_MatchJoinResp(Rest,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData).
+skip_64_MatchJoinResp(
+    <<_:64, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_MatchJoinResp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
 decode_msg_MatchLeaveReq(Bin, TrUserData) ->
-    dfp_read_field_def_MatchLeaveReq(Bin,
-                                     0,
-                                     0,
-                                     id(undefined, TrUserData),
-                                     id(undefined, TrUserData),
-                                     TrUserData).
+    dfp_read_field_def_MatchLeaveReq(
+        Bin,
+        0,
+        0,
+        id(undefined, TrUserData),
+        id(undefined, TrUserData),
+        TrUserData
+    ).
 
-dfp_read_field_def_MatchLeaveReq(<<10, Rest/binary>>,
-                                 Z1, Z2, F@_1, F@_2, TrUserData) ->
-    d_field_MatchLeaveReq_player(Rest,
-                                 Z1,
-                                 Z2,
-                                 F@_1,
-                                 F@_2,
-                                 TrUserData);
-dfp_read_field_def_MatchLeaveReq(<<16, Rest/binary>>,
-                                 Z1, Z2, F@_1, F@_2, TrUserData) ->
-    d_field_MatchLeaveReq_matchid(Rest,
-                                  Z1,
-                                  Z2,
-                                  F@_1,
-                                  F@_2,
-                                  TrUserData);
-dfp_read_field_def_MatchLeaveReq(<<>>, 0, 0, F@_1, F@_2,
-                                 _) ->
+dfp_read_field_def_MatchLeaveReq(
+    <<10, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    d_field_MatchLeaveReq_player(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dfp_read_field_def_MatchLeaveReq(
+    <<16, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    d_field_MatchLeaveReq_matchid(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dfp_read_field_def_MatchLeaveReq(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    F@_2,
+    _
+) ->
     #'MatchLeaveReq'{player = F@_1, matchid = F@_2};
-dfp_read_field_def_MatchLeaveReq(Other, Z1, Z2, F@_1,
-                                 F@_2, TrUserData) ->
-    dg_read_field_def_MatchLeaveReq(Other,
-                                    Z1,
-                                    Z2,
-                                    F@_1,
-                                    F@_2,
-                                    TrUserData).
+dfp_read_field_def_MatchLeaveReq(
+    Other,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dg_read_field_def_MatchLeaveReq(
+        Other,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-dg_read_field_def_MatchLeaveReq(<<1:1, X:7,
-                                  Rest/binary>>,
-                                N, Acc, F@_1, F@_2, TrUserData)
-    when N < 32 - 7 ->
-    dg_read_field_def_MatchLeaveReq(Rest,
-                                    N + 7,
-                                    X bsl N + Acc,
-                                    F@_1,
-                                    F@_2,
-                                    TrUserData);
-dg_read_field_def_MatchLeaveReq(<<0:1, X:7,
-                                  Rest/binary>>,
-                                N, Acc, F@_1, F@_2, TrUserData) ->
+dg_read_field_def_MatchLeaveReq(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 32 - 7 ->
+    dg_read_field_def_MatchLeaveReq(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+dg_read_field_def_MatchLeaveReq(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     Key = X bsl N + Acc,
     case Key of
         10 ->
-            d_field_MatchLeaveReq_player(Rest,
-                                         0,
-                                         0,
-                                         F@_1,
-                                         F@_2,
-                                         TrUserData);
+            d_field_MatchLeaveReq_player(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                TrUserData
+            );
         16 ->
-            d_field_MatchLeaveReq_matchid(Rest,
-                                          0,
-                                          0,
-                                          F@_1,
-                                          F@_2,
-                                          TrUserData);
+            d_field_MatchLeaveReq_matchid(
+                Rest,
+                0,
+                0,
+                F@_1,
+                F@_2,
+                TrUserData
+            );
         _ ->
             case Key band 7 of
                 0 ->
-                    skip_varint_MatchLeaveReq(Rest,
-                                              0,
-                                              0,
-                                              F@_1,
-                                              F@_2,
-                                              TrUserData);
+                    skip_varint_MatchLeaveReq(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 1 ->
-                    skip_64_MatchLeaveReq(Rest,
-                                          0,
-                                          0,
-                                          F@_1,
-                                          F@_2,
-                                          TrUserData);
+                    skip_64_MatchLeaveReq(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 2 ->
-                    skip_length_delimited_MatchLeaveReq(Rest,
-                                                        0,
-                                                        0,
-                                                        F@_1,
-                                                        F@_2,
-                                                        TrUserData);
+                    skip_length_delimited_MatchLeaveReq(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 3 ->
-                    skip_group_MatchLeaveReq(Rest,
-                                             Key bsr 3,
-                                             0,
-                                             F@_1,
-                                             F@_2,
-                                             TrUserData);
+                    skip_group_MatchLeaveReq(
+                        Rest,
+                        Key bsr 3,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    );
                 5 ->
-                    skip_32_MatchLeaveReq(Rest,
-                                          0,
-                                          0,
-                                          F@_1,
-                                          F@_2,
-                                          TrUserData)
+                    skip_32_MatchLeaveReq(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        F@_2,
+                        TrUserData
+                    )
             end
     end;
-dg_read_field_def_MatchLeaveReq(<<>>, 0, 0, F@_1, F@_2,
-                                _) ->
+dg_read_field_def_MatchLeaveReq(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    F@_2,
+    _
+) ->
     #'MatchLeaveReq'{player = F@_1, matchid = F@_2}.
 
-d_field_MatchLeaveReq_player(<<1:1, X:7, Rest/binary>>,
-                             N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    d_field_MatchLeaveReq_player(Rest,
-                                 N + 7,
-                                 X bsl N + Acc,
-                                 F@_1,
-                                 F@_2,
-                                 TrUserData);
-d_field_MatchLeaveReq_player(<<0:1, X:7, Rest/binary>>,
-                             N, Acc, _, F@_2, TrUserData) ->
+d_field_MatchLeaveReq_player(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    d_field_MatchLeaveReq_player(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+d_field_MatchLeaveReq_player(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    _,
+    F@_2,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_MatchLeaveReq(RestF,
-                                     0,
-                                     0,
-                                     NewFValue,
-                                     F@_2,
-                                     TrUserData).
+        Len = X bsl N + Acc,
+        <<Bytes:Len/binary, Rest2/binary>> = Rest,
+        {id(binary:copy(Bytes), TrUserData), Rest2}
+    end,
+    dfp_read_field_def_MatchLeaveReq(
+        RestF,
+        0,
+        0,
+        NewFValue,
+        F@_2,
+        TrUserData
+    ).
 
-d_field_MatchLeaveReq_matchid(<<1:1, X:7, Rest/binary>>,
-                              N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    d_field_MatchLeaveReq_matchid(Rest,
-                                  N + 7,
-                                  X bsl N + Acc,
-                                  F@_1,
-                                  F@_2,
-                                  TrUserData);
-d_field_MatchLeaveReq_matchid(<<0:1, X:7, Rest/binary>>,
-                              N, Acc, F@_1, _, TrUserData) ->
-    {NewFValue, RestF} = {id(X bsl N + Acc, TrUserData),
-                          Rest},
-    dfp_read_field_def_MatchLeaveReq(RestF,
-                                     0,
-                                     0,
-                                     F@_1,
-                                     NewFValue,
-                                     TrUserData).
+d_field_MatchLeaveReq_matchid(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    d_field_MatchLeaveReq_matchid(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+d_field_MatchLeaveReq_matchid(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    _,
+    TrUserData
+) ->
+    {NewFValue, RestF} = {id(X bsl N + Acc, TrUserData), Rest},
+    dfp_read_field_def_MatchLeaveReq(
+        RestF,
+        0,
+        0,
+        F@_1,
+        NewFValue,
+        TrUserData
+    ).
 
-skip_varint_MatchLeaveReq(<<1:1, _:7, Rest/binary>>, Z1,
-                          Z2, F@_1, F@_2, TrUserData) ->
-    skip_varint_MatchLeaveReq(Rest,
-                              Z1,
-                              Z2,
-                              F@_1,
-                              F@_2,
-                              TrUserData);
-skip_varint_MatchLeaveReq(<<0:1, _:7, Rest/binary>>, Z1,
-                          Z2, F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_MatchLeaveReq(Rest,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData).
+skip_varint_MatchLeaveReq(
+    <<1:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    skip_varint_MatchLeaveReq(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+skip_varint_MatchLeaveReq(
+    <<0:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_MatchLeaveReq(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_length_delimited_MatchLeaveReq(<<1:1, X:7,
-                                      Rest/binary>>,
-                                    N, Acc, F@_1, F@_2, TrUserData)
-    when N < 57 ->
-    skip_length_delimited_MatchLeaveReq(Rest,
-                                        N + 7,
-                                        X bsl N + Acc,
-                                        F@_1,
-                                        F@_2,
-                                        TrUserData);
-skip_length_delimited_MatchLeaveReq(<<0:1, X:7,
-                                      Rest/binary>>,
-                                    N, Acc, F@_1, F@_2, TrUserData) ->
+skip_length_delimited_MatchLeaveReq(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) when N < 57 ->
+    skip_length_delimited_MatchLeaveReq(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        F@_2,
+        TrUserData
+    );
+skip_length_delimited_MatchLeaveReq(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     Length = X bsl N + Acc,
     <<_:Length/binary, Rest2/binary>> = Rest,
-    dfp_read_field_def_MatchLeaveReq(Rest2,
-                                     0,
-                                     0,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData).
+    dfp_read_field_def_MatchLeaveReq(
+        Rest2,
+        0,
+        0,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_group_MatchLeaveReq(Bin, FNum, Z2, F@_1, F@_2,
-                         TrUserData) ->
+skip_group_MatchLeaveReq(
+    Bin,
+    FNum,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
     {_, Rest} = read_group(Bin, FNum),
-    dfp_read_field_def_MatchLeaveReq(Rest,
-                                     0,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData).
+    dfp_read_field_def_MatchLeaveReq(
+        Rest,
+        0,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_32_MatchLeaveReq(<<_:32, Rest/binary>>, Z1, Z2,
-                      F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_MatchLeaveReq(Rest,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData).
+skip_32_MatchLeaveReq(
+    <<_:32, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_MatchLeaveReq(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
-skip_64_MatchLeaveReq(<<_:64, Rest/binary>>, Z1, Z2,
-                      F@_1, F@_2, TrUserData) ->
-    dfp_read_field_def_MatchLeaveReq(Rest,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     TrUserData).
+skip_64_MatchLeaveReq(
+    <<_:64, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    F@_2,
+    TrUserData
+) ->
+    dfp_read_field_def_MatchLeaveReq(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        F@_2,
+        TrUserData
+    ).
 
 decode_msg_MatchLeaveResp(Bin, TrUserData) ->
-    dfp_read_field_def_MatchLeaveResp(Bin,
-                                      0,
-                                      0,
-                                      id(undefined, TrUserData),
-                                      TrUserData).
+    dfp_read_field_def_MatchLeaveResp(
+        Bin,
+        0,
+        0,
+        id(undefined, TrUserData),
+        TrUserData
+    ).
 
-dfp_read_field_def_MatchLeaveResp(<<10, Rest/binary>>,
-                                  Z1, Z2, F@_1, TrUserData) ->
-    d_field_MatchLeaveResp_resp(Rest,
-                                Z1,
-                                Z2,
-                                F@_1,
-                                TrUserData);
-dfp_read_field_def_MatchLeaveResp(<<>>, 0, 0, F@_1,
-                                  _) ->
+dfp_read_field_def_MatchLeaveResp(
+    <<10, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    d_field_MatchLeaveResp_resp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    );
+dfp_read_field_def_MatchLeaveResp(
+    <<>>,
+    0,
+    0,
+    F@_1,
+    _
+) ->
     #'MatchLeaveResp'{resp = F@_1};
-dfp_read_field_def_MatchLeaveResp(Other, Z1, Z2, F@_1,
-                                  TrUserData) ->
-    dg_read_field_def_MatchLeaveResp(Other,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     TrUserData).
+dfp_read_field_def_MatchLeaveResp(
+    Other,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    dg_read_field_def_MatchLeaveResp(
+        Other,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
-dg_read_field_def_MatchLeaveResp(<<1:1, X:7,
-                                   Rest/binary>>,
-                                 N, Acc, F@_1, TrUserData)
-    when N < 32 - 7 ->
-    dg_read_field_def_MatchLeaveResp(Rest,
-                                     N + 7,
-                                     X bsl N + Acc,
-                                     F@_1,
-                                     TrUserData);
-dg_read_field_def_MatchLeaveResp(<<0:1, X:7,
-                                   Rest/binary>>,
-                                 N, Acc, F@_1, TrUserData) ->
+dg_read_field_def_MatchLeaveResp(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) when N < 32 - 7 ->
+    dg_read_field_def_MatchLeaveResp(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        TrUserData
+    );
+dg_read_field_def_MatchLeaveResp(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) ->
     Key = X bsl N + Acc,
     case Key of
         10 ->
-            d_field_MatchLeaveResp_resp(Rest,
-                                        0,
-                                        0,
-                                        F@_1,
-                                        TrUserData);
+            d_field_MatchLeaveResp_resp(
+                Rest,
+                0,
+                0,
+                F@_1,
+                TrUserData
+            );
         _ ->
             case Key band 7 of
                 0 ->
-                    skip_varint_MatchLeaveResp(Rest,
-                                               0,
-                                               0,
-                                               F@_1,
-                                               TrUserData);
+                    skip_varint_MatchLeaveResp(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        TrUserData
+                    );
                 1 ->
                     skip_64_MatchLeaveResp(Rest, 0, 0, F@_1, TrUserData);
                 2 ->
-                    skip_length_delimited_MatchLeaveResp(Rest,
-                                                         0,
-                                                         0,
-                                                         F@_1,
-                                                         TrUserData);
+                    skip_length_delimited_MatchLeaveResp(
+                        Rest,
+                        0,
+                        0,
+                        F@_1,
+                        TrUserData
+                    );
                 3 ->
-                    skip_group_MatchLeaveResp(Rest,
-                                              Key bsr 3,
-                                              0,
-                                              F@_1,
-                                              TrUserData);
+                    skip_group_MatchLeaveResp(
+                        Rest,
+                        Key bsr 3,
+                        0,
+                        F@_1,
+                        TrUserData
+                    );
                 5 ->
                     skip_32_MatchLeaveResp(Rest, 0, 0, F@_1, TrUserData)
             end
@@ -5525,93 +8925,158 @@ dg_read_field_def_MatchLeaveResp(<<0:1, X:7,
 dg_read_field_def_MatchLeaveResp(<<>>, 0, 0, F@_1, _) ->
     #'MatchLeaveResp'{resp = F@_1}.
 
-d_field_MatchLeaveResp_resp(<<1:1, X:7, Rest/binary>>,
-                            N, Acc, F@_1, TrUserData)
-    when N < 57 ->
-    d_field_MatchLeaveResp_resp(Rest,
-                                N + 7,
-                                X bsl N + Acc,
-                                F@_1,
-                                TrUserData);
-d_field_MatchLeaveResp_resp(<<0:1, X:7, Rest/binary>>,
-                            N, Acc, Prev, TrUserData) ->
+d_field_MatchLeaveResp_resp(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) when N < 57 ->
+    d_field_MatchLeaveResp_resp(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        TrUserData
+    );
+d_field_MatchLeaveResp_resp(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    Prev,
+    TrUserData
+) ->
     {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bs:Len/binary, Rest2/binary>> = Rest,
-                             {id(decode_msg_ResponseObject(Bs, TrUserData),
-                                 TrUserData),
-                              Rest2}
-                         end,
-    dfp_read_field_def_MatchLeaveResp(RestF,
-                                      0,
-                                      0,
-                                      if Prev == undefined -> NewFValue;
-                                         true ->
-                                             merge_msg_ResponseObject(Prev,
-                                                                      NewFValue,
-                                                                      TrUserData)
-                                      end,
-                                      TrUserData).
+        Len = X bsl N + Acc,
+        <<Bs:Len/binary, Rest2/binary>> = Rest,
+        {id(
+                decode_msg_ResponseObject(Bs, TrUserData),
+                TrUserData
+            ),
+            Rest2}
+    end,
+    dfp_read_field_def_MatchLeaveResp(
+        RestF,
+        0,
+        0,
+        if
+            Prev == undefined ->
+                NewFValue;
+            true ->
+                merge_msg_ResponseObject(
+                    Prev,
+                    NewFValue,
+                    TrUserData
+                )
+        end,
+        TrUserData
+    ).
 
-skip_varint_MatchLeaveResp(<<1:1, _:7, Rest/binary>>,
-                           Z1, Z2, F@_1, TrUserData) ->
-    skip_varint_MatchLeaveResp(Rest,
-                               Z1,
-                               Z2,
-                               F@_1,
-                               TrUserData);
-skip_varint_MatchLeaveResp(<<0:1, _:7, Rest/binary>>,
-                           Z1, Z2, F@_1, TrUserData) ->
-    dfp_read_field_def_MatchLeaveResp(Rest,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      TrUserData).
+skip_varint_MatchLeaveResp(
+    <<1:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    skip_varint_MatchLeaveResp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    );
+skip_varint_MatchLeaveResp(
+    <<0:1, _:7, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    dfp_read_field_def_MatchLeaveResp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
-skip_length_delimited_MatchLeaveResp(<<1:1, X:7,
-                                       Rest/binary>>,
-                                     N, Acc, F@_1, TrUserData)
-    when N < 57 ->
-    skip_length_delimited_MatchLeaveResp(Rest,
-                                         N + 7,
-                                         X bsl N + Acc,
-                                         F@_1,
-                                         TrUserData);
-skip_length_delimited_MatchLeaveResp(<<0:1, X:7,
-                                       Rest/binary>>,
-                                     N, Acc, F@_1, TrUserData) ->
+skip_length_delimited_MatchLeaveResp(
+    <<1:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) when N < 57 ->
+    skip_length_delimited_MatchLeaveResp(
+        Rest,
+        N + 7,
+        X bsl N + Acc,
+        F@_1,
+        TrUserData
+    );
+skip_length_delimited_MatchLeaveResp(
+    <<0:1, X:7, Rest/binary>>,
+    N,
+    Acc,
+    F@_1,
+    TrUserData
+) ->
     Length = X bsl N + Acc,
     <<_:Length/binary, Rest2/binary>> = Rest,
-    dfp_read_field_def_MatchLeaveResp(Rest2,
-                                      0,
-                                      0,
-                                      F@_1,
-                                      TrUserData).
+    dfp_read_field_def_MatchLeaveResp(
+        Rest2,
+        0,
+        0,
+        F@_1,
+        TrUserData
+    ).
 
-skip_group_MatchLeaveResp(Bin, FNum, Z2, F@_1,
-                          TrUserData) ->
+skip_group_MatchLeaveResp(
+    Bin,
+    FNum,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
     {_, Rest} = read_group(Bin, FNum),
-    dfp_read_field_def_MatchLeaveResp(Rest,
-                                      0,
-                                      Z2,
-                                      F@_1,
-                                      TrUserData).
+    dfp_read_field_def_MatchLeaveResp(
+        Rest,
+        0,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
-skip_32_MatchLeaveResp(<<_:32, Rest/binary>>, Z1, Z2,
-                       F@_1, TrUserData) ->
-    dfp_read_field_def_MatchLeaveResp(Rest,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      TrUserData).
+skip_32_MatchLeaveResp(
+    <<_:32, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    dfp_read_field_def_MatchLeaveResp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
-skip_64_MatchLeaveResp(<<_:64, Rest/binary>>, Z1, Z2,
-                       F@_1, TrUserData) ->
-    dfp_read_field_def_MatchLeaveResp(Rest,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      TrUserData).
+skip_64_MatchLeaveResp(
+    <<_:64, Rest/binary>>,
+    Z1,
+    Z2,
+    F@_1,
+    TrUserData
+) ->
+    dfp_read_field_def_MatchLeaveResp(
+        Rest,
+        Z1,
+        Z2,
+        F@_1,
+        TrUserData
+    ).
 
 d_enum_MatchState(0) -> 'CREATING';
 d_enum_MatchState(1) -> 'PLAYING';
@@ -5656,56 +9121,66 @@ read_group(Bin, FieldNum) ->
 %% (The only time the same group field number could occur would
 %% be in a nested sub message, but then it would be inside a
 %% length-delimited entry, which we skip-read by length.)
-read_gr_b(<<1:1, X:7, Tl/binary>>, N, Acc, NumBytes, TagLen, FieldNum)
-  when N < (32-7) ->
-    read_gr_b(Tl, N+7, X bsl N + Acc, NumBytes, TagLen+1, FieldNum);
-read_gr_b(<<0:1, X:7, Tl/binary>>, N, Acc, NumBytes, TagLen,
-          FieldNum) ->
+read_gr_b(<<1:1, X:7, Tl/binary>>, N, Acc, NumBytes, TagLen, FieldNum) when N < (32 - 7) ->
+    read_gr_b(Tl, N + 7, X bsl N + Acc, NumBytes, TagLen + 1, FieldNum);
+read_gr_b(
+    <<0:1, X:7, Tl/binary>>,
+    N,
+    Acc,
+    NumBytes,
+    TagLen,
+    FieldNum
+) ->
     Key = X bsl N + Acc,
     TagLen1 = TagLen + 1,
     case {Key bsr 3, Key band 7} of
-        {FieldNum, 4} -> % 4 = group_end
+        % 4 = group_end
+        {FieldNum, 4} ->
             {NumBytes, TagLen1};
-        {_, 0} -> % 0 = varint
+        % 0 = varint
+        {_, 0} ->
             read_gr_vi(Tl, 0, NumBytes + TagLen1, FieldNum);
-        {_, 1} -> % 1 = bits64
+        % 1 = bits64
+        {_, 1} ->
             <<_:64, Tl2/binary>> = Tl,
             read_gr_b(Tl2, 0, 0, NumBytes + TagLen1 + 8, 0, FieldNum);
-        {_, 2} -> % 2 = length_delimited
+        % 2 = length_delimited
+        {_, 2} ->
             read_gr_ld(Tl, 0, 0, NumBytes + TagLen1, FieldNum);
-        {_, 3} -> % 3 = group_start
+        % 3 = group_start
+        {_, 3} ->
             read_gr_b(Tl, 0, 0, NumBytes + TagLen1, 0, FieldNum);
-        {_, 4} -> % 4 = group_end
+        % 4 = group_end
+        {_, 4} ->
             read_gr_b(Tl, 0, 0, NumBytes + TagLen1, 0, FieldNum);
-        {_, 5} -> % 5 = bits32
+        % 5 = bits32
+        {_, 5} ->
             <<_:32, Tl2/binary>> = Tl,
             read_gr_b(Tl2, 0, 0, NumBytes + TagLen1 + 4, 0, FieldNum)
     end.
 
-read_gr_vi(<<1:1, _:7, Tl/binary>>, N, NumBytes, FieldNum)
-  when N < (64-7) ->
-    read_gr_vi(Tl, N+7, NumBytes+1, FieldNum);
+read_gr_vi(<<1:1, _:7, Tl/binary>>, N, NumBytes, FieldNum) when N < (64 - 7) ->
+    read_gr_vi(Tl, N + 7, NumBytes + 1, FieldNum);
 read_gr_vi(<<0:1, _:7, Tl/binary>>, _, NumBytes, FieldNum) ->
-    read_gr_b(Tl, 0, 0, NumBytes+1, 0, FieldNum).
+    read_gr_b(Tl, 0, 0, NumBytes + 1, 0, FieldNum).
 
-read_gr_ld(<<1:1, X:7, Tl/binary>>, N, Acc, NumBytes, FieldNum)
-  when N < (64-7) ->
-    read_gr_ld(Tl, N+7, X bsl N + Acc, NumBytes+1, FieldNum);
+read_gr_ld(<<1:1, X:7, Tl/binary>>, N, Acc, NumBytes, FieldNum) when N < (64 - 7) ->
+    read_gr_ld(Tl, N + 7, X bsl N + Acc, NumBytes + 1, FieldNum);
 read_gr_ld(<<0:1, X:7, Tl/binary>>, N, Acc, NumBytes, FieldNum) ->
     Len = X bsl N + Acc,
     NumBytes1 = NumBytes + 1,
     <<_:Len/binary, Tl2/binary>> = Tl,
     read_gr_b(Tl2, 0, 0, NumBytes1 + Len, 0, FieldNum).
 
-merge_msgs(Prev, New)
-    when element(1, Prev) =:= element(1, New) ->
+merge_msgs(Prev, New) when element(1, Prev) =:= element(1, New) ->
     merge_msgs(Prev, New, element(1, Prev), []).
 
 merge_msgs(Prev, New, MsgName) when is_atom(MsgName) ->
     merge_msgs(Prev, New, MsgName, []);
-merge_msgs(Prev, New, Opts)
-    when element(1, Prev) =:= element(1, New),
-         is_list(Opts) ->
+merge_msgs(Prev, New, Opts) when
+    element(1, Prev) =:= element(1, New),
+    is_list(Opts)
+->
     merge_msgs(Prev, New, element(1, Prev), Opts).
 
 merge_msgs(Prev, New, MsgName, Opts) ->
@@ -5715,7 +9190,8 @@ merge_msgs(Prev, New, MsgName, Opts) ->
             merge_msg_ResponseObject(Prev, New, TrUserData);
         'Match.Player' ->
             'merge_msg_Match.Player'(Prev, New, TrUserData);
-        'Match' -> merge_msg_Match(Prev, New, TrUserData);
+        'Match' ->
+            merge_msg_Match(Prev, New, TrUserData);
         'AccountNewReq' ->
             merge_msg_AccountNewReq(Prev, New, TrUserData);
         'AccountNewResp' ->
@@ -5723,9 +9199,11 @@ merge_msgs(Prev, New, MsgName, Opts) ->
         'AccountLoginReq' ->
             merge_msg_AccountLoginReq(Prev, New, TrUserData);
         'AccountLoginResp.Player' ->
-            'merge_msg_AccountLoginResp.Player'(Prev,
-                                                New,
-                                                TrUserData);
+            'merge_msg_AccountLoginResp.Player'(
+                Prev,
+                New,
+                TrUserData
+            );
         'AccountLoginResp' ->
             merge_msg_AccountLoginResp(Prev, New, TrUserData);
         'PlayerNewReq' ->
@@ -5752,207 +9230,343 @@ merge_msgs(Prev, New, MsgName, Opts) ->
             merge_msg_MatchLeaveResp(Prev, New, TrUserData)
     end.
 
--compile({nowarn_unused_function,merge_msg_ResponseObject/3}).
-merge_msg_ResponseObject(#'ResponseObject'{error =
-                                               PFerror},
-                         #'ResponseObject'{status = NFstatus, error = NFerror},
-                         _) ->
-    #'ResponseObject'{status = NFstatus,
-                      error =
-                          if NFerror =:= undefined -> PFerror;
-                             true -> NFerror
-                          end}.
+-compile({nowarn_unused_function, merge_msg_ResponseObject/3}).
+merge_msg_ResponseObject(
+    #'ResponseObject'{
+        error =
+            PFerror
+    },
+    #'ResponseObject'{status = NFstatus, error = NFerror},
+    _
+) ->
+    #'ResponseObject'{
+        status = NFstatus,
+        error =
+            if
+                NFerror =:= undefined -> PFerror;
+                true -> NFerror
+            end
+    }.
 
--compile({nowarn_unused_function,'merge_msg_Match.Player'/3}).
-'merge_msg_Match.Player'(#'Match.Player'{},
-                         #'Match.Player'{name = NFname}, _) ->
+-compile({nowarn_unused_function, 'merge_msg_Match.Player'/3}).
+'merge_msg_Match.Player'(
+    #'Match.Player'{},
+    #'Match.Player'{name = NFname},
+    _
+) ->
     #'Match.Player'{name = NFname}.
 
--compile({nowarn_unused_function,merge_msg_Match/3}).
-merge_msg_Match(#'Match'{players = PFplayers,
-                         extra = PFextra},
-                #'Match'{id = NFid, state = NFstate,
-                         players = NFplayers, players_max = NFplayers_max,
-                         start_time = NFstart_time, mode = NFmode,
-                         duration = NFduration, extra = NFextra},
-                TrUserData) ->
-    #'Match'{id = NFid, state = NFstate,
-             players =
-                 if PFplayers /= undefined, NFplayers /= undefined ->
-                        'erlang_++'(PFplayers, NFplayers, TrUserData);
-                    PFplayers == undefined -> NFplayers;
-                    NFplayers == undefined -> PFplayers
-                 end,
-             players_max = NFplayers_max, start_time = NFstart_time,
-             mode = NFmode, duration = NFduration,
-             extra =
-                 if NFextra =:= undefined -> PFextra;
-                    true -> NFextra
-                 end}.
+-compile({nowarn_unused_function, merge_msg_Match/3}).
+merge_msg_Match(
+    #'Match'{
+        players = PFplayers,
+        extra = PFextra
+    },
+    #'Match'{
+        id = NFid,
+        state = NFstate,
+        players = NFplayers,
+        players_max = NFplayers_max,
+        start_time = NFstart_time,
+        mode = NFmode,
+        duration = NFduration,
+        extra = NFextra
+    },
+    TrUserData
+) ->
+    #'Match'{
+        id = NFid,
+        state = NFstate,
+        players =
+            if
+                PFplayers /= undefined, NFplayers /= undefined ->
+                    'erlang_++'(PFplayers, NFplayers, TrUserData);
+                PFplayers == undefined ->
+                    NFplayers;
+                NFplayers == undefined ->
+                    PFplayers
+            end,
+        players_max = NFplayers_max,
+        start_time = NFstart_time,
+        mode = NFmode,
+        duration = NFduration,
+        extra =
+            if
+                NFextra =:= undefined -> PFextra;
+                true -> NFextra
+            end
+    }.
 
--compile({nowarn_unused_function,merge_msg_AccountNewReq/3}).
-merge_msg_AccountNewReq(#'AccountNewReq'{},
-                        #'AccountNewReq'{email = NFemail,
-                                         password = NFpassword},
-                        _) ->
-    #'AccountNewReq'{email = NFemail,
-                     password = NFpassword}.
+-compile({nowarn_unused_function, merge_msg_AccountNewReq/3}).
+merge_msg_AccountNewReq(
+    #'AccountNewReq'{},
+    #'AccountNewReq'{
+        email = NFemail,
+        password = NFpassword
+    },
+    _
+) ->
+    #'AccountNewReq'{
+        email = NFemail,
+        password = NFpassword
+    }.
 
--compile({nowarn_unused_function,merge_msg_AccountNewResp/3}).
-merge_msg_AccountNewResp(#'AccountNewResp'{error =
-                                               PFerror},
-                         #'AccountNewResp'{status = NFstatus, error = NFerror},
-                         _) ->
-    #'AccountNewResp'{status = NFstatus,
-                      error =
-                          if NFerror =:= undefined -> PFerror;
-                             true -> NFerror
-                          end}.
+-compile({nowarn_unused_function, merge_msg_AccountNewResp/3}).
+merge_msg_AccountNewResp(
+    #'AccountNewResp'{
+        error =
+            PFerror
+    },
+    #'AccountNewResp'{status = NFstatus, error = NFerror},
+    _
+) ->
+    #'AccountNewResp'{
+        status = NFstatus,
+        error =
+            if
+                NFerror =:= undefined -> PFerror;
+                true -> NFerror
+            end
+    }.
 
--compile({nowarn_unused_function,merge_msg_AccountLoginReq/3}).
-merge_msg_AccountLoginReq(#'AccountLoginReq'{},
-                          #'AccountLoginReq'{email = NFemail,
-                                             password = NFpassword},
-                          _) ->
-    #'AccountLoginReq'{email = NFemail,
-                       password = NFpassword}.
+-compile({nowarn_unused_function, merge_msg_AccountLoginReq/3}).
+merge_msg_AccountLoginReq(
+    #'AccountLoginReq'{},
+    #'AccountLoginReq'{
+        email = NFemail,
+        password = NFpassword
+    },
+    _
+) ->
+    #'AccountLoginReq'{
+        email = NFemail,
+        password = NFpassword
+    }.
 
--compile({nowarn_unused_function,'merge_msg_AccountLoginResp.Player'/3}).
-'merge_msg_AccountLoginResp.Player'(#'AccountLoginResp.Player'{},
-                                    #'AccountLoginResp.Player'{name = NFname},
-                                    _) ->
+-compile({nowarn_unused_function, 'merge_msg_AccountLoginResp.Player'/3}).
+'merge_msg_AccountLoginResp.Player'(
+    #'AccountLoginResp.Player'{},
+    #'AccountLoginResp.Player'{name = NFname},
+    _
+) ->
     #'AccountLoginResp.Player'{name = NFname}.
 
--compile({nowarn_unused_function,merge_msg_AccountLoginResp/3}).
-merge_msg_AccountLoginResp(#'AccountLoginResp'{players =
-                                                   PFplayers,
-                                               error = PFerror},
-                           #'AccountLoginResp'{status = NFstatus,
-                                               players = NFplayers,
-                                               error = NFerror},
-                           TrUserData) ->
-    #'AccountLoginResp'{status = NFstatus,
-                        players =
-                            if PFplayers /= undefined, NFplayers /= undefined ->
-                                   'erlang_++'(PFplayers,
-                                               NFplayers,
-                                               TrUserData);
-                               PFplayers == undefined -> NFplayers;
-                               NFplayers == undefined -> PFplayers
-                            end,
-                        error =
-                            if NFerror =:= undefined -> PFerror;
-                               true -> NFerror
-                            end}.
+-compile({nowarn_unused_function, merge_msg_AccountLoginResp/3}).
+merge_msg_AccountLoginResp(
+    #'AccountLoginResp'{
+        players =
+            PFplayers,
+        error = PFerror
+    },
+    #'AccountLoginResp'{
+        status = NFstatus,
+        players = NFplayers,
+        error = NFerror
+    },
+    TrUserData
+) ->
+    #'AccountLoginResp'{
+        status = NFstatus,
+        players =
+            if
+                PFplayers /= undefined, NFplayers /= undefined ->
+                    'erlang_++'(
+                        PFplayers,
+                        NFplayers,
+                        TrUserData
+                    );
+                PFplayers == undefined ->
+                    NFplayers;
+                NFplayers == undefined ->
+                    PFplayers
+            end,
+        error =
+            if
+                NFerror =:= undefined -> PFerror;
+                true -> NFerror
+            end
+    }.
 
--compile({nowarn_unused_function,merge_msg_PlayerNewReq/3}).
-merge_msg_PlayerNewReq(#'PlayerNewReq'{},
-                       #'PlayerNewReq'{name = NFname, title = NFtitle,
-                                       appearance = NFappearance,
-                                       role = NFrole},
-                       _) ->
-    #'PlayerNewReq'{name = NFname, title = NFtitle,
-                    appearance = NFappearance, role = NFrole}.
+-compile({nowarn_unused_function, merge_msg_PlayerNewReq/3}).
+merge_msg_PlayerNewReq(
+    #'PlayerNewReq'{},
+    #'PlayerNewReq'{
+        name = NFname,
+        title = NFtitle,
+        appearance = NFappearance,
+        role = NFrole
+    },
+    _
+) ->
+    #'PlayerNewReq'{
+        name = NFname,
+        title = NFtitle,
+        appearance = NFappearance,
+        role = NFrole
+    }.
 
--compile({nowarn_unused_function,merge_msg_PlayerNewResp/3}).
-merge_msg_PlayerNewResp(#'PlayerNewResp'{error =
-                                             PFerror},
-                        #'PlayerNewResp'{status = NFstatus, error = NFerror},
-                        _) ->
-    #'PlayerNewResp'{status = NFstatus,
-                     error =
-                         if NFerror =:= undefined -> PFerror;
-                            true -> NFerror
-                         end}.
+-compile({nowarn_unused_function, merge_msg_PlayerNewResp/3}).
+merge_msg_PlayerNewResp(
+    #'PlayerNewResp'{
+        error =
+            PFerror
+    },
+    #'PlayerNewResp'{status = NFstatus, error = NFerror},
+    _
+) ->
+    #'PlayerNewResp'{
+        status = NFstatus,
+        error =
+            if
+                NFerror =:= undefined -> PFerror;
+                true -> NFerror
+            end
+    }.
 
--compile({nowarn_unused_function,merge_msg_PlayerAuthenticate/3}).
-merge_msg_PlayerAuthenticate(#'PlayerAuthenticate'{},
-                             #'PlayerAuthenticate'{id = NFid}, _) ->
+-compile({nowarn_unused_function, merge_msg_PlayerAuthenticate/3}).
+merge_msg_PlayerAuthenticate(
+    #'PlayerAuthenticate'{},
+    #'PlayerAuthenticate'{id = NFid},
+    _
+) ->
     #'PlayerAuthenticate'{id = NFid}.
 
--compile({nowarn_unused_function,merge_msg_PlayerLog/3}).
-merge_msg_PlayerLog(#'PlayerLog'{},
-                    #'PlayerLog'{msg = NFmsg}, _) ->
+-compile({nowarn_unused_function, merge_msg_PlayerLog/3}).
+merge_msg_PlayerLog(
+    #'PlayerLog'{},
+    #'PlayerLog'{msg = NFmsg},
+    _
+) ->
     #'PlayerLog'{msg = NFmsg}.
 
--compile({nowarn_unused_function,merge_msg_LobbyInfo/3}).
-merge_msg_LobbyInfo(#'LobbyInfo'{resp = PFresp,
-                                 matches = PFmatches},
-                    #'LobbyInfo'{resp = NFresp, matches = NFmatches},
-                    TrUserData) ->
-    #'LobbyInfo'{resp =
-                     merge_msg_ResponseObject(PFresp, NFresp, TrUserData),
-                 matches =
-                     if PFmatches /= undefined, NFmatches /= undefined ->
-                            'erlang_++'(PFmatches, NFmatches, TrUserData);
-                        PFmatches == undefined -> NFmatches;
-                        NFmatches == undefined -> PFmatches
-                     end}.
+-compile({nowarn_unused_function, merge_msg_LobbyInfo/3}).
+merge_msg_LobbyInfo(
+    #'LobbyInfo'{
+        resp = PFresp,
+        matches = PFmatches
+    },
+    #'LobbyInfo'{resp = NFresp, matches = NFmatches},
+    TrUserData
+) ->
+    #'LobbyInfo'{
+        resp =
+            merge_msg_ResponseObject(PFresp, NFresp, TrUserData),
+        matches =
+            if
+                PFmatches /= undefined, NFmatches /= undefined ->
+                    'erlang_++'(PFmatches, NFmatches, TrUserData);
+                PFmatches == undefined ->
+                    NFmatches;
+                NFmatches == undefined ->
+                    PFmatches
+            end
+    }.
 
--compile({nowarn_unused_function,merge_msg_MatchCreateReq/3}).
-merge_msg_MatchCreateReq(#'MatchCreateReq'{extra =
-                                               PFextra},
-                         #'MatchCreateReq'{mode = NFmode,
-                                           players_max = NFplayers_max,
-                                           extra = NFextra},
-                         _) ->
-    #'MatchCreateReq'{mode = NFmode,
-                      players_max = NFplayers_max,
-                      extra =
-                          if NFextra =:= undefined -> PFextra;
-                             true -> NFextra
-                          end}.
+-compile({nowarn_unused_function, merge_msg_MatchCreateReq/3}).
+merge_msg_MatchCreateReq(
+    #'MatchCreateReq'{
+        extra =
+            PFextra
+    },
+    #'MatchCreateReq'{
+        mode = NFmode,
+        players_max = NFplayers_max,
+        extra = NFextra
+    },
+    _
+) ->
+    #'MatchCreateReq'{
+        mode = NFmode,
+        players_max = NFplayers_max,
+        extra =
+            if
+                NFextra =:= undefined -> PFextra;
+                true -> NFextra
+            end
+    }.
 
--compile({nowarn_unused_function,merge_msg_MatchCreateResp/3}).
-merge_msg_MatchCreateResp(#'MatchCreateResp'{resp =
-                                                 PFresp,
-                                             match = PFmatch},
-                          #'MatchCreateResp'{resp = NFresp, match = NFmatch},
-                          TrUserData) ->
-    #'MatchCreateResp'{resp =
-                           merge_msg_ResponseObject(PFresp, NFresp, TrUserData),
-                       match =
-                           if PFmatch /= undefined, NFmatch /= undefined ->
-                                  merge_msg_Match(PFmatch, NFmatch, TrUserData);
-                              PFmatch == undefined -> NFmatch;
-                              NFmatch == undefined -> PFmatch
-                           end}.
+-compile({nowarn_unused_function, merge_msg_MatchCreateResp/3}).
+merge_msg_MatchCreateResp(
+    #'MatchCreateResp'{
+        resp =
+            PFresp,
+        match = PFmatch
+    },
+    #'MatchCreateResp'{resp = NFresp, match = NFmatch},
+    TrUserData
+) ->
+    #'MatchCreateResp'{
+        resp =
+            merge_msg_ResponseObject(PFresp, NFresp, TrUserData),
+        match =
+            if
+                PFmatch /= undefined, NFmatch /= undefined ->
+                    merge_msg_Match(PFmatch, NFmatch, TrUserData);
+                PFmatch == undefined ->
+                    NFmatch;
+                NFmatch == undefined ->
+                    PFmatch
+            end
+    }.
 
--compile({nowarn_unused_function,merge_msg_MatchJoinReq/3}).
-merge_msg_MatchJoinReq(#'MatchJoinReq'{},
-                       #'MatchJoinReq'{player = NFplayer, matchid = NFmatchid},
-                       _) ->
+-compile({nowarn_unused_function, merge_msg_MatchJoinReq/3}).
+merge_msg_MatchJoinReq(
+    #'MatchJoinReq'{},
+    #'MatchJoinReq'{player = NFplayer, matchid = NFmatchid},
+    _
+) ->
     #'MatchJoinReq'{player = NFplayer, matchid = NFmatchid}.
 
--compile({nowarn_unused_function,merge_msg_MatchJoinResp/3}).
-merge_msg_MatchJoinResp(#'MatchJoinResp'{resp = PFresp,
-                                         match = PFmatch},
-                        #'MatchJoinResp'{resp = NFresp, match = NFmatch},
-                        TrUserData) ->
-    #'MatchJoinResp'{resp =
-                         merge_msg_ResponseObject(PFresp, NFresp, TrUserData),
-                     match =
-                         if PFmatch /= undefined, NFmatch /= undefined ->
-                                merge_msg_Match(PFmatch, NFmatch, TrUserData);
-                            PFmatch == undefined -> NFmatch;
-                            NFmatch == undefined -> PFmatch
-                         end}.
+-compile({nowarn_unused_function, merge_msg_MatchJoinResp/3}).
+merge_msg_MatchJoinResp(
+    #'MatchJoinResp'{
+        resp = PFresp,
+        match = PFmatch
+    },
+    #'MatchJoinResp'{resp = NFresp, match = NFmatch},
+    TrUserData
+) ->
+    #'MatchJoinResp'{
+        resp =
+            merge_msg_ResponseObject(PFresp, NFresp, TrUserData),
+        match =
+            if
+                PFmatch /= undefined, NFmatch /= undefined ->
+                    merge_msg_Match(PFmatch, NFmatch, TrUserData);
+                PFmatch == undefined ->
+                    NFmatch;
+                NFmatch == undefined ->
+                    PFmatch
+            end
+    }.
 
--compile({nowarn_unused_function,merge_msg_MatchLeaveReq/3}).
-merge_msg_MatchLeaveReq(#'MatchLeaveReq'{},
-                        #'MatchLeaveReq'{player = NFplayer,
-                                         matchid = NFmatchid},
-                        _) ->
-    #'MatchLeaveReq'{player = NFplayer,
-                     matchid = NFmatchid}.
+-compile({nowarn_unused_function, merge_msg_MatchLeaveReq/3}).
+merge_msg_MatchLeaveReq(
+    #'MatchLeaveReq'{},
+    #'MatchLeaveReq'{
+        player = NFplayer,
+        matchid = NFmatchid
+    },
+    _
+) ->
+    #'MatchLeaveReq'{
+        player = NFplayer,
+        matchid = NFmatchid
+    }.
 
--compile({nowarn_unused_function,merge_msg_MatchLeaveResp/3}).
-merge_msg_MatchLeaveResp(#'MatchLeaveResp'{resp =
-                                               PFresp},
-                         #'MatchLeaveResp'{resp = NFresp}, TrUserData) ->
-    #'MatchLeaveResp'{resp =
-                          merge_msg_ResponseObject(PFresp, NFresp, TrUserData)}.
-
+-compile({nowarn_unused_function, merge_msg_MatchLeaveResp/3}).
+merge_msg_MatchLeaveResp(
+    #'MatchLeaveResp'{
+        resp =
+            PFresp
+    },
+    #'MatchLeaveResp'{resp = NFresp},
+    TrUserData
+) ->
+    #'MatchLeaveResp'{
+        resp =
+            merge_msg_ResponseObject(PFresp, NFresp, TrUserData)
+    }.
 
 verify_msg(Msg) when tuple_size(Msg) >= 1 ->
     verify_msg(Msg, element(1, Msg), []);
@@ -5973,7 +9587,8 @@ verify_msg(Msg, MsgName, Opts) ->
             v_msg_ResponseObject(Msg, [MsgName], TrUserData);
         'Match.Player' ->
             'v_msg_Match.Player'(Msg, [MsgName], TrUserData);
-        'Match' -> v_msg_Match(Msg, [MsgName], TrUserData);
+        'Match' ->
+            v_msg_Match(Msg, [MsgName], TrUserData);
         'AccountNewReq' ->
             v_msg_AccountNewReq(Msg, [MsgName], TrUserData);
         'AccountNewResp' ->
@@ -5981,9 +9596,11 @@ verify_msg(Msg, MsgName, Opts) ->
         'AccountLoginReq' ->
             v_msg_AccountLoginReq(Msg, [MsgName], TrUserData);
         'AccountLoginResp.Player' ->
-            'v_msg_AccountLoginResp.Player'(Msg,
-                                            [MsgName],
-                                            TrUserData);
+            'v_msg_AccountLoginResp.Player'(
+                Msg,
+                [MsgName],
+                TrUserData
+            );
         'AccountLoginResp' ->
             v_msg_AccountLoginResp(Msg, [MsgName], TrUserData);
         'PlayerNewReq' ->
@@ -6008,153 +9625,237 @@ verify_msg(Msg, MsgName, Opts) ->
             v_msg_MatchLeaveReq(Msg, [MsgName], TrUserData);
         'MatchLeaveResp' ->
             v_msg_MatchLeaveResp(Msg, [MsgName], TrUserData);
-        _ -> mk_type_error(not_a_known_message, Msg, [])
+        _ ->
+            mk_type_error(not_a_known_message, Msg, [])
     end.
 
-
--compile({nowarn_unused_function,v_msg_ResponseObject/3}).
--dialyzer({nowarn_function,v_msg_ResponseObject/3}).
-v_msg_ResponseObject(#'ResponseObject'{status = F1,
-                                       error = F2},
-                     Path, TrUserData) ->
-    'v_enum_ResponseObject.Status'(F1,
-                                   [status | Path],
-                                   TrUserData),
-    if F2 == undefined -> ok;
-       true -> v_type_string(F2, [error | Path], TrUserData)
+-compile({nowarn_unused_function, v_msg_ResponseObject/3}).
+-dialyzer({nowarn_function, v_msg_ResponseObject/3}).
+v_msg_ResponseObject(
+    #'ResponseObject'{
+        status = F1,
+        error = F2
+    },
+    Path,
+    TrUserData
+) ->
+    'v_enum_ResponseObject.Status'(
+        F1,
+        [status | Path],
+        TrUserData
+    ),
+    if
+        F2 == undefined -> ok;
+        true -> v_type_string(F2, [error | Path], TrUserData)
     end,
     ok;
 v_msg_ResponseObject(X, Path, _TrUserData) ->
-    mk_type_error({expected_msg, 'ResponseObject'},
-                  X,
-                  Path).
+    mk_type_error(
+        {expected_msg, 'ResponseObject'},
+        X,
+        Path
+    ).
 
--compile({nowarn_unused_function,'v_msg_Match.Player'/3}).
--dialyzer({nowarn_function,'v_msg_Match.Player'/3}).
-'v_msg_Match.Player'(#'Match.Player'{name = F1}, Path,
-                     TrUserData) ->
+-compile({nowarn_unused_function, 'v_msg_Match.Player'/3}).
+-dialyzer({nowarn_function, 'v_msg_Match.Player'/3}).
+'v_msg_Match.Player'(
+    #'Match.Player'{name = F1},
+    Path,
+    TrUserData
+) ->
     v_type_string(F1, [name | Path], TrUserData),
     ok;
 'v_msg_Match.Player'(X, Path, _TrUserData) ->
     mk_type_error({expected_msg, 'Match.Player'}, X, Path).
 
--compile({nowarn_unused_function,v_msg_Match/3}).
--dialyzer({nowarn_function,v_msg_Match/3}).
-v_msg_Match(#'Match'{id = F1, state = F2, players = F3,
-                     players_max = F4, start_time = F5, mode = F6,
-                     duration = F7, extra = F8},
-            Path, TrUserData) ->
+-compile({nowarn_unused_function, v_msg_Match/3}).
+-dialyzer({nowarn_function, v_msg_Match/3}).
+v_msg_Match(
+    #'Match'{
+        id = F1,
+        state = F2,
+        players = F3,
+        players_max = F4,
+        start_time = F5,
+        mode = F6,
+        duration = F7,
+        extra = F8
+    },
+    Path,
+    TrUserData
+) ->
     v_type_uint32(F1, [id | Path], TrUserData),
     v_enum_MatchState(F2, [state | Path], TrUserData),
-    if is_list(F3) ->
-           _ = ['v_msg_Match.Player'(Elem,
-                                     [players | Path],
-                                     TrUserData)
-                || Elem <- F3],
-           ok;
-       true ->
-           mk_type_error({invalid_list_of, {msg, 'Match.Player'}},
-                         F3,
-                         [players | Path])
+    if
+        is_list(F3) ->
+            _ = [
+                'v_msg_Match.Player'(
+                    Elem,
+                    [players | Path],
+                    TrUserData
+                )
+             || Elem <- F3
+            ],
+            ok;
+        true ->
+            mk_type_error(
+                {invalid_list_of, {msg, 'Match.Player'}},
+                F3,
+                [players | Path]
+            )
     end,
     v_type_uint32(F4, [players_max | Path], TrUserData),
     v_type_uint64(F5, [start_time | Path], TrUserData),
     v_enum_MatchMode(F6, [mode | Path], TrUserData),
     v_type_uint32(F7, [duration | Path], TrUserData),
-    if F8 == undefined -> ok;
-       true -> v_type_bytes(F8, [extra | Path], TrUserData)
+    if
+        F8 == undefined -> ok;
+        true -> v_type_bytes(F8, [extra | Path], TrUserData)
     end,
     ok;
 v_msg_Match(X, Path, _TrUserData) ->
     mk_type_error({expected_msg, 'Match'}, X, Path).
 
--compile({nowarn_unused_function,v_msg_AccountNewReq/3}).
--dialyzer({nowarn_function,v_msg_AccountNewReq/3}).
-v_msg_AccountNewReq(#'AccountNewReq'{email = F1,
-                                     password = F2},
-                    Path, TrUserData) ->
+-compile({nowarn_unused_function, v_msg_AccountNewReq/3}).
+-dialyzer({nowarn_function, v_msg_AccountNewReq/3}).
+v_msg_AccountNewReq(
+    #'AccountNewReq'{
+        email = F1,
+        password = F2
+    },
+    Path,
+    TrUserData
+) ->
     v_type_string(F1, [email | Path], TrUserData),
     v_type_string(F2, [password | Path], TrUserData),
     ok;
 v_msg_AccountNewReq(X, Path, _TrUserData) ->
     mk_type_error({expected_msg, 'AccountNewReq'}, X, Path).
 
--compile({nowarn_unused_function,v_msg_AccountNewResp/3}).
--dialyzer({nowarn_function,v_msg_AccountNewResp/3}).
-v_msg_AccountNewResp(#'AccountNewResp'{status = F1,
-                                       error = F2},
-                     Path, TrUserData) ->
-    'v_enum_AccountNewResp.Status'(F1,
-                                   [status | Path],
-                                   TrUserData),
-    if F2 == undefined -> ok;
-       true -> v_type_string(F2, [error | Path], TrUserData)
+-compile({nowarn_unused_function, v_msg_AccountNewResp/3}).
+-dialyzer({nowarn_function, v_msg_AccountNewResp/3}).
+v_msg_AccountNewResp(
+    #'AccountNewResp'{
+        status = F1,
+        error = F2
+    },
+    Path,
+    TrUserData
+) ->
+    'v_enum_AccountNewResp.Status'(
+        F1,
+        [status | Path],
+        TrUserData
+    ),
+    if
+        F2 == undefined -> ok;
+        true -> v_type_string(F2, [error | Path], TrUserData)
     end,
     ok;
 v_msg_AccountNewResp(X, Path, _TrUserData) ->
-    mk_type_error({expected_msg, 'AccountNewResp'},
-                  X,
-                  Path).
+    mk_type_error(
+        {expected_msg, 'AccountNewResp'},
+        X,
+        Path
+    ).
 
--compile({nowarn_unused_function,v_msg_AccountLoginReq/3}).
--dialyzer({nowarn_function,v_msg_AccountLoginReq/3}).
-v_msg_AccountLoginReq(#'AccountLoginReq'{email = F1,
-                                         password = F2},
-                      Path, TrUserData) ->
+-compile({nowarn_unused_function, v_msg_AccountLoginReq/3}).
+-dialyzer({nowarn_function, v_msg_AccountLoginReq/3}).
+v_msg_AccountLoginReq(
+    #'AccountLoginReq'{
+        email = F1,
+        password = F2
+    },
+    Path,
+    TrUserData
+) ->
     v_type_string(F1, [email | Path], TrUserData),
     v_type_string(F2, [password | Path], TrUserData),
     ok;
 v_msg_AccountLoginReq(X, Path, _TrUserData) ->
-    mk_type_error({expected_msg, 'AccountLoginReq'},
-                  X,
-                  Path).
+    mk_type_error(
+        {expected_msg, 'AccountLoginReq'},
+        X,
+        Path
+    ).
 
--compile({nowarn_unused_function,'v_msg_AccountLoginResp.Player'/3}).
--dialyzer({nowarn_function,'v_msg_AccountLoginResp.Player'/3}).
-'v_msg_AccountLoginResp.Player'(#'AccountLoginResp.Player'{name
-                                                               = F1},
-                                Path, TrUserData) ->
+-compile({nowarn_unused_function, 'v_msg_AccountLoginResp.Player'/3}).
+-dialyzer({nowarn_function, 'v_msg_AccountLoginResp.Player'/3}).
+'v_msg_AccountLoginResp.Player'(
+    #'AccountLoginResp.Player'{
+        name =
+            F1
+    },
+    Path,
+    TrUserData
+) ->
     v_type_string(F1, [name | Path], TrUserData),
     ok;
 'v_msg_AccountLoginResp.Player'(X, Path, _TrUserData) ->
-    mk_type_error({expected_msg, 'AccountLoginResp.Player'},
-                  X,
-                  Path).
+    mk_type_error(
+        {expected_msg, 'AccountLoginResp.Player'},
+        X,
+        Path
+    ).
 
--compile({nowarn_unused_function,v_msg_AccountLoginResp/3}).
--dialyzer({nowarn_function,v_msg_AccountLoginResp/3}).
-v_msg_AccountLoginResp(#'AccountLoginResp'{status = F1,
-                                           players = F2, error = F3},
-                       Path, TrUserData) ->
-    'v_enum_AccountLoginResp.Status'(F1,
-                                     [status | Path],
-                                     TrUserData),
-    if is_list(F2) ->
-           _ = ['v_msg_AccountLoginResp.Player'(Elem,
-                                                [players | Path],
-                                                TrUserData)
-                || Elem <- F2],
-           ok;
-       true ->
-           mk_type_error({invalid_list_of,
-                          {msg, 'AccountLoginResp.Player'}},
-                         F2,
-                         [players | Path])
+-compile({nowarn_unused_function, v_msg_AccountLoginResp/3}).
+-dialyzer({nowarn_function, v_msg_AccountLoginResp/3}).
+v_msg_AccountLoginResp(
+    #'AccountLoginResp'{
+        status = F1,
+        players = F2,
+        error = F3
+    },
+    Path,
+    TrUserData
+) ->
+    'v_enum_AccountLoginResp.Status'(
+        F1,
+        [status | Path],
+        TrUserData
+    ),
+    if
+        is_list(F2) ->
+            _ = [
+                'v_msg_AccountLoginResp.Player'(
+                    Elem,
+                    [players | Path],
+                    TrUserData
+                )
+             || Elem <- F2
+            ],
+            ok;
+        true ->
+            mk_type_error(
+                {invalid_list_of, {msg, 'AccountLoginResp.Player'}},
+                F2,
+                [players | Path]
+            )
     end,
-    if F3 == undefined -> ok;
-       true -> v_type_string(F3, [error | Path], TrUserData)
+    if
+        F3 == undefined -> ok;
+        true -> v_type_string(F3, [error | Path], TrUserData)
     end,
     ok;
 v_msg_AccountLoginResp(X, Path, _TrUserData) ->
-    mk_type_error({expected_msg, 'AccountLoginResp'},
-                  X,
-                  Path).
+    mk_type_error(
+        {expected_msg, 'AccountLoginResp'},
+        X,
+        Path
+    ).
 
--compile({nowarn_unused_function,v_msg_PlayerNewReq/3}).
--dialyzer({nowarn_function,v_msg_PlayerNewReq/3}).
-v_msg_PlayerNewReq(#'PlayerNewReq'{name = F1,
-                                   title = F2, appearance = F3, role = F4},
-                   Path, TrUserData) ->
+-compile({nowarn_unused_function, v_msg_PlayerNewReq/3}).
+-dialyzer({nowarn_function, v_msg_PlayerNewReq/3}).
+v_msg_PlayerNewReq(
+    #'PlayerNewReq'{
+        name = F1,
+        title = F2,
+        appearance = F3,
+        role = F4
+    },
+    Path,
+    TrUserData
+) ->
     v_type_string(F1, [name | Path], TrUserData),
     v_type_string(F2, [title | Path], TrUserData),
     v_type_uint32(F3, [appearance | Path], TrUserData),
@@ -6163,283 +9864,377 @@ v_msg_PlayerNewReq(#'PlayerNewReq'{name = F1,
 v_msg_PlayerNewReq(X, Path, _TrUserData) ->
     mk_type_error({expected_msg, 'PlayerNewReq'}, X, Path).
 
--compile({nowarn_unused_function,v_msg_PlayerNewResp/3}).
--dialyzer({nowarn_function,v_msg_PlayerNewResp/3}).
-v_msg_PlayerNewResp(#'PlayerNewResp'{status = F1,
-                                     error = F2},
-                    Path, TrUserData) ->
-    'v_enum_PlayerNewResp.Status'(F1,
-                                  [status | Path],
-                                  TrUserData),
-    if F2 == undefined -> ok;
-       true -> v_type_string(F2, [error | Path], TrUserData)
+-compile({nowarn_unused_function, v_msg_PlayerNewResp/3}).
+-dialyzer({nowarn_function, v_msg_PlayerNewResp/3}).
+v_msg_PlayerNewResp(
+    #'PlayerNewResp'{
+        status = F1,
+        error = F2
+    },
+    Path,
+    TrUserData
+) ->
+    'v_enum_PlayerNewResp.Status'(
+        F1,
+        [status | Path],
+        TrUserData
+    ),
+    if
+        F2 == undefined -> ok;
+        true -> v_type_string(F2, [error | Path], TrUserData)
     end,
     ok;
 v_msg_PlayerNewResp(X, Path, _TrUserData) ->
     mk_type_error({expected_msg, 'PlayerNewResp'}, X, Path).
 
--compile({nowarn_unused_function,v_msg_PlayerAuthenticate/3}).
--dialyzer({nowarn_function,v_msg_PlayerAuthenticate/3}).
-v_msg_PlayerAuthenticate(#'PlayerAuthenticate'{id = F1},
-                         Path, TrUserData) ->
+-compile({nowarn_unused_function, v_msg_PlayerAuthenticate/3}).
+-dialyzer({nowarn_function, v_msg_PlayerAuthenticate/3}).
+v_msg_PlayerAuthenticate(
+    #'PlayerAuthenticate'{id = F1},
+    Path,
+    TrUserData
+) ->
     v_type_bytes(F1, [id | Path], TrUserData),
     ok;
 v_msg_PlayerAuthenticate(X, Path, _TrUserData) ->
-    mk_type_error({expected_msg, 'PlayerAuthenticate'},
-                  X,
-                  Path).
+    mk_type_error(
+        {expected_msg, 'PlayerAuthenticate'},
+        X,
+        Path
+    ).
 
--compile({nowarn_unused_function,v_msg_PlayerLog/3}).
--dialyzer({nowarn_function,v_msg_PlayerLog/3}).
-v_msg_PlayerLog(#'PlayerLog'{msg = F1}, Path,
-                TrUserData) ->
+-compile({nowarn_unused_function, v_msg_PlayerLog/3}).
+-dialyzer({nowarn_function, v_msg_PlayerLog/3}).
+v_msg_PlayerLog(
+    #'PlayerLog'{msg = F1},
+    Path,
+    TrUserData
+) ->
     v_type_string(F1, [msg | Path], TrUserData),
     ok;
 v_msg_PlayerLog(X, Path, _TrUserData) ->
     mk_type_error({expected_msg, 'PlayerLog'}, X, Path).
 
--compile({nowarn_unused_function,v_msg_LobbyInfo/3}).
--dialyzer({nowarn_function,v_msg_LobbyInfo/3}).
-v_msg_LobbyInfo(#'LobbyInfo'{resp = F1, matches = F2},
-                Path, TrUserData) ->
+-compile({nowarn_unused_function, v_msg_LobbyInfo/3}).
+-dialyzer({nowarn_function, v_msg_LobbyInfo/3}).
+v_msg_LobbyInfo(
+    #'LobbyInfo'{resp = F1, matches = F2},
+    Path,
+    TrUserData
+) ->
     v_msg_ResponseObject(F1, [resp | Path], TrUserData),
-    if is_list(F2) ->
-           _ = [v_msg_Match(Elem, [matches | Path], TrUserData)
-                || Elem <- F2],
-           ok;
-       true ->
-           mk_type_error({invalid_list_of, {msg, 'Match'}},
-                         F2,
-                         [matches | Path])
+    if
+        is_list(F2) ->
+            _ = [
+                v_msg_Match(Elem, [matches | Path], TrUserData)
+             || Elem <- F2
+            ],
+            ok;
+        true ->
+            mk_type_error(
+                {invalid_list_of, {msg, 'Match'}},
+                F2,
+                [matches | Path]
+            )
     end,
     ok;
 v_msg_LobbyInfo(X, Path, _TrUserData) ->
     mk_type_error({expected_msg, 'LobbyInfo'}, X, Path).
 
--compile({nowarn_unused_function,v_msg_MatchCreateReq/3}).
--dialyzer({nowarn_function,v_msg_MatchCreateReq/3}).
-v_msg_MatchCreateReq(#'MatchCreateReq'{mode = F1,
-                                       players_max = F2, extra = F3},
-                     Path, TrUserData) ->
+-compile({nowarn_unused_function, v_msg_MatchCreateReq/3}).
+-dialyzer({nowarn_function, v_msg_MatchCreateReq/3}).
+v_msg_MatchCreateReq(
+    #'MatchCreateReq'{
+        mode = F1,
+        players_max = F2,
+        extra = F3
+    },
+    Path,
+    TrUserData
+) ->
     v_enum_MatchMode(F1, [mode | Path], TrUserData),
     v_type_uint32(F2, [players_max | Path], TrUserData),
-    if F3 == undefined -> ok;
-       true -> v_type_bytes(F3, [extra | Path], TrUserData)
+    if
+        F3 == undefined -> ok;
+        true -> v_type_bytes(F3, [extra | Path], TrUserData)
     end,
     ok;
 v_msg_MatchCreateReq(X, Path, _TrUserData) ->
-    mk_type_error({expected_msg, 'MatchCreateReq'},
-                  X,
-                  Path).
+    mk_type_error(
+        {expected_msg, 'MatchCreateReq'},
+        X,
+        Path
+    ).
 
--compile({nowarn_unused_function,v_msg_MatchCreateResp/3}).
--dialyzer({nowarn_function,v_msg_MatchCreateResp/3}).
-v_msg_MatchCreateResp(#'MatchCreateResp'{resp = F1,
-                                         match = F2},
-                      Path, TrUserData) ->
+-compile({nowarn_unused_function, v_msg_MatchCreateResp/3}).
+-dialyzer({nowarn_function, v_msg_MatchCreateResp/3}).
+v_msg_MatchCreateResp(
+    #'MatchCreateResp'{
+        resp = F1,
+        match = F2
+    },
+    Path,
+    TrUserData
+) ->
     v_msg_ResponseObject(F1, [resp | Path], TrUserData),
-    if F2 == undefined -> ok;
-       true -> v_msg_Match(F2, [match | Path], TrUserData)
+    if
+        F2 == undefined -> ok;
+        true -> v_msg_Match(F2, [match | Path], TrUserData)
     end,
     ok;
 v_msg_MatchCreateResp(X, Path, _TrUserData) ->
-    mk_type_error({expected_msg, 'MatchCreateResp'},
-                  X,
-                  Path).
+    mk_type_error(
+        {expected_msg, 'MatchCreateResp'},
+        X,
+        Path
+    ).
 
--compile({nowarn_unused_function,v_msg_MatchJoinReq/3}).
--dialyzer({nowarn_function,v_msg_MatchJoinReq/3}).
-v_msg_MatchJoinReq(#'MatchJoinReq'{player = F1,
-                                   matchid = F2},
-                   Path, TrUserData) ->
+-compile({nowarn_unused_function, v_msg_MatchJoinReq/3}).
+-dialyzer({nowarn_function, v_msg_MatchJoinReq/3}).
+v_msg_MatchJoinReq(
+    #'MatchJoinReq'{
+        player = F1,
+        matchid = F2
+    },
+    Path,
+    TrUserData
+) ->
     v_type_string(F1, [player | Path], TrUserData),
     v_type_uint32(F2, [matchid | Path], TrUserData),
     ok;
 v_msg_MatchJoinReq(X, Path, _TrUserData) ->
     mk_type_error({expected_msg, 'MatchJoinReq'}, X, Path).
 
--compile({nowarn_unused_function,v_msg_MatchJoinResp/3}).
--dialyzer({nowarn_function,v_msg_MatchJoinResp/3}).
-v_msg_MatchJoinResp(#'MatchJoinResp'{resp = F1,
-                                     match = F2},
-                    Path, TrUserData) ->
+-compile({nowarn_unused_function, v_msg_MatchJoinResp/3}).
+-dialyzer({nowarn_function, v_msg_MatchJoinResp/3}).
+v_msg_MatchJoinResp(
+    #'MatchJoinResp'{
+        resp = F1,
+        match = F2
+    },
+    Path,
+    TrUserData
+) ->
     v_msg_ResponseObject(F1, [resp | Path], TrUserData),
-    if F2 == undefined -> ok;
-       true -> v_msg_Match(F2, [match | Path], TrUserData)
+    if
+        F2 == undefined -> ok;
+        true -> v_msg_Match(F2, [match | Path], TrUserData)
     end,
     ok;
 v_msg_MatchJoinResp(X, Path, _TrUserData) ->
     mk_type_error({expected_msg, 'MatchJoinResp'}, X, Path).
 
--compile({nowarn_unused_function,v_msg_MatchLeaveReq/3}).
--dialyzer({nowarn_function,v_msg_MatchLeaveReq/3}).
-v_msg_MatchLeaveReq(#'MatchLeaveReq'{player = F1,
-                                     matchid = F2},
-                    Path, TrUserData) ->
+-compile({nowarn_unused_function, v_msg_MatchLeaveReq/3}).
+-dialyzer({nowarn_function, v_msg_MatchLeaveReq/3}).
+v_msg_MatchLeaveReq(
+    #'MatchLeaveReq'{
+        player = F1,
+        matchid = F2
+    },
+    Path,
+    TrUserData
+) ->
     v_type_string(F1, [player | Path], TrUserData),
     v_type_uint32(F2, [matchid | Path], TrUserData),
     ok;
 v_msg_MatchLeaveReq(X, Path, _TrUserData) ->
     mk_type_error({expected_msg, 'MatchLeaveReq'}, X, Path).
 
--compile({nowarn_unused_function,v_msg_MatchLeaveResp/3}).
--dialyzer({nowarn_function,v_msg_MatchLeaveResp/3}).
-v_msg_MatchLeaveResp(#'MatchLeaveResp'{resp = F1}, Path,
-                     TrUserData) ->
+-compile({nowarn_unused_function, v_msg_MatchLeaveResp/3}).
+-dialyzer({nowarn_function, v_msg_MatchLeaveResp/3}).
+v_msg_MatchLeaveResp(
+    #'MatchLeaveResp'{resp = F1},
+    Path,
+    TrUserData
+) ->
     v_msg_ResponseObject(F1, [resp | Path], TrUserData),
     ok;
 v_msg_MatchLeaveResp(X, Path, _TrUserData) ->
-    mk_type_error({expected_msg, 'MatchLeaveResp'},
-                  X,
-                  Path).
+    mk_type_error(
+        {expected_msg, 'MatchLeaveResp'},
+        X,
+        Path
+    ).
 
--compile({nowarn_unused_function,v_enum_MatchState/3}).
--dialyzer({nowarn_function,v_enum_MatchState/3}).
-v_enum_MatchState('CREATING', _Path, _TrUserData) -> ok;
-v_enum_MatchState('PLAYING', _Path, _TrUserData) -> ok;
+-compile({nowarn_unused_function, v_enum_MatchState/3}).
+-dialyzer({nowarn_function, v_enum_MatchState/3}).
+v_enum_MatchState('CREATING', _Path, _TrUserData) ->
+    ok;
+v_enum_MatchState('PLAYING', _Path, _TrUserData) ->
+    ok;
 v_enum_MatchState('FINISHING', _Path, _TrUserData) ->
     ok;
-v_enum_MatchState(V, Path, TrUserData)
-    when is_integer(V) ->
+v_enum_MatchState(V, Path, TrUserData) when is_integer(V) ->
     v_type_sint32(V, Path, TrUserData);
 v_enum_MatchState(X, Path, _TrUserData) ->
     mk_type_error({invalid_enum, 'MatchState'}, X, Path).
 
--compile({nowarn_unused_function,v_enum_MatchMode/3}).
--dialyzer({nowarn_function,v_enum_MatchMode/3}).
-v_enum_MatchMode('DEFAULT', _Path, _TrUserData) -> ok;
-v_enum_MatchMode('BLITZ', _Path, _TrUserData) -> ok;
-v_enum_MatchMode('STRATEGIC', _Path, _TrUserData) -> ok;
-v_enum_MatchMode(V, Path, TrUserData)
-    when is_integer(V) ->
+-compile({nowarn_unused_function, v_enum_MatchMode/3}).
+-dialyzer({nowarn_function, v_enum_MatchMode/3}).
+v_enum_MatchMode('DEFAULT', _Path, _TrUserData) ->
+    ok;
+v_enum_MatchMode('BLITZ', _Path, _TrUserData) ->
+    ok;
+v_enum_MatchMode('STRATEGIC', _Path, _TrUserData) ->
+    ok;
+v_enum_MatchMode(V, Path, TrUserData) when is_integer(V) ->
     v_type_sint32(V, Path, TrUserData);
 v_enum_MatchMode(X, Path, _TrUserData) ->
     mk_type_error({invalid_enum, 'MatchMode'}, X, Path).
 
--compile({nowarn_unused_function,'v_enum_ResponseObject.Status'/3}).
--dialyzer({nowarn_function,'v_enum_ResponseObject.Status'/3}).
-'v_enum_ResponseObject.Status'('OK', _Path,
-                               _TrUserData) ->
+-compile({nowarn_unused_function, 'v_enum_ResponseObject.Status'/3}).
+-dialyzer({nowarn_function, 'v_enum_ResponseObject.Status'/3}).
+'v_enum_ResponseObject.Status'(
+    'OK',
+    _Path,
+    _TrUserData
+) ->
     ok;
-'v_enum_ResponseObject.Status'('ERROR', _Path,
-                               _TrUserData) ->
+'v_enum_ResponseObject.Status'(
+    'ERROR',
+    _Path,
+    _TrUserData
+) ->
     ok;
-'v_enum_ResponseObject.Status'(V, Path, TrUserData)
-    when is_integer(V) ->
+'v_enum_ResponseObject.Status'(V, Path, TrUserData) when is_integer(V) ->
     v_type_sint32(V, Path, TrUserData);
 'v_enum_ResponseObject.Status'(X, Path, _TrUserData) ->
-    mk_type_error({invalid_enum, 'ResponseObject.Status'},
-                  X,
-                  Path).
+    mk_type_error(
+        {invalid_enum, 'ResponseObject.Status'},
+        X,
+        Path
+    ).
 
--compile({nowarn_unused_function,'v_enum_AccountNewResp.Status'/3}).
--dialyzer({nowarn_function,'v_enum_AccountNewResp.Status'/3}).
-'v_enum_AccountNewResp.Status'('OK', _Path,
-                               _TrUserData) ->
+-compile({nowarn_unused_function, 'v_enum_AccountNewResp.Status'/3}).
+-dialyzer({nowarn_function, 'v_enum_AccountNewResp.Status'/3}).
+'v_enum_AccountNewResp.Status'(
+    'OK',
+    _Path,
+    _TrUserData
+) ->
     ok;
-'v_enum_AccountNewResp.Status'('ERROR', _Path,
-                               _TrUserData) ->
+'v_enum_AccountNewResp.Status'(
+    'ERROR',
+    _Path,
+    _TrUserData
+) ->
     ok;
-'v_enum_AccountNewResp.Status'(V, Path, TrUserData)
-    when is_integer(V) ->
+'v_enum_AccountNewResp.Status'(V, Path, TrUserData) when is_integer(V) ->
     v_type_sint32(V, Path, TrUserData);
 'v_enum_AccountNewResp.Status'(X, Path, _TrUserData) ->
-    mk_type_error({invalid_enum, 'AccountNewResp.Status'},
-                  X,
-                  Path).
+    mk_type_error(
+        {invalid_enum, 'AccountNewResp.Status'},
+        X,
+        Path
+    ).
 
--compile({nowarn_unused_function,'v_enum_AccountLoginResp.Status'/3}).
--dialyzer({nowarn_function,'v_enum_AccountLoginResp.Status'/3}).
-'v_enum_AccountLoginResp.Status'('OK', _Path,
-                                 _TrUserData) ->
+-compile({nowarn_unused_function, 'v_enum_AccountLoginResp.Status'/3}).
+-dialyzer({nowarn_function, 'v_enum_AccountLoginResp.Status'/3}).
+'v_enum_AccountLoginResp.Status'(
+    'OK',
+    _Path,
+    _TrUserData
+) ->
     ok;
-'v_enum_AccountLoginResp.Status'('ERROR', _Path,
-                                 _TrUserData) ->
+'v_enum_AccountLoginResp.Status'(
+    'ERROR',
+    _Path,
+    _TrUserData
+) ->
     ok;
-'v_enum_AccountLoginResp.Status'(V, Path, TrUserData)
-    when is_integer(V) ->
+'v_enum_AccountLoginResp.Status'(V, Path, TrUserData) when is_integer(V) ->
     v_type_sint32(V, Path, TrUserData);
-'v_enum_AccountLoginResp.Status'(X, Path,
-                                 _TrUserData) ->
-    mk_type_error({invalid_enum, 'AccountLoginResp.Status'},
-                  X,
-                  Path).
+'v_enum_AccountLoginResp.Status'(
+    X,
+    Path,
+    _TrUserData
+) ->
+    mk_type_error(
+        {invalid_enum, 'AccountLoginResp.Status'},
+        X,
+        Path
+    ).
 
--compile({nowarn_unused_function,'v_enum_PlayerNewResp.Status'/3}).
--dialyzer({nowarn_function,'v_enum_PlayerNewResp.Status'/3}).
-'v_enum_PlayerNewResp.Status'('OK', _Path,
-                              _TrUserData) ->
+-compile({nowarn_unused_function, 'v_enum_PlayerNewResp.Status'/3}).
+-dialyzer({nowarn_function, 'v_enum_PlayerNewResp.Status'/3}).
+'v_enum_PlayerNewResp.Status'(
+    'OK',
+    _Path,
+    _TrUserData
+) ->
     ok;
-'v_enum_PlayerNewResp.Status'('ERROR', _Path,
-                              _TrUserData) ->
+'v_enum_PlayerNewResp.Status'(
+    'ERROR',
+    _Path,
+    _TrUserData
+) ->
     ok;
-'v_enum_PlayerNewResp.Status'(V, Path, TrUserData)
-    when is_integer(V) ->
+'v_enum_PlayerNewResp.Status'(V, Path, TrUserData) when is_integer(V) ->
     v_type_sint32(V, Path, TrUserData);
 'v_enum_PlayerNewResp.Status'(X, Path, _TrUserData) ->
-    mk_type_error({invalid_enum, 'PlayerNewResp.Status'},
-                  X,
-                  Path).
+    mk_type_error(
+        {invalid_enum, 'PlayerNewResp.Status'},
+        X,
+        Path
+    ).
 
--compile({nowarn_unused_function,v_type_sint32/3}).
--dialyzer({nowarn_function,v_type_sint32/3}).
-v_type_sint32(N, _Path, _TrUserData)
-    when -2147483648 =< N, N =< 2147483647 ->
+-compile({nowarn_unused_function, v_type_sint32/3}).
+-dialyzer({nowarn_function, v_type_sint32/3}).
+v_type_sint32(N, _Path, _TrUserData) when -2147483648 =< N, N =< 2147483647 ->
     ok;
-v_type_sint32(N, Path, _TrUserData)
-    when is_integer(N) ->
-    mk_type_error({value_out_of_range, sint32, signed, 32},
-                  N,
-                  Path);
+v_type_sint32(N, Path, _TrUserData) when is_integer(N) ->
+    mk_type_error(
+        {value_out_of_range, sint32, signed, 32},
+        N,
+        Path
+    );
 v_type_sint32(X, Path, _TrUserData) ->
-    mk_type_error({bad_integer, sint32, signed, 32},
-                  X,
-                  Path).
+    mk_type_error(
+        {bad_integer, sint32, signed, 32},
+        X,
+        Path
+    ).
 
--compile({nowarn_unused_function,v_type_uint32/3}).
--dialyzer({nowarn_function,v_type_uint32/3}).
-v_type_uint32(N, _Path, _TrUserData)
-    when 0 =< N, N =< 4294967295 ->
+-compile({nowarn_unused_function, v_type_uint32/3}).
+-dialyzer({nowarn_function, v_type_uint32/3}).
+v_type_uint32(N, _Path, _TrUserData) when 0 =< N, N =< 4294967295 ->
     ok;
-v_type_uint32(N, Path, _TrUserData)
-    when is_integer(N) ->
-    mk_type_error({value_out_of_range,
-                   uint32,
-                   unsigned,
-                   32},
-                  N,
-                  Path);
+v_type_uint32(N, Path, _TrUserData) when is_integer(N) ->
+    mk_type_error(
+        {value_out_of_range, uint32, unsigned, 32},
+        N,
+        Path
+    );
 v_type_uint32(X, Path, _TrUserData) ->
-    mk_type_error({bad_integer, uint32, unsigned, 32},
-                  X,
-                  Path).
+    mk_type_error(
+        {bad_integer, uint32, unsigned, 32},
+        X,
+        Path
+    ).
 
--compile({nowarn_unused_function,v_type_uint64/3}).
--dialyzer({nowarn_function,v_type_uint64/3}).
-v_type_uint64(N, _Path, _TrUserData)
-    when 0 =< N, N =< 18446744073709551615 ->
+-compile({nowarn_unused_function, v_type_uint64/3}).
+-dialyzer({nowarn_function, v_type_uint64/3}).
+v_type_uint64(N, _Path, _TrUserData) when 0 =< N, N =< 18446744073709551615 ->
     ok;
-v_type_uint64(N, Path, _TrUserData)
-    when is_integer(N) ->
-    mk_type_error({value_out_of_range,
-                   uint64,
-                   unsigned,
-                   64},
-                  N,
-                  Path);
+v_type_uint64(N, Path, _TrUserData) when is_integer(N) ->
+    mk_type_error(
+        {value_out_of_range, uint64, unsigned, 64},
+        N,
+        Path
+    );
 v_type_uint64(X, Path, _TrUserData) ->
-    mk_type_error({bad_integer, uint64, unsigned, 64},
-                  X,
-                  Path).
+    mk_type_error(
+        {bad_integer, uint64, unsigned, 64},
+        X,
+        Path
+    ).
 
--compile({nowarn_unused_function,v_type_string/3}).
--dialyzer({nowarn_function,v_type_string/3}).
-v_type_string(S, Path, _TrUserData)
-    when is_list(S); is_binary(S) ->
+-compile({nowarn_unused_function, v_type_string/3}).
+-dialyzer({nowarn_function, v_type_string/3}).
+v_type_string(S, Path, _TrUserData) when is_list(S); is_binary(S) ->
     try unicode:characters_to_binary(S) of
         B when is_binary(B) -> ok;
-        {error, _, _} ->
-            mk_type_error(bad_unicode_string, S, Path)
+        {error, _, _} -> mk_type_error(bad_unicode_string, S, Path)
     catch
         error:badarg ->
             mk_type_error(bad_unicode_string, S, Path)
@@ -6447,8 +10242,8 @@ v_type_string(S, Path, _TrUserData)
 v_type_string(X, Path, _TrUserData) ->
     mk_type_error(bad_unicode_string, X, Path).
 
--compile({nowarn_unused_function,v_type_bytes/3}).
--dialyzer({nowarn_function,v_type_bytes/3}).
+-compile({nowarn_unused_function, v_type_bytes/3}).
+-dialyzer({nowarn_function, v_type_bytes/3}).
 v_type_bytes(B, _Path, _TrUserData) when is_binary(B) ->
     ok;
 v_type_bytes(B, _Path, _TrUserData) when is_list(B) ->
@@ -6456,238 +10251,501 @@ v_type_bytes(B, _Path, _TrUserData) when is_list(B) ->
 v_type_bytes(X, Path, _TrUserData) ->
     mk_type_error(bad_binary_value, X, Path).
 
--compile({nowarn_unused_function,mk_type_error/3}).
+-compile({nowarn_unused_function, mk_type_error/3}).
 -spec mk_type_error(_, _, list()) -> no_return().
 mk_type_error(Error, ValueSeen, Path) ->
     Path2 = prettify_path(Path),
-    erlang:error({gpb_type_error,
-                  {Error, [{value, ValueSeen}, {path, Path2}]}}).
+    erlang:error({gpb_type_error, {Error, [{value, ValueSeen}, {path, Path2}]}}).
 
-
--compile({nowarn_unused_function,prettify_path/1}).
--dialyzer({nowarn_function,prettify_path/1}).
-prettify_path([]) -> top_level;
+-compile({nowarn_unused_function, prettify_path/1}).
+-dialyzer({nowarn_function, prettify_path/1}).
+prettify_path([]) ->
+    top_level;
 prettify_path(PathR) ->
-    list_to_atom(lists:append(lists:join(".",
-                                         lists:map(fun atom_to_list/1,
-                                                   lists:reverse(PathR))))).
+    list_to_atom(
+        lists:append(
+            lists:join(
+                ".",
+                lists:map(
+                    fun atom_to_list/1,
+                    lists:reverse(PathR)
+                )
+            )
+        )
+    ).
 
-
--compile({nowarn_unused_function,id/2}).
--compile({inline,id/2}).
+-compile({nowarn_unused_function, id/2}).
+-compile({inline, id/2}).
 id(X, _TrUserData) -> X.
 
--compile({nowarn_unused_function,v_ok/3}).
--compile({inline,v_ok/3}).
+-compile({nowarn_unused_function, v_ok/3}).
+-compile({inline, v_ok/3}).
 v_ok(_Value, _Path, _TrUserData) -> ok.
 
--compile({nowarn_unused_function,m_overwrite/3}).
--compile({inline,m_overwrite/3}).
+-compile({nowarn_unused_function, m_overwrite/3}).
+-compile({inline, m_overwrite/3}).
 m_overwrite(_Prev, New, _TrUserData) -> New.
 
--compile({nowarn_unused_function,cons/3}).
--compile({inline,cons/3}).
+-compile({nowarn_unused_function, cons/3}).
+-compile({inline, cons/3}).
 cons(Elem, Acc, _TrUserData) -> [Elem | Acc].
 
--compile({nowarn_unused_function,lists_reverse/2}).
--compile({inline,lists_reverse/2}).
+-compile({nowarn_unused_function, lists_reverse/2}).
+-compile({inline, lists_reverse/2}).
 'lists_reverse'(L, _TrUserData) -> lists:reverse(L).
--compile({nowarn_unused_function,'erlang_++'/3}).
--compile({inline,'erlang_++'/3}).
+-compile({nowarn_unused_function, 'erlang_++'/3}).
+-compile({inline, 'erlang_++'/3}).
 'erlang_++'(A, B, _TrUserData) -> A ++ B.
 
-
 get_msg_defs() ->
-    [{{enum, 'MatchState'},
-      [{'CREATING', 0}, {'PLAYING', 1}, {'FINISHING', 2}]},
-     {{enum, 'MatchMode'},
-      [{'DEFAULT', 0}, {'BLITZ', 1}, {'STRATEGIC', 2}]},
-     {{enum, 'ResponseObject.Status'},
-      [{'OK', 0}, {'ERROR', 1}]},
-     {{enum, 'AccountNewResp.Status'},
-      [{'OK', 0}, {'ERROR', 1}]},
-     {{enum, 'AccountLoginResp.Status'},
-      [{'OK', 0}, {'ERROR', 1}]},
-     {{enum, 'PlayerNewResp.Status'},
-      [{'OK', 0}, {'ERROR', 1}]},
-     {{msg, 'ResponseObject'},
-      [#field{name = status, fnum = 1, rnum = 2,
-              type = {enum, 'ResponseObject.Status'},
-              occurrence = required, opts = []},
-       #field{name = error, fnum = 2, rnum = 3, type = string,
-              occurrence = optional, opts = []}]},
-     {{msg, 'Match.Player'},
-      [#field{name = name, fnum = 1, rnum = 2, type = string,
-              occurrence = required, opts = []}]},
-     {{msg, 'Match'},
-      [#field{name = id, fnum = 1, rnum = 2, type = uint32,
-              occurrence = required, opts = []},
-       #field{name = state, fnum = 2, rnum = 3,
-              type = {enum, 'MatchState'}, occurrence = required,
-              opts = []},
-       #field{name = players, fnum = 3, rnum = 4,
-              type = {msg, 'Match.Player'}, occurrence = repeated,
-              opts = []},
-       #field{name = players_max, fnum = 4, rnum = 5,
-              type = uint32, occurrence = required, opts = []},
-       #field{name = start_time, fnum = 5, rnum = 6,
-              type = uint64, occurrence = required, opts = []},
-       #field{name = mode, fnum = 6, rnum = 7,
-              type = {enum, 'MatchMode'}, occurrence = required,
-              opts = []},
-       #field{name = duration, fnum = 7, rnum = 8,
-              type = uint32, occurrence = required, opts = []},
-       #field{name = extra, fnum = 8, rnum = 9, type = bytes,
-              occurrence = optional, opts = []}]},
-     {{msg, 'AccountNewReq'},
-      [#field{name = email, fnum = 1, rnum = 2, type = string,
-              occurrence = required, opts = []},
-       #field{name = password, fnum = 2, rnum = 3,
-              type = string, occurrence = required, opts = []}]},
-     {{msg, 'AccountNewResp'},
-      [#field{name = status, fnum = 1, rnum = 2,
-              type = {enum, 'AccountNewResp.Status'},
-              occurrence = required, opts = []},
-       #field{name = error, fnum = 2, rnum = 3, type = string,
-              occurrence = optional, opts = []}]},
-     {{msg, 'AccountLoginReq'},
-      [#field{name = email, fnum = 1, rnum = 2, type = string,
-              occurrence = required, opts = []},
-       #field{name = password, fnum = 2, rnum = 3,
-              type = string, occurrence = required, opts = []}]},
-     {{msg, 'AccountLoginResp.Player'},
-      [#field{name = name, fnum = 1, rnum = 2, type = string,
-              occurrence = required, opts = []}]},
-     {{msg, 'AccountLoginResp'},
-      [#field{name = status, fnum = 1, rnum = 2,
-              type = {enum, 'AccountLoginResp.Status'},
-              occurrence = required, opts = []},
-       #field{name = players, fnum = 2, rnum = 3,
-              type = {msg, 'AccountLoginResp.Player'},
-              occurrence = repeated, opts = []},
-       #field{name = error, fnum = 3, rnum = 4, type = string,
-              occurrence = optional, opts = []}]},
-     {{msg, 'PlayerNewReq'},
-      [#field{name = name, fnum = 1, rnum = 2, type = string,
-              occurrence = required, opts = []},
-       #field{name = title, fnum = 2, rnum = 3, type = string,
-              occurrence = required, opts = []},
-       #field{name = appearance, fnum = 3, rnum = 4,
-              type = uint32, occurrence = required, opts = []},
-       #field{name = role, fnum = 4, rnum = 5, type = string,
-              occurrence = required, opts = []}]},
-     {{msg, 'PlayerNewResp'},
-      [#field{name = status, fnum = 1, rnum = 2,
-              type = {enum, 'PlayerNewResp.Status'},
-              occurrence = required, opts = []},
-       #field{name = error, fnum = 3, rnum = 3, type = string,
-              occurrence = optional, opts = []}]},
-     {{msg, 'PlayerAuthenticate'},
-      [#field{name = id, fnum = 1, rnum = 2, type = bytes,
-              occurrence = required, opts = []}]},
-     {{msg, 'PlayerLog'},
-      [#field{name = msg, fnum = 2, rnum = 2, type = string,
-              occurrence = required, opts = []}]},
-     {{msg, 'LobbyInfo'},
-      [#field{name = resp, fnum = 1, rnum = 2,
-              type = {msg, 'ResponseObject'}, occurrence = required,
-              opts = []},
-       #field{name = matches, fnum = 2, rnum = 3,
-              type = {msg, 'Match'}, occurrence = repeated,
-              opts = []}]},
-     {{msg, 'MatchCreateReq'},
-      [#field{name = mode, fnum = 1, rnum = 2,
-              type = {enum, 'MatchMode'}, occurrence = required,
-              opts = []},
-       #field{name = players_max, fnum = 2, rnum = 3,
-              type = uint32, occurrence = required, opts = []},
-       #field{name = extra, fnum = 3, rnum = 4, type = bytes,
-              occurrence = optional, opts = []}]},
-     {{msg, 'MatchCreateResp'},
-      [#field{name = resp, fnum = 1, rnum = 2,
-              type = {msg, 'ResponseObject'}, occurrence = required,
-              opts = []},
-       #field{name = match, fnum = 2, rnum = 3,
-              type = {msg, 'Match'}, occurrence = optional,
-              opts = []}]},
-     {{msg, 'MatchJoinReq'},
-      [#field{name = player, fnum = 1, rnum = 2,
-              type = string, occurrence = required, opts = []},
-       #field{name = matchid, fnum = 2, rnum = 3,
-              type = uint32, occurrence = required, opts = []}]},
-     {{msg, 'MatchJoinResp'},
-      [#field{name = resp, fnum = 1, rnum = 2,
-              type = {msg, 'ResponseObject'}, occurrence = required,
-              opts = []},
-       #field{name = match, fnum = 2, rnum = 3,
-              type = {msg, 'Match'}, occurrence = optional,
-              opts = []}]},
-     {{msg, 'MatchLeaveReq'},
-      [#field{name = player, fnum = 1, rnum = 2,
-              type = string, occurrence = required, opts = []},
-       #field{name = matchid, fnum = 2, rnum = 3,
-              type = uint32, occurrence = required, opts = []}]},
-     {{msg, 'MatchLeaveResp'},
-      [#field{name = resp, fnum = 1, rnum = 2,
-              type = {msg, 'ResponseObject'}, occurrence = required,
-              opts = []}]}].
-
+    [
+        {{enum, 'MatchState'}, [{'CREATING', 0}, {'PLAYING', 1}, {'FINISHING', 2}]},
+        {{enum, 'MatchMode'}, [{'DEFAULT', 0}, {'BLITZ', 1}, {'STRATEGIC', 2}]},
+        {{enum, 'ResponseObject.Status'}, [{'OK', 0}, {'ERROR', 1}]},
+        {{enum, 'AccountNewResp.Status'}, [{'OK', 0}, {'ERROR', 1}]},
+        {{enum, 'AccountLoginResp.Status'}, [{'OK', 0}, {'ERROR', 1}]},
+        {{enum, 'PlayerNewResp.Status'}, [{'OK', 0}, {'ERROR', 1}]},
+        {{msg, 'ResponseObject'}, [
+            #field{
+                name = status,
+                fnum = 1,
+                rnum = 2,
+                type = {enum, 'ResponseObject.Status'},
+                occurrence = required,
+                opts = []
+            },
+            #field{
+                name = error,
+                fnum = 2,
+                rnum = 3,
+                type = string,
+                occurrence = optional,
+                opts = []
+            }
+        ]},
+        {{msg, 'Match.Player'}, [
+            #field{
+                name = name,
+                fnum = 1,
+                rnum = 2,
+                type = string,
+                occurrence = required,
+                opts = []
+            }
+        ]},
+        {{msg, 'Match'}, [
+            #field{
+                name = id,
+                fnum = 1,
+                rnum = 2,
+                type = uint32,
+                occurrence = required,
+                opts = []
+            },
+            #field{
+                name = state,
+                fnum = 2,
+                rnum = 3,
+                type = {enum, 'MatchState'},
+                occurrence = required,
+                opts = []
+            },
+            #field{
+                name = players,
+                fnum = 3,
+                rnum = 4,
+                type = {msg, 'Match.Player'},
+                occurrence = repeated,
+                opts = []
+            },
+            #field{
+                name = players_max,
+                fnum = 4,
+                rnum = 5,
+                type = uint32,
+                occurrence = required,
+                opts = []
+            },
+            #field{
+                name = start_time,
+                fnum = 5,
+                rnum = 6,
+                type = uint64,
+                occurrence = required,
+                opts = []
+            },
+            #field{
+                name = mode,
+                fnum = 6,
+                rnum = 7,
+                type = {enum, 'MatchMode'},
+                occurrence = required,
+                opts = []
+            },
+            #field{
+                name = duration,
+                fnum = 7,
+                rnum = 8,
+                type = uint32,
+                occurrence = required,
+                opts = []
+            },
+            #field{
+                name = extra,
+                fnum = 8,
+                rnum = 9,
+                type = bytes,
+                occurrence = optional,
+                opts = []
+            }
+        ]},
+        {{msg, 'AccountNewReq'}, [
+            #field{
+                name = email,
+                fnum = 1,
+                rnum = 2,
+                type = string,
+                occurrence = required,
+                opts = []
+            },
+            #field{
+                name = password,
+                fnum = 2,
+                rnum = 3,
+                type = string,
+                occurrence = required,
+                opts = []
+            }
+        ]},
+        {{msg, 'AccountNewResp'}, [
+            #field{
+                name = status,
+                fnum = 1,
+                rnum = 2,
+                type = {enum, 'AccountNewResp.Status'},
+                occurrence = required,
+                opts = []
+            },
+            #field{
+                name = error,
+                fnum = 2,
+                rnum = 3,
+                type = string,
+                occurrence = optional,
+                opts = []
+            }
+        ]},
+        {{msg, 'AccountLoginReq'}, [
+            #field{
+                name = email,
+                fnum = 1,
+                rnum = 2,
+                type = string,
+                occurrence = required,
+                opts = []
+            },
+            #field{
+                name = password,
+                fnum = 2,
+                rnum = 3,
+                type = string,
+                occurrence = required,
+                opts = []
+            }
+        ]},
+        {{msg, 'AccountLoginResp.Player'}, [
+            #field{
+                name = name,
+                fnum = 1,
+                rnum = 2,
+                type = string,
+                occurrence = required,
+                opts = []
+            }
+        ]},
+        {{msg, 'AccountLoginResp'}, [
+            #field{
+                name = status,
+                fnum = 1,
+                rnum = 2,
+                type = {enum, 'AccountLoginResp.Status'},
+                occurrence = required,
+                opts = []
+            },
+            #field{
+                name = players,
+                fnum = 2,
+                rnum = 3,
+                type = {msg, 'AccountLoginResp.Player'},
+                occurrence = repeated,
+                opts = []
+            },
+            #field{
+                name = error,
+                fnum = 3,
+                rnum = 4,
+                type = string,
+                occurrence = optional,
+                opts = []
+            }
+        ]},
+        {{msg, 'PlayerNewReq'}, [
+            #field{
+                name = name,
+                fnum = 1,
+                rnum = 2,
+                type = string,
+                occurrence = required,
+                opts = []
+            },
+            #field{
+                name = title,
+                fnum = 2,
+                rnum = 3,
+                type = string,
+                occurrence = required,
+                opts = []
+            },
+            #field{
+                name = appearance,
+                fnum = 3,
+                rnum = 4,
+                type = uint32,
+                occurrence = required,
+                opts = []
+            },
+            #field{
+                name = role,
+                fnum = 4,
+                rnum = 5,
+                type = string,
+                occurrence = required,
+                opts = []
+            }
+        ]},
+        {{msg, 'PlayerNewResp'}, [
+            #field{
+                name = status,
+                fnum = 1,
+                rnum = 2,
+                type = {enum, 'PlayerNewResp.Status'},
+                occurrence = required,
+                opts = []
+            },
+            #field{
+                name = error,
+                fnum = 3,
+                rnum = 3,
+                type = string,
+                occurrence = optional,
+                opts = []
+            }
+        ]},
+        {{msg, 'PlayerAuthenticate'}, [
+            #field{
+                name = id,
+                fnum = 1,
+                rnum = 2,
+                type = bytes,
+                occurrence = required,
+                opts = []
+            }
+        ]},
+        {{msg, 'PlayerLog'}, [
+            #field{
+                name = msg,
+                fnum = 2,
+                rnum = 2,
+                type = string,
+                occurrence = required,
+                opts = []
+            }
+        ]},
+        {{msg, 'LobbyInfo'}, [
+            #field{
+                name = resp,
+                fnum = 1,
+                rnum = 2,
+                type = {msg, 'ResponseObject'},
+                occurrence = required,
+                opts = []
+            },
+            #field{
+                name = matches,
+                fnum = 2,
+                rnum = 3,
+                type = {msg, 'Match'},
+                occurrence = repeated,
+                opts = []
+            }
+        ]},
+        {{msg, 'MatchCreateReq'}, [
+            #field{
+                name = mode,
+                fnum = 1,
+                rnum = 2,
+                type = {enum, 'MatchMode'},
+                occurrence = required,
+                opts = []
+            },
+            #field{
+                name = players_max,
+                fnum = 2,
+                rnum = 3,
+                type = uint32,
+                occurrence = required,
+                opts = []
+            },
+            #field{
+                name = extra,
+                fnum = 3,
+                rnum = 4,
+                type = bytes,
+                occurrence = optional,
+                opts = []
+            }
+        ]},
+        {{msg, 'MatchCreateResp'}, [
+            #field{
+                name = resp,
+                fnum = 1,
+                rnum = 2,
+                type = {msg, 'ResponseObject'},
+                occurrence = required,
+                opts = []
+            },
+            #field{
+                name = match,
+                fnum = 2,
+                rnum = 3,
+                type = {msg, 'Match'},
+                occurrence = optional,
+                opts = []
+            }
+        ]},
+        {{msg, 'MatchJoinReq'}, [
+            #field{
+                name = player,
+                fnum = 1,
+                rnum = 2,
+                type = string,
+                occurrence = required,
+                opts = []
+            },
+            #field{
+                name = matchid,
+                fnum = 2,
+                rnum = 3,
+                type = uint32,
+                occurrence = required,
+                opts = []
+            }
+        ]},
+        {{msg, 'MatchJoinResp'}, [
+            #field{
+                name = resp,
+                fnum = 1,
+                rnum = 2,
+                type = {msg, 'ResponseObject'},
+                occurrence = required,
+                opts = []
+            },
+            #field{
+                name = match,
+                fnum = 2,
+                rnum = 3,
+                type = {msg, 'Match'},
+                occurrence = optional,
+                opts = []
+            }
+        ]},
+        {{msg, 'MatchLeaveReq'}, [
+            #field{
+                name = player,
+                fnum = 1,
+                rnum = 2,
+                type = string,
+                occurrence = required,
+                opts = []
+            },
+            #field{
+                name = matchid,
+                fnum = 2,
+                rnum = 3,
+                type = uint32,
+                occurrence = required,
+                opts = []
+            }
+        ]},
+        {{msg, 'MatchLeaveResp'}, [
+            #field{
+                name = resp,
+                fnum = 1,
+                rnum = 2,
+                type = {msg, 'ResponseObject'},
+                occurrence = required,
+                opts = []
+            }
+        ]}
+    ].
 
 get_msg_names() ->
-    ['ResponseObject',
-     'Match.Player',
-     'Match',
-     'AccountNewReq',
-     'AccountNewResp',
-     'AccountLoginReq',
-     'AccountLoginResp.Player',
-     'AccountLoginResp',
-     'PlayerNewReq',
-     'PlayerNewResp',
-     'PlayerAuthenticate',
-     'PlayerLog',
-     'LobbyInfo',
-     'MatchCreateReq',
-     'MatchCreateResp',
-     'MatchJoinReq',
-     'MatchJoinResp',
-     'MatchLeaveReq',
-     'MatchLeaveResp'].
-
+    [
+        'ResponseObject',
+        'Match.Player',
+        'Match',
+        'AccountNewReq',
+        'AccountNewResp',
+        'AccountLoginReq',
+        'AccountLoginResp.Player',
+        'AccountLoginResp',
+        'PlayerNewReq',
+        'PlayerNewResp',
+        'PlayerAuthenticate',
+        'PlayerLog',
+        'LobbyInfo',
+        'MatchCreateReq',
+        'MatchCreateResp',
+        'MatchJoinReq',
+        'MatchJoinResp',
+        'MatchLeaveReq',
+        'MatchLeaveResp'
+    ].
 
 get_group_names() -> [].
 
-
 get_msg_or_group_names() ->
-    ['ResponseObject',
-     'Match.Player',
-     'Match',
-     'AccountNewReq',
-     'AccountNewResp',
-     'AccountLoginReq',
-     'AccountLoginResp.Player',
-     'AccountLoginResp',
-     'PlayerNewReq',
-     'PlayerNewResp',
-     'PlayerAuthenticate',
-     'PlayerLog',
-     'LobbyInfo',
-     'MatchCreateReq',
-     'MatchCreateResp',
-     'MatchJoinReq',
-     'MatchJoinResp',
-     'MatchLeaveReq',
-     'MatchLeaveResp'].
-
+    [
+        'ResponseObject',
+        'Match.Player',
+        'Match',
+        'AccountNewReq',
+        'AccountNewResp',
+        'AccountLoginReq',
+        'AccountLoginResp.Player',
+        'AccountLoginResp',
+        'PlayerNewReq',
+        'PlayerNewResp',
+        'PlayerAuthenticate',
+        'PlayerLog',
+        'LobbyInfo',
+        'MatchCreateReq',
+        'MatchCreateResp',
+        'MatchJoinReq',
+        'MatchJoinResp',
+        'MatchLeaveReq',
+        'MatchLeaveResp'
+    ].
 
 get_enum_names() ->
-    ['MatchState',
-     'MatchMode',
-     'ResponseObject.Status',
-     'AccountNewResp.Status',
-     'AccountLoginResp.Status',
-     'PlayerNewResp.Status'].
-
+    [
+        'MatchState',
+        'MatchMode',
+        'ResponseObject.Status',
+        'AccountNewResp.Status',
+        'AccountLoginResp.Status',
+        'PlayerNewResp.Status'
+    ].
 
 fetch_msg_def(MsgName) ->
     case find_msg_def(MsgName) of
@@ -6695,137 +10753,415 @@ fetch_msg_def(MsgName) ->
         error -> erlang:error({no_such_msg, MsgName})
     end.
 
-
 fetch_enum_def(EnumName) ->
     case find_enum_def(EnumName) of
         Es when is_list(Es) -> Es;
         error -> erlang:error({no_such_enum, EnumName})
     end.
 
-
 find_msg_def('ResponseObject') ->
-    [#field{name = status, fnum = 1, rnum = 2,
+    [
+        #field{
+            name = status,
+            fnum = 1,
+            rnum = 2,
             type = {enum, 'ResponseObject.Status'},
-            occurrence = required, opts = []},
-     #field{name = error, fnum = 2, rnum = 3, type = string,
-            occurrence = optional, opts = []}];
+            occurrence = required,
+            opts = []
+        },
+        #field{
+            name = error,
+            fnum = 2,
+            rnum = 3,
+            type = string,
+            occurrence = optional,
+            opts = []
+        }
+    ];
 find_msg_def('Match.Player') ->
-    [#field{name = name, fnum = 1, rnum = 2, type = string,
-            occurrence = required, opts = []}];
+    [
+        #field{
+            name = name,
+            fnum = 1,
+            rnum = 2,
+            type = string,
+            occurrence = required,
+            opts = []
+        }
+    ];
 find_msg_def('Match') ->
-    [#field{name = id, fnum = 1, rnum = 2, type = uint32,
-            occurrence = required, opts = []},
-     #field{name = state, fnum = 2, rnum = 3,
-            type = {enum, 'MatchState'}, occurrence = required,
-            opts = []},
-     #field{name = players, fnum = 3, rnum = 4,
-            type = {msg, 'Match.Player'}, occurrence = repeated,
-            opts = []},
-     #field{name = players_max, fnum = 4, rnum = 5,
-            type = uint32, occurrence = required, opts = []},
-     #field{name = start_time, fnum = 5, rnum = 6,
-            type = uint64, occurrence = required, opts = []},
-     #field{name = mode, fnum = 6, rnum = 7,
-            type = {enum, 'MatchMode'}, occurrence = required,
-            opts = []},
-     #field{name = duration, fnum = 7, rnum = 8,
-            type = uint32, occurrence = required, opts = []},
-     #field{name = extra, fnum = 8, rnum = 9, type = bytes,
-            occurrence = optional, opts = []}];
+    [
+        #field{
+            name = id,
+            fnum = 1,
+            rnum = 2,
+            type = uint32,
+            occurrence = required,
+            opts = []
+        },
+        #field{
+            name = state,
+            fnum = 2,
+            rnum = 3,
+            type = {enum, 'MatchState'},
+            occurrence = required,
+            opts = []
+        },
+        #field{
+            name = players,
+            fnum = 3,
+            rnum = 4,
+            type = {msg, 'Match.Player'},
+            occurrence = repeated,
+            opts = []
+        },
+        #field{
+            name = players_max,
+            fnum = 4,
+            rnum = 5,
+            type = uint32,
+            occurrence = required,
+            opts = []
+        },
+        #field{
+            name = start_time,
+            fnum = 5,
+            rnum = 6,
+            type = uint64,
+            occurrence = required,
+            opts = []
+        },
+        #field{
+            name = mode,
+            fnum = 6,
+            rnum = 7,
+            type = {enum, 'MatchMode'},
+            occurrence = required,
+            opts = []
+        },
+        #field{
+            name = duration,
+            fnum = 7,
+            rnum = 8,
+            type = uint32,
+            occurrence = required,
+            opts = []
+        },
+        #field{
+            name = extra,
+            fnum = 8,
+            rnum = 9,
+            type = bytes,
+            occurrence = optional,
+            opts = []
+        }
+    ];
 find_msg_def('AccountNewReq') ->
-    [#field{name = email, fnum = 1, rnum = 2, type = string,
-            occurrence = required, opts = []},
-     #field{name = password, fnum = 2, rnum = 3,
-            type = string, occurrence = required, opts = []}];
+    [
+        #field{
+            name = email,
+            fnum = 1,
+            rnum = 2,
+            type = string,
+            occurrence = required,
+            opts = []
+        },
+        #field{
+            name = password,
+            fnum = 2,
+            rnum = 3,
+            type = string,
+            occurrence = required,
+            opts = []
+        }
+    ];
 find_msg_def('AccountNewResp') ->
-    [#field{name = status, fnum = 1, rnum = 2,
+    [
+        #field{
+            name = status,
+            fnum = 1,
+            rnum = 2,
             type = {enum, 'AccountNewResp.Status'},
-            occurrence = required, opts = []},
-     #field{name = error, fnum = 2, rnum = 3, type = string,
-            occurrence = optional, opts = []}];
+            occurrence = required,
+            opts = []
+        },
+        #field{
+            name = error,
+            fnum = 2,
+            rnum = 3,
+            type = string,
+            occurrence = optional,
+            opts = []
+        }
+    ];
 find_msg_def('AccountLoginReq') ->
-    [#field{name = email, fnum = 1, rnum = 2, type = string,
-            occurrence = required, opts = []},
-     #field{name = password, fnum = 2, rnum = 3,
-            type = string, occurrence = required, opts = []}];
+    [
+        #field{
+            name = email,
+            fnum = 1,
+            rnum = 2,
+            type = string,
+            occurrence = required,
+            opts = []
+        },
+        #field{
+            name = password,
+            fnum = 2,
+            rnum = 3,
+            type = string,
+            occurrence = required,
+            opts = []
+        }
+    ];
 find_msg_def('AccountLoginResp.Player') ->
-    [#field{name = name, fnum = 1, rnum = 2, type = string,
-            occurrence = required, opts = []}];
+    [
+        #field{
+            name = name,
+            fnum = 1,
+            rnum = 2,
+            type = string,
+            occurrence = required,
+            opts = []
+        }
+    ];
 find_msg_def('AccountLoginResp') ->
-    [#field{name = status, fnum = 1, rnum = 2,
+    [
+        #field{
+            name = status,
+            fnum = 1,
+            rnum = 2,
             type = {enum, 'AccountLoginResp.Status'},
-            occurrence = required, opts = []},
-     #field{name = players, fnum = 2, rnum = 3,
+            occurrence = required,
+            opts = []
+        },
+        #field{
+            name = players,
+            fnum = 2,
+            rnum = 3,
             type = {msg, 'AccountLoginResp.Player'},
-            occurrence = repeated, opts = []},
-     #field{name = error, fnum = 3, rnum = 4, type = string,
-            occurrence = optional, opts = []}];
+            occurrence = repeated,
+            opts = []
+        },
+        #field{
+            name = error,
+            fnum = 3,
+            rnum = 4,
+            type = string,
+            occurrence = optional,
+            opts = []
+        }
+    ];
 find_msg_def('PlayerNewReq') ->
-    [#field{name = name, fnum = 1, rnum = 2, type = string,
-            occurrence = required, opts = []},
-     #field{name = title, fnum = 2, rnum = 3, type = string,
-            occurrence = required, opts = []},
-     #field{name = appearance, fnum = 3, rnum = 4,
-            type = uint32, occurrence = required, opts = []},
-     #field{name = role, fnum = 4, rnum = 5, type = string,
-            occurrence = required, opts = []}];
+    [
+        #field{
+            name = name,
+            fnum = 1,
+            rnum = 2,
+            type = string,
+            occurrence = required,
+            opts = []
+        },
+        #field{
+            name = title,
+            fnum = 2,
+            rnum = 3,
+            type = string,
+            occurrence = required,
+            opts = []
+        },
+        #field{
+            name = appearance,
+            fnum = 3,
+            rnum = 4,
+            type = uint32,
+            occurrence = required,
+            opts = []
+        },
+        #field{
+            name = role,
+            fnum = 4,
+            rnum = 5,
+            type = string,
+            occurrence = required,
+            opts = []
+        }
+    ];
 find_msg_def('PlayerNewResp') ->
-    [#field{name = status, fnum = 1, rnum = 2,
+    [
+        #field{
+            name = status,
+            fnum = 1,
+            rnum = 2,
             type = {enum, 'PlayerNewResp.Status'},
-            occurrence = required, opts = []},
-     #field{name = error, fnum = 3, rnum = 3, type = string,
-            occurrence = optional, opts = []}];
+            occurrence = required,
+            opts = []
+        },
+        #field{
+            name = error,
+            fnum = 3,
+            rnum = 3,
+            type = string,
+            occurrence = optional,
+            opts = []
+        }
+    ];
 find_msg_def('PlayerAuthenticate') ->
-    [#field{name = id, fnum = 1, rnum = 2, type = bytes,
-            occurrence = required, opts = []}];
+    [
+        #field{
+            name = id,
+            fnum = 1,
+            rnum = 2,
+            type = bytes,
+            occurrence = required,
+            opts = []
+        }
+    ];
 find_msg_def('PlayerLog') ->
-    [#field{name = msg, fnum = 2, rnum = 2, type = string,
-            occurrence = required, opts = []}];
+    [
+        #field{
+            name = msg,
+            fnum = 2,
+            rnum = 2,
+            type = string,
+            occurrence = required,
+            opts = []
+        }
+    ];
 find_msg_def('LobbyInfo') ->
-    [#field{name = resp, fnum = 1, rnum = 2,
-            type = {msg, 'ResponseObject'}, occurrence = required,
-            opts = []},
-     #field{name = matches, fnum = 2, rnum = 3,
-            type = {msg, 'Match'}, occurrence = repeated,
-            opts = []}];
+    [
+        #field{
+            name = resp,
+            fnum = 1,
+            rnum = 2,
+            type = {msg, 'ResponseObject'},
+            occurrence = required,
+            opts = []
+        },
+        #field{
+            name = matches,
+            fnum = 2,
+            rnum = 3,
+            type = {msg, 'Match'},
+            occurrence = repeated,
+            opts = []
+        }
+    ];
 find_msg_def('MatchCreateReq') ->
-    [#field{name = mode, fnum = 1, rnum = 2,
-            type = {enum, 'MatchMode'}, occurrence = required,
-            opts = []},
-     #field{name = players_max, fnum = 2, rnum = 3,
-            type = uint32, occurrence = required, opts = []},
-     #field{name = extra, fnum = 3, rnum = 4, type = bytes,
-            occurrence = optional, opts = []}];
+    [
+        #field{
+            name = mode,
+            fnum = 1,
+            rnum = 2,
+            type = {enum, 'MatchMode'},
+            occurrence = required,
+            opts = []
+        },
+        #field{
+            name = players_max,
+            fnum = 2,
+            rnum = 3,
+            type = uint32,
+            occurrence = required,
+            opts = []
+        },
+        #field{
+            name = extra,
+            fnum = 3,
+            rnum = 4,
+            type = bytes,
+            occurrence = optional,
+            opts = []
+        }
+    ];
 find_msg_def('MatchCreateResp') ->
-    [#field{name = resp, fnum = 1, rnum = 2,
-            type = {msg, 'ResponseObject'}, occurrence = required,
-            opts = []},
-     #field{name = match, fnum = 2, rnum = 3,
-            type = {msg, 'Match'}, occurrence = optional,
-            opts = []}];
+    [
+        #field{
+            name = resp,
+            fnum = 1,
+            rnum = 2,
+            type = {msg, 'ResponseObject'},
+            occurrence = required,
+            opts = []
+        },
+        #field{
+            name = match,
+            fnum = 2,
+            rnum = 3,
+            type = {msg, 'Match'},
+            occurrence = optional,
+            opts = []
+        }
+    ];
 find_msg_def('MatchJoinReq') ->
-    [#field{name = player, fnum = 1, rnum = 2,
-            type = string, occurrence = required, opts = []},
-     #field{name = matchid, fnum = 2, rnum = 3,
-            type = uint32, occurrence = required, opts = []}];
+    [
+        #field{
+            name = player,
+            fnum = 1,
+            rnum = 2,
+            type = string,
+            occurrence = required,
+            opts = []
+        },
+        #field{
+            name = matchid,
+            fnum = 2,
+            rnum = 3,
+            type = uint32,
+            occurrence = required,
+            opts = []
+        }
+    ];
 find_msg_def('MatchJoinResp') ->
-    [#field{name = resp, fnum = 1, rnum = 2,
-            type = {msg, 'ResponseObject'}, occurrence = required,
-            opts = []},
-     #field{name = match, fnum = 2, rnum = 3,
-            type = {msg, 'Match'}, occurrence = optional,
-            opts = []}];
+    [
+        #field{
+            name = resp,
+            fnum = 1,
+            rnum = 2,
+            type = {msg, 'ResponseObject'},
+            occurrence = required,
+            opts = []
+        },
+        #field{
+            name = match,
+            fnum = 2,
+            rnum = 3,
+            type = {msg, 'Match'},
+            occurrence = optional,
+            opts = []
+        }
+    ];
 find_msg_def('MatchLeaveReq') ->
-    [#field{name = player, fnum = 1, rnum = 2,
-            type = string, occurrence = required, opts = []},
-     #field{name = matchid, fnum = 2, rnum = 3,
-            type = uint32, occurrence = required, opts = []}];
+    [
+        #field{
+            name = player,
+            fnum = 1,
+            rnum = 2,
+            type = string,
+            occurrence = required,
+            opts = []
+        },
+        #field{
+            name = matchid,
+            fnum = 2,
+            rnum = 3,
+            type = uint32,
+            occurrence = required,
+            opts = []
+        }
+    ];
 find_msg_def('MatchLeaveResp') ->
-    [#field{name = resp, fnum = 1, rnum = 2,
-            type = {msg, 'ResponseObject'}, occurrence = required,
-            opts = []}];
-find_msg_def(_) -> error.
-
+    [
+        #field{
+            name = resp,
+            fnum = 1,
+            rnum = 2,
+            type = {msg, 'ResponseObject'},
+            occurrence = required,
+            opts = []
+        }
+    ];
+find_msg_def(_) ->
+    error.
 
 find_enum_def('MatchState') ->
     [{'CREATING', 0}, {'PLAYING', 1}, {'FINISHING', 2}];
@@ -6839,8 +11175,8 @@ find_enum_def('AccountLoginResp.Status') ->
     [{'OK', 0}, {'ERROR', 1}];
 find_enum_def('PlayerNewResp.Status') ->
     [{'OK', 0}, {'ERROR', 1}];
-find_enum_def(_) -> error.
-
+find_enum_def(_) ->
+    error.
 
 enum_symbol_by_value('MatchState', Value) ->
     enum_symbol_by_value_MatchState(Value);
@@ -6850,12 +11186,13 @@ enum_symbol_by_value('ResponseObject.Status', Value) ->
     'enum_symbol_by_value_ResponseObject.Status'(Value);
 enum_symbol_by_value('AccountNewResp.Status', Value) ->
     'enum_symbol_by_value_AccountNewResp.Status'(Value);
-enum_symbol_by_value('AccountLoginResp.Status',
-                     Value) ->
+enum_symbol_by_value(
+    'AccountLoginResp.Status',
+    Value
+) ->
     'enum_symbol_by_value_AccountLoginResp.Status'(Value);
 enum_symbol_by_value('PlayerNewResp.Status', Value) ->
     'enum_symbol_by_value_PlayerNewResp.Status'(Value).
-
 
 enum_value_by_symbol('MatchState', Sym) ->
     enum_value_by_symbol_MatchState(Sym);
@@ -6870,11 +11207,9 @@ enum_value_by_symbol('AccountLoginResp.Status', Sym) ->
 enum_value_by_symbol('PlayerNewResp.Status', Sym) ->
     'enum_value_by_symbol_PlayerNewResp.Status'(Sym).
 
-
 enum_symbol_by_value_MatchState(0) -> 'CREATING';
 enum_symbol_by_value_MatchState(1) -> 'PLAYING';
 enum_symbol_by_value_MatchState(2) -> 'FINISHING'.
-
 
 enum_value_by_symbol_MatchState('CREATING') -> 0;
 enum_value_by_symbol_MatchState('PLAYING') -> 1;
@@ -6884,34 +11219,26 @@ enum_symbol_by_value_MatchMode(0) -> 'DEFAULT';
 enum_symbol_by_value_MatchMode(1) -> 'BLITZ';
 enum_symbol_by_value_MatchMode(2) -> 'STRATEGIC'.
 
-
 enum_value_by_symbol_MatchMode('DEFAULT') -> 0;
 enum_value_by_symbol_MatchMode('BLITZ') -> 1;
 enum_value_by_symbol_MatchMode('STRATEGIC') -> 2.
 
 'enum_symbol_by_value_ResponseObject.Status'(0) -> 'OK';
-'enum_symbol_by_value_ResponseObject.Status'(1) ->
-    'ERROR'.
-
+'enum_symbol_by_value_ResponseObject.Status'(1) -> 'ERROR'.
 
 'enum_value_by_symbol_ResponseObject.Status'('OK') -> 0;
-'enum_value_by_symbol_ResponseObject.Status'('ERROR') ->
-    1.
+'enum_value_by_symbol_ResponseObject.Status'('ERROR') -> 1.
 
 'enum_symbol_by_value_AccountNewResp.Status'(0) -> 'OK';
-'enum_symbol_by_value_AccountNewResp.Status'(1) ->
-    'ERROR'.
-
+'enum_symbol_by_value_AccountNewResp.Status'(1) -> 'ERROR'.
 
 'enum_value_by_symbol_AccountNewResp.Status'('OK') -> 0;
-'enum_value_by_symbol_AccountNewResp.Status'('ERROR') ->
-    1.
+'enum_value_by_symbol_AccountNewResp.Status'('ERROR') -> 1.
 
 'enum_symbol_by_value_AccountLoginResp.Status'(0) ->
     'OK';
 'enum_symbol_by_value_AccountLoginResp.Status'(1) ->
     'ERROR'.
-
 
 'enum_value_by_symbol_AccountLoginResp.Status'('OK') ->
     0;
@@ -6919,32 +11246,22 @@ enum_value_by_symbol_MatchMode('STRATEGIC') -> 2.
     1.
 
 'enum_symbol_by_value_PlayerNewResp.Status'(0) -> 'OK';
-'enum_symbol_by_value_PlayerNewResp.Status'(1) ->
-    'ERROR'.
-
+'enum_symbol_by_value_PlayerNewResp.Status'(1) -> 'ERROR'.
 
 'enum_value_by_symbol_PlayerNewResp.Status'('OK') -> 0;
-'enum_value_by_symbol_PlayerNewResp.Status'('ERROR') ->
-    1.
-
+'enum_value_by_symbol_PlayerNewResp.Status'('ERROR') -> 1.
 
 get_service_names() -> [].
 
-
 get_service_def(_) -> error.
-
 
 get_rpc_names(_) -> error.
 
-
 find_rpc_def(_, _) -> error.
-
-
 
 -spec fetch_rpc_def(_, _) -> no_return().
 fetch_rpc_def(ServiceName, RpcName) ->
     erlang:error({no_such_rpc, ServiceName, RpcName}).
-
 
 %% Convert a a fully qualified (ie with package name) service name
 %% as a binary to a service name as an atom.
@@ -6952,13 +11269,11 @@ fetch_rpc_def(ServiceName, RpcName) ->
 fqbin_to_service_name(X) ->
     error({gpb_error, {badservice, X}}).
 
-
 %% Convert a service name as an atom to a fully qualified
 %% (ie with package name) name as a binary.
 -spec service_name_to_fqbin(_) -> no_return().
 service_name_to_fqbin(X) ->
     error({gpb_error, {badservice, X}}).
-
 
 %% Convert a a fully qualified (ie with package name) service name
 %% and an rpc name, both as binaries to a service name and an rpc
@@ -6967,14 +11282,12 @@ service_name_to_fqbin(X) ->
 fqbins_to_service_and_rpc_name(S, R) ->
     error({gpb_error, {badservice_or_rpc, {S, R}}}).
 
-
 %% Convert a service name and an rpc name, both as atoms,
 %% to a fully qualified (ie with package name) service name and
 %% an rpc name as binaries.
 -spec service_and_rpc_name_to_fqbins(_, _) -> no_return().
 service_and_rpc_name_to_fqbins(S, R) ->
     error({gpb_error, {badservice_or_rpc, {S, R}}}).
-
 
 fqbin_to_msg_name(<<"goblet.ResponseObject">>) -> 'ResponseObject';
 fqbin_to_msg_name(<<"goblet.Match.Player">>) -> 'Match.Player';
@@ -6997,7 +11310,6 @@ fqbin_to_msg_name(<<"goblet.MatchLeaveReq">>) -> 'MatchLeaveReq';
 fqbin_to_msg_name(<<"goblet.MatchLeaveResp">>) -> 'MatchLeaveResp';
 fqbin_to_msg_name(E) -> error({gpb_error, {badmsg, E}}).
 
-
 msg_name_to_fqbin('ResponseObject') -> <<"goblet.ResponseObject">>;
 msg_name_to_fqbin('Match.Player') -> <<"goblet.Match.Player">>;
 msg_name_to_fqbin('Match') -> <<"goblet.Match">>;
@@ -7019,39 +11331,29 @@ msg_name_to_fqbin('MatchLeaveReq') -> <<"goblet.MatchLeaveReq">>;
 msg_name_to_fqbin('MatchLeaveResp') -> <<"goblet.MatchLeaveResp">>;
 msg_name_to_fqbin(E) -> error({gpb_error, {badmsg, E}}).
 
-
 fqbin_to_enum_name(<<"goblet.MatchState">>) -> 'MatchState';
 fqbin_to_enum_name(<<"goblet.MatchMode">>) -> 'MatchMode';
 fqbin_to_enum_name(<<"goblet.ResponseObject.Status">>) -> 'ResponseObject.Status';
 fqbin_to_enum_name(<<"goblet.AccountNewResp.Status">>) -> 'AccountNewResp.Status';
-fqbin_to_enum_name(<<"goblet.AccountLoginResp.Status">>) ->
-    'AccountLoginResp.Status';
+fqbin_to_enum_name(<<"goblet.AccountLoginResp.Status">>) -> 'AccountLoginResp.Status';
 fqbin_to_enum_name(<<"goblet.PlayerNewResp.Status">>) -> 'PlayerNewResp.Status';
-fqbin_to_enum_name(E) ->
-    error({gpb_error, {badenum, E}}).
-
+fqbin_to_enum_name(E) -> error({gpb_error, {badenum, E}}).
 
 enum_name_to_fqbin('MatchState') -> <<"goblet.MatchState">>;
 enum_name_to_fqbin('MatchMode') -> <<"goblet.MatchMode">>;
 enum_name_to_fqbin('ResponseObject.Status') -> <<"goblet.ResponseObject.Status">>;
 enum_name_to_fqbin('AccountNewResp.Status') -> <<"goblet.AccountNewResp.Status">>;
-enum_name_to_fqbin('AccountLoginResp.Status') ->
-    <<"goblet.AccountLoginResp.Status">>;
+enum_name_to_fqbin('AccountLoginResp.Status') -> <<"goblet.AccountLoginResp.Status">>;
 enum_name_to_fqbin('PlayerNewResp.Status') -> <<"goblet.PlayerNewResp.Status">>;
-enum_name_to_fqbin(E) ->
-    error({gpb_error, {badenum, E}}).
-
+enum_name_to_fqbin(E) -> error({gpb_error, {badenum, E}}).
 
 get_package_name() -> goblet.
-
 
 %% Whether or not the message names
 %% are prepended with package name or not.
 uses_packages() -> false.
 
-
 source_basename() -> "goblet.proto".
-
 
 %% Retrieve all proto file names, also imported ones.
 %% The order is top-down. The first element is always the main
@@ -7060,7 +11362,6 @@ source_basename() -> "goblet.proto".
 %% the basenames sans extension
 get_all_source_basenames() -> ["goblet.proto"].
 
-
 %% Retrieve all proto file names, also imported ones.
 %% The order is top-down. The first element is always the main
 %% source file. The files are returned sans .proto extension,
@@ -7068,56 +11369,51 @@ get_all_source_basenames() -> ["goblet.proto"].
 %% functions.
 get_all_proto_names() -> ["goblet"].
 
-
 get_msg_containment("goblet") ->
-    ['AccountLoginReq',
-     'AccountLoginResp',
-     'AccountLoginResp.Player',
-     'AccountNewReq',
-     'AccountNewResp',
-     'LobbyInfo',
-     'Match',
-     'Match.Player',
-     'MatchCreateReq',
-     'MatchCreateResp',
-     'MatchJoinReq',
-     'MatchJoinResp',
-     'MatchLeaveReq',
-     'MatchLeaveResp',
-     'PlayerAuthenticate',
-     'PlayerLog',
-     'PlayerNewReq',
-     'PlayerNewResp',
-     'ResponseObject'];
+    [
+        'AccountLoginReq',
+        'AccountLoginResp',
+        'AccountLoginResp.Player',
+        'AccountNewReq',
+        'AccountNewResp',
+        'LobbyInfo',
+        'Match',
+        'Match.Player',
+        'MatchCreateReq',
+        'MatchCreateResp',
+        'MatchJoinReq',
+        'MatchJoinResp',
+        'MatchLeaveReq',
+        'MatchLeaveResp',
+        'PlayerAuthenticate',
+        'PlayerLog',
+        'PlayerNewReq',
+        'PlayerNewResp',
+        'ResponseObject'
+    ];
 get_msg_containment(P) ->
     error({gpb_error, {badproto, P}}).
 
-
 get_pkg_containment("goblet") -> undefined;
-get_pkg_containment(P) ->
-    error({gpb_error, {badproto, P}}).
-
+get_pkg_containment(P) -> error({gpb_error, {badproto, P}}).
 
 get_service_containment("goblet") -> [];
-get_service_containment(P) ->
-    error({gpb_error, {badproto, P}}).
-
+get_service_containment(P) -> error({gpb_error, {badproto, P}}).
 
 get_rpc_containment("goblet") -> [];
-get_rpc_containment(P) ->
-    error({gpb_error, {badproto, P}}).
-
+get_rpc_containment(P) -> error({gpb_error, {badproto, P}}).
 
 get_enum_containment("goblet") ->
-    ['AccountLoginResp.Status',
-     'AccountNewResp.Status',
-     'MatchMode',
-     'MatchState',
-     'PlayerNewResp.Status',
-     'ResponseObject.Status'];
+    [
+        'AccountLoginResp.Status',
+        'AccountNewResp.Status',
+        'MatchMode',
+        'MatchState',
+        'PlayerNewResp.Status',
+        'ResponseObject.Status'
+    ];
 get_enum_containment(P) ->
     error({gpb_error, {badproto, P}}).
-
 
 get_proto_by_msg_name_as_fqbin(<<"goblet.PlayerNewResp">>) -> "goblet";
 get_proto_by_msg_name_as_fqbin(<<"goblet.MatchLeaveResp">>) -> "goblet";
@@ -7138,14 +11434,11 @@ get_proto_by_msg_name_as_fqbin(<<"goblet.PlayerAuthenticate">>) -> "goblet";
 get_proto_by_msg_name_as_fqbin(<<"goblet.PlayerLog">>) -> "goblet";
 get_proto_by_msg_name_as_fqbin(<<"goblet.Match">>) -> "goblet";
 get_proto_by_msg_name_as_fqbin(<<"goblet.LobbyInfo">>) -> "goblet";
-get_proto_by_msg_name_as_fqbin(E) ->
-    error({gpb_error, {badmsg, E}}).
-
+get_proto_by_msg_name_as_fqbin(E) -> error({gpb_error, {badmsg, E}}).
 
 -spec get_proto_by_service_name_as_fqbin(_) -> no_return().
 get_proto_by_service_name_as_fqbin(E) ->
     error({gpb_error, {badservice, E}}).
-
 
 get_proto_by_enum_name_as_fqbin(<<"goblet.ResponseObject.Status">>) -> "goblet";
 get_proto_by_enum_name_as_fqbin(<<"goblet.PlayerNewResp.Status">>) -> "goblet";
@@ -7153,18 +11446,14 @@ get_proto_by_enum_name_as_fqbin(<<"goblet.AccountNewResp.Status">>) -> "goblet";
 get_proto_by_enum_name_as_fqbin(<<"goblet.AccountLoginResp.Status">>) -> "goblet";
 get_proto_by_enum_name_as_fqbin(<<"goblet.MatchState">>) -> "goblet";
 get_proto_by_enum_name_as_fqbin(<<"goblet.MatchMode">>) -> "goblet";
-get_proto_by_enum_name_as_fqbin(E) ->
-    error({gpb_error, {badenum, E}}).
-
+get_proto_by_enum_name_as_fqbin(E) -> error({gpb_error, {badenum, E}}).
 
 -spec get_protos_by_pkg_name_as_fqbin(_) -> no_return().
 get_protos_by_pkg_name_as_fqbin(E) ->
     error({gpb_error, {badpkg, E}}).
 
-
-
 gpb_version_as_string() ->
     "4.11.2".
 
 gpb_version_as_list() ->
-    [4,11,2].
+    [4, 11, 2].

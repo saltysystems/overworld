@@ -142,7 +142,7 @@ account_login(Message) ->
 match_list(_Message, State) ->
     Matches = goblet_lobby:get_matches(),
     % Convert the tuples back to records..
-    M1 = [ pack_match(X) || X <- Matches ],
+    M1 = [pack_match(X) || X <- Matches],
     Resp = #'ResponseObject'{status = 'OK'},
     Msg = goblet_pb:encode_msg(#'LobbyInfo'{resp = Resp, matches = M1}),
     OpCode = <<?MATCH_LIST:16>>,
@@ -178,7 +178,6 @@ match_create(Message, State) when State#session.authenticated =:= true ->
     OpCode = <<?MATCH_CREATE:16>>,
     {[OpCode, Msg], State}.
 
-
 %%----------------------------------------------------------------------------
 %% @doc Join a match. Will only join matches for sessions where the player is
 %%      authenticated.
@@ -194,21 +193,22 @@ match_join(Message, State) when State#session.authenticated =:= true ->
 
 %%----------------------------------------------------------------------------
 %% @doc Only actually commit joining a match once it has been validated that
-%%      the proposed player actually belongs to the account for whom the 
+%%      the proposed player actually belongs to the account for whom the
 %%      session is validated.
 %% @end
 %%----------------------------------------------------------------------------
 match_join(MatchID, Player, State, true) ->
-    Msg = case goblet_lobby:join_match(Player, MatchID) of 
-        {ok, M} -> 
-            Resp = #'ResponseObject'{status = 'OK'},
-            goblet_pb:encode_msg(#'MatchJoinResp'{resp = Resp, match = pack_match(M)});
-        {error, Error} -> 
-            Resp = #'ResponseObject'{
-                status = 'ERROR',
-                error = atom_to_list(Error)
-            },
-            goblet_pb:encode_msg(#'MatchJoinResp'{resp=Resp})
+    Msg =
+        case goblet_lobby:join_match(Player, MatchID) of
+            {ok, M} ->
+                Resp = #'ResponseObject'{status = 'OK'},
+                goblet_pb:encode_msg(#'MatchJoinResp'{resp = Resp, match = pack_match(M)});
+            {error, Error} ->
+                Resp = #'ResponseObject'{
+                    status = 'ERROR',
+                    error = atom_to_list(Error)
+                },
+                goblet_pb:encode_msg(#'MatchJoinResp'{resp = Resp})
         end,
     OpCode = <<?MATCH_JOIN:16>>,
     {[OpCode, Msg], State};
@@ -217,9 +217,9 @@ match_join(MatchID, Player, State, false) ->
         status = 'ERROR',
         error = "player_account_mismatch"
     },
-    Msg = goblet_pb:encode_msg(#'MatchJoinResp'{resp=Resp}),
+    Msg = goblet_pb:encode_msg(#'MatchJoinResp'{resp = Resp}),
     OpCode = <<?MATCH_JOIN:16>>,
-    {[OpCode, Msg], State}. 
+    {[OpCode, Msg], State}.
 
 %%----------------------------------------------------------------------------
 %% @doc Leave a match. Will only leave matches for sessions where the player is
@@ -231,20 +231,20 @@ match_leave(Message, State) when State#session.authenticated =:= true ->
     Match = goblet_pb:decode_msg(Message, 'MatchLeaveReq'),
     MatchID = Match#'MatchJoinReq'.matchid,
     Player = Match#'MatchJoinReq'.player,
-    Msg = case goblet_lobby:leave_match(Player, MatchID) of 
-        ok -> 
-            Resp = #'ResponseObject'{status = 'OK'},
-            goblet_pb:encode_msg(#'MatchJoinResp'{resp=Resp});
-        {error, Error} -> 
-            Resp = #'ResponseObject'{
-                status = 'ERROR',
-                error = atom_to_list(Error)
-            },
-            goblet_pb:encode_msg(#'MatchJoinResp'{resp=Resp})
+    Msg =
+        case goblet_lobby:leave_match(Player, MatchID) of
+            ok ->
+                Resp = #'ResponseObject'{status = 'OK'},
+                goblet_pb:encode_msg(#'MatchJoinResp'{resp = Resp});
+            {error, Error} ->
+                Resp = #'ResponseObject'{
+                    status = 'ERROR',
+                    error = atom_to_list(Error)
+                },
+                goblet_pb:encode_msg(#'MatchJoinResp'{resp = Resp})
         end,
     OpCode = <<?MATCH_LEAVE:16>>,
-    {[OpCode, Msg], State}. 
-    
+    {[OpCode, Msg], State}.
 
 %%----------------------------------------------------------------------------
 %% @doc Create a new player character
