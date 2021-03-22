@@ -7,31 +7,20 @@
 -define(HEARTBEAT, 16#1010).
 -define(ACCOUNT_NEW, 16#1040).
 -define(ACCOUNT_LOGIN, 16#1045).
+
+% Player management commands
 -define(PLAYER_NEW, 16#1050).
--define(PLAYER_LOGIN, 16#1055).
--define(PLAYER_LOG, 16#1060).
+-define(PLAYER_LIST, 16#1055).
+-define(PLAYER_LOG, 16#1060). % chat messages
 
 % Lobby and match creation commands
--define(LOBBY_INFO, 16#2010).
+-define(MATCH_LIST, 16#2010).
 -define(MATCH_CREATE, 16#2020).
 -define(MATCH_JOIN, 16#2030).
 -define(MATCH_LEAVE, 16#2040).
-
-%%%% Deprecated
-
-% Room-specific commands
--define(ROOM_STATE, 16#1100).
-%-define(PLAYER_MOVE, 16#1230).
-
-% Entity-specific commands
--define(ENTITY_STATE, 16#1300).
--define(ENTITY_VALIDATE, 16#1310).
--define(ENTITY_COMMIT, 16#1320).
--define(ENTITY_DELETE, 16#1330).
--define(ENTITY_RANDNAME, 16#1340).
-
-% Script-specific commands
--define(SCRIPT_STATE, 16#1500).
--define(SCRIPT_VALIDATE, 16#1510).
--define(SCRIPT_COMMIT, 16#1520).
--define(SCRIPT_DELETE, 16#1530).
+-define(MATCH_START, 16#2050).
+-define(MATCH_STATE, 16#2060).
+-define(MATCH_PREPARE, 16#2070). % acknowledge match ready
+-define(MATCH_DECIDE, 16#2072).  % send decision
+-define(MATCH_EXECUTE, 16#2074). % cue to play animations
+-define(MATCH_FINISH,16#2076). % show summary screen
