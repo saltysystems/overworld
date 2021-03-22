@@ -1,4 +1,4 @@
--module(goblet_instance_server).
+-module(goblet_instance).
 
 -behaviour(gen_statem).
 
@@ -33,7 +33,7 @@ player_ready(Player, MatchID) ->
     gen_statem:cast(?SERVER(MatchID), {prepare, Player}).
 
 % Callbacks
-init([PlayerList, MatchID]) ->
+init({PlayerList, MatchID}) ->
     M = #match{id = MatchID, playerlist = PlayerList, readyplayers = []},
     {ok, prepare, M}.
 
