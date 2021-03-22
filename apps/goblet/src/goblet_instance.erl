@@ -1,5 +1,7 @@
 -module(goblet_instance).
 
+-include_lib("eunit/include/eunit.hrl").
+
 -behaviour(gen_statem).
 
 % internal functions ackchually
@@ -178,3 +180,39 @@ group_phases(N, KeyList, Acc) ->
         _ ->
             group_phases(N - 1, KeyList, [PhaseGroup | Acc])
     end.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Test                                                               %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+normalize_actions_test() -> 
+	Actions = [
+		#action{name=shoot, ap=2, from="player1", target="player2"},
+		#action{name=move, ap=1, from="player1", target={0,0}},
+		#action{name=laz0r, ap=6, from="player2", target="player1"}
+	],
+	% Convert AP to Phases
+	MP = normalize_actions(Actions),
+	Last = lists:last(MP),
+	?assertEqual(9, Last#action.ap).
+	%?assertEqual(9, Last#action.mp).
+
+phases_test() -> 
+	P1_Actions = [
+		#action{name=shoot, ap=2, from="player1", target="player2"},
+		#action{name=move, ap=1, from="player1", target={0,0}},
+		#action{name=laz0r, ap=6, from="player1", target="player2"}
+	],
+	P2_Actions = [
+		#action{name=move, ap=1, from="player2", target={1,1}},
+		#action{name=shoot, ap=2, from="player2", target="player1"},
+		#action{name=shield, ap=3, from="player2", target="player1"},
+		#action{name=missile, ap=3, from="player2", target="player1"}
+	],
+	% Convert AP to Phases
+	MP = normalize_actions(P1_Actions),
+	MP2 = normalize_actions(P2_Actions),
+	Collected = MP ++ MP2,
+	% Group the phases
+	phases(Collected).
