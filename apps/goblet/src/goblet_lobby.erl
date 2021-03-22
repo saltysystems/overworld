@@ -44,6 +44,7 @@ stop() ->
 
 %%-------------------------------------------------------------------
 %% @doc Return a list of matches.
+%% @end
 %%-------------------------------------------------------------------
 -spec get_matches() -> list().
 get_matches() ->
@@ -51,6 +52,7 @@ get_matches() ->
 
 %%-------------------------------------------------------------------
 %% @doc Return a single match in tuple format.
+%% @end
 %%-------------------------------------------------------------------
 -spec get_match(integer()) -> tuple().
 get_match(MatchID) ->
@@ -59,6 +61,7 @@ get_match(MatchID) ->
 %%-------------------------------------------------------------------
 %% @doc Add a match to the lobby server, return a record of the match
 %%      with updated fields (state, ID).
+%% @end
 %%-------------------------------------------------------------------
 -spec create_match(atom(), integer()) -> {ok, tuple()} | {error, atom()}.
 create_match(Mode, MaxPlayers) ->
@@ -70,6 +73,7 @@ create_match(Mode, MaxPlayers, Extra) ->
 
 %%-------------------------------------------------------------------
 %% @doc Join a player to a match, so long as it hasn't yet started.
+%% @end
 %%-------------------------------------------------------------------
 -spec join_match(list(), integer()) -> {ok, tuple()} | {error, atom()}.
 join_match(Player, MatchID) ->
@@ -77,6 +81,7 @@ join_match(Player, MatchID) ->
 
 %%-------------------------------------------------------------------
 %% @doc Remove a player from an unstarted match
+%% @end
 %%-------------------------------------------------------------------
 -spec leave_match(list(), integer()) -> ok | {error, atom()}.
 leave_match(Player, MatchID) ->
@@ -93,6 +98,7 @@ start_match(MatchID) ->
 %%-------------------------------------------------------------------
 %% @doc Delete the match from the lobby server, if it exists. If
 %%      it does not, then do nothing.
+%% @end
 %%-------------------------------------------------------------------
 -spec delete_match(integer()) -> ok.
 delete_match(MatchID) ->
