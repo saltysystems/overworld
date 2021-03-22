@@ -61,11 +61,5 @@ possible.
 
 One very important message
 -------------------------------------------------
-This is Free Software, please respect the terms of the license.
-
-This project is not an approprate forum for discussing politics, morality, or
-your very personal feelings about injustices in the world. This is also not a
-democracy nor a platform for armchair activism du jour. It is not within the
-scope of the project to impose any particular ethical framework on its
-developers, operators or end-users, aside from those restrictions placed, and
-freedoms protected, explicitly by the license.
+This is Free Software under the terms of the Affero General Public License
+(AGPL).  Please read, understand, and respect the terms of the license. 
