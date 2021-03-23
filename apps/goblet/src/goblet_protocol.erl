@@ -62,13 +62,17 @@ decode(<<?MATCH_LEAVE:16, T/binary>>, State) ->
     logger:notice("Match leave requestfrom ~p~n", [State#session.email]),
     match_leave(T, State);
 decode(<<?MATCH_START:16, T/binary>>, State) ->
-    logger:notice("Match start request from ~p~n", [State#session.email]);
+    logger:notice("Match start request from ~p~n", [State#session.email]),
+    match_start(T, State);
 decode(<<?MATCH_STATE:16, T/binary>>, State) ->
     logger:notice("Match state request from ~p~n", [State#session.email]);
+    %match_state(T, State);
 decode(<<?MATCH_PREPARE:16, T/binary>>, State) ->
     logger:notice("Match prepare packet from ~p~n", [State#session.email]);
+    %match_prepare(T, State);
 decode(<<?MATCH_DECIDE:16, T/binary>>, State) ->
     logger:notice("Match decision packet from ~p~n", [State#session.email]);
+    %match_decide(T, State);
 decode(<<OpCode:16, _T/binary>>, State) ->
     logger:notice("Got an unknown opcode ~p from ~p~n", [OpCode, State#session.email]),
     {ok, State}.
@@ -181,7 +185,8 @@ match_create(Message, State) when State#session.authenticated =:= true ->
 
 %%----------------------------------------------------------------------------
 %% @doc Join a match. Will only join matches for sessions where the player is
-%%      authenticated.
+%%      authenticated. Additionally registers the connection in the process
+%%      registry for the match.
 %% @end
 %%----------------------------------------------------------------------------
 -spec match_join(binary(), any()) -> {[binary(), ...], any()}.
@@ -193,15 +198,17 @@ match_join(Message, State) when State#session.authenticated =:= true ->
     match_join(MatchID, Player, State, IsValid).
 
 %%----------------------------------------------------------------------------
-%% @doc Only actually commit joining a match once it has been validated that
-%%      the proposed player actually belongs to the account for whom the
-%%      session is validated.
+%% @doc (unexported) Only actually commit joining a match once it has been
+%%      validated that the proposed player actually belongs to the account for
+%%      whom the session is validated.
 %% @end
 %%----------------------------------------------------------------------------
 match_join(MatchID, Player, State, true) ->
     Msg =
         case goblet_lobby:join_match(Player, MatchID) of
             {ok, M} ->
+                % Register the current process with process registry
+                match_register_session(MatchID),
                 Resp = #'ResponseObject'{status = 'OK'},
                 goblet_pb:encode_msg(#'MatchJoinResp'{resp = Resp, match = pack_match(M)});
             {error, Error} ->
@@ -213,7 +220,7 @@ match_join(MatchID, Player, State, true) ->
         end,
     OpCode = <<?MATCH_JOIN:16>>,
     {[OpCode, Msg], State};
-match_join(MatchID, Player, State, false) ->
+match_join(_MatchID, _Player, State, false) ->
     Resp = #'ResponseObject'{
         status = 'ERROR',
         error = "player_account_mismatch"
@@ -223,8 +230,8 @@ match_join(MatchID, Player, State, false) ->
     {[OpCode, Msg], State}.
 
 %%----------------------------------------------------------------------------
-%% @doc Leave a match. Will only leave matches for sessions where the player is
-%%      authenticated.
+%% @doc Leave a match. Will only leave matches for sessions where the player
+%%      is authenticated.
 %% @end
 %%----------------------------------------------------------------------------
 -spec match_leave(binary(), any()) -> {[binary(), ...], any()}.
@@ -236,6 +243,7 @@ match_leave(Message, State) when State#session.authenticated =:= true ->
         case goblet_lobby:leave_match(Player, MatchID) of
             ok ->
                 Resp = #'ResponseObject'{status = 'OK'},
+                match_deregister_session(MatchID),
                 goblet_pb:encode_msg(#'MatchJoinResp'{resp = Resp});
             {error, Error} ->
                 Resp = #'ResponseObject'{
@@ -246,6 +254,52 @@ match_leave(Message, State) when State#session.authenticated =:= true ->
         end,
     OpCode = <<?MATCH_LEAVE:16>>,
     {[OpCode, Msg], State}.
+
+%%----------------------------------------------------------------------------
+%% @doc Start a match. The first player the match (i.e., the head of the
+%%      player list) controls when to start the match.
+%% @end
+%%----------------------------------------------------------------------------
+-spec match_start(binary(), any()) -> {[binary(), ...], any()}.
+match_start(Message, State) when State#session.authenticated =:= true ->
+    Match = goblet_pb:decode_msg(Message, 'MatchStartReq'),
+    MatchID = Match#'MatchStartReq'.matchid,
+    Player = binary:bin_to_list(Match#'MatchStartReq'.player),
+    Email = State#session.email,
+    IsValid = case goblet_util:run_checks([
+        fun() -> check_valid_player_account(Player, Email) end,
+        fun() -> check_valid_match_owner(Player, MatchID) end
+    ]) of
+        ok -> true;
+        Error -> Error
+    end,
+    match_start(MatchID, State, IsValid).
+
+match_start(MatchID, State, true) ->
+    Msg =
+        case goblet_lobby:start_match(MatchID) of
+            ok ->
+                Resp = #'ResponseObject'{status = 'OK'},
+                goblet_pb:encode_msg(#'MatchStartResp'{resp = Resp});
+            {error, Error} ->
+                Resp = #'ResponseObject'{
+                    status = 'ERROR',
+                    error = atom_to_list(Error)
+                },
+                goblet_pb:encode_msg(#'MatchStartResp'{resp = Resp})
+        end,
+    OpCode = <<?MATCH_START:16>>,
+    match_multicast([OpCode, Msg], MatchID),
+    {ok, State};
+match_start(_MatchID, State, {error, ErrMsg}) ->
+    Resp = #'ResponseObject'{
+        status = 'ERROR',
+        error = atom_to_list(ErrMsg)
+    },
+    Msg = goblet_pb:encode_msg(#'MatchJoinResp'{resp = Resp}),
+    OpCode = <<?MATCH_START:16>>,
+    {[OpCode, Msg], State}.
+
 
 %%----------------------------------------------------------------------------
 %% @doc Create a new player character
@@ -280,6 +334,16 @@ sanitize_message(Message) ->
     %      other client(s)
     Message.
 
+match_register_session(MatchID) ->
+    gproc:reg({p, l, {match, MatchID}}).
+
+-spec match_multicast([binary(), ...], integer()) -> ok.
+match_multicast(Message, MatchID) ->
+    gproc:send({p, l, {match, MatchID}}, {self(), event, Message}).
+
+match_deregister_session(MatchID) ->
+    gproc:unreg({p, l, {match, MatchID}}).
+
 pack_match({Id, State, Players, PlayersMax, StartTime, Mode, Extra}) ->
     #'Match'{
         id = Id,
@@ -291,6 +355,23 @@ pack_match({Id, State, Players, PlayersMax, StartTime, Mode, Extra}) ->
         mode = Mode,
         extra = Extra
     }.
+
+check_valid_player_account(Player, Email) ->
+    case goblet_db:is_valid_player_account(Player, Email) of
+        true -> ok;
+        false -> {error, invalid_account}
+    end.
+
+check_valid_match_owner(Player, MatchID) ->
+    case goblet_lobby:get_match_players(MatchID) of
+        [ H | T ] -> 
+            case H =:= Player of
+                true -> ok;
+                false -> {error, not_match_owner}
+            end;
+        {error, E} -> 
+            {error, E}
+    end.
 
 
 %%============================================================================
