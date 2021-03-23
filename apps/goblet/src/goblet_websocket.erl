@@ -70,9 +70,9 @@ websocket_handle(_Frame, State) ->
 %%----------------------------------------------------------------------------
 % if we get a message sent to our Pid that looks like something from another
 % process (or myself), reply it back to the client
-websocket_info([OpCode, Msg], State) ->
-    logger:notice("Got a broadcast message from another process ~n"),
-    {reply, {binary, [OpCode, Msg]}, State};
+websocket_info({_Pid, event, Msg}, State) ->
+    logger:notice("Received event, forwarding to client ~n"),
+    {reply, {binary, Msg}, State};
 websocket_info(Info, State) ->
     logger:notice("Got a message from another process: ~p~n", [Info]),
     {ok, State}.
