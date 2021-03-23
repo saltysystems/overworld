@@ -12,6 +12,7 @@
 -export([
     get_matches/0,
     get_match/1,
+    get_match_players/1,
     create_match/2,
     create_match/3,
     join_match/2,
@@ -57,6 +58,14 @@ get_matches() ->
 -spec get_match(integer()) -> tuple().
 get_match(MatchID) ->
     gen_server:call(?MODULE, {get_match, MatchID}).
+
+%%-------------------------------------------------------------------
+%% @doc Return the players in a given game. 
+%% @end
+%%-------------------------------------------------------------------
+-spec get_match_players(integer()) -> list() | {error, atom()}.
+get_match_players(MatchID) ->
+    gen_server:call(?MODULE, {get_match_players, MatchID}).
 
 %%-------------------------------------------------------------------
 %% @doc Add a match to the lobby server, return a record of the match
@@ -119,6 +128,13 @@ handle_call(get_matches, _From, {NextID, Matches}) ->
 handle_call({get_match, MatchID}, _From, {NextID, Matches}) ->
     Match = match_find(MatchID, Matches),
     Reply = match_get(Match),
+    {reply, Reply, {NextID, Matches}};
+handle_call({get_match_players, MatchID}, _From, {NextID, Matches}) ->
+    Match = match_find(MatchID, Matches),
+    Reply = case Match of
+        false -> {error, no_such_match};
+        Players -> Players
+    end,
     {reply, Reply, {NextID, Matches}};
 handle_call({create_match, Mode, MaxPlayers, Extra}, _From, {ID, Matches}) ->
     MatchState = 'CREATING',
