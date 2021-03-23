@@ -137,3 +137,12 @@ message MatchLeaveReq {
 message MatchLeaveResp {
     required ResponseObject resp = 1;
 }
+
+message MatchStartReq {
+    required string player = 1;
+    required uint32 matchid = 2;
+}
+
+message MatchStartResp {
+    required ResponseObject resp = 1;
+}
