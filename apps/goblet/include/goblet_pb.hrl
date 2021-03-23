@@ -164,4 +164,19 @@
         }).
 -endif.
 
+-ifndef('MATCHSTARTREQ_PB_H').
+-define('MATCHSTARTREQ_PB_H', true).
+-record('MatchStartReq',
+        {player                 :: iodata(),        % = 1
+         matchid                :: non_neg_integer() % = 2, 32 bits
+        }).
+-endif.
+
+-ifndef('MATCHSTARTRESP_PB_H').
+-define('MATCHSTARTRESP_PB_H', true).
+-record('MatchStartResp',
+        {resp                   :: goblet_pb:'ResponseObject'() % = 1
+        }).
+-endif.
+
 -endif.
