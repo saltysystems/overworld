@@ -179,4 +179,51 @@
         }).
 -endif.
 
+-ifndef('MATCHINFOREQ_PB_H').
+-define('MATCHINFOREQ_PB_H', true).
+-record('MatchInfoReq',
+        {player                 :: iodata(),        % = 1
+         matchid                :: non_neg_integer() % = 2, 32 bits
+        }).
+-endif.
+
+-ifndef('MATCHINFORESP_PB_H').
+-define('MATCHINFORESP_PB_H', true).
+-record('MatchInfoResp',
+        {resp                   :: goblet_pb:'ResponseObject'(), % = 1
+         match                  :: goblet_pb:'Match'() | undefined % = 2
+        }).
+-endif.
+
+-ifndef('MATCHPREPREQ_PB_H').
+-define('MATCHPREPREQ_PB_H', true).
+-record('MatchPrepReq',
+        {player                 :: iodata(),        % = 1
+         matchid                :: non_neg_integer() % = 2, 32 bits
+        }).
+-endif.
+
+-ifndef('MATCHPREPRESP_PB_H').
+-define('MATCHPREPRESP_PB_H', true).
+-record('MatchPrepResp',
+        {resp                   :: goblet_pb:'ResponseObject'() % = 1
+        }).
+-endif.
+
+-ifndef('MATCHDECIDEREQ_PB_H').
+-define('MATCHDECIDEREQ_PB_H', true).
+-record('MatchDecideReq',
+        {player                 :: iodata(),        % = 1
+         actions                :: iodata(),        % = 2
+         matchid                :: non_neg_integer() % = 3, 32 bits
+        }).
+-endif.
+
+-ifndef('MATCHDECIDERESP_PB_H').
+-define('MATCHDECIDERESP_PB_H', true).
+-record('MatchDecideResp',
+        {resp                   :: goblet_pb:'ResponseObject'() % = 1
+        }).
+-endif.
+
 -endif.
