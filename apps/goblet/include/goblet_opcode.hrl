@@ -19,8 +19,9 @@
 -define(MATCH_JOIN, 16#2030).
 -define(MATCH_LEAVE, 16#2040).
 -define(MATCH_START, 16#2050).
--define(MATCH_STATE, 16#2060).
--define(MATCH_PREPARE, 16#2070). % acknowledge match ready
--define(MATCH_DECIDE, 16#2072).  % send decision
--define(MATCH_EXECUTE, 16#2074). % cue to play animations
--define(MATCH_FINISH,16#2076). % show summary screen
+-define(MATCH_INFO, 16#2060).
+-define(MATCH_STATE, 16#2070).
+-define(MATCH_PREPARE, 16#2080). % acknowledge match ready
+-define(MATCH_DECIDE, 16#2082).  % send decision
+-define(MATCH_EXECUTE, 16#2084). % cue to play animations
+-define(MATCH_FINISH,16#2086). % show summary screen
