@@ -146,3 +146,33 @@ message MatchStartReq {
 message MatchStartResp {
     required ResponseObject resp = 1;
 }
+
+message MatchInfoReq {
+    required string player = 1;
+    required uint32 matchid = 2;
+} 
+
+message MatchInfoResp {
+    required ResponseObject resp = 1;
+    optional Match match = 2;
+} 
+
+
+// Asynchronous ?
+message MatchPrepReq {
+    required string player = 1;
+    required uint32 matchid = 2;
+} 
+message MatchPrepResp {
+    required ResponseObject resp = 1;
+} 
+
+message MatchDecideReq {
+    required string player = 1;
+    required string actions = 2;
+    required uint32 matchid = 3;
+} 
+
+message MatchDecideResp {
+    required ResponseObject resp = 1;
+} 
