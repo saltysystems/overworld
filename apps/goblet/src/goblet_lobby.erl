@@ -60,7 +60,7 @@ get_match(MatchID) ->
     gen_server:call(?MODULE, {get_match, MatchID}).
 
 %%-------------------------------------------------------------------
-%% @doc Return the players in a given game. 
+%% @doc Return the players in a given game.
 %% @end
 %%-------------------------------------------------------------------
 -spec get_match_players(integer()) -> list() | {error, atom()}.
@@ -131,10 +131,11 @@ handle_call({get_match, MatchID}, _From, {NextID, Matches}) ->
     {reply, Reply, {NextID, Matches}};
 handle_call({get_match_players, MatchID}, _From, {NextID, Matches}) ->
     Match = match_find(MatchID, Matches),
-    Reply = case Match of
-        false -> {error, no_such_match};
-        Players -> Players
-    end,
+    Reply =
+        case Match of
+            false -> {error, no_such_match};
+            Players -> Players
+        end,
     {reply, Reply, {NextID, Matches}};
 handle_call({create_match, Mode, MaxPlayers, Extra}, _From, {ID, Matches}) ->
     MatchState = 'CREATING',
