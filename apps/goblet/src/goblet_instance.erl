@@ -7,13 +7,14 @@
 % internal functions ackchually
 -export([phases/1, normalize_actions/1]).
 
-% API
--export([start/2, player_ready/2]).
+% Public API
+-export([start/2, player_ready/2, player_decision/3]).
 
 % Callbacks
 -export([init/1, callback_mode/0, terminate/3]).
 
 % State Functions
+% Do not use directly
 -export([
     prepare/3,
     decision/3,
@@ -34,6 +35,9 @@ start(PlayerList, MatchID) ->
 player_ready(Player, MatchID) ->
     gen_statem:cast(?SERVER(MatchID), {prepare, Player}).
 
+player_decision(Player, Actions, MatchID) ->
+    gen_statem:cast(?SERVER(MatchID), {decision, Player, Actions}).
+
 % Callbacks
 init({PlayerList, MatchID}) ->
     M = #match{id = MatchID, playerlist = PlayerList, readyplayers = []},
@@ -51,6 +55,7 @@ prepare(
     #match{id = _ID, playerlist = PlayerList, readyplayers = Ready} = Data
 ) ->
     ReadyPlayers = [Player | Ready],
+    % TODO: Validate that Ready is a subset of Player
     ReadySet = sets:from_list(ReadyPlayers),
     PlayerSet = sets:from_list(PlayerList),
     logger:notice("Player ~p is now ready.", [Player]),
@@ -181,38 +186,37 @@ group_phases(N, KeyList, Acc) ->
             group_phases(N - 1, KeyList, [PhaseGroup | Acc])
     end.
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  Test                                                               %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-normalize_actions_test() -> 
-	Actions = [
-		#action{name=shoot, ap=2, from="player1", target="player2"},
-		#action{name=move, ap=1, from="player1", target={0,0}},
-		#action{name=laz0r, ap=6, from="player2", target="player1"}
-	],
-	% Convert AP to Phases
-	MP = normalize_actions(Actions),
-	Last = lists:last(MP),
-	?assertEqual(9, Last#action.ap).
-	%?assertEqual(9, Last#action.mp).
+normalize_actions_test() ->
+    Actions = [
+        #action{name = shoot, ap = 2, from = "player1", target = "player2"},
+        #action{name = move, ap = 1, from = "player1", target = {0, 0}},
+        #action{name = laz0r, ap = 6, from = "player2", target = "player1"}
+    ],
+    % Convert AP to Phases
+    MP = normalize_actions(Actions),
+    Last = lists:last(MP),
+    ?assertEqual(9, Last#action.ap).
+%?assertEqual(9, Last#action.mp).
 
-phases_test() -> 
-	P1_Actions = [
-		#action{name=shoot, ap=2, from="player1", target="player2"},
-		#action{name=move, ap=1, from="player1", target={0,0}},
-		#action{name=laz0r, ap=6, from="player1", target="player2"}
-	],
-	P2_Actions = [
-		#action{name=move, ap=1, from="player2", target={1,1}},
-		#action{name=shoot, ap=2, from="player2", target="player1"},
-		#action{name=shield, ap=3, from="player2", target="player1"},
-		#action{name=missile, ap=3, from="player2", target="player1"}
-	],
-	% Convert AP to Phases
-	MP = normalize_actions(P1_Actions),
-	MP2 = normalize_actions(P2_Actions),
-	Collected = MP ++ MP2,
-	% Group the phases
-	phases(Collected).
+phases_test() ->
+    P1_Actions = [
+        #action{name = shoot, ap = 2, from = "player1", target = "player2"},
+        #action{name = move, ap = 1, from = "player1", target = {0, 0}},
+        #action{name = laz0r, ap = 6, from = "player1", target = "player2"}
+    ],
+    P2_Actions = [
+        #action{name = move, ap = 1, from = "player2", target = {1, 1}},
+        #action{name = shoot, ap = 2, from = "player2", target = "player1"},
+        #action{name = shield, ap = 3, from = "player2", target = "player1"},
+        #action{name = missile, ap = 3, from = "player2", target = "player1"}
+    ],
+    % Convert AP to Phases
+    MP = normalize_actions(P1_Actions),
+    MP2 = normalize_actions(P2_Actions),
+    Collected = MP ++ MP2,
+    % Group the phases
+    phases(Collected).
