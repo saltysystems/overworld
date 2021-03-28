@@ -15,19 +15,19 @@
         }).
 -endif.
 
--ifndef('MATCH.PLAYER_PB_H').
--define('MATCH.PLAYER_PB_H', true).
--record('Match.Player',
+-ifndef('MATCHINFO.PLAYER_PB_H').
+-define('MATCHINFO.PLAYER_PB_H', true).
+-record('MatchInfo.Player',
         {name                   :: iodata()         % = 1
         }).
 -endif.
 
--ifndef('MATCH_PB_H').
--define('MATCH_PB_H', true).
--record('Match',
+-ifndef('MATCHINFO_PB_H').
+-define('MATCHINFO_PB_H', true).
+-record('MatchInfo',
         {id                     :: non_neg_integer(), % = 1, 32 bits
          state                  :: 'CREATING' | 'PLAYING' | 'FINISHING' | integer(), % = 2, enum MatchState
-         players = []           :: [goblet_pb:'Match.Player'()] | undefined, % = 3
+         players = []           :: [goblet_pb:'MatchInfo.Player'()] | undefined, % = 3
          players_max            :: non_neg_integer(), % = 4, 32 bits
          start_time             :: non_neg_integer(), % = 5, 64 bits
          mode                   :: 'DEFAULT' | 'BLITZ' | 'STRATEGIC' | integer(), % = 6, enum MatchMode
@@ -80,9 +80,8 @@
 -define('PLAYERNEWREQ_PB_H', true).
 -record('PlayerNewReq',
         {name                   :: iodata(),        % = 1
-         title                  :: iodata(),        % = 2
-         appearance             :: non_neg_integer(), % = 3, 32 bits
-         role                   :: iodata()         % = 4
+         appearance             :: non_neg_integer(), % = 2, 32 bits
+         role                   :: 'DESTROYER' | 'INTERCEPTOR' | 'CARRIER' | 'COMMAND' | integer() % = 3, enum PlayerRole
         }).
 -endif.
 
@@ -112,7 +111,7 @@
 -define('LOBBYINFO_PB_H', true).
 -record('LobbyInfo',
         {resp                   :: goblet_pb:'ResponseObject'(), % = 1
-         matches = []           :: [goblet_pb:'Match'()] | undefined % = 2
+         matches = []           :: [goblet_pb:'MatchInfo'()] | undefined % = 2
         }).
 -endif.
 
@@ -129,7 +128,7 @@
 -define('MATCHCREATERESP_PB_H', true).
 -record('MatchCreateResp',
         {resp                   :: goblet_pb:'ResponseObject'(), % = 1
-         match                  :: goblet_pb:'Match'() | undefined % = 2
+         match                  :: goblet_pb:'MatchInfo'() | undefined % = 2
         }).
 -endif.
 
@@ -145,7 +144,7 @@
 -define('MATCHJOINRESP_PB_H', true).
 -record('MatchJoinResp',
         {resp                   :: goblet_pb:'ResponseObject'(), % = 1
-         match                  :: goblet_pb:'Match'() | undefined % = 2
+         match                  :: goblet_pb:'MatchInfo'() | undefined % = 2
         }).
 -endif.
 
@@ -191,7 +190,42 @@
 -define('MATCHINFORESP_PB_H', true).
 -record('MatchInfoResp',
         {resp                   :: goblet_pb:'ResponseObject'(), % = 1
-         match                  :: goblet_pb:'Match'() | undefined % = 2
+         match                  :: goblet_pb:'MatchInfo'() | undefined % = 2
+        }).
+-endif.
+
+-ifndef('MATCHSTATERESP.TILE_PB_H').
+-define('MATCHSTATERESP.TILE_PB_H', true).
+-record('MatchStateResp.Tile',
+        {x                      :: integer(),       % = 1, 32 bits
+         y                      :: integer(),       % = 2, 32 bits
+         type                   :: iodata(),        % = 3
+         occupant = []          :: [iodata()] | undefined, % = 4
+         flags = []             :: [iodata()] | undefined % = 5
+        }).
+-endif.
+
+-ifndef('MATCHSTATERESP.ACTION_PB_H').
+-define('MATCHSTATERESP.ACTION_PB_H', true).
+-record('MatchStateResp.Action',
+        {phase                  :: integer(),       % = 1, 32 bits
+         name                   :: iodata(),        % = 2
+         type                   :: 'SELF' | 'DIRECT' | 'LINEAR' | 'AREA' | integer(), % = 3, enum ItemAction
+         x_from                 :: integer(),       % = 4, 32 bits
+         y_from                 :: integer(),       % = 5, 32 bits
+         x_to                   :: integer(),       % = 6, 32 bits
+         y_to                   :: integer()        % = 7, 32 bits
+        }).
+-endif.
+
+-ifndef('MATCHSTATERESP_PB_H').
+-define('MATCHSTATERESP_PB_H', true).
+-record('MatchStateResp',
+        {state                  :: 'PREPARE' | 'DECIDE' | 'EXECUTE' | 'FINISH' | integer(), % = 1, enum MatchStateMachine
+         tile = []              :: [goblet_pb:'MatchStateResp.Tile'()] | undefined, % = 2
+         playerlist = []        :: [iodata()] | undefined, % = 3
+         readyplayers = []      :: [iodata()] | undefined, % = 4
+         actions = []           :: [goblet_pb:'MatchStateResp.Action'()] | undefined % = 5
         }).
 -endif.
 
