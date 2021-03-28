@@ -32,7 +32,15 @@
 ]).
 
 % Records representing ephemeral objects, such as matches
--record(goblet_match, {id = -1, state, players = [], players_max, start_time, mode, extra = <<>>}).
+-record(goblet_match, {
+    id = -1,
+    state,
+    players = [],
+    players_max,
+    start_time,
+    mode,
+    extra = <<>>
+}).
 
 %%===================================================================
 %% API
@@ -76,7 +84,8 @@ get_match_players(MatchID) ->
 create_match(Mode, MaxPlayers) ->
     create_match(Mode, MaxPlayers, <<>>).
 
--spec create_match(atom(), integer(), binary()) -> {ok, tuple()} | {error, atom()}.
+-spec create_match(atom(), integer(), binary()) ->
+    {ok, tuple()} | {error, atom()}.
 create_match(Mode, MaxPlayers, Extra) ->
     gen_server:call(?MODULE, {create_match, Mode, MaxPlayers, Extra}).
 
@@ -232,7 +241,12 @@ match_update(_UpdatedMatch, false, Matches) ->
 match_update(false, _Match, Matches) ->
     Matches;
 match_update(UpdatedMatch, Match, Matches) ->
-    lists:keyreplace(Match#goblet_match.id, #goblet_match.id, Matches, UpdatedMatch).
+    lists:keyreplace(
+        Match#goblet_match.id,
+        #goblet_match.id,
+        Matches,
+        UpdatedMatch
+    ).
 
 maybe_leave(_Player, false) ->
     {ok, false};
@@ -285,14 +299,18 @@ maybe_start(false, Matches) ->
 maybe_start(Match, Matches) when length(Match#goblet_match.players) == 0 ->
     {{error, empty_match}, Matches};
 maybe_start(Match, Matches) ->
-    supervisor:start_child(goblet_instance_sup, [Match#goblet_match.players, Match#goblet_match.id]),
+    supervisor:start_child(goblet_instance_sup, [
+        Match#goblet_match.players,
+        Match#goblet_match.id
+    ]),
     UpdatedMatch = Match#goblet_match{state = 'PLAYING'},
     UpdatedMatches = match_update(UpdatedMatch, Match, Matches),
     {ok, UpdatedMatches}.
 
 repack_match(Match) ->
-    {Match#goblet_match.id, Match#goblet_match.state, Match#goblet_match.players,
-        Match#goblet_match.players_max, Match#goblet_match.start_time, Match#goblet_match.mode,
+    {Match#goblet_match.id, Match#goblet_match.state,
+        Match#goblet_match.players, Match#goblet_match.players_max,
+        Match#goblet_match.start_time, Match#goblet_match.mode,
         Match#goblet_match.extra}.
 
 %%===================================================================
@@ -305,7 +323,8 @@ get_matches_empty_test() ->
 
 add_match_test() ->
     {ok, ConfirmedMatch} = create_match('DEFAULT', 6),
-    {Id, State, Players, PlayerMax, _StartTime, Mode, _Extra} = ConfirmedMatch,
+    {Id, State, Players, PlayerMax, _StartTime, Mode, _Extra} =
+        ConfirmedMatch,
     ?assertEqual('CREATING', State),
     ?assertEqual([], Players),
     ?assertEqual(6, PlayerMax),
@@ -323,7 +342,7 @@ join_leave_match_test() ->
     Name = "Chester Tester",
     Email = "Test@localhost.localdomain",
     _Resp0 = goblet_db:create_account(Email, "test"),
-    _Resp1 = goblet_db:create_player(Name, "Captain", 1, "destroyer", Email),
+    _Resp1 = goblet_db:create_player(Name, 1, 'DESTROYER', Email),
     {ok, MatchParams} = create_match('DEFAULT', 6),
     {MatchId, _S, _P, _PM, _ST, _M, _E} = MatchParams,
     {ok, MatchParams2} = join_match(Name, MatchId),
@@ -344,7 +363,7 @@ start_match_test() ->
     Name = "Chester Tester",
     Email = "Test@localhost.localdomain",
     _Resp0 = goblet_db:create_account(Email, "test"),
-    _Resp1 = goblet_db:create_player(Name, "Captain", 1, "destroyer", Email),
+    _Resp1 = goblet_db:create_player(Name, 1, 'DESTROYER', Email),
     {ok, MatchParams} = create_match('DEFAULT', 6),
     {MatchId, _S, _P, _PM, _ST, _M, _E} = MatchParams,
     {ok, _MatchParams2} = join_match(Name, MatchId),
@@ -373,4 +392,7 @@ repack_match_test() ->
         mode = Mode,
         extra = Extra
     },
-    ?assertEqual({Id, State, Players, PlayersMax, StartTime, Mode, Extra}, repack_match(M)).
+    ?assertEqual(
+        {Id, State, Players, PlayersMax, StartTime, Mode, Extra},
+        repack_match(M)
+    ).
