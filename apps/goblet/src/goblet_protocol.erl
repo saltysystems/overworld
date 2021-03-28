@@ -460,22 +460,36 @@ player_new(Message, State) when State#session.authenticated =:= true ->
 %% @doc Create a new player character
 %% @end
 %%---------------------------------------------------------------------------
--spec match_state_update(list(), list(), atom(), list(), list(), pos_integer()) -> ok.
-match_state_update(Tiles, Actions, MatchState, PlayerList, ReadyPlayers, MatchID) ->
+-spec match_state_update(
+    list(),
+    list(),
+    atom(),
+    list(),
+    list(),
+    pos_integer()
+) -> ok.
+match_state_update(
+    Tiles,
+    Actions,
+    MatchState,
+    PlayerList,
+    ReadyPlayers,
+    MatchID
+) ->
     T1 = [pack_tile(X) || X <- Tiles],
-    A1 = [ pack_action(X) || X <- Actions],
-    
+    A1 = [pack_action(X) || X <- Actions],
+
     Update = #'MatchStateResp'{
-                state = MatchState,
-                tile = T1,
-                playerlist = PlayerList,
-                readyplayers = ReadyPlayers,
-                actions = A1
-            },
+        state = MatchState,
+        tile = T1,
+        playerlist = PlayerList,
+        readyplayers = ReadyPlayers,
+        actions = A1
+    },
     Msg = goblet_pb:encode_msg(Update),
     OpCode = <<?MATCH_STATE:16>>,
     match_broadcast([OpCode, Msg], MatchID).
-    
+
 %%============================================================================
 %% Internal functions
 %%============================================================================
