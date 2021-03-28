@@ -26,15 +26,13 @@ install(Nodes) ->
 			account_create_table(Nodes),
 			player_create_table(Nodes),
 			entity_create_table(Nodes),
-			object_create_table(Nodes),
-			script_create_table(Nodes),
-			zone_create_table(Nodes),
-			setup_counters([goblet_account, goblet_player, goblet_entity, goblet_object, goblet_script, goblet_zone]),
+			item_create_table(Nodes),
+			setup_counters([goblet_account, goblet_player, goblet_entity, goblet_item]),
             rpc:multicall(Nodes, application, stop, [mnesia]);
         Err -> 
             io:format("Couldn't create schema: ~p", [Err]),
             Err
-    end.    
+    end.
 
 setup_counters([]) ->
 	ok;
@@ -70,18 +68,8 @@ entity_create_table(Nodes) ->
 				[{attributes, record_info(fields, goblet_entity)},
 				 {disc_copies, Nodes}
 				 ]).
-object_create_table(Nodes) ->
-	{_, ok} = mnesia:create_table(goblet_object,
-				[{attributes, record_info(fields, goblet_object)},
-				 {disc_copies, Nodes}
-				 ]).
-script_create_table(Nodes) ->
-	{_, ok} = mnesia:create_table(goblet_script,
-				[{attributes, record_info(fields, goblet_script)},
-				 {disc_copies, Nodes}
-				 ]).
-zone_create_table(Nodes) ->
-	{_, ok} = mnesia:create_table(goblet_zone,
-				[{attributes, record_info(fields, goblet_zone)},
+item_create_table(Nodes) ->
+	{_, ok} = mnesia:create_table(goblet_item,
+				[{attributes, record_info(fields, goblet_item)},
 				 {disc_copies, Nodes}
 				 ]).
