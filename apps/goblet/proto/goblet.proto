@@ -8,14 +8,35 @@ package goblet;
 
 // Match bits
 enum MatchState {
-    CREATING = 0;
-    PLAYING = 1;
+    CREATING  = 0;
+    PLAYING   = 1;
     FINISHING = 2;
 }
 enum MatchMode {
-    DEFAULT = 0;
-    BLITZ = 1;
+    DEFAULT   = 0;
+    BLITZ     = 1;
     STRATEGIC = 2;
+}
+
+enum MatchStateMachine {
+    PREPARE = 0;
+    DECIDE = 1;
+    EXECUTE = 2;
+    FINISH = 3;
+}
+
+enum PlayerRole {
+    DESTROYER   = 0;
+    INTERCEPTOR = 1;
+    CARRIER     = 2;
+    COMMAND     = 3;
+}
+
+enum ItemAction {
+    SELF   = 0;
+    DIRECT = 1; // affects 1 tile
+    LINEAR = 2; // affects a line of tiles 
+    AREA   = 3; // affects tile + all adjacent
 }
 
 // General response message
@@ -28,8 +49,8 @@ message ResponseObject {
 	optional string error = 2;
 }
 
-// Match description
-message Match {
+// Match info
+message MatchInfo {
     message Player {
         required string name = 1;
     }
@@ -80,9 +101,8 @@ message AccountLoginResp {
 // opcode 0x1050
 message PlayerNewReq {
 	required string name = 1;
-	required string title = 2;
-	required uint32 appearance = 3;
-	required string role = 4;
+	required uint32 appearance = 2;
+	required PlayerRole role = 3;
 }
 
 // opcode 0x1060 
@@ -105,7 +125,7 @@ message PlayerLog {
 
 message LobbyInfo {
     required ResponseObject resp = 1;
-    repeated Match matches = 2;
+    repeated MatchInfo matches = 2;
 }
 
 message MatchCreateReq {
@@ -116,7 +136,7 @@ message MatchCreateReq {
 
 message MatchCreateResp {
     required ResponseObject resp = 1;
-    optional Match match = 2;
+    optional MatchInfo match = 2;
 }
 
 message MatchJoinReq {
@@ -126,7 +146,7 @@ message MatchJoinReq {
 
 message MatchJoinResp {
     required ResponseObject resp = 1;
-    optional Match match = 2;
+    optional MatchInfo match = 2;
 }
 
 message MatchLeaveReq {
@@ -154,11 +174,33 @@ message MatchInfoReq {
 
 message MatchInfoResp {
     required ResponseObject resp = 1;
-    optional Match match = 2;
+    optional MatchInfo match = 2;
 } 
 
+message MatchStateResp {
+    message Tile {
+        required int32 x = 1;
+        required int32 y = 2;
+        required string type = 3;
+        repeated string occupant = 4;
+        repeated string flags = 5;
+    }
+    message Action {
+        required int32 phase = 1;
+        required string name = 2;
+        required ItemAction type = 3;
+        required int32 x_from = 4;
+        required int32 y_from = 5;
+        required int32 x_to = 6;
+        required int32 y_to = 7;
+    }
+    required MatchStateMachine state = 1;
+    repeated Tile tile = 2;    
+    repeated string playerlist = 3;
+    repeated string readyplayers = 4;
+    repeated Action actions = 5;
+}
 
-// Asynchronous ?
 message MatchPrepReq {
     required string player = 1;
     required uint32 matchid = 2;
