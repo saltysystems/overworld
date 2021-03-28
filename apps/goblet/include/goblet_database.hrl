@@ -5,8 +5,7 @@
 
 % Records representing the database tables in Mnesia
 -record(goblet_account,{email, id, hash, salt, first_login, last_login, player_ids}).
--record(goblet_player,{name, id, title, appearance, role, stats, inventory, online}).
--record(goblet_entity,{id, name, stats, scripts}).
--record(goblet_object,{id, zone, coordinates}).
--record(goblet_script,{id, name, content, scope}).
--record(goblet_zone,{id, name, shortname}).
+-record(goblet_player,{name, id, appearance, role, health, status_effects, inventory}).
+% separate table because separate IDs
+-record(goblet_entity,{name, id, appearance, role, health, status_effects, inventory}).
+-record(goblet_item, {name, id, ap, action, target_type, target_damage, target_health, status_effect, price}).
