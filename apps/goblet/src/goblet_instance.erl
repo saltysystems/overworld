@@ -25,12 +25,17 @@
 -define(SERVER(Name), {via, gproc, {n, l, {?MODULE, Name}}}).
 
 -record(action, {ap, name, from, target}).
--record(match, {id, playerlist, readyplayers}).
+-record(match, {id, playerlist, readyplayers, board}).
 
 % Public API
 start(PlayerList, MatchID) ->
     logger:notice("Starting up state machine for Match ~p", [MatchID]),
-    gen_statem:start_link(?SERVER(MatchID), ?MODULE, {PlayerList, MatchID}, []).
+    gen_statem:start_link(
+        ?SERVER(MatchID),
+        ?MODULE,
+        {PlayerList, MatchID},
+        []
+    ).
 
 player_ready(Player, MatchID) ->
     gen_statem:cast(?SERVER(MatchID), {prepare, Player}).
@@ -40,7 +45,12 @@ player_decision(Player, Actions, MatchID) ->
 
 % Callbacks
 init({PlayerList, MatchID}) ->
-    M = #match{id = MatchID, playerlist = PlayerList, readyplayers = []},
+    M = #match{
+        id = MatchID,
+        playerlist = PlayerList,
+        readyplayers = [],
+        board = goblet_game:initialize_board(1, 1, PlayerList)
+    },
     {ok, prepare, M}.
 
 callback_mode() ->
@@ -62,18 +72,25 @@ prepare(
     NextState =
         case PlayerSet == ReadySet of
             true ->
-                % All players are ready, reset ready state and move to the next
-                % phase. We want a maximum of 20s to go by before we skip over
-                % decision and go straight to execute
-                logger:notice("All players are ready, move on to decision state"),
+                % All players are ready, reset ready state and move to the
+                % next phase. We want a maximum of 20s to go by before we
+                % skip over decision and go straight to execute
+                logger:notice(
+                    "All players are ready, move on to decision state"
+                ),
                 TimeOut = {{timeout, decide}, 20000, execute},
-                {next_state, decision, Data#match{readyplayers = []}, [TimeOut]};
+                {next_state, decision, Data#match{readyplayers = []}, [
+                    TimeOut
+                ]};
             false ->
                 % Wait for all players to be ready
                 % TODO: Implement timeout
-                {next_state, prepare, Data#match{readyplayers = ReadyPlayers}}
+                {next_state, prepare, Data#match{
+                    readyplayers = ReadyPlayers
+                }}
         end,
     logger:notice("Ready players are:~p", [ReadyPlayers]),
+    
     NextState;
 prepare(EventType, EventContent, Data) ->
     logger:warning("Got a bad event sent to prepare"),
@@ -81,7 +98,11 @@ prepare(EventType, EventContent, Data) ->
 
 % In the decision stage, we accept decisions from players until the timeout is
 % reached. Then we move to Execute phase.
-decision(cast, {decision, Player, Actions}, #match{playerlist = PL, readyplayers = RP} = Data) ->
+decision(
+    cast,
+    {decision, Player, Actions},
+    #match{playerlist = PL, readyplayers = RP} = Data
+) ->
     % TODO: Validate action list
     Ready = [Player | RP],
     RSet = sets:from_list(RP),
@@ -93,9 +114,13 @@ decision(cast, {decision, Player, Actions}, #match{playerlist = PL, readyplayers
                 % All players have made their decision
                 % Cancel the decision timer by setting it to infinity and move
                 % onto execute state
-                logger:notice("All players are ready, move on to execution state"),
+                logger:notice(
+                    "All players are ready, move on to execution state"
+                ),
                 TimeOut = {{timeout, decide}, infinity, execute},
-                {next_state, execution, Data#match{readyplayers = []}, [TimeOut]};
+                {next_state, execution, Data#match{readyplayers = []}, [
+                    TimeOut
+                ]};
             false ->
                 {next_state, decision, Data#match{readyplayers = Ready}}
         end,
@@ -109,11 +134,11 @@ decision(EventType, EventContent, Data) ->
     logger:warning("Got a bad event sent to decision"),
     handle_event(EventType, EventContent, Data).
 
-% In the execution phase, we group actions, calculate the results, and give the
-% clients a bit of time to play animations. Then we expect to hear the clients
-% have finished with their animations, or we time out after some generous time
-% period (60s ?). We check to see if the match is over, and go to the Finish
-% phase if it is. Otherwise, back to Decision.
+% In the execution phase, we group actions, calculate the results, and give
+% the clients a bit of time to play animations. Then we expect to hear the
+% clients have finished with their animations, or we time out after some
+% generous time period (60s ?). We check to see if the match is over, and go
+% to the Finish phase if it is. Otherwise, back to Decision.
 %execution(cast, {execution, Player, Actions}, Data) ->
 %    NewData = Data, % calculate results here
 %    {next_state, decision, NewData, [{state_timeout, 5000, decide}]};
@@ -211,8 +236,18 @@ phases_test() ->
     P2_Actions = [
         #action{name = move, ap = 1, from = "player2", target = {1, 1}},
         #action{name = shoot, ap = 2, from = "player2", target = "player1"},
-        #action{name = shield, ap = 3, from = "player2", target = "player1"},
-        #action{name = missile, ap = 3, from = "player2", target = "player1"}
+        #action{
+            name = shield,
+            ap = 3,
+            from = "player2",
+            target = "player1"
+        },
+        #action{
+            name = missile,
+            ap = 3,
+            from = "player2",
+            target = "player1"
+        }
     ],
     % Convert AP to Phases
     MP = normalize_actions(P1_Actions),
