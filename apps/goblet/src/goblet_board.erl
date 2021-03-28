@@ -178,7 +178,8 @@ add_pawn(Pawn, Coordinates, TileList) ->
 %      no-op.
 % @end
 %---------------------------------------------------------------------------
--spec rm_pawn({non_neg_integer(), non_neg_integer()}, list()) -> {atom(), list()}.
+-spec rm_pawn({non_neg_integer(), non_neg_integer()}, list()) ->
+    {atom(), list()}.
 rm_pawn(Coordinates, TileList) ->
     Tile = get_tile(Coordinates, TileList),
     NewTile = Tile#tile{occupant = []},
@@ -257,15 +258,12 @@ hide_tile(PlayerID, Coordinates, TileList) ->
 % @doc Dump the entire tile state
 % @end
 %----------------------------------------------------------------------
--spec get_tile_all({non_neg_integer(), non_neg_integer()}, list()) -> tuple().
+-spec get_tile_all({non_neg_integer(), non_neg_integer()}, list()) ->
+    tuple().
 get_tile_all({X, Y}, TileList) ->
     Tile = get_tile({X, Y}, TileList),
-    {X,Y} = Tile#tile.coordinates,
-    {X,
-     Y,
-     Tile#tile.occupant, 
-     Tile#tile.type,
-     Tile#tile.flags}.
+    {X, Y} = Tile#tile.coordinates,
+    {X, Y, Tile#tile.occupant, Tile#tile.type, Tile#tile.flags}.
 
 %----------------------------------------------------------------------
 % @doc Get the occupant of a tile
