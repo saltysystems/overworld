@@ -90,7 +90,7 @@ prepare(
                 }}
         end,
     logger:notice("Ready players are:~p", [ReadyPlayers]),
-    
+
     NextState;
 prepare(EventType, EventContent, Data) ->
     logger:warning("Got a bad event sent to prepare"),
