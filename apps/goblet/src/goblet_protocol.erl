@@ -11,7 +11,8 @@
     match_leave/2,
     match_info/2,
     match_prepare/2,
-    match_decide/2
+    match_decide/2,
+    match_state_update/6
 ]).
 -export([player_log/1]).
 
@@ -77,7 +78,10 @@ decode(<<?MATCH_DECIDE:16, T/binary>>, State) ->
     logger:notice("Match decision packet from ~p~n", [State#session.email]),
     match_decide(T, State);
 decode(<<OpCode:16, _T/binary>>, State) ->
-    logger:notice("Got an unknown opcode ~p from ~p~n", [OpCode, State#session.email]),
+    logger:notice("Got an unknown opcode ~p from ~p~n", [
+        OpCode,
+        State#session.email
+    ]),
     {ok, State}.
 
 %%----------------------------------------------------------------------------
@@ -102,7 +106,9 @@ account_new(Message) ->
     Password = Decode#'AccountNewReq'.password,
     % TODO Validate length
     {Msg, NewState} =
-        case goblet_db:create_account(binary:bin_to_list(Email), Password) of
+        case
+            goblet_db:create_account(binary:bin_to_list(Email), Password)
+        of
             {error, Error} ->
                 Reply = goblet_pb:encode_msg(#'AccountNewResp'{
                     status = 'ERROR',
@@ -110,7 +116,9 @@ account_new(Message) ->
                 }),
                 {Reply, #session{authenticated = false}};
             _ ->
-                Reply = goblet_pb:encode_msg(#'AccountNewResp'{status = 'OK'}),
+                Reply = goblet_pb:encode_msg(#'AccountNewResp'{
+                    status = 'OK'
+                }),
                 {Reply, #session{email = Email, authenticated = true}}
         end,
     OpCode = <<?ACCOUNT_NEW:16>>,
@@ -130,7 +138,10 @@ account_login(Message) ->
             true ->
                 Record = goblet_db:account_by_email(Email),
                 Players = Record#goblet_account.player_ids,
-                Reply = goblet_pb:encode_msg(#'AccountLoginResp'{status = 'OK', players = Players}),
+                Reply = goblet_pb:encode_msg(#'AccountLoginResp'{
+                    status = 'OK',
+                    players = Players
+                }),
                 {Reply, #session{email = Email, authenticated = true}};
             false ->
                 Reply = goblet_pb:encode_msg(#'AccountLoginResp'{
@@ -175,7 +186,10 @@ match_create(Message, State) when State#session.authenticated =:= true ->
         case goblet_lobby:create_match(Mode, MaxPlayers, Extra) of
             {ok, M} ->
                 Resp = #'ResponseObject'{status = 'OK'},
-                goblet_pb:encode_msg(#'MatchCreateResp'{resp = Resp, match = pack_match(M)});
+                goblet_pb:encode_msg(#'MatchCreateResp'{
+                    resp = Resp,
+                    match = pack_match(M)
+                });
             {error, Error} ->
                 Resp = #'ResponseObject'{
                     status = 'ERROR',
@@ -197,7 +211,10 @@ match_join(Message, State) when State#session.authenticated =:= true ->
     Match = goblet_pb:decode_msg(Message, 'MatchJoinReq'),
     MatchID = Match#'MatchJoinReq'.matchid,
     Player = binary:bin_to_list(Match#'MatchJoinReq'.player),
-    IsValid = goblet_db:is_valid_player_account(Player, State#session.email),
+    IsValid = goblet_db:is_valid_player_account(
+        Player,
+        State#session.email
+    ),
     match_join(MatchID, Player, State, IsValid).
 
 %%----------------------------------------------------------------------------
@@ -213,7 +230,10 @@ match_join(MatchID, Player, State, true) ->
                 % Register the current process with process registry
                 match_register_session(MatchID),
                 Resp = #'ResponseObject'{status = 'OK'},
-                goblet_pb:encode_msg(#'MatchJoinResp'{resp = Resp, match = pack_match(M)});
+                goblet_pb:encode_msg(#'MatchJoinResp'{
+                    resp = Resp,
+                    match = pack_match(M)
+                });
             {error, Error} ->
                 Resp = #'ResponseObject'{
                     status = 'ERROR',
@@ -330,15 +350,15 @@ match_info(Message, State) when State#session.authenticated =:= true ->
     OpCode = <<?MATCH_INFO:16>>,
     {[OpCode, Msg], State}.
 
-match_info(MatchID, State, true) ->
+match_info(MatchID, _State, true) ->
     Match = pack_match(goblet_lobby:get_match(MatchID)),
-    Msg = goblet_pb:encode_msg(Match);
-match_info(_MatchID, State, {error, ErrMsg}) ->
+    goblet_pb:encode_msg(Match);
+match_info(_MatchID, _State, {error, ErrMsg}) ->
     Resp = #'ResponseObject'{
         status = 'ERROR',
         error = atom_to_list(ErrMsg)
     },
-    Msg = goblet_pb:encode_msg(#'MatchInfoResp'{resp = Resp}).
+    goblet_pb:encode_msg(#'MatchInfoResp'{resp = Resp}).
 
 %%----------------------------------------------------------------------------
 %% @doc Accept parameters for a player's preparation phase
@@ -364,9 +384,6 @@ match_prepare(Message, State) when State#session.authenticated =:= true ->
 
 match_prepare(MatchID, Player, State, true) ->
     goblet_instance:player_ready(Player, MatchID),
-    %TODO: broadcast message of the internal match state
-    %TODO x2: come up with a new name for the external state vs the internal
-    %state
     {ok, State};
 match_prepare(_MatchID, _Player, State, {error, ErrMsg}) ->
     Resp = #'ResponseObject'{
@@ -414,29 +431,51 @@ match_decide(_MatchID, _Player, _Actions, State, {error, ErrMsg}) ->
     OpCode = <<?MATCH_PREPARE:16>>,
     [{OpCode, Msg}, State].
 
-%%----------------------------------------------------------------------------
+%%---------------------------------------------------------------------------
 %% @doc Create a new player character
 %% @end
-%%----------------------------------------------------------------------------
+%%---------------------------------------------------------------------------
 -spec player_new(binary(), any()) -> {[binary(), ...], any()}.
 % Let it crash when an unauthenticated user tries to make an account.
 player_new(Message, State) when State#session.authenticated =:= true ->
     Decode = goblet_pb:decode_msg(Message, 'PlayerNewReq'),
     Name = binary:bin_to_list(Decode#'PlayerNewReq'.name),
-    Title = binary:bin_to_list(Decode#'PlayerNewReq'.title),
     Appearance = Decode#'PlayerNewReq'.appearance,
-    Role = binary:bin_to_list(Decode#'PlayerNewReq'.role),
+    Role = Decode#'PlayerNewReq'.role,
     Account = State#session.email,
     Msg =
-        case goblet_space_player:new(Name, Title, Appearance, Role, Account) of
+        case goblet_space_player:new(Name, Appearance, Role, Account) of
             ok ->
                 goblet_pb:encode_msg(#'PlayerNewResp'{status = 'OK'});
             {error, Error} ->
-                goblet_pb:encode_msg(#'PlayerNewResp'{status = 'ERROR', error = Error})
+                goblet_pb:encode_msg(#'PlayerNewResp'{
+                    status = 'ERROR',
+                    error = Error
+                })
         end,
     OpCode = <<?PLAYER_NEW:16>>,
     {[OpCode, Msg], State}.
 
+%%---------------------------------------------------------------------------
+%% @doc Create a new player character
+%% @end
+%%---------------------------------------------------------------------------
+-spec match_state_update(list(), list(), atom(), list(), list(), pos_integer()) -> ok.
+match_state_update(Tiles, Actions, MatchState, PlayerList, ReadyPlayers, MatchID) ->
+    T1 = [pack_tile(X) || X <- Tiles],
+    A1 = [ pack_action(X) || X <- Actions],
+    
+    Update = #'MatchStateResp'{
+                state = MatchState,
+                tile = T1,
+                playerlist = PlayerList,
+                readyplayers = ReadyPlayers,
+                actions = A1
+            },
+    Msg = goblet_pb:encode_msg(Update),
+    OpCode = <<?MATCH_STATE:16>>,
+    match_broadcast([OpCode, Msg], MatchID).
+    
 %%============================================================================
 %% Internal functions
 %%============================================================================
@@ -463,7 +502,7 @@ match_deregister_session(MatchID) ->
 %    match_broadcast(Msg, MatchID).
 
 pack_match({Id, State, Players, PlayersMax, StartTime, Mode, Extra}) ->
-    #'Match'{
+    #'MatchInfo'{
         id = Id,
         state = State,
         players = Players,
@@ -474,6 +513,26 @@ pack_match({Id, State, Players, PlayersMax, StartTime, Mode, Extra}) ->
         extra = Extra
     }.
 
+pack_tile({X, Y, Occupant, Type, Flags}) ->
+    #'MatchStateResp.Tile'{
+        x = X,
+        y = Y,
+        type = Type,
+        occupant = Occupant,
+        flags = Flags
+    }.
+
+pack_action([Phase, Name, Type, XFrom, YFrom, XTo, YTo]) ->
+    #'MatchStateResp.Action'{
+        phase = Phase,
+        name = Name,
+        type = Type,
+        x_from = XFrom,
+        y_from = YFrom,
+        x_to = XTo,
+        y_to = YTo
+    }.
+
 check_valid_player_account(Player, Email) ->
     case goblet_db:is_valid_player_account(Player, Email) of
         true -> ok;
@@ -482,7 +541,7 @@ check_valid_player_account(Player, Email) ->
 
 check_valid_match_owner(Player, MatchID) ->
     case goblet_lobby:get_match_players(MatchID) of
-        [H | T] ->
+        [H | _T] ->
             case H =:= Player of
                 true -> ok;
                 false -> {error, not_match_owner}
@@ -518,7 +577,10 @@ account_new_test() ->
     Email = "TestUser@doesntexist.notadomain",
     Password = "TestPassword1234",
     goblet_db:delete_account(Email),
-    Msg = goblet_pb:encode_msg(#'AccountNewReq'{email = Email, password = Password}),
+    Msg = goblet_pb:encode_msg(#'AccountNewReq'{
+        email = Email,
+        password = Password
+    }),
     {[RespOp, RespMsg], _State} = goblet_protocol:account_new(Msg),
     ?assertEqual(<<?ACCOUNT_NEW:16>>, RespOp),
     DecodedResp = goblet_pb:decode_msg(RespMsg, 'AccountNewResp'),
@@ -527,17 +589,26 @@ account_new_test() ->
 account_new_already_exists_test() ->
     Email = "TestUser@doesntexist.notadomain",
     Password = "TestPassword1234",
-    Msg = goblet_pb:encode_msg(#'AccountNewReq'{email = Email, password = Password}),
+    Msg = goblet_pb:encode_msg(#'AccountNewReq'{
+        email = Email,
+        password = Password
+    }),
     {[RespOp, RespMsg], _State} = goblet_protocol:account_new(Msg),
     ?assertEqual(<<?ACCOUNT_NEW:16>>, RespOp),
     DecodedResp = goblet_pb:decode_msg(RespMsg, 'AccountNewResp'),
     ?assertEqual('ERROR', DecodedResp#'AccountNewResp'.status),
-    ?assertEqual(<<"email_already_registered">>, DecodedResp#'AccountNewResp'.error).
+    ?assertEqual(
+        <<"email_already_registered">>,
+        DecodedResp#'AccountNewResp'.error
+    ).
 
 account_login_bad_password_test() ->
     Email = "TestUser@doesntexist.notadomain",
     Password = "Password",
-    Msg = goblet_pb:encode_msg(#'AccountLoginReq'{email = Email, password = Password}),
+    Msg = goblet_pb:encode_msg(#'AccountLoginReq'{
+        email = Email,
+        password = Password
+    }),
     {[RespOp, RespMsg], _State} = goblet_protocol:account_login(Msg),
     ?assertEqual(<<?ACCOUNT_LOGIN:16>>, RespOp),
     DecodedResp = goblet_pb:decode_msg(RespMsg, 'AccountLoginResp'),
@@ -546,7 +617,10 @@ account_login_bad_password_test() ->
 account_login_test() ->
     Email = "TestUser@doesntexist.notadomain",
     Password = "TestPassword1234",
-    Msg = goblet_pb:encode_msg(#'AccountLoginReq'{email = Email, password = Password}),
+    Msg = goblet_pb:encode_msg(#'AccountLoginReq'{
+        email = Email,
+        password = Password
+    }),
     {[RespOp, RespMsg], _State} = goblet_protocol:account_login(Msg),
     ?assertEqual(<<?ACCOUNT_LOGIN:16>>, RespOp),
     DecodedResp = goblet_pb:decode_msg(RespMsg, 'AccountLoginResp'),
@@ -559,11 +633,13 @@ player_new_test() ->
     State = #session{email = Email, authenticated = true},
     Message = goblet_pb:encode_msg(#'PlayerNewReq'{
         name = "Chester The Tester",
-        title = "Rickety Mockup",
         appearance = 1,
-        role = "interceptor"
+        role = 'INTERCEPTOR'
     }),
-    {[RespOp, RespMsg], _State} = goblet_protocol:player_new(Message, State),
+    {[RespOp, RespMsg], _State} = goblet_protocol:player_new(
+        Message,
+        State
+    ),
     ?assertEqual(RespOp, <<?PLAYER_NEW:16>>),
     RespObj = goblet_pb:decode_msg(RespMsg, 'PlayerNewResp'),
     ?assertEqual(RespObj#'PlayerNewResp'.status, 'OK').
@@ -583,7 +659,10 @@ match_create_test() ->
     State = #session{email = Email, authenticated = true},
     Mode = 'DEFAULT',
     MaxPlayers = 6,
-    Msg = goblet_pb:encode_msg(#'MatchCreateReq'{mode = Mode, players_max = MaxPlayers}),
+    Msg = goblet_pb:encode_msg(#'MatchCreateReq'{
+        mode = Mode,
+        players_max = MaxPlayers
+    }),
     {[RespOp, RespMsg], State} = goblet_protocol:match_create(Msg, State),
     OpCode = <<?MATCH_CREATE:16>>,
     ?assertEqual(OpCode, RespOp),
@@ -591,7 +670,7 @@ match_create_test() ->
     ResponseObj = DecodedResp#'MatchCreateResp'.resp,
     ?assertEqual(ResponseObj#'ResponseObject'.status, 'OK'),
     M = DecodedResp#'MatchCreateResp'.match,
-    ?assertEqual(MaxPlayers, M#'Match'.players_max),
-    ?assertEqual(Mode, M#'Match'.mode),
+    ?assertEqual(MaxPlayers, M#'MatchInfo'.players_max),
+    ?assertEqual(Mode, M#'MatchInfo'.mode),
     % deconstruct the match
-    goblet_lobby:delete_match(M#'Match'.id).
+    goblet_lobby:delete_match(M#'MatchInfo'.id).
