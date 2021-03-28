@@ -47,9 +47,9 @@ initialize_board(Board, []) ->
 initialize_board(Board, [Player | Rest]) ->
     Coords = goblet_board:get_unoccupied_tile(Board),
     case goblet_board:add_pawn(Player, Coords, Board) of
-        {error, Board} -> 
+        {error, Board} ->
             Board;
-        B1 -> 
+        B1 ->
             initialize_board(B1, Rest)
     end.
 
@@ -76,7 +76,6 @@ is_valid_role(Role) ->
         false ->
             not_a_class
     end.
-
 
 %======================================================================
 % Tests
