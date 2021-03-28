@@ -9,12 +9,15 @@
     delete_account/1,
     account_by_email/1,
     account_login/2,
-    create_player/5,
+    create_player/4,
     delete_player/2,
     delete_orphaned_player/1,
     player_by_name/1,
     is_valid_player/1,
     is_valid_player_account/2,
+    create_item/8,
+    get_item/1,
+    item_to_player/2,
     salt_and_hash/2
 ]).
 
@@ -23,7 +26,11 @@ create_account(Email, Password) ->
     Fun = fun() ->
         case mnesia:read({goblet_account, Email}) of
             [] ->
-                NextID = mnesia:dirty_update_counter(goblet_table_ids, goblet_account, 1),
+                NextID = mnesia:dirty_update_counter(
+                    goblet_table_ids,
+                    goblet_account,
+                    1
+                ),
                 {Hash, Salt} = salt_and_hash(Password),
                 mnesia:write(
                     goblet_account,
@@ -63,7 +70,7 @@ account_by_email(Email) ->
     end,
     mnesia:activity(transaction, Fun).
 
--spec player_by_name(list()) -> ok | {error, atom()}.
+-spec player_by_name(list()) -> tuple() | {error, atom()}.
 player_by_name(Name) ->
     Fun = fun() ->
         case mnesia:read({goblet_player, Name}) of
@@ -93,23 +100,27 @@ is_valid_player_account(Player, Email) ->
             lists:member(Player, Account#goblet_account.player_ids)
     end.
 
--spec create_player(list(), list(), pos_integer(), list(), list()) -> ok | {error, atom()}.
-create_player(Name, Title, Appearance, Role, Account) ->
+-spec create_player(list(), pos_integer(), atom(), list()) ->
+    ok | {error, atom()}.
+create_player(Name, Appearance, Role, Account) ->
     Fun = fun() ->
         case mnesia:read({goblet_player, Name}) of
             [] ->
-                NextID = mnesia:dirty_update_counter(goblet_table_ids, goblet_player, 1),
+                NextID = mnesia:dirty_update_counter(
+                    goblet_table_ids,
+                    goblet_player,
+                    1
+                ),
                 mnesia:write(
                     goblet_player,
                     #goblet_player{
                         name = Name,
                         id = NextID,
-                        title = Title,
                         appearance = Appearance,
                         role = Role,
-                        stats = [],
-                        inventory = [],
-                        online = false
+                        health = 100,
+                        status_effects = [],
+                        inventory = []
                     },
                     write
                 ),
@@ -138,6 +149,98 @@ delete_player(Name, Account) ->
             Resp#goblet_account{player_ids = lists:delete(Name, Players)},
             write
         )
+    end,
+    mnesia:activity(transaction, Fun).
+
+-spec create_item(
+    list(),
+    pos_integer(),
+    atom(),
+    atom(),
+    non_neg_integer(),
+    non_neg_integer(),
+    atom(),
+    pos_integer()
+) -> ok | {error, atom()}.
+create_item(
+    Name,
+    AP,
+    Action,
+    TargetType,
+    TargetDamage,
+    TargetHealth,
+    StatusEffect,
+    Price
+) ->
+    Fun = fun() ->
+        case mnesia:read({goblet_item, Name}) of
+            [] ->
+                NextID = mnesia:dirty_update_counter(
+                    goblet_table_ids,
+                    goblet_item,
+                    1
+                ),
+                mnesia:write(
+                    goblet_item,
+                    #goblet_item{
+                        name = Name,
+                        id = NextID,
+                        ap = AP,
+                        action = Action,
+                        target_type = TargetType,
+                        target_damage = TargetDamage,
+                        target_health = TargetHealth,
+                        status_effect = StatusEffect,
+                        price = Price
+                    },
+                    write
+                );
+            _ ->
+                {error, item_already_exists}
+        end
+    end,
+    mnesia:activity(transaction, Fun).
+
+% Items can't be removed simply without orphan objects in player inventories
+%-spec delete_item(list(), list()) -> ok.
+%delete_item(Name) ->
+%    Fun = fun() ->
+%        mnesia:delete({goblet_item, Name})
+%    end,
+%    mnesia:activity(transaction, Fun).
+
+-spec get_item(list()) -> tuple().
+get_item(Item) ->
+    Fun = fun() ->
+        case mnesia:read({goblet_item, Item}) of
+            [I] -> I;
+            Other -> Other
+        end
+    end,
+    mnesia:activity(transaction, Fun).
+
+-spec item_to_player(list(), list()) -> ok | {error, atom()}.
+item_to_player(Item, Player) ->
+    Fun = fun() ->
+        case mnesia:read({goblet_item, Item}) of
+            [I] ->
+                ItemName = I#goblet_item.name,
+                case mnesia:read({goblet_player, Player}) of
+                    [P] ->
+                        Inventory = P#goblet_player.inventory,
+                        mnesia:write(
+                            goblet_player,
+                            P#goblet_player{
+                                inventory = [ItemName | Inventory]
+                            },
+                            write
+                        );
+                    _ ->
+                        {error, no_such_player}
+                end;
+            _ ->
+                {error, no_such_item}
+        end
     end,
     mnesia:activity(transaction, Fun).
 
@@ -226,14 +329,43 @@ account_login_badpass_test() ->
 create_player_test() ->
     Email = "TestUser@doesntexist.notadomain",
     Name = "Chester McTester",
-    Title = "Fleet Captain",
     Appearance = 1,
-    Role = "Destroyer",
-    Resp = goblet_db:create_player(Name, Title, Appearance, Role, Email),
+    Role = 'DESTROYER',
+    Resp = goblet_db:create_player(Name, Appearance, Role, Email),
     ?assertEqual(ok, Resp),
     % Now check to see that the player is properly associated with the
     Acct = goblet_db:account_by_email(Email),
     ?assertEqual(["Chester McTester"], Acct#goblet_account.player_ids).
+
+create_item_test() ->
+    Name = "TestGun",
+    AP = 3,
+    Action = testgun,
+    TargetType = direct,
+    TargetDamage = 10,
+    TargetHealth = 0,
+    StatusEffect = none,
+    Price = 1000,
+    Resp = goblet_db:create_item(
+        Name,
+        AP,
+        Action,
+        TargetType,
+        TargetDamage,
+        TargetHealth,
+        StatusEffect,
+        Price
+    ),
+    ?assertEqual(ok, Resp).
+
+item_to_player_test() ->
+    Item = "TestGun",
+    Player = "Chester McTester",
+    Resp = goblet_db:item_to_player(Item, Player),
+    ?assertEqual(ok, Resp),
+    P = goblet_db:player_by_name(Player),
+    Inv = P#goblet_player.inventory,
+    ?assertEqual(true, lists:member(Item, Inv)).
 
 delete_player_test() ->
     Email = "TestUser@doesntexist.notadomain",
