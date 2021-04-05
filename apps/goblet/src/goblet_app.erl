@@ -42,7 +42,7 @@ start(_StartType, _StartArgs) ->
     ]),
     {ok, _} = cowboy:start_clear(
         http,
-        [{port, 4434}],
+        [{port, 4433}],
         #{env => #{dispatch => Dispatch}}
     ),
     goblet_sup:start_link().
