@@ -91,10 +91,7 @@ message AccountLoginResp {
 		ERROR = 1;
 	}
 	required Status status = 1;
-	message Player {
-		required string name = 1;
-	}
-	repeated Player players = 2;
+	repeated string players = 2;
 	optional string error = 3;
 }
 
@@ -115,6 +112,17 @@ message PlayerNewResp {
 	optional string error = 3;
 }
 
+// no corresponding Request
+message PlayerListResp {
+	enum Status {
+		OK = 0;
+		ERROR = 1;
+	}
+	required Status status = 1;
+    repeated string players = 2;
+	optional string error = 3;
+}
+
 message PlayerAuthenticate {
 	required bytes id = 1;
 }
@@ -123,7 +131,7 @@ message PlayerLog {
 	required string msg = 2;
 }
 
-message LobbyInfo {
+message MatchListResp {
     required ResponseObject resp = 1;
     repeated MatchInfo matches = 2;
 }
