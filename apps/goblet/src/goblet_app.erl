@@ -9,6 +9,8 @@
 
 -export([start/2, stop/1]).
 
+-record(session, {email = none, authenticated = false, match = false}).
+
 start(_StartType, _StartArgs) ->
     % Try to setup items
     goblet_db:create_item("Reactor MK I", 1, move, 'SELF', 0, 0, none, 100),
@@ -37,7 +39,7 @@ start(_StartType, _StartArgs) ->
 
     Dispatch = cowboy_router:compile([
         {'_', [
-            {"/ws", goblet_websocket, []}
+            {"/ws", goblet_websocket, #session{}}
         ]}
     ]),
     {ok, _} = cowboy:start_clear(
