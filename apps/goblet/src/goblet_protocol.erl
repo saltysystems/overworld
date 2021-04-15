@@ -5,6 +5,7 @@
     account_new/1,
     account_login/1,
     player_new/2,
+    player_list/2,
     match_create/2,
     match_list/2,
     match_join/2,
@@ -38,48 +39,51 @@
 %%      function
 %% @end
 %%-------------------------------------------------------------------------
--spec decode(binary(), any()) -> {ok, any()} | {[binary(), ...], any()}.
+-spec decode(binary(), tuple()) -> {ok, tuple()} | {[binary(), ...], tuple()}.
 decode(<<?VERSION:16, _T/binary>>, State) ->
-    logger:notice("Version request~n"),
+    logger:notice("Version request"),
+    {ok, State};
+decode(<<?HEARTBEAT:16, _T/binary>>, State) ->
+    logger:debug("Got heartbeat"),
     {ok, State};
 decode(<<?ACCOUNT_NEW:16, T/binary>>, _State) ->
-    logger:notice("New account request~n"),
+    logger:notice("New account request"),
     account_new(T);
 decode(<<?ACCOUNT_LOGIN:16, T/binary>>, _State) ->
-    logger:notice("Account login request~n"),
+    logger:notice("Account login request"),
     account_login(T);
 decode(<<?PLAYER_NEW:16, T/binary>>, State) ->
-    logger:notice("New player request~n~p", [State#session.email]),
+    logger:notice("New player request from ~p", [State#session.email]),
     player_new(T, State);
 decode(<<?PLAYER_LIST:16, T/binary>>, State) ->
-    logger:notice("Player list request from ~p~n", [State#session.email]),
+    logger:notice("Player list request from ~p", [State#session.email]),
     player_list(T, State);
 decode(<<?MATCH_LIST:16, T/binary>>, State) ->
-    logger:notice("Match list request from ~p~n", [State#session.email]),
+    logger:notice("Match list request from ~p", [State#session.email]),
     match_list(T, State);
 decode(<<?MATCH_CREATE:16, T/binary>>, State) ->
-    logger:notice("New match request from ~p~n", [State#session.email]),
+    logger:notice("New match request from ~p", [State#session.email]),
     match_create(T, State);
 decode(<<?MATCH_JOIN:16, T/binary>>, State) ->
-    logger:notice("Match join request from ~p~n", [State#session.email]),
+    logger:notice("Match join request from ~p", [State#session.email]),
     match_join(T, State);
 decode(<<?MATCH_LEAVE:16, T/binary>>, State) ->
-    logger:notice("Match leave requestfrom ~p~n", [State#session.email]),
+    logger:notice("Match leave requestfrom ~p", [State#session.email]),
     match_leave(T, State);
 decode(<<?MATCH_START:16, T/binary>>, State) ->
-    logger:notice("Match start request from ~p~n", [State#session.email]),
+    logger:notice("Match start request from ~p", [State#session.email]),
     match_start(T, State);
 decode(<<?MATCH_STATE:16, T/binary>>, State) ->
-    logger:notice("Match state request from ~p~n", [State#session.email]),
+    logger:notice("Match state request from ~p", [State#session.email]),
     match_info(T, State);
 decode(<<?MATCH_PREPARE:16, T/binary>>, State) ->
-    logger:notice("Match prepare packet from ~p~n", [State#session.email]),
+    logger:notice("Match prepare packet from ~p", [State#session.email]),
     match_prepare(T, State);
 decode(<<?MATCH_DECIDE:16, T/binary>>, State) ->
-    logger:notice("Match decision packet from ~p~n", [State#session.email]),
+    logger:notice("Match decision packet from ~p", [State#session.email]),
     match_decide(T, State);
 decode(<<OpCode:16, _T/binary>>, State) ->
-    logger:notice("Got an unknown opcode ~p from ~p~n", [
+    logger:notice("Got an unknown opcode ~p from ~p", [
         OpCode,
         State#session.email
     ]),
@@ -100,15 +104,15 @@ player_log(Message) ->
 %% @doc Registers a new account, storing it in the database
 %% @end
 %%----------------------------------------------------------------------------
--spec account_new(binary()) -> {[binary(), ...], any()}.
+-spec account_new(binary()) -> {[binary(), ...], tuple()}.
 account_new(Message) ->
     Decode = goblet_pb:decode_msg(Message, 'AccountNewReq'),
-    Email = Decode#'AccountNewReq'.email,
-    Password = Decode#'AccountNewReq'.password,
+    Email = binary:bin_to_list(Decode#'AccountNewReq'.email),
+    Password = binary:bin_to_list(Decode#'AccountNewReq'.password),
     % TODO Validate length
     {Msg, NewState} =
         case
-            goblet_db:create_account(binary:bin_to_list(Email), Password)
+            goblet_db:create_account(Email, Password)
         of
             {error, Error} ->
                 Reply = goblet_pb:encode_msg(#'AccountNewResp'{
@@ -129,7 +133,7 @@ account_new(Message) ->
 %% @doc Login the user and mutate the session state
 %% @end
 %%----------------------------------------------------------------------------
--spec account_login(binary()) -> {[binary(), ...], any()}.
+-spec account_login(binary()) -> {[binary(), ...], tuple()}.
 account_login(Message) ->
     Decode = goblet_pb:decode_msg(Message, 'AccountNewReq'),
     Email = binary:bin_to_list(Decode#'AccountNewReq'.email),
@@ -145,6 +149,7 @@ account_login(Message) ->
                 }),
                 {Reply, #session{email = Email, authenticated = true}};
             false ->
+                logger:warning("Invalid password attempt for ~p", [Email]),
                 Reply = goblet_pb:encode_msg(#'AccountLoginResp'{
                     status = 'ERROR',
                     error = "invalid password"
@@ -158,7 +163,7 @@ account_login(Message) ->
 %% @doc Get the current lobby information
 %% @end
 %%----------------------------------------------------------------------------
--spec match_list(binary(), any()) -> {[binary(), ...], any()}.
+-spec match_list(binary(), tuple()) -> {[binary(), ...], tuple()}.
 match_list(_Message, State) ->
     Matches = goblet_lobby:get_matches(),
     % Convert the tuples back to records..
@@ -173,7 +178,7 @@ match_list(_Message, State) ->
 %%      player is authenticated.
 %% @end
 %%----------------------------------------------------------------------------
--spec match_create(binary(), any()) -> {[binary(), ...], any()}.
+-spec match_create(binary(), tuple()) -> {[binary(), ...], tuple()}.
 match_create(Message, State) when State#session.authenticated =:= true ->
     Match = goblet_pb:decode_msg(Message, 'MatchCreateReq'),
     Mode = Match#'MatchCreateReq'.mode,
@@ -207,7 +212,7 @@ match_create(Message, State) when State#session.authenticated =:= true ->
 %%      process registry for the match.
 %% @end
 %%-------------------------------------------------------------------------
--spec match_join(binary(), any()) -> {[binary(), ...], any()}.
+-spec match_join(binary(), tuple()) -> {[binary(), ...], tuple()}.
 match_join(Message, State) when State#session.authenticated =:= true ->
     Match = goblet_pb:decode_msg(Message, 'MatchJoinReq'),
     MatchID = Match#'MatchJoinReq'.matchid,
@@ -258,7 +263,7 @@ match_join(_MatchID, _Player, State, false) ->
 %%      is authenticated.
 %% @end
 %%-------------------------------------------------------------------------
--spec match_leave(binary(), any()) -> {[binary(), ...], any()}.
+-spec match_leave(binary(), tuple()) -> {[binary(), ...], tuple()}.
 match_leave(Message, State) when State#session.authenticated =:= true ->
     Match = goblet_pb:decode_msg(Message, 'MatchLeaveReq'),
     MatchID = Match#'MatchJoinReq'.matchid,
@@ -284,7 +289,7 @@ match_leave(Message, State) when State#session.authenticated =:= true ->
 %%      player list) controls when to start the match.
 %% @end
 %%-------------------------------------------------------------------------
--spec match_start(binary(), any()) -> {[binary(), ...], any()}.
+-spec match_start(binary(), tuple()) -> {[binary(), ...], tuple()}.
 match_start(Message, State) when State#session.authenticated =:= true ->
     Match = goblet_pb:decode_msg(Message, 'MatchStartReq'),
     MatchID = Match#'MatchStartReq'.matchid,
@@ -331,7 +336,7 @@ match_start(_MatchID, State, {error, ErrMsg}) ->
 %% @doc Return the current match info
 %% @end
 %%-------------------------------------------------------------------------
--spec match_info(binary(), any()) -> {[binary(), ...], any()}.
+-spec match_info(binary(), tuple()) -> {[binary(), ...], tuple()}.
 match_info(Message, State) when State#session.authenticated =:= true ->
     Match = goblet_pb:decode_msg(Message, 'MatchStateReq'),
     MatchID = Match#'MatchInfoReq'.matchid,
@@ -365,7 +370,7 @@ match_info(_MatchID, _State, {error, ErrMsg}) ->
 %% @doc Accept parameters for a player's preparation phase
 %% @end
 %%-------------------------------------------------------------------------
--spec match_prepare(binary(), any()) -> {ok | [binary(), ...], any()}.
+-spec match_prepare(binary(), tuple()) -> {ok | [binary(), ...], tuple()}.
 match_prepare(Message, State) when State#session.authenticated =:= true ->
     Match = goblet_pb:decode_msg(Message, 'MatchPrepReq'),
     MatchID = Match#'MatchPrepReq'.matchid,
@@ -399,7 +404,7 @@ match_prepare(_MatchID, _Player, State, {error, ErrMsg}) ->
 %% @doc Accept a player's decisions and forward them to the state machine
 %% @end
 %%-------------------------------------------------------------------------
--spec match_decide(binary(), any()) -> {ok | [binary(), ...], any()}.
+-spec match_decide(binary(), tuple()) -> {ok | [binary(), ...], tuple()}.
 match_decide(Message, State) when State#session.authenticated =:= true ->
     Match = goblet_pb:decode_msg(Message, 'MatchDecideReq'),
     MatchID = Match#'MatchDecideReq'.matchid,
@@ -436,7 +441,7 @@ match_decide(_MatchID, _Player, _Actions, State, {error, ErrMsg}) ->
 %% @doc Create a new player character
 %% @end
 %%------------------------------------------------------------------------
--spec player_new(binary(), any()) -> {[binary(), ...], any()}.
+-spec player_new(binary(), tuple()) -> {[binary(), ...], tuple()}.
 % Let it crash when an unauthenticated user tries to make an account.
 player_new(Message, State) when State#session.authenticated =:= true ->
     Decode = goblet_pb:decode_msg(Message, 'PlayerNewReq'),
@@ -445,7 +450,7 @@ player_new(Message, State) when State#session.authenticated =:= true ->
     Role = Decode#'PlayerNewReq'.role,
     Account = State#session.email,
     Msg =
-        case goblet_space_player:new(Name, Appearance, Role, Account) of
+        case goblet_game:new_player(Name, Appearance, Role, Account) of
             ok ->
                 goblet_pb:encode_msg(#'PlayerNewResp'{status = 'OK'});
             {error, Error} ->
@@ -461,8 +466,9 @@ player_new(Message, State) when State#session.authenticated =:= true ->
 %% @doc List all player characters for an account
 %% @end
 %%------------------------------------------------------------------------
--spec player_list(binary(), any()) -> {[binary(), ...], any()}.
+-spec player_list(binary(), tuple()) -> {[binary(), ...], tuple()}.
 player_list(_Message, State) when State#session.authenticated =:= true ->
+    logger:notice("Session is authenticated, continuing.."),
     Email = State#session.email,
     Msg =
         case goblet_db:account_by_email(Email) of
@@ -478,7 +484,9 @@ player_list(_Message, State) when State#session.authenticated =:= true ->
                 })
         end,
     OpCode = <<?PLAYER_LIST:16>>,
-    {[OpCode, Msg], State}.
+    {[OpCode, Msg], State};
+player_list(_Message, State) ->
+    default_handler(State).
 
 %%------------------------------------------------------------------------
 %% @doc Update a match state
@@ -595,6 +603,10 @@ check_valid_match_player(Player, MatchID) ->
         false -> {error, not_in_match}
     end.
 
+default_handler(State) ->
+    logger:error("Something wont awry with the session.."),
+    {ok, State}.
+
 %%=========================================================================
 %% Tests
 %%=========================================================================
@@ -681,6 +693,15 @@ player_new_test() ->
     ?assertEqual(RespOp, <<?PLAYER_NEW:16>>),
     RespObj = goblet_pb:decode_msg(RespMsg, 'PlayerNewResp'),
     ?assertEqual(RespObj#'PlayerNewResp'.status, 'OK').
+
+player_list_test() ->
+    Email = "TestUser@doesntexist.notadomain",
+    State = #session{email = Email, authenticated = true},
+    {[RespOp, RespMsg], _State} = goblet_protocol:player_list(<<>>, State),
+    ?assertEqual(RespOp, <<?PLAYER_LIST:16>>),
+    RespObj = goblet_pb:decode_msg(RespMsg, 'PlayerListResp'),
+    PlayerList = RespObj#'PlayerListResp'.players,
+    ?assertEqual(is_list(PlayerList), true).
 
 match_list_test() ->
     % shouldnt matter here
