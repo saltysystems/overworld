@@ -98,8 +98,9 @@ message AccountLoginResp {
 // opcode 0x1050
 message PlayerNewReq {
 	required string name = 1;
-	required uint32 appearance = 2;
-	required PlayerRole role = 3;
+	repeated string color = 2;
+	repeated uint32 symbol = 3;
+	required PlayerRole role = 4;
 }
 
 // opcode 0x1060 
