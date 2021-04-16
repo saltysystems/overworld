@@ -6,7 +6,7 @@
 -module(goblet_game).
 
 -export([
-    new_player/4,
+    new_player/5,
     initialize_board/3
 ]).
 
@@ -14,18 +14,18 @@
 % Public API
 %======================================================================
 
--spec new_player(list(), pos_integer(), atom(), list()) ->
+-spec new_player(list(), list(), list(), atom(), list()) ->
     ok | {error, any()}.
-new_player(Name, Appearance, Role, Account) ->
+new_player(Name, Colors, Symbols, Role, Account) ->
     case
         goblet_util:run_checks([
             fun() -> is_valid_name(Name) end,
-            fun() -> is_valid_appearance(Appearance) end,
+            fun() -> is_valid_appearance(Symbols, Colors) end,
             fun() -> is_valid_role(Role) end
         ])
     of
         ok ->
-            goblet_db:create_player(Name, Appearance, Role, Account),
+            goblet_db:create_player(Name, Colors, Symbols, Role, Account),
             % Now give the player some basic inventory
             % TODO: replace me with a more dynamic system
             goblet_db:item_to_player("Reactor MK I", Name),
@@ -62,11 +62,11 @@ is_valid_name(_Name) ->
     too_long.
 
 % should be a positive integer to be a valid protobuf message
-% TODO: Fix the randomly chosen value of 10!
-is_valid_appearance(Appearance) when Appearance < 10 ->
-    ok;
-is_valid_appearance(_Appearance) ->
-    no_such_appearance.
+is_valid_appearance(_Symbols, _Colors) ->
+    % Easter egg: You can hack up the client to send any color and symbol
+    ok.
+
+% combination. If you wanted to prevent that, this would be the place.
 
 is_valid_role(Role) ->
     ValidRoles = ['DESTROYER', 'INTERCEPTOR', 'CARRIER', 'COMMAND'],
