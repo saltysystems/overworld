@@ -9,7 +9,7 @@
     delete_account/1,
     account_by_email/1,
     account_login/2,
-    create_player/4,
+    create_player/5,
     delete_player/2,
     delete_orphaned_player/1,
     player_by_name/1,
@@ -100,9 +100,9 @@ is_valid_player_account(Player, Email) ->
             lists:member(Player, Account#goblet_account.player_ids)
     end.
 
--spec create_player(list(), pos_integer(), atom(), list()) ->
+-spec create_player(list(), list(), list(), atom(), list()) ->
     ok | {error, atom()}.
-create_player(Name, Appearance, Role, Account) ->
+create_player(Name, Colors, Symbols, Role, Account) ->
     Fun = fun() ->
         case mnesia:read({goblet_player, Name}) of
             [] ->
@@ -116,7 +116,8 @@ create_player(Name, Appearance, Role, Account) ->
                     #goblet_player{
                         name = Name,
                         id = NextID,
-                        appearance = Appearance,
+                        colors = Colors,
+                        symbols = Symbols,
                         role = Role,
                         health = 100,
                         status_effects = [],
@@ -329,9 +330,10 @@ account_login_badpass_test() ->
 create_player_test() ->
     Email = "TestUser@doesntexist.notadomain",
     Name = "Chester McTester",
-    Appearance = 1,
+    Colors = ["#f00d00", "#ffffff", "#deabee"],
+    Symbols = [1, 3],
     Role = 'DESTROYER',
-    Resp = goblet_db:create_player(Name, Appearance, Role, Email),
+    Resp = goblet_db:create_player(Name, Colors, Symbols, Role, Email),
     ?assertEqual(ok, Resp),
     % Now check to see that the player is properly associated with the
     Acct = goblet_db:account_by_email(Email),
