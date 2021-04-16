@@ -15,6 +15,7 @@
     match_decide/2,
     match_state_update/6
 ]).
+
 -export([player_log/1]).
 
 -include("goblet_opcode.hrl").
@@ -39,7 +40,8 @@
 %%      function
 %% @end
 %%-------------------------------------------------------------------------
--spec decode(binary(), tuple()) -> {ok, tuple()} | {[binary(), ...], tuple()}.
+-spec decode(binary(), tuple()) ->
+    {ok, tuple()} | {[binary(), ...], tuple()}.
 decode(<<?VERSION:16, _T/binary>>, State) ->
     logger:notice("Version request"),
     {ok, State};
@@ -107,13 +109,11 @@ player_log(Message) ->
 -spec account_new(binary()) -> {[binary(), ...], tuple()}.
 account_new(Message) ->
     Decode = goblet_pb:decode_msg(Message, 'AccountNewReq'),
-    Email = binary:bin_to_list(Decode#'AccountNewReq'.email),
-    Password = binary:bin_to_list(Decode#'AccountNewReq'.password),
+    Email = Decode#'AccountNewReq'.email,
+    Password = Decode#'AccountNewReq'.password,
     % TODO Validate length
     {Msg, NewState} =
-        case
-            goblet_db:create_account(Email, Password)
-        of
+        case goblet_db:create_account(Email, Password) of
             {error, Error} ->
                 Reply = goblet_pb:encode_msg(#'AccountNewResp'{
                     status = 'ERROR',
@@ -136,7 +136,7 @@ account_new(Message) ->
 -spec account_login(binary()) -> {[binary(), ...], tuple()}.
 account_login(Message) ->
     Decode = goblet_pb:decode_msg(Message, 'AccountNewReq'),
-    Email = binary:bin_to_list(Decode#'AccountNewReq'.email),
+    Email = Decode#'AccountNewReq'.email,
     Password = Decode#'AccountNewReq'.password,
     {Msg, NewState} =
         case goblet_db:account_login(Email, Password) of
@@ -216,7 +216,7 @@ match_create(Message, State) when State#session.authenticated =:= true ->
 match_join(Message, State) when State#session.authenticated =:= true ->
     Match = goblet_pb:decode_msg(Message, 'MatchJoinReq'),
     MatchID = Match#'MatchJoinReq'.matchid,
-    Player = binary:bin_to_list(Match#'MatchJoinReq'.player),
+    Player = Match#'MatchJoinReq'.player,
     IsValid = goblet_db:is_valid_player_account(
         Player,
         State#session.email
@@ -293,7 +293,7 @@ match_leave(Message, State) when State#session.authenticated =:= true ->
 match_start(Message, State) when State#session.authenticated =:= true ->
     Match = goblet_pb:decode_msg(Message, 'MatchStartReq'),
     MatchID = Match#'MatchStartReq'.matchid,
-    Player = binary:bin_to_list(Match#'MatchStartReq'.player),
+    Player = Match#'MatchStartReq'.player,
     Email = State#session.email,
     IsValid =
         case
@@ -340,7 +340,7 @@ match_start(_MatchID, State, {error, ErrMsg}) ->
 match_info(Message, State) when State#session.authenticated =:= true ->
     Match = goblet_pb:decode_msg(Message, 'MatchStateReq'),
     MatchID = Match#'MatchInfoReq'.matchid,
-    Player = binary:bin_to_list(Match#'MatchInfoReq'.player),
+    Player = Match#'MatchInfoReq'.player,
     Email = State#session.email,
     IsValid =
         case
@@ -374,7 +374,7 @@ match_info(_MatchID, _State, {error, ErrMsg}) ->
 match_prepare(Message, State) when State#session.authenticated =:= true ->
     Match = goblet_pb:decode_msg(Message, 'MatchPrepReq'),
     MatchID = Match#'MatchPrepReq'.matchid,
-    Player = binary:bin_to_list(Match#'MatchPrepReq'.player),
+    Player = Match#'MatchPrepReq'.player,
     Email = State#session.email,
     IsValid =
         case
@@ -408,7 +408,7 @@ match_prepare(_MatchID, _Player, State, {error, ErrMsg}) ->
 match_decide(Message, State) when State#session.authenticated =:= true ->
     Match = goblet_pb:decode_msg(Message, 'MatchDecideReq'),
     MatchID = Match#'MatchDecideReq'.matchid,
-    Player = binary:bin_to_list(Match#'MatchDecideReq'.player),
+    Player = Match#'MatchDecideReq'.player,
     %what and how will they validate?
     Actions = Match#'MatchDecideReq'.actions,
     Email = State#session.email,
@@ -445,12 +445,13 @@ match_decide(_MatchID, _Player, _Actions, State, {error, ErrMsg}) ->
 % Let it crash when an unauthenticated user tries to make an account.
 player_new(Message, State) when State#session.authenticated =:= true ->
     Decode = goblet_pb:decode_msg(Message, 'PlayerNewReq'),
-    Name = binary:bin_to_list(Decode#'PlayerNewReq'.name),
-    Appearance = Decode#'PlayerNewReq'.appearance,
+    Name = Decode#'PlayerNewReq'.name,
+    Symbols = Decode#'PlayerNewReq'.symbol,
+    Colors = Decode#'PlayerNewReq'.color,
     Role = Decode#'PlayerNewReq'.role,
     Account = State#session.email,
     Msg =
-        case goblet_game:new_player(Name, Appearance, Role, Account) of
+        case goblet_game:new_player(Name, Colors, Symbols, Role, Account) of
             ok ->
                 goblet_pb:encode_msg(#'PlayerNewResp'{status = 'OK'});
             {error, Error} ->
@@ -618,7 +619,7 @@ player_log_test() ->
     ?assertEqual(OpCode, <<?PLAYER_LOG:16>>),
     % Check that the message decodes correctly
     Decoded = goblet_pb:decode_msg(Message, 'PlayerLog'),
-    ToList = binary:bin_to_list(Decoded#'PlayerLog'.msg),
+    ToList = Decoded#'PlayerLog'.msg,
     ?assertEqual(OriginalMessage, ToList),
     ok.
 
@@ -648,7 +649,7 @@ account_new_already_exists_test() ->
     DecodedResp = goblet_pb:decode_msg(RespMsg, 'AccountNewResp'),
     ?assertEqual('ERROR', DecodedResp#'AccountNewResp'.status),
     ?assertEqual(
-        <<"email_already_registered">>,
+        "email_already_registered",
         DecodedResp#'AccountNewResp'.error
     ).
 
@@ -683,7 +684,8 @@ player_new_test() ->
     State = #session{email = Email, authenticated = true},
     Message = goblet_pb:encode_msg(#'PlayerNewReq'{
         name = "Chester The Tester",
-        appearance = 1,
+        color = ["#000000", "#ffffff", "#c0ffee"],
+        symbol = [1, 3],
         role = 'INTERCEPTOR'
     }),
     {[RespOp, RespMsg], _State} = goblet_protocol:player_new(
