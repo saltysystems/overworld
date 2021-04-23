@@ -154,6 +154,13 @@ account_login(Message) ->
                     status = 'ERROR',
                     error = "invalid password"
                 }),
+                {Reply, false};
+            {error, Err} -> 
+                logger:warning("No account exists for ~p", [Email]),
+                Reply = goblet_pb:encode_msg(#'AccountLoginResp'{
+                    status = 'ERROR',
+                    error = atom_to_list(Err)
+                }),
                 {Reply, false}
         end,
     OpCode = <<?ACCOUNT_LOGIN:16>>,
@@ -733,5 +740,34 @@ match_create_test() ->
     M = DecodedResp#'MatchCreateResp'.match,
     ?assertEqual(MaxPlayers, M#'MatchInfo'.players_max),
     ?assertEqual(Mode, M#'MatchInfo'.mode),
+    % deconstruct the match
+    goblet_lobby:delete_match(M#'MatchInfo'.id).
+
+match_join_test() ->
+    % Create the match
+    Email = "TestUser@doesntexist.notadomain",
+    State = #session{email = Email, authenticated = true},
+    Mode = 'DEFAULT',
+    MaxPlayers = 6,
+    Msg = goblet_pb:encode_msg(#'MatchCreateReq'{
+        mode = Mode,
+        players_max = MaxPlayers
+    }),
+    {[RespOp, RespMsg], State} = goblet_protocol:match_create(Msg, State),
+    OpCode = <<?MATCH_CREATE:16>>,
+    ?assertEqual(OpCode, RespOp),
+    DecodedResp = goblet_pb:decode_msg(RespMsg, 'MatchCreateResp'),
+    ResponseObj = DecodedResp#'MatchCreateResp'.resp,
+    ?assertEqual(ResponseObj#'ResponseObject'.status, 'OK'),
+    M = DecodedResp#'MatchCreateResp'.match,
+    ?assertEqual(MaxPlayers, M#'MatchInfo'.players_max),
+    ?assertEqual(Mode, M#'MatchInfo'.mode),
+    
+    % Join the match
+    Msg1 = goblet_pb:encode_msg(#'MatchJoinReq'{ 
+        player = 'Chester The Tester', 
+        matchid = 1 }), 
+    goblet_protocol:match_join(Msg1, State),
+
     % deconstruct the match
     goblet_lobby:delete_match(M#'MatchInfo'.id).
