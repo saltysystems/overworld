@@ -243,6 +243,7 @@ match_join(MatchID, Player, State, true) ->
                 % Register the current process with process registry
                 match_register_session(MatchID),
                 Resp = #'ResponseObject'{status = 'OK'},
+				logger:notice("Match info is ~p~n", [M]),
                 goblet_pb:encode_msg(#'MatchJoinResp'{
                     resp = Resp,
                     match = pack_match(M)
@@ -754,20 +755,51 @@ match_join_test() ->
         players_max = MaxPlayers
     }),
     {[RespOp, RespMsg], State} = goblet_protocol:match_create(Msg, State),
-    OpCode = <<?MATCH_CREATE:16>>,
-    ?assertEqual(OpCode, RespOp),
     DecodedResp = goblet_pb:decode_msg(RespMsg, 'MatchCreateResp'),
-    ResponseObj = DecodedResp#'MatchCreateResp'.resp,
-    ?assertEqual(ResponseObj#'ResponseObject'.status, 'OK'),
     M = DecodedResp#'MatchCreateResp'.match,
-    ?assertEqual(MaxPlayers, M#'MatchInfo'.players_max),
-    ?assertEqual(Mode, M#'MatchInfo'.mode),
+	MatchID = M#'MatchInfo'.id,
     
-    % Join the match
-    Msg1 = goblet_pb:encode_msg(#'MatchJoinReq'{ 
-        player = 'Chester The Tester', 
-        matchid = 1 }), 
-    goblet_protocol:match_join(Msg1, State),
+    % Create a new player and join the match
+	Player2 = "Lester The Tester",
+    Message2 = goblet_pb:encode_msg(#'PlayerNewReq'{
+        name = Player2,
+        color = ["#000000", "#ffffff", "#c0ffee"],
+        symbol = [1, 3],
+        role = 'DESTROYER'
+    }),
+    {[RespOp2, RespMsg2], _State} = goblet_protocol:player_new(
+        Message2,
+        State
+    ),
 
-    % deconstruct the match
-    goblet_lobby:delete_match(M#'MatchInfo'.id).
+    % Create another new player and join the match
+	Player3 = "Nester The Tester",
+    Message3 = goblet_pb:encode_msg(#'PlayerNewReq'{
+        name = Player3,
+        color = ["#000000", "#ffffff", "#c0ffee"],
+        symbol = [1, 3],
+        role = 'DESTROYER'
+    }),
+    {[RespOp3, RespMsg3], _State} = goblet_protocol:player_new(
+        Message3,
+        State
+    ),
+
+	JoinMsg2 = goblet_pb:encode_msg(#'MatchJoinReq'{
+		player = Player2,
+		matchid = MatchID
+	}),
+
+	JoinMsg3 = goblet_pb:encode_msg(#'MatchJoinReq'{
+		player = Player3,
+		matchid = MatchID
+	}),
+
+    {[RespOp4, RespMsg4], _State} = goblet_protocol:match_join(JoinMsg2, State),
+	Msg4 = goblet_pb:decode_msg(RespMsg4, 'MatchJoinResp'),
+	RespObj = Msg4#'MatchJoinResp'.resp,
+	?assertEqual('OK', RespObj#'ResponseObject'.status),
+    {[RespOp5, RespMsg5], _State} = goblet_protocol:match_join(JoinMsg3, State),
+	Msg5 = goblet_pb:decode_msg(RespMsg5, 'MatchJoinResp'),
+	RespObj = Msg5#'MatchJoinResp'.resp,
+	?assertEqual('OK', RespObj#'ResponseObject'.status).
