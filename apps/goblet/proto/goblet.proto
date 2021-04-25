@@ -51,12 +51,9 @@ message ResponseObject {
 
 // Match info
 message MatchInfo {
-    message Player {
-        required string name = 1;
-    }
     required uint32 id = 1;
     required MatchState state = 2;
-    repeated Player players = 3;
+    repeated string players = 3;
     required uint32 players_max = 4;
     required uint64 start_time = 5;
     required MatchMode mode = 6;
