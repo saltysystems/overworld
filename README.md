@@ -3,7 +3,7 @@ Goblet Game Server
 Goblet is an multiplayer game server powered by Erlang/OTP. The project is
 focused on building tools for the creation of persistent multiplayer worlds,
 including account management, player progression, zones, items & inventory,
-NPCs, scripting and so on. 
+NPCs, scripting and more.
 
 The project draws inspiration from classic large-scale multiplayer games like
 Ultima Online, EverQuest, Star Wars Galaxies, and the many colorful and
