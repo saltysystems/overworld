@@ -1,16 +1,15 @@
 Goblet Game Server
 =================================================
-Goblet is an online gaming service powered by Erlang/OTP. The project
-currently focuses on building tools for the creation of persistent multiplayer
-worlds. Goblet intends to provide some of the basic, common capabilities
-of persistent worlds including account management, player avatars, zones, items
-& inventory, mechanisms for progression, NPCs, and so on. 
+Goblet is an multiplayer game server powered by Erlang/OTP. The project is
+focused on building tools for the creation of persistent multiplayer worlds,
+including account management, player progression, zones, items & inventory,
+NPCs, scripting and so on. 
 
-We are strongly influenced by massively multiplayer games of yore, such as
-Ultima Online, Everquest, Star Wars Galaxies, and the many colorful creations
-within platforms like BYOND and Neverwinter Nights Persistent Worlds. It is our
-belief that giving agency to players to craft their own experiences will build
-a vibrant community for years to come.
+The project draws inspiration from classic large-scale multiplayer games like
+Ultima Online, EverQuest, Star Wars Galaxies, and the many colorful and
+creative worlds built with platforms like BYOND, and Neverwinter Nights.
+
+Goblet is Free Software, licensed under the Affero General Public License v3. 
 
 
 Getting started
@@ -19,8 +18,8 @@ First, install OTP from the Erlang website or your local package repository.
 The framework has mostly been developed with OTP 21+. It has not been tested
 with older versions.
 
-Goblet uses the `rebar3` deployment tool heavily. It would be good to
-familiarize yourself with rebar.
+You will also need the `rebar3` build tool in order to build, test and deploy
+the server.
 
 
 Style
@@ -28,10 +27,6 @@ Style
 Please try to annotate functions with type specs and edoc comments. This will
 make dialyzer happy, it will make the maintainers happy, and it may even make
 you happy.
-
-Generally, functions may have single newlines for clarity within their
-defintion, while functions themselves will have two consecutive newlines
-following them for separation.
 
 
 Before creating a merge request
@@ -57,9 +52,3 @@ module>)` succeeds as expected.
 
 You should also attempt to annotate functions with type specs as best as
 possible.
-
-
-One very important message
--------------------------------------------------
-This is Free Software under the terms of the Affero General Public License
-(AGPL).  Please read, understand, and respect the terms of the license. 
