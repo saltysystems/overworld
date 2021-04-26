@@ -243,7 +243,6 @@ match_join(MatchID, Player, State, true) ->
                 % Register the current process with process registry
                 match_register_session(MatchID),
                 Resp = #'ResponseObject'{status = 'OK'},
-				logger:notice("Match info is ~p~n", [M]),
                 goblet_pb:encode_msg(#'MatchJoinResp'{
                     resp = Resp,
                     match = pack_match(M)
@@ -755,6 +754,7 @@ match_join_test() ->
         players_max = MaxPlayers
     }),
     {[RespOp, RespMsg], State} = goblet_protocol:match_create(Msg, State),
+    ?assertEqual(RespOp, <<?MATCH_CREATE:16>>),
     DecodedResp = goblet_pb:decode_msg(RespMsg, 'MatchCreateResp'),
     M = DecodedResp#'MatchCreateResp'.match,
 	MatchID = M#'MatchInfo'.id,
@@ -767,10 +767,11 @@ match_join_test() ->
         symbol = [1, 3],
         role = 'DESTROYER'
     }),
-    {[RespOp2, RespMsg2], _State} = goblet_protocol:player_new(
+    {[RespOp2, _RespMsg2], _State} = goblet_protocol:player_new(
         Message2,
         State
     ),
+    ?assertEqual(RespOp2, <<?PLAYER_NEW:16>>),
 
     % Create another new player and join the match
 	Player3 = "Nester The Tester",
@@ -780,10 +781,11 @@ match_join_test() ->
         symbol = [1, 3],
         role = 'DESTROYER'
     }),
-    {[RespOp3, RespMsg3], _State} = goblet_protocol:player_new(
+    {[RespOp3, _RespMsg3], _State} = goblet_protocol:player_new(
         Message3,
         State
     ),
+    ?assertEqual(RespOp3, <<?PLAYER_NEW:16>>),
 
 	JoinMsg2 = goblet_pb:encode_msg(#'MatchJoinReq'{
 		player = Player2,
@@ -796,10 +798,12 @@ match_join_test() ->
 	}),
 
     {[RespOp4, RespMsg4], _State} = goblet_protocol:match_join(JoinMsg2, State),
+    ?assertEqual(RespOp4, <<?MATCH_JOIN:16>>),
 	Msg4 = goblet_pb:decode_msg(RespMsg4, 'MatchJoinResp'),
 	RespObj = Msg4#'MatchJoinResp'.resp,
 	?assertEqual('OK', RespObj#'ResponseObject'.status),
     {[RespOp5, RespMsg5], _State} = goblet_protocol:match_join(JoinMsg3, State),
+    ?assertEqual(RespOp5, <<?MATCH_JOIN:16>>),
 	Msg5 = goblet_pb:decode_msg(RespMsg5, 'MatchJoinResp'),
 	RespObj = Msg5#'MatchJoinResp'.resp,
 	?assertEqual('OK', RespObj#'ResponseObject'.status).
