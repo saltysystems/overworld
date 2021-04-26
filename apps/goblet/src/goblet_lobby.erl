@@ -342,7 +342,13 @@ join_leave_match_test() ->
     Name = "Chester Tester",
     Email = "Test@localhost.localdomain",
     _Resp0 = goblet_db:create_account(Email, "test"),
-    _Resp1 = goblet_game:new_player(Name, ["#c0ffee","#ffffff","#000000"], [1,3], 'DESTROYER', Email),
+    _Resp1 = goblet_game:new_player(
+        Name,
+        ["#c0ffee", "#ffffff", "#000000"],
+        [1, 3],
+        'DESTROYER',
+        Email
+    ),
     {ok, MatchParams} = create_match('DEFAULT', 6),
     {MatchId, _S, _P, _PM, _ST, _M, _E} = MatchParams,
     {ok, MatchParams2} = join_match(Name, MatchId),
@@ -363,7 +369,13 @@ start_match_test() ->
     Name = "Chester Tester",
     Email = "Test@localhost.localdomain",
     _Resp0 = goblet_db:create_account(Email, "test"),
-    _Resp1 = goblet_game:new_player(Name, ["#c0ffee","#ffffff","#000000"], [1,3], 'DESTROYER', Email),
+    _Resp1 = goblet_game:new_player(
+        Name,
+        ["#c0ffee", "#ffffff", "#000000"],
+        [1, 3],
+        'DESTROYER',
+        Email
+    ),
     {ok, MatchParams} = create_match('DEFAULT', 6),
     {MatchId, _S, _P, _PM, _ST, _M, _E} = MatchParams,
     {ok, _MatchParams2} = join_match(Name, MatchId),
