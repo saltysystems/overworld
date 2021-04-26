@@ -111,7 +111,19 @@ account_new(Message) ->
     Decode = goblet_pb:decode_msg(Message, 'AccountNewReq'),
     Email = Decode#'AccountNewReq'.email,
     Password = Decode#'AccountNewReq'.password,
-    % TODO Validate length
+    IsValid =
+        case
+            goblet_util:run_checks([
+                fun() -> check_valid_email(Email) end,
+                fun() -> check_valid_password(Password) end
+            ])
+        of
+            ok -> true;
+            Error -> Error
+        end,
+    account_new(Email, Password, IsValid).
+
+account_new(Email, Password, true) ->
     {Msg, NewState} =
         case goblet_db:create_account(Email, Password) of
             {error, Error} ->
@@ -126,6 +138,14 @@ account_new(Message) ->
                 }),
                 {Reply, #session{email = Email, authenticated = true}}
         end,
+    OpCode = <<?ACCOUNT_NEW:16>>,
+    {[OpCode, Msg], NewState};
+account_new(_Email, _Password, {error, ErrMsg}) ->
+    Msg = goblet_pb:encode_msg(#'AccountNewResp'{
+        status = 'ERROR',
+        error = atom_to_list(ErrMsg)
+    }),
+    NewState = #session{authenticated = false},
     OpCode = <<?ACCOUNT_NEW:16>>,
     {[OpCode, Msg], NewState}.
 
@@ -155,7 +175,7 @@ account_login(Message) ->
                     error = "invalid password"
                 }),
                 {Reply, false};
-            {error, Err} -> 
+            {error, Err} ->
                 logger:warning("No account exists for ~p", [Email]),
                 Reply = goblet_pb:encode_msg(#'AccountLoginResp'{
                     status = 'ERROR',
@@ -224,10 +244,16 @@ match_join(Message, State) when State#session.authenticated =:= true ->
     Match = goblet_pb:decode_msg(Message, 'MatchJoinReq'),
     MatchID = Match#'MatchJoinReq'.matchid,
     Player = Match#'MatchJoinReq'.player,
-    IsValid = goblet_db:is_valid_player_account(
-        Player,
-        State#session.email
-    ),
+    Email = State#session.email,
+    IsValid =
+        case
+            goblet_util:run_checks([
+                fun() -> check_valid_player_account(Player, Email) end
+            ])
+        of
+            ok -> true;
+            Error -> Error
+        end,
     match_join(MatchID, Player, State, IsValid).
 
 %%-------------------------------------------------------------------------
@@ -256,10 +282,10 @@ match_join(MatchID, Player, State, true) ->
         end,
     OpCode = <<?MATCH_JOIN:16>>,
     {[OpCode, Msg], State};
-match_join(_MatchID, _Player, State, false) ->
+match_join(_MatchID, _Player, State, {error, ErrMsg}) ->
     Resp = #'ResponseObject'{
         status = 'ERROR',
-        error = "player_account_mismatch"
+        error = atom_to_list(ErrMsg)
     },
     Msg = goblet_pb:encode_msg(#'MatchJoinResp'{resp = Resp}),
     OpCode = <<?MATCH_JOIN:16>>,
@@ -587,6 +613,21 @@ pack_action([Phase, Name, Type, XFrom, YFrom, XTo, YTo]) ->
         y_to = YTo
     }.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Check the validity of various parameters                              %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% TODO: Use z_stdlib email validator function? Who cares tho really.
+check_valid_email(Email) when length(Email) > 0 ->
+    ok;
+check_valid_email(_Email) ->
+    {error, invalid_email}.
+
+check_valid_password(Password) when length(Password) > 8 ->
+    ok;
+check_valid_password(_Password) ->
+    {error, password_too_short}.
+
 check_valid_player_account(Player, Email) ->
     case goblet_db:is_valid_player_account(Player, Email) of
         true -> ok;
@@ -610,6 +651,8 @@ check_valid_match_player(Player, MatchID) ->
         true -> ok;
         false -> {error, not_in_match}
     end.
+
+%
 
 default_handler(State) ->
     logger:error("Something wont awry with the session.."),
@@ -757,10 +800,10 @@ match_join_test() ->
     ?assertEqual(RespOp, <<?MATCH_CREATE:16>>),
     DecodedResp = goblet_pb:decode_msg(RespMsg, 'MatchCreateResp'),
     M = DecodedResp#'MatchCreateResp'.match,
-	MatchID = M#'MatchInfo'.id,
-    
+    MatchID = M#'MatchInfo'.id,
+
     % Create a new player and join the match
-	Player2 = "Lester The Tester",
+    Player2 = "Lester The Tester",
     Message2 = goblet_pb:encode_msg(#'PlayerNewReq'{
         name = Player2,
         color = ["#000000", "#ffffff", "#c0ffee"],
@@ -774,7 +817,7 @@ match_join_test() ->
     ?assertEqual(RespOp2, <<?PLAYER_NEW:16>>),
 
     % Create another new player and join the match
-	Player3 = "Nester The Tester",
+    Player3 = "Nester The Tester",
     Message3 = goblet_pb:encode_msg(#'PlayerNewReq'{
         name = Player3,
         color = ["#000000", "#ffffff", "#c0ffee"],
@@ -787,23 +830,29 @@ match_join_test() ->
     ),
     ?assertEqual(RespOp3, <<?PLAYER_NEW:16>>),
 
-	JoinMsg2 = goblet_pb:encode_msg(#'MatchJoinReq'{
-		player = Player2,
-		matchid = MatchID
-	}),
+    JoinMsg2 = goblet_pb:encode_msg(#'MatchJoinReq'{
+        player = Player2,
+        matchid = MatchID
+    }),
 
-	JoinMsg3 = goblet_pb:encode_msg(#'MatchJoinReq'{
-		player = Player3,
-		matchid = MatchID
-	}),
+    JoinMsg3 = goblet_pb:encode_msg(#'MatchJoinReq'{
+        player = Player3,
+        matchid = MatchID
+    }),
 
-    {[RespOp4, RespMsg4], _State} = goblet_protocol:match_join(JoinMsg2, State),
+    {[RespOp4, RespMsg4], _State} = goblet_protocol:match_join(
+        JoinMsg2,
+        State
+    ),
     ?assertEqual(RespOp4, <<?MATCH_JOIN:16>>),
-	Msg4 = goblet_pb:decode_msg(RespMsg4, 'MatchJoinResp'),
-	RespObj = Msg4#'MatchJoinResp'.resp,
-	?assertEqual('OK', RespObj#'ResponseObject'.status),
-    {[RespOp5, RespMsg5], _State} = goblet_protocol:match_join(JoinMsg3, State),
+    Msg4 = goblet_pb:decode_msg(RespMsg4, 'MatchJoinResp'),
+    RespObj = Msg4#'MatchJoinResp'.resp,
+    ?assertEqual('OK', RespObj#'ResponseObject'.status),
+    {[RespOp5, RespMsg5], _State} = goblet_protocol:match_join(
+        JoinMsg3,
+        State
+    ),
     ?assertEqual(RespOp5, <<?MATCH_JOIN:16>>),
-	Msg5 = goblet_pb:decode_msg(RespMsg5, 'MatchJoinResp'),
-	RespObj = Msg5#'MatchJoinResp'.resp,
-	?assertEqual('OK', RespObj#'ResponseObject'.status).
+    Msg5 = goblet_pb:decode_msg(RespMsg5, 'MatchJoinResp'),
+    RespObj = Msg5#'MatchJoinResp'.resp,
+    ?assertEqual('OK', RespObj#'ResponseObject'.status).
