@@ -57,16 +57,19 @@ initialize_board(Board, [Player | Rest]) ->
 % Internal Functions
 %======================================================================
 is_valid_name(Name) when length(Name) < 64 ->
-    ok;
+    case goblet_db:player_by_name(Name) of
+        {error, no_such_player} -> ok;
+        _Result -> already_exists
+    end;
 is_valid_name(_Name) ->
-    too_long.
+    name_too_long.
 
 % should be a positive integer to be a valid protobuf message
 is_valid_appearance(_Symbols, _Colors) ->
     % Easter egg: You can hack up the client to send any color and symbol
+    % combination. If you wanted to prevent that, this would be the place.
     ok.
 
-% combination. If you wanted to prevent that, this would be the place.
 
 is_valid_role(Role) ->
     ValidRoles = ['DESTROYER', 'INTERCEPTOR', 'CARRIER', 'COMMAND'],
