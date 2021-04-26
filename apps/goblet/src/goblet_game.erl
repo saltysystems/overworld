@@ -70,7 +70,6 @@ is_valid_appearance(_Symbols, _Colors) ->
     % combination. If you wanted to prevent that, this would be the place.
     ok.
 
-
 is_valid_role(Role) ->
     ValidRoles = ['DESTROYER', 'INTERCEPTOR', 'CARRIER', 'COMMAND'],
     case lists:member(Role, ValidRoles) of
