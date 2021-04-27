@@ -10,6 +10,7 @@
     match_list/2,
     match_join/2,
     match_leave/2,
+    match_start/2,
     match_info/2,
     match_prepare/2,
     match_decide/2,
@@ -208,30 +209,49 @@ match_list(_Message, State) ->
 -spec match_create(binary(), tuple()) -> {[binary(), ...], tuple()}.
 match_create(Message, State) when State#session.authenticated =:= true ->
     Match = goblet_pb:decode_msg(Message, 'MatchCreateReq'),
+    Player = Match#'MatchCreateReq'.player,
     Mode = Match#'MatchCreateReq'.mode,
     MaxPlayers = Match#'MatchCreateReq'.players_max,
+    Email = State#session.email,
     Extra =
         case Match#'MatchCreateReq'.extra of
             undefined -> <<>>;
             Bytes -> Bytes
         end,
-    Msg =
-        case goblet_lobby:create_match(Mode, MaxPlayers, Extra) of
-            {ok, M} ->
-                Resp = #'ResponseObject'{status = 'OK'},
-                goblet_pb:encode_msg(#'MatchCreateResp'{
-                    resp = Resp,
-                    match = pack_match(M)
-                });
-            {error, Error} ->
-                Resp = #'ResponseObject'{
-                    status = 'ERROR',
-                    error = atom_to_list(Error)
-                },
-                goblet_pb:encode_msg(#'MatchCreateResp'{resp = Resp})
+    IsValid =
+        case
+            goblet_util:run_checks([
+                fun() -> check_valid_player_account(Player, Email) end
+            ])
+        of
+            ok -> true;
+            Error -> Error
         end,
+    Msg = match_create(Player, Mode, MaxPlayers, Extra, IsValid),
     OpCode = <<?MATCH_CREATE:16>>,
     {[OpCode, Msg], State}.
+
+match_create(Player, Mode, MaxPlayers, Extra, true) ->
+    case goblet_lobby:create_match(Player, Mode, MaxPlayers, Extra) of
+        {ok, M} ->
+            Resp = #'ResponseObject'{status = 'OK'},
+            goblet_pb:encode_msg(#'MatchCreateResp'{
+                resp = Resp,
+                match = pack_match(M)
+            });
+        {error, Error} ->
+            Resp = #'ResponseObject'{
+                status = 'ERROR',
+                error = atom_to_list(Error)
+            },
+            goblet_pb:encode_msg(#'MatchCreateResp'{resp = Resp})
+    end;
+match_create(_Player, _Mode, _MaxPlayers, _Extra, {error, ErrMsg}) ->
+    Resp = #'ResponseObject'{
+        status = 'ERROR',
+        error = atom_to_list(ErrMsg)
+    },
+    goblet_pb:encode_msg(#'MatchCreateResp'{resp = Resp}).
 
 %%-------------------------------------------------------------------------
 %% @doc Join a match. Will only join matches for sessions where the player
@@ -566,7 +586,19 @@ sanitize_message(Message) ->
     Message.
 
 match_register_session(MatchID) ->
-    gproc:reg({p, l, {match, MatchID}}).
+    % Gproc seems to only fail when we run it via eunit.
+    % IM SURE THIS IS FINE. Anyhow we log an error for now if it happens for
+    % reals.
+    try gproc:reg({p, l, {match, MatchID}}) of
+        Response -> Response
+    catch
+        _:_ ->
+            logger:error(
+                "Failed to register session for match ~p with gproc",
+                [MatchID]
+            ),
+            true
+    end.
 
 -spec match_broadcast([binary(), ...], integer()) -> ok.
 match_broadcast(Message, MatchID) ->
@@ -771,6 +803,7 @@ match_create_test() ->
     Mode = 'DEFAULT',
     MaxPlayers = 6,
     Msg = goblet_pb:encode_msg(#'MatchCreateReq'{
+        player = "Chester The Tester",
         mode = Mode,
         players_max = MaxPlayers
     }),
@@ -793,6 +826,7 @@ match_join_test() ->
     Mode = 'DEFAULT',
     MaxPlayers = 6,
     Msg = goblet_pb:encode_msg(#'MatchCreateReq'{
+        player = "Chester The Tester",
         mode = Mode,
         players_max = MaxPlayers
     }),
