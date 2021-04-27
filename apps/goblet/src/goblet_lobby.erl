@@ -13,8 +13,8 @@
     get_matches/0,
     get_match/1,
     get_match_players/1,
-    create_match/2,
     create_match/3,
+    create_match/4,
     join_match/2,
     leave_match/2,
     start_match/1,
@@ -80,14 +80,18 @@ get_match_players(MatchID) ->
 %%      with updated fields (state, ID).
 %% @end
 %%-------------------------------------------------------------------
--spec create_match(atom(), integer()) -> {ok, tuple()} | {error, atom()}.
-create_match(Mode, MaxPlayers) ->
-    create_match(Mode, MaxPlayers, <<>>).
-
--spec create_match(atom(), integer(), binary()) ->
+-spec create_match(list(), atom(), integer()) ->
     {ok, tuple()} | {error, atom()}.
-create_match(Mode, MaxPlayers, Extra) ->
-    gen_server:call(?MODULE, {create_match, Mode, MaxPlayers, Extra}).
+create_match(Player, Mode, MaxPlayers) ->
+    create_match(Player, Mode, MaxPlayers, <<>>).
+
+-spec create_match(list(), atom(), integer(), binary()) ->
+    {ok, tuple()} | {error, atom()}.
+create_match(Player, Mode, MaxPlayers, Extra) ->
+    gen_server:call(
+        ?MODULE,
+        {create_match, Player, Mode, MaxPlayers, Extra}
+    ).
 
 %%-------------------------------------------------------------------
 %% @doc Join a player to a match, so long as it hasn't yet started.
@@ -148,7 +152,7 @@ handle_call({get_match_players, MatchID}, _From, {NextID, Matches, Timer}) ->
         end,
     {reply, Reply, {NextID, Matches, Timer}};
 handle_call(
-    {create_match, Mode, MaxPlayers, Extra},
+    {create_match, Player, Mode, MaxPlayers, Extra},
     _From,
     {ID, Matches, Timer}
 ) ->
@@ -157,6 +161,7 @@ handle_call(
     Match = #goblet_match{
         id = ID,
         state = MatchState,
+        players = [Player],
         mode = Mode,
         players_max = MaxPlayers,
         start_time = StartTime,
@@ -353,11 +358,13 @@ get_matches_empty_test() ->
     ?assertEqual([], Matches).
 
 add_match_test() ->
-    {ok, ConfirmedMatch} = create_match('DEFAULT', 6),
+    % Note that we don't do any validation here-
+    Name = "Chester Tester",
+    {ok, ConfirmedMatch} = create_match(Name, 'DEFAULT', 6),
     {Id, State, Players, PlayerMax, _StartTime, Mode, _Extra} =
         ConfirmedMatch,
     ?assertEqual('CREATING', State),
-    ?assertEqual([], Players),
+    ?assertEqual([Name], Players),
     ?assertEqual(6, PlayerMax),
     ?assertEqual('DEFAULT', Mode),
     Matches1 = get_matches(),
@@ -380,16 +387,13 @@ join_leave_match_test() ->
         'DESTROYER',
         Email
     ),
-    {ok, MatchParams} = create_match('DEFAULT', 6),
-    {MatchId, _S, _P, _PM, _ST, _M, _E} = MatchParams,
-    {ok, MatchParams2} = join_match(Name, MatchId),
-    {_, _S, Players, _PM, _ST, _M, _E} = MatchParams2,
+    {ok, MatchParams} = create_match(Name, 'DEFAULT', 6),
+    {MatchId, _S, Players, _PM, _ST, _M, _E} = MatchParams,
     ?assertEqual([Name], Players),
     % Try to join again, just for fun
-    % TODO: fix me, dialyzer claims this can never succeed
     {error, Error} = join_match(Name, MatchId),
     ?assertEqual(Error, already_joined),
-    % attempt to leave the account
+    % attempt to leave the match
     ?assertEqual(ok, leave_match(Name, MatchId)),
     ?assertEqual({error, no_such_match}, get_match(MatchId)),
     ?assertEqual(ok, goblet_db:delete_player(Name, Email)),
@@ -407,10 +411,9 @@ start_match_test() ->
         'DESTROYER',
         Email
     ),
-    {ok, MatchParams} = create_match('DEFAULT', 6),
+    {ok, MatchParams} = create_match(Name, 'DEFAULT', 6),
     {MatchId, _S, _P, _PM, _ST, _M, _E} = MatchParams,
-    {ok, _MatchParams2} = join_match(Name, MatchId),
-    % Who does the validation?
+    % This is validated by the session
     ok = start_match(MatchId),
     % Can we leave a match if its running?
     ?assertEqual(ok, leave_match(Name, MatchId)),
