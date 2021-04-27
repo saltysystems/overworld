@@ -128,25 +128,30 @@ delete_match(MatchID) ->
 init([]) ->
     Matches = [],
     NextID = 0,
-    {ok, {NextID, Matches}}.
+    Timer = erlang:send_after(1, self(), tick),
+    {ok, {NextID, Matches, Timer}}.
 
-handle_call(get_matches, _From, {NextID, Matches}) ->
+handle_call(get_matches, _From, {NextID, Matches, Timer}) ->
     % convert all matches into plain tuples before handing it to the caller
     TupleMatches = [repack_match(X) || X <- Matches],
-    {reply, TupleMatches, {NextID, Matches}};
-handle_call({get_match, MatchID}, _From, {NextID, Matches}) ->
+    {reply, TupleMatches, {NextID, Matches, Timer}};
+handle_call({get_match, MatchID}, _From, {NextID, Matches, Timer}) ->
     Match = match_find(MatchID, Matches),
     Reply = match_get(Match),
-    {reply, Reply, {NextID, Matches}};
-handle_call({get_match_players, MatchID}, _From, {NextID, Matches}) ->
+    {reply, Reply, {NextID, Matches, Timer}};
+handle_call({get_match_players, MatchID}, _From, {NextID, Matches, Timer}) ->
     Match = match_find(MatchID, Matches),
     Reply =
         case Match of
             false -> {error, no_such_match};
             Players -> Players
         end,
-    {reply, Reply, {NextID, Matches}};
-handle_call({create_match, Mode, MaxPlayers, Extra}, _From, {ID, Matches}) ->
+    {reply, Reply, {NextID, Matches, Timer}};
+handle_call(
+    {create_match, Mode, MaxPlayers, Extra},
+    _From,
+    {ID, Matches, Timer}
+) ->
     MatchState = 'CREATING',
     StartTime = erlang:system_time(second),
     Match = #goblet_match{
@@ -160,8 +165,8 @@ handle_call({create_match, Mode, MaxPlayers, Extra}, _From, {ID, Matches}) ->
     MatchList = [Match | Matches],
     Reply = {ok, repack_match(Match)},
     % Reply with the match list, increment the next available MatchID
-    {reply, Reply, {ID + 1, MatchList}};
-handle_call({start_match, MatchID}, _From, {NextID, Matches}) ->
+    {reply, Reply, {ID + 1, MatchList, Timer}};
+handle_call({start_match, MatchID}, _From, {NextID, Matches, Timer}) ->
     Match = match_find(MatchID, Matches),
     {Reply, UpdatedMatches} =
         case maybe_start(Match, Matches) of
@@ -170,8 +175,8 @@ handle_call({start_match, MatchID}, _From, {NextID, Matches}) ->
             {R, U} ->
                 {R, U}
         end,
-    {reply, Reply, {NextID, UpdatedMatches}};
-handle_call({join_match, Player, MatchID}, _From, {NextID, Matches}) ->
+    {reply, Reply, {NextID, UpdatedMatches, Timer}};
+handle_call({join_match, Player, MatchID}, _From, {NextID, Matches, Timer}) ->
     Match = match_find(MatchID, Matches),
     {Reply, UpdatedMatch} =
         case maybe_join(Player, Match) of
@@ -181,8 +186,12 @@ handle_call({join_match, Player, MatchID}, _From, {NextID, Matches}) ->
                 {{error, Error}, Match}
         end,
     UpdatedMatches = match_update(UpdatedMatch, Match, Matches),
-    {reply, Reply, {NextID, UpdatedMatches}};
-handle_call({leave_match, Player, MatchID}, _From, {NextID, Matches}) ->
+    {reply, Reply, {NextID, UpdatedMatches, Timer}};
+handle_call(
+    {leave_match, Player, MatchID},
+    _From,
+    {NextID, Matches, Timer}
+) ->
     Match = match_find(MatchID, Matches),
     % should basically never fail
     {Reply, UpdatedMatch} = maybe_leave(Player, Match),
@@ -198,17 +207,25 @@ handle_call({leave_match, Player, MatchID}, _From, {NextID, Matches}) ->
                 % greatest record for the Match
                 match_update(UpdatedMatch, Match, Matches)
         end,
-    {reply, Reply, {NextID, UpdatedMatches}};
-handle_call({delete_match, MatchID}, _From, {NextID, Matches}) ->
+    {reply, Reply, {NextID, UpdatedMatches, Timer}};
+handle_call({delete_match, MatchID}, _From, {NextID, Matches, Timer}) ->
     Match = match_find(MatchID, Matches),
     NewMatches = match_del(Match, Matches),
-    {reply, ok, {NextID, NewMatches}};
+    {reply, ok, {NextID, NewMatches, Timer}};
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
 
 handle_cast(_Request, State) ->
     {noreply, State}.
 
+handle_info(tick, {NextID, Matches, OldTimer}) ->
+    % We received a tick event, cancel the old timer
+    erlang:cancel_timer(OldTimer),
+    % Run the cleanup handler with the current Match information
+    NewMatches = cleanup_old_matches(Matches),
+    % In miliseconds
+    Timer = erlang:send_after(1000 * 60 * 20, self(), tick),
+    {noreply, {NextID, NewMatches, Timer}};
 handle_info(_Info, State) ->
     {noreply, State}.
 
@@ -220,6 +237,20 @@ code_change(_OldVsn, State, _Extra) ->
 
 % Internal functions that may be subject to change if the backend
 % implementation were to change from lists to e.g. ETS
+cleanup_old_matches(Matches) ->
+    CurrentTime = erlang:system_time(second),
+    % Cleanup all matches older than an hour
+    % First return all matches that are in Creating state:
+    Creating = [X || X <- Matches, X#goblet_match.state == 'CREATING'],
+    % Then filter for all matches that are older than 1 hr
+    Stale = [
+        X
+     || X <- Creating, CurrentTime - X#goblet_match.start_time > 3600
+    ],
+    % Then just delete those matches. This shouldn't be subject to races
+    % because the matches are managed entirely by the lobby server.
+    logger:notice("Cleaned up ~p old matches", [length(Stale)]),
+    Matches -- Stale.
 
 match_find(MatchID, Matches) ->
     lists:keyfind(MatchID, #goblet_match.id, Matches).
