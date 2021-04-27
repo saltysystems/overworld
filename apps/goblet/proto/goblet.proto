@@ -135,9 +135,10 @@ message MatchListResp {
 }
 
 message MatchCreateReq {
-    required MatchMode mode = 1;
-    required uint32 players_max = 2;
-    optional bytes extra = 3;
+    required string player = 1;
+    required MatchMode mode = 2;
+    required uint32 players_max = 3;
+    optional bytes extra = 4;
 }
 
 message MatchCreateResp {
