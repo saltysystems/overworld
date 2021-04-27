@@ -1,17 +1,17 @@
 Goblet Game Server
 =================================================
-Goblet is an multiplayer game server powered by Erlang/OTP. The project is
+Goblet is a multiplayer game server powered by Erlang/OTP. The project is
 focused on building tools for the creation of persistent multiplayer worlds,
 including account management, player progression, zones, items & inventory,
 NPCs, scripting and more.
 
 The project draws inspiration from classic large-scale multiplayer games like
 Ultima Online, EverQuest, Star Wars Galaxies, and the many colorful and
-creative worlds built with platforms like BYOND, and Neverwinter Nights.
+creative worlds built with platforms like BYOND and Neverwinter Nights.
+
+A strategy game, "Known Space", is being built alongside Goblet as an early game using the service.
 
 Goblet is Free Software, licensed under the Affero General Public License v3. 
-
-
 Getting started
 -------------------------------------------------
 First, install OTP from the Erlang website or your local package repository.
