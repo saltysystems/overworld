@@ -148,7 +148,7 @@ handle_call({get_match_players, MatchID}, _From, {NextID, Matches, Timer}) ->
     Reply =
         case Match of
             false -> {error, no_such_match};
-            Players -> Players
+            Result -> Result#goblet_match.players
         end,
     {reply, Reply, {NextID, Matches, Timer}};
 handle_call(
