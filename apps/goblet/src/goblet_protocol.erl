@@ -2,6 +2,7 @@
 
 -export([
     decode/2,
+    pack_match/1,
     account_new/1,
     account_login/1,
     player_new/2,
@@ -67,6 +68,9 @@ decode(<<?MATCH_LIST:16, T/binary>>, State) ->
 decode(<<?MATCH_CREATE:16, T/binary>>, State) ->
     logger:notice("New match request from ~p", [State#session.email]),
     match_create(T, State);
+decode(<<?MATCH_INFO:16, T/binary>>, State) ->
+    logger:notice("Match info request from ~p", [State#session.email]),
+    match_info(T, State);
 decode(<<?MATCH_JOIN:16, T/binary>>, State) ->
     logger:notice("Match join request from ~p", [State#session.email]),
     match_join(T, State);
@@ -76,9 +80,9 @@ decode(<<?MATCH_LEAVE:16, T/binary>>, State) ->
 decode(<<?MATCH_START:16, T/binary>>, State) ->
     logger:notice("Match start request from ~p", [State#session.email]),
     match_start(T, State);
-decode(<<?MATCH_STATE:16, T/binary>>, State) ->
-    logger:notice("Match state request from ~p", [State#session.email]),
-    match_info(T, State);
+decode(<<?MATCH_STATE:16, _T/binary>>, State) ->
+    logger:notice("Match state request from ~p", [State#session.email]);
+    %match_info(T, State);
 decode(<<?MATCH_PREPARE:16, T/binary>>, State) ->
     logger:notice("Match prepare packet from ~p", [State#session.email]),
     match_prepare(T, State);
@@ -234,6 +238,8 @@ match_create(Message, State) when State#session.authenticated =:= true ->
 match_create(Player, Mode, MaxPlayers, Extra, true) ->
     case goblet_lobby:create_match(Player, Mode, MaxPlayers, Extra) of
         {ok, M} ->
+            MatchID = element(1, M), % not a stable interface
+            match_register_session(MatchID),
             Resp = #'ResponseObject'{status = 'OK'},
             goblet_pb:encode_msg(#'MatchCreateResp'{
                 resp = Resp,
@@ -389,9 +395,10 @@ match_start(_MatchID, State, {error, ErrMsg}) ->
 %% @doc Return the current match info
 %% @end
 %%-------------------------------------------------------------------------
+%% TODO: Understand the badarg around the IsValid check
 -spec match_info(binary(), tuple()) -> {[binary(), ...], tuple()}.
 match_info(Message, State) when State#session.authenticated =:= true ->
-    Match = goblet_pb:decode_msg(Message, 'MatchStateReq'),
+    Match = goblet_pb:decode_msg(Message, 'MatchInfoReq'),
     MatchID = Match#'MatchInfoReq'.matchid,
     Player = Match#'MatchInfoReq'.player,
     Email = State#session.email,
@@ -399,7 +406,7 @@ match_info(Message, State) when State#session.authenticated =:= true ->
         case
             goblet_util:run_checks([
                 fun() -> check_valid_player_account(Player, Email) end,
-                fun() -> check_valid_match_player(Player, Email) end
+                fun() -> check_valid_match_owner(Player, MatchID) end
             ])
         of
             ok -> true;
@@ -410,8 +417,20 @@ match_info(Message, State) when State#session.authenticated =:= true ->
     {[OpCode, Msg], State}.
 
 match_info(MatchID, _State, true) ->
-    Match = pack_match(goblet_lobby:get_match(MatchID)),
-    goblet_pb:encode_msg(Match);
+    case goblet_lobby:get_match(MatchID) of
+        {ok, M} ->
+            Resp = #'ResponseObject'{status = 'OK'},
+            goblet_pb:encode_msg(#'MatchInfoResp'{
+                resp = Resp,
+                match = pack_match(M)
+            });
+        {error, Error} ->
+            Resp = #'ResponseObject'{
+                status = 'ERROR',
+                error = atom_to_list(Error)
+            },
+            goblet_pb:encode_msg(#'MatchInfoResp'{resp = Resp})
+    end;
 match_info(_MatchID, _State, {error, ErrMsg}) ->
     Resp = #'ResponseObject'{
         status = 'ERROR',
@@ -586,22 +605,16 @@ sanitize_message(Message) ->
     Message.
 
 match_register_session(MatchID) ->
-    % Gproc seems to only fail when we run it via eunit.
-    % IM SURE THIS IS FINE. Anyhow we log an error for now if it happens for
-    % reals.
-    try gproc:reg({p, l, {match, MatchID}}) of
-        Response -> Response
-    catch
-        _:_ ->
-            logger:error(
-                "Failed to register session for match ~p with gproc",
-                [MatchID]
-            ),
-            true
+    case gproc:reg({p, l, {match, MatchID}}) of 
+        true -> 
+            logger:notice("Registered ~p with gproc for ~p", [self(), MatchID]);
+        Other -> 
+            logger:warning("Registration failed: ~p", [Other])
     end.
 
 -spec match_broadcast([binary(), ...], integer()) -> ok.
 match_broadcast(Message, MatchID) ->
+    logger:notice("Broadcasting a message to match ~p", [MatchID]),
     gproc:send({p, l, {match, MatchID}}, {self(), event, Message}).
 
 match_deregister_session(MatchID) ->
