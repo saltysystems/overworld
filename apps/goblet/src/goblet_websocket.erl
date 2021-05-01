@@ -22,7 +22,7 @@
 %%----------------------------------------------------------------------------
 init(Req, State) ->
     #{peer := {IP, _Port}} = Req,
-    logger:notice("~p: client connected~n", [IP]),
+    logger:notice("~p: client connected.", [IP]),
     {cowboy_websocket, Req, State}.
 
 %%----------------------------------------------------------------------------
@@ -31,7 +31,7 @@ init(Req, State) ->
 %%----------------------------------------------------------------------------
 terminate(_Reason, Req, _State) ->
     #{peer := {IP, _Port}} = Req,
-    logger:notice("~p: client disconnected~n", [IP]),
+    logger:notice("~p: client disconnected", [IP]),
     ok.
 
 %%----------------------------------------------------------------------------
@@ -71,8 +71,8 @@ websocket_handle(_Frame, State) ->
 % if we get a message sent to our Pid that looks like something from another
 % process (or myself), reply it back to the client
 websocket_info({_Pid, event, Msg}, State) ->
-    logger:notice("Received event, forwarding to client ~n"),
+    logger:notice("Received event, forwarding to client"),
     {reply, {binary, Msg}, State};
 websocket_info(Info, State) ->
-    logger:notice("Got a message from another process: ~p~n", [Info]),
+    logger:notice("Got a message from another process: ~p", [Info]),
     {ok, State}.
