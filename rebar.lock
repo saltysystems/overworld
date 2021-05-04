@@ -2,13 +2,15 @@
 [{<<"cowboy">>,{pkg,<<"cowboy">>,<<"2.7.0">>},0},
  {<<"cowlib">>,{pkg,<<"cowlib">>,<<"2.8.0">>},1},
  {<<"gproc">>,{pkg,<<"gproc">>,<<"0.8.0">>},0},
- {<<"luerl">>,{pkg,<<"luerl">>,<<"0.4.0">>},0},
+ {<<"luerl">>,
+  {git,"https://github.com/rvirding/luerl.git",
+       {ref,"fc668ef337b04ca2aee83c648cf6853dab8babe6"}},
+  0},
  {<<"ranch">>,{pkg,<<"ranch">>,<<"1.7.1">>},1}]}.
 [
 {pkg_hash,[
  {<<"cowboy">>, <<"91ED100138A764355F43316B1D23D7FF6BDB0DE4EA618CB5D8677C93A7A2F115">>},
  {<<"cowlib">>, <<"FD0FF1787DB84AC415B8211573E9A30A3EBE71B5CBFF7F720089972B2319C8A4">>},
  {<<"gproc">>, <<"CEA02C578589C61E5341FCE149EA36CCEF236CC2ECAC8691FBA408E7EA77EC2F">>},
- {<<"luerl">>, <<"6D3191F529286B77B765E790A70CC36B6B27D91E97363AFA89E0B7394F5116BD">>},
  {<<"ranch">>, <<"6B1FAB51B49196860B733A49C07604465A47BDB78AA10C1C16A3D199F7F8C881">>}]}
 ].
