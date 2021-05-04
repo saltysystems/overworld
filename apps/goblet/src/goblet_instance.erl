@@ -4,9 +4,6 @@
 
 -behaviour(gen_statem).
 
-% internal functions ackchually
--export([phases/1, normalize_actions/1]).
-
 % Public API
 -export([start/2, player_ready/2, player_decision/3]).
 
@@ -24,8 +21,7 @@
 
 -define(SERVER(Name), {via, gproc, {n, l, {?MODULE, Name}}}).
 
--record(action, {ap, name, from, target}).
--record(match, {id, playerlist, readyplayers, board}).
+-record(match, {id, playerlist, readyplayers, board, actions = []}).
 
 % Public API
 start(PlayerList, MatchID) ->
@@ -100,14 +96,16 @@ prepare(EventType, EventContent, Data) ->
 % reached. Then we move to Execute phase.
 decision(
     cast,
-    {decision, Player, Actions},
-    #match{playerlist = PL, readyplayers = RP} = Data
+    {decision, Player, PlayerActions},
+    #match{playerlist = PL, readyplayers = RP, actions = Actions} = Data
 ) ->
     % TODO: Validate action list
     Ready = [Player | RP],
     RSet = sets:from_list(RP),
     PSet = sets:from_list(PL),
     logger:notice("Player ~p has made a decision.", [Player]),
+    % Update the match state with the player's decision
+    Data1 = Data#match{actions = [PlayerActions | Actions]},
     NextState =
         case RSet == PSet of
             true ->
@@ -118,11 +116,11 @@ decision(
                     "All players are ready, move on to execution state"
                 ),
                 TimeOut = {{timeout, decide}, infinity, execute},
-                {next_state, execution, Data#match{readyplayers = []}, [
+                {next_state, execution, Data1#match{readyplayers = []}, [
                     TimeOut
                 ]};
             false ->
-                {next_state, decision, Data#match{readyplayers = Ready}}
+                {next_state, decision, Data1#match{readyplayers = Ready}}
         end,
     logger:notice("Ready players are: ~p", [Ready]),
     NextState;
@@ -142,10 +140,15 @@ decision(EventType, EventContent, Data) ->
 %execution(cast, {execution, Player, Actions}, Data) ->
 %    NewData = Data, % calculate results here
 %    {next_state, decision, NewData, [{state_timeout, 5000, decide}]};
-execution(state_timeout, decide, Data) ->
-    % calculate results here
-    NewData = Data,
-    logger:notice("10000ms has passed for animations, back to decision"),
+execution(
+    state_timeout,
+    decide,
+    #match{id = ID, board = B0, actions = Actions} = Data
+) ->
+    Results = goblet_game:calculate_round(Actions, B0),
+    Msg = goblet_protocol:encode(match_state_resp, ID, Results),
+    goblet_protocol:match_broadcast(Msg, ID),
+    logger:notice("60000ms has passed for animations, back to decision"),
     TimeOut = {{timeout, decide}, 20000, execute},
     {next_state, decision, Data, [TimeOut]};
 execution(EventType, EventContent, Data) ->
@@ -154,104 +157,9 @@ execution(EventType, EventContent, Data) ->
 
 % In the finish phase, we instruct the clients to wrap up, show them results, and we shut down or wait to be shut down by our supervisor.
 
-handle_event(EventType, EventContent, Data) ->
+handle_event(_EventType, _EventContent, Data) ->
     {keep_state, Data}.
 
 terminate(_Reason, _State, _Data) ->
     %TODO: Save the player progress
     ok.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%  Internal Functions                                                 %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-normalize_actions(ActionList) ->
-    % Take a list of actions for a player, e.g.
-    %    [{1,shoot}, {2, move, {4, laz0r}]
-    % and then normalize it such that the AP costs are translated into Phases:
-    %  [{1,shoot}, {3, move}, {7, laz0r}]
-    normalize_actions(ActionList, []).
-
-normalize_actions([], Acc) ->
-    lists:reverse(Acc);
-normalize_actions([H | T], []) ->
-    normalize_actions(T, [H]);
-normalize_actions([H | T], [AccH | AccT]) when is_record(H, action) ->
-    MP = H#action.ap + AccH#action.ap,
-    MPList = H#action{ap = MP},
-    normalize_actions(T, [MPList | [AccH | AccT]]);
-normalize_actions([H | T], [AccH | AccT]) ->
-    % H = 1, T = [2,3,4] ; AccH = 1, AccT = []
-    NewList = H + AccH,
-    normalize_actions(T, [NewList | [AccH | AccT]]).
-
-% The ActionList must already do the math needed to handle this
-phases(ActionList) ->
-    % Get the largest key
-    % AP must be the first item in the record, hence 2nd key
-    S = lists:keysort(2, ActionList),
-    % Get the last element of the list
-    MaxPhase = lists:last(S),
-    % Recurse through the phases, pairing up matching keys into the same phase
-    % til we hit 0.
-    group_phases(MaxPhase#action.ap, S).
-
-group_phases(N, KeyList) ->
-    group_phases(N, KeyList, []).
-
-group_phases(N, _KeyList, Acc) when N == 0 ->
-    Acc;
-group_phases(N, KeyList, Acc) ->
-    %PhaseGroup = [ X || {_, N1, _, _} = X <- KeyList, N == N1],
-    PhaseGroup = [X || #action{ap = N1} = X <- KeyList, N == N1],
-    case PhaseGroup of
-        [] ->
-            group_phases(N - 1, KeyList, Acc);
-        _ ->
-            group_phases(N - 1, KeyList, [PhaseGroup | Acc])
-    end.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%  Test                                                               %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-normalize_actions_test() ->
-    Actions = [
-        #action{name = shoot, ap = 2, from = "player1", target = "player2"},
-        #action{name = move, ap = 1, from = "player1", target = {0, 0}},
-        #action{name = laz0r, ap = 6, from = "player2", target = "player1"}
-    ],
-    % Convert AP to Phases
-    MP = normalize_actions(Actions),
-    Last = lists:last(MP),
-    ?assertEqual(9, Last#action.ap).
-%?assertEqual(9, Last#action.mp).
-
-phases_test() ->
-    P1_Actions = [
-        #action{name = shoot, ap = 2, from = "player1", target = "player2"},
-        #action{name = move, ap = 1, from = "player1", target = {0, 0}},
-        #action{name = laz0r, ap = 6, from = "player1", target = "player2"}
-    ],
-    P2_Actions = [
-        #action{name = move, ap = 1, from = "player2", target = {1, 1}},
-        #action{name = shoot, ap = 2, from = "player2", target = "player1"},
-        #action{
-            name = shield,
-            ap = 3,
-            from = "player2",
-            target = "player1"
-        },
-        #action{
-            name = missile,
-            ap = 3,
-            from = "player2",
-            target = "player1"
-        }
-    ],
-    % Convert AP to Phases
-    MP = normalize_actions(P1_Actions),
-    MP2 = normalize_actions(P2_Actions),
-    Collected = MP ++ MP2,
-    % Group the phases
-    phases(Collected).
