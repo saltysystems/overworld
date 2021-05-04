@@ -2,6 +2,7 @@
 
 -export([
     decode/2,
+    encode/2,
     pack_match/1,
     account_new/1,
     account_login/1,
@@ -82,7 +83,7 @@ decode(<<?MATCH_START:16, T/binary>>, State) ->
     match_start(T, State);
 decode(<<?MATCH_STATE:16, _T/binary>>, State) ->
     logger:notice("Match state request from ~p", [State#session.email]);
-    %match_info(T, State);
+%match_info(T, State);
 decode(<<?MATCH_PREPARE:16, T/binary>>, State) ->
     logger:notice("Match prepare packet from ~p", [State#session.email]),
     match_prepare(T, State);
@@ -95,6 +96,21 @@ decode(<<OpCode:16, _T/binary>>, State) ->
         State#session.email
     ]),
     {ok, State}.
+
+%%-------------------------------------------------------------------------
+%% @doc Encode a message to send to the player or the match
+%% @end
+%%-------------------------------------------------------------------------
+encode(match_state_resp, _Results) ->
+    % Msg =  goblet_pb:encode_msg(#'MatchStateResp'....
+    Msg = <<>>,
+    OpCode = <<?MATCH_STATE:16>>,
+    [OpCode, Msg];
+encode(UnknownMsg, _Results) ->
+    logger:warning(
+        "Requested encoding of an unknown or unimplemented message type: ~p",
+        [UnknownMsg]
+    ).
 
 %%----------------------------------------------------------------------------
 %% @doc Encodes a log message to be sent back to the client
@@ -238,7 +254,8 @@ match_create(Message, State) when State#session.authenticated =:= true ->
 match_create(Player, Mode, MaxPlayers, Extra, true) ->
     case goblet_lobby:create_match(Player, Mode, MaxPlayers, Extra) of
         {ok, M} ->
-            MatchID = element(1, M), % not a stable interface
+            % not a stable interface
+            MatchID = element(1, M),
             match_register_session(MatchID),
             Resp = #'ResponseObject'{status = 'OK'},
             goblet_pb:encode_msg(#'MatchCreateResp'{
@@ -481,7 +498,6 @@ match_decide(Message, State) when State#session.authenticated =:= true ->
     Match = goblet_pb:decode_msg(Message, 'MatchDecideReq'),
     MatchID = Match#'MatchDecideReq'.matchid,
     Player = Match#'MatchDecideReq'.player,
-    %what and how will they validate?
     Actions = Match#'MatchDecideReq'.actions,
     Email = State#session.email,
     IsValid =
@@ -605,10 +621,13 @@ sanitize_message(Message) ->
     Message.
 
 match_register_session(MatchID) ->
-    case gproc:reg({p, l, {match, MatchID}}) of 
-        true -> 
-            logger:notice("Registered ~p with gproc for ~p", [self(), MatchID]);
-        Other -> 
+    case gproc:reg({p, l, {match, MatchID}}) of
+        true ->
+            logger:notice("Registered ~p with gproc for Match ~p", [
+                self(),
+                MatchID
+            ]);
+        Other ->
             logger:warning("Registration failed: ~p", [Other])
     end.
 
