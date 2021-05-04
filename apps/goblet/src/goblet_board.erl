@@ -17,6 +17,7 @@
     hide_tile/3,
     get_tile_all/2,
     get_tile_occupant/2,
+    get_tile_reachable/4,
     get_unoccupied_tile/1
 ]).
 
@@ -275,6 +276,22 @@ get_tile_occupant({X, Y}, TileList) ->
     Tile#tile.occupant.
 
 %----------------------------------------------------------------------
+% @doc Check whether or not a tile is reachable
+%----------------------------------------------------------------------
+get_tile_reachable(T1, T2, Board, MaxDistance) ->
+    CanMove = goblet_util:run_checks([
+        fun() -> is_tile(not_a_wall, T1) end,
+        fun() -> is_tile(not_a_wall, T2) end,
+        fun() -> is_tile(empty, T2) end
+    ]).
+get_tile_reachable(T1, T2, Board, MaxDistance, ok) ->
+    {X1, Y1} = T1,
+    {X2, Y2} = T2,
+    max(abs(Y2 - Y1), abs(X2 - X1)) =< MaxDistance;
+get_tile_reachable(_T1, _T2, _Board, _MovementFun, _CanMove) ->
+    false.
+
+%----------------------------------------------------------------------
 % @doc Get a random floor tile who has no occupant. Recurse through the list
 %      until an unoccupied tile can be found. Crash horribly if there are no
 %      free tiles.
@@ -295,8 +312,8 @@ get_unoccupied_tile(TileList) ->
 %%=========================================================================
 
 %% TODO: Cleanup or used unused/unexported functions
-%is_tile(empty, Tile) when Tile#tile.occupant =:= [] ->
-%    ok;
+is_tile(empty, Tile) when Tile#tile.occupant =:= [] ->
+    ok;
 %is_tile(occupied, Tile) when Tile#tile.occupant =/= [] ->
 %    ok;
 is_tile(not_a_wall, Tile) when Tile#tile.type =/= w ->
