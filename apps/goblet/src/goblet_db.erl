@@ -13,11 +13,17 @@
     delete_player/2,
     delete_orphaned_player/1,
     player_by_name/1,
+    player_inventory/1,
+    player_items_have_action/2,
     is_valid_player/1,
     is_valid_player_account/2,
     create_item/8,
+    delete_item/1,
     get_item/1,
     item_to_player/2,
+    item_from_player/2,
+    %purge_item_from_players/1,
+    get_all_item_owners/1,
     salt_and_hash/2
 ]).
 
@@ -81,6 +87,13 @@ player_by_name(Name) ->
         end
     end,
     mnesia:activity(transaction, Fun).
+
+-spec player_inventory(list()) -> list() | {error, atom()}.
+player_inventory(Name) ->
+    case player_by_name(Name) of
+        {error, _} -> [];
+        P -> P#goblet_player.inventory
+    end.
 
 -spec is_valid_player(list()) -> true | false.
 is_valid_player(Name) ->
@@ -202,20 +215,65 @@ create_item(
     end,
     mnesia:activity(transaction, Fun).
 
-% Items can't be removed simply without orphan objects in player inventories
-%-spec delete_item(list(), list()) -> ok.
-%delete_item(Name) ->
-%    Fun = fun() ->
-%        mnesia:delete({goblet_item, Name})
-%    end,
-%    mnesia:activity(transaction, Fun).
+-spec delete_item(list()) -> ok.
+delete_item(Item) ->
+    Fun =
+        fun() ->
+            % Items can't be removed simply without orphan objects in player
+            % inventories, so this is quite complex.
+            % First, check all players for a copy of the item.
+            % Remove the item from the player's inventory.
+            % Then finally delete the item itself.
+            mnesia:foldl(
+                fun(Rec, Acc) ->
+                    Inventory = Rec#goblet_player.inventory,
+                    case lists:member(Item, Inventory) of
+                        true ->
+                            I2 = lists:delete(Item, Inventory),
+                            mnesia:write(
+                                goblet_player,
+                                Rec#goblet_player{inventory = I2},
+                                write
+                            ),
+                            [ok | Acc];
+                        _ ->
+                            Acc
+                    end
+                end,
+                [],
+                goblet_player
+            ),
+            mnesia:delete({goblet_item, Item})
+        end,
+    mnesia:activity(transaction, Fun).
+
+-spec get_all_item_owners(list()) -> ok | {error, atom()}.
+get_all_item_owners(Item) ->
+    F =
+        fun() ->
+            % Check all players for a copy of the item. If found, add it to
+            % the list. Finally, return the list back to the caller.
+            mnesia:foldl(
+                fun(Rec, Acc) ->
+                    case lists:member(Item, Rec#goblet_player.inventory) of
+                        true -> [Rec#goblet_player.name | Acc];
+                        _ -> Acc
+                    end
+                end,
+                [],
+                goblet_player
+            )
+        end,
+    mnesia:activity(transaction, F).
 
 -spec get_item(list()) -> tuple().
 get_item(Item) ->
     Fun = fun() ->
         case mnesia:read({goblet_item, Item}) of
-            [I] -> I;
-            Other -> Other
+            [I] ->
+                I;
+            Other ->
+                Other
         end
     end,
     mnesia:activity(transaction, Fun).
@@ -244,6 +302,41 @@ item_to_player(Item, Player) ->
         end
     end,
     mnesia:activity(transaction, Fun).
+
+-spec item_from_player(list(), list()) -> ok | {error, atom()}.
+item_from_player(Item, Player) ->
+    Fun = fun() ->
+        case mnesia:read({goblet_player, Player}) of
+            [P] ->
+                Inventory = P#goblet_player.inventory,
+                I2 = lists:delete(Item, Inventory),
+                mnesia:write(
+                    goblet_player,
+                    P#goblet_player{
+                        inventory = I2
+                    },
+                    write
+                );
+            _ ->
+                {error, no_such_player}
+        end
+    end,
+    mnesia:activity(transaction, Fun).
+
+player_items_have_action(Name, Action) ->
+    Fun =
+        fun() ->
+            I = #goblet_item{name = '$1', action = Action, _ = '_'},
+            mnesia:select(goblet_item, [{I, [], ['$1']}])
+        end,
+    Matches = mnesia:activity(transaction, Fun),
+    case player_by_name(Name) of
+        {error, E} ->
+            {error, E};
+        P ->
+            Items = P#goblet_player.inventory,
+            [X || X <- Items, lists:member(X, Matches) == true]
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Exported, but unsafe functions %
@@ -368,6 +461,26 @@ item_to_player_test() ->
     P = goblet_db:player_by_name(Player),
     Inv = P#goblet_player.inventory,
     ?assertEqual(true, lists:member(Item, Inv)).
+
+player_items_have_action_test() ->
+    Player = "Chester McTester",
+    Resp = goblet_db:player_items_have_action(Player, testgun),
+    ?assertEqual(["TestGun"], Resp).
+
+get_all_item_owners_test() ->
+    Player = "Chester McTester",
+    Item = "TestGun",
+    [Resp] = get_all_item_owners(Item),
+    ?assertEqual(Resp, Player).
+
+delete_item_test() ->
+    Item = "TestGun",
+    Resp1 = goblet_db:delete_item(Item),
+    ?assertEqual(ok, Resp1),
+    P = "Chester McTester",
+    Resp2 = goblet_db:player_inventory(P),
+    ItemExists = lists:member(Item, Resp2),
+    ?assertEqual(false, ItemExists).
 
 delete_player_test() ->
     Email = "TestUser@doesntexist.notadomain",
