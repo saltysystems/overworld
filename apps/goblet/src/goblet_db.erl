@@ -115,11 +115,12 @@ is_valid_player_account(Player, Email) ->
             lists:member(Player, Account#goblet_account.player_ids)
     end.
 
--spec is_player_alive(list()) -> true|false|{error, any()}.
+-spec is_player_alive(list()) -> true | false | {error, any()}.
 is_player_alive(Name) ->
     case player_by_name(Name) of
-        {error, E} -> {error, E};
-        Player -> 
+        {error, E} ->
+            {error, E};
+        Player ->
             % we can get fancy with components and such later.
             Player#goblet_player.health >= 0
     end.
@@ -179,20 +180,20 @@ delete_player(Name, Account) ->
 
 -spec update_player_health(list(), integer()) -> ok.
 update_player_health(Name, Value) ->
-    Fun = 
+    Fun =
         fun() ->
             case mnesia:read({goblet_player, Name}) of
-                [] -> {error, no_such_player};
-                [Player] -> 
+                [] ->
+                    {error, no_such_player};
+                [Player] ->
                     mnesia:write(
-                        goblet_player, 
-                        Player#goblet_player{health=Value},
+                        goblet_player,
+                        Player#goblet_player{health = Value},
                         write
                     )
             end
         end,
     mnesia:activity(transaction, Fun).
-                
 
 -spec create_item(
     list(),
