@@ -710,7 +710,6 @@ check_valid_match_owner(Player, MatchID) ->
             {error, E}
     end.
 
-
 check_valid_match_player(Player, MatchID) ->
     Players = goblet_lobby:get_match_players(MatchID),
     case lists:member(Player, Players) of
@@ -718,10 +717,9 @@ check_valid_match_player(Player, MatchID) ->
         false -> {error, not_in_match}
     end.
 
-
-check_valid_actions(_Player, []) -> 
+check_valid_actions(_Player, []) ->
     ok;
-check_valid_actions(Player, [H|T]) -> 
+check_valid_actions(Player, [H | T]) ->
     case goblet_db:player_items_have_action(Player, H) of
         [] ->
             {error, invalid_action};
@@ -730,7 +728,6 @@ check_valid_actions(Player, [H|T]) ->
         _ ->
             check_valid_actions(Player, T)
     end.
-
 
 default_handler(State) ->
     logger:error("Something wont awry with the session.."),
@@ -888,7 +885,7 @@ match_join_test() ->
     }),
     % Note that creating _also_ joins, which tripped me up when debugging
     % gproc errors
-    {[RespOp, RespMsg], State} = goblet_protocol:match_create(Msg, State), 
+    {[RespOp, RespMsg], State} = goblet_protocol:match_create(Msg, State),
     ?assertEqual(RespOp, <<?MATCH_CREATE:16>>),
     DecodedResp = goblet_pb:decode_msg(RespMsg, 'MatchCreateResp'),
     M = DecodedResp#'MatchCreateResp'.match,
@@ -956,10 +953,10 @@ match_join_test() ->
 
 check_valid_actions_test() ->
     Player = "Chester The Tester",
-    Actions = [move,move],
+    Actions = [move, move],
     check_valid_actions(Player, Actions).
 
 check_valid_actions_invalid_test() ->
     Player = "Chester The Tester",
-    Actions = [move,laz0r],
+    Actions = [move, laz0r],
     check_valid_actions(Player, Actions).
