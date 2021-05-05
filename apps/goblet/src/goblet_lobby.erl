@@ -216,6 +216,15 @@ handle_call(
 handle_call({delete_match, MatchID}, _From, {NextID, Matches, Timer}) ->
     Match = match_find(MatchID, Matches),
     NewMatches = match_del(Match, Matches),
+    % Find any processes still registered to this session in gproc
+    Pids = gproc:lookup_pids({p,l,MatchID}),
+    logger:notice("Deleting match ~p.  Pids still attached to this match: ~p", [MatchID, Pids]),
+    lists:foreach(
+        fun(X) -> gproc:unreg_other({p,l,MatchID}, X) end, 
+        Pids
+    ),
+    %TODO: We also need to encode a MATCH_LEAVE or MATCH_FINISH message to
+    %      every client in this match and let them know that it has poofed.
     {reply, ok, {NextID, NewMatches, Timer}};
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
