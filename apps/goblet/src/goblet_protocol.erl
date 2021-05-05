@@ -16,7 +16,8 @@
     match_info/2,
     match_prepare/2,
     match_decide/2,
-    match_state_update/6
+    match_state_update/6,
+    match_broadcast/2
 ]).
 
 -export([player_log/1]).
