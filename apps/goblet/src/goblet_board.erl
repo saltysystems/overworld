@@ -283,7 +283,8 @@ get_tile_reachable(T1, T2, Board, MaxDistance) ->
         fun() -> is_tile(not_a_wall, T1) end,
         fun() -> is_tile(not_a_wall, T2) end,
         fun() -> is_tile(empty, T2) end
-    ]).
+    ]),
+    get_tile_reachable(T1, T2, Board, MaxDistance, CanMove).
 get_tile_reachable(T1, T2, Board, MaxDistance, ok) ->
     {X1, Y1} = T1,
     {X2, Y2} = T2,
