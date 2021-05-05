@@ -103,7 +103,7 @@ decode(<<OpCode:16, _T/binary>>, State) ->
 %% @end
 %%-------------------------------------------------------------------------
 encode(match_state_resp, _Results) ->
-    % Msg =  goblet_pb:encode_msg(#'MatchStateResp'....
+    %Msg = goblet_pb:encode_msg(#'MatchStateResp'....
     Msg = <<>>,
     OpCode = <<?MATCH_STATE:16>>,
     [OpCode, Msg];
@@ -506,6 +506,7 @@ match_decide(Message, State) when State#session.authenticated =:= true ->
             goblet_util:run_checks([
                 fun() -> check_valid_player_account(Player, Email) end,
                 fun() -> check_valid_match_player(Player, Email) end,
+                fun() -> check_player_alive(Player) end,
                 fun() -> check_valid_actions(Player, Actions) end
             ])
         of
@@ -637,15 +638,11 @@ match_broadcast(Message, MatchID) ->
     logger:notice("Broadcasting a message to match ~p", [MatchID]),
     gproc:send({p, l, {match, MatchID}}, {self(), event, Message}).
 
+
 match_deregister_session(MatchID) ->
     logger:notice("Deregistered ~p from session ~p", [self(), MatchID]),
     gproc:unreg({p, l, {match, MatchID}}).
 
-% TODO: fix me up, not quite what we want. we need internal representation
-%match_broadcast_state(MatchID) ->
-%    Match = pack_match(goblet_lobby:get_match(MatchID)),
-%    Msg = goblet_pb:encode_msg(Match),
-%    match_broadcast(Msg, MatchID).
 
 pack_match({Id, State, Players, PlayersMax, StartTime, Mode, Extra}) ->
     #'MatchInfo'{
@@ -728,6 +725,13 @@ check_valid_actions(Player, [H | T]) ->
             {error, E};
         _ ->
             check_valid_actions(Player, T)
+    end.
+
+check_player_alive(Player) ->
+    case goblet_db:is_player_alive(Player) of  
+        true -> ok;
+        false -> {error, player_dead};
+        {error, E} -> {error, E}
     end.
 
 default_handler(State) ->
