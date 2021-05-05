@@ -247,7 +247,7 @@ delete_item(Item) ->
         end,
     mnesia:activity(transaction, Fun).
 
--spec get_all_item_owners(list()) -> ok | {error, atom()}.
+-spec get_all_item_owners(list()) -> list().
 get_all_item_owners(Item) ->
     F =
         fun() ->
