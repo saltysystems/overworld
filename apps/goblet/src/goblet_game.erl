@@ -7,7 +7,8 @@
 
 -export([
     new_player/5,
-    initialize_board/3
+    initialize_board/3,
+    calculate_round/2
 ]).
 
 -include_lib("kernel/include/logger.hrl").
