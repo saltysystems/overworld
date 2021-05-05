@@ -342,20 +342,20 @@ match_join(_MatchID, _Player, State, {error, ErrMsg}) ->
 -spec match_leave(binary(), tuple()) -> {[binary(), ...], tuple()}.
 match_leave(Message, State) when State#session.authenticated =:= true ->
     Match = goblet_pb:decode_msg(Message, 'MatchLeaveReq'),
-    MatchID = Match#'MatchJoinReq'.matchid,
-    Player = Match#'MatchJoinReq'.player,
+    MatchID = Match#'MatchLeaveReq'.matchid,
+    Player = Match#'MatchLeaveReq'.player,
     Msg =
         case goblet_lobby:leave_match(Player, MatchID) of
             ok ->
                 Resp = #'ResponseObject'{status = 'OK'},
                 match_deregister_session(MatchID),
-                goblet_pb:encode_msg(#'MatchJoinResp'{resp = Resp});
+                goblet_pb:encode_msg(#'MatchLeaveResp'{resp = Resp});
             {error, Error} ->
                 Resp = #'ResponseObject'{
                     status = 'ERROR',
                     error = atom_to_list(Error)
                 },
-                goblet_pb:encode_msg(#'MatchJoinResp'{resp = Resp})
+                goblet_pb:encode_msg(#'MatchLeaveResp'{resp = Resp})
         end,
     OpCode = <<?MATCH_LEAVE:16>>,
     {[OpCode, Msg], State}.
@@ -504,8 +504,8 @@ match_decide(Message, State) when State#session.authenticated =:= true ->
         case
             goblet_util:run_checks([
                 fun() -> check_valid_player_account(Player, Email) end,
-                fun() -> check_valid_match_player(Player, Email) end
-                % TODO: fun() -> check_valid_actions ?
+                fun() -> check_valid_match_player(Player, Email) end,
+                fun() -> check_valid_actions(Player, Actions) end
             ])
         of
             ok -> true;
@@ -637,6 +637,7 @@ match_broadcast(Message, MatchID) ->
     gproc:send({p, l, {match, MatchID}}, {self(), event, Message}).
 
 match_deregister_session(MatchID) ->
+    logger:notice("Deregistered ~p from session ~p", [self(), MatchID]),
     gproc:unreg({p, l, {match, MatchID}}).
 
 % TODO: fix me up, not quite what we want. we need internal representation
@@ -709,6 +710,7 @@ check_valid_match_owner(Player, MatchID) ->
             {error, E}
     end.
 
+
 check_valid_match_player(Player, MatchID) ->
     Players = goblet_lobby:get_match_players(MatchID),
     case lists:member(Player, Players) of
@@ -716,7 +718,19 @@ check_valid_match_player(Player, MatchID) ->
         false -> {error, not_in_match}
     end.
 
-%
+
+check_valid_actions(_Player, []) -> 
+    ok;
+check_valid_actions(Player, [H|T]) -> 
+    case goblet_db:player_items_have_action(Player, H) of
+        [] ->
+            {error, invalid_action};
+        {error, E} ->
+            {error, E};
+        _ ->
+            check_valid_actions(Player, T)
+    end.
+
 
 default_handler(State) ->
     logger:error("Something wont awry with the session.."),
@@ -829,13 +843,14 @@ match_list_test() ->
     ?assertEqual(ResponseObj#'ResponseObject'.status, 'OK'),
     ?assertEqual(is_list(DecodedResp#'MatchListResp'.matches), true).
 
-match_create_test() ->
+match_create_leave_test() ->
     Email = "TestUser@doesntexist.notadomain",
     State = #session{email = Email, authenticated = true},
     Mode = 'DEFAULT',
     MaxPlayers = 6,
+    Player = "Chester The Tester",
     Msg = goblet_pb:encode_msg(#'MatchCreateReq'{
-        player = "Chester The Tester",
+        player = Player,
         mode = Mode,
         players_max = MaxPlayers
     }),
@@ -848,10 +863,19 @@ match_create_test() ->
     M = DecodedResp#'MatchCreateResp'.match,
     ?assertEqual(MaxPlayers, M#'MatchInfo'.players_max),
     ?assertEqual(Mode, M#'MatchInfo'.mode),
-    % deconstruct the match
-    goblet_lobby:delete_match(M#'MatchInfo'.id).
+    % Now try to leave
+    Msg1 = goblet_pb:encode_msg(#'MatchLeaveReq'{
+        player = Player,
+        matchid = M#'MatchInfo'.id
+    }),
+    {[RespOp1, RespMsg1], State} = goblet_protocol:match_leave(Msg1, State),
+    ?assertEqual(<<?MATCH_LEAVE:16>>, RespOp1),
+    DecodedResp1 = goblet_pb:decode_msg(RespMsg1, 'MatchLeaveResp'),
+    Response1 = DecodedResp1#'MatchLeaveResp'.resp,
+    ?assertEqual(Response1#'ResponseObject'.status, 'OK').
 
 match_join_test() ->
+    logger:notice("Gproc info: ~p", [gproc:info(self())]),
     % Create the match
     Email = "TestUser@doesntexist.notadomain",
     State = #session{email = Email, authenticated = true},
@@ -862,11 +886,15 @@ match_join_test() ->
         mode = Mode,
         players_max = MaxPlayers
     }),
-    {[RespOp, RespMsg], State} = goblet_protocol:match_create(Msg, State),
+    % Note that creating _also_ joins, which tripped me up when debugging
+    % gproc errors
+    {[RespOp, RespMsg], State} = goblet_protocol:match_create(Msg, State), 
     ?assertEqual(RespOp, <<?MATCH_CREATE:16>>),
     DecodedResp = goblet_pb:decode_msg(RespMsg, 'MatchCreateResp'),
     M = DecodedResp#'MatchCreateResp'.match,
     MatchID = M#'MatchInfo'.id,
+    % Deregister the current process from gproc
+    match_deregister_session(MatchID),
 
     % Create a new player and join the match
     Player2 = "Lester The Tester",
@@ -914,11 +942,24 @@ match_join_test() ->
     Msg4 = goblet_pb:decode_msg(RespMsg4, 'MatchJoinResp'),
     RespObj = Msg4#'MatchJoinResp'.resp,
     ?assertEqual('OK', RespObj#'ResponseObject'.status),
+    match_deregister_session(MatchID),
+
     {[RespOp5, RespMsg5], _State} = goblet_protocol:match_join(
         JoinMsg3,
         State
     ),
+    match_deregister_session(MatchID),
     ?assertEqual(RespOp5, <<?MATCH_JOIN:16>>),
     Msg5 = goblet_pb:decode_msg(RespMsg5, 'MatchJoinResp'),
     RespObj = Msg5#'MatchJoinResp'.resp,
     ?assertEqual('OK', RespObj#'ResponseObject'.status).
+
+check_valid_actions_test() ->
+    Player = "Chester The Tester",
+    Actions = [move,move],
+    check_valid_actions(Player, Actions).
+
+check_valid_actions_invalid_test() ->
+    Player = "Chester The Tester",
+    Actions = [move,laz0r],
+    check_valid_actions(Player, Actions).
