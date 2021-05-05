@@ -638,11 +638,9 @@ match_broadcast(Message, MatchID) ->
     logger:notice("Broadcasting a message to match ~p", [MatchID]),
     gproc:send({p, l, {match, MatchID}}, {self(), event, Message}).
 
-
 match_deregister_session(MatchID) ->
     logger:notice("Deregistered ~p from session ~p", [self(), MatchID]),
     gproc:unreg({p, l, {match, MatchID}}).
-
 
 pack_match({Id, State, Players, PlayersMax, StartTime, Mode, Extra}) ->
     #'MatchInfo'{
@@ -728,7 +726,7 @@ check_valid_actions(Player, [H | T]) ->
     end.
 
 check_player_alive(Player) ->
-    case goblet_db:is_player_alive(Player) of  
+    case goblet_db:is_player_alive(Player) of
         true -> ok;
         false -> {error, player_dead};
         {error, E} -> {error, E}
