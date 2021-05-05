@@ -143,11 +143,10 @@ decision(EventType, EventContent, Data) ->
 execution(
     state_timeout,
     decide,
-    #match{id = ID, board = B0, actions = Actions} = Data
+    #match{id = ID, board = B0, actions = A, playerlist = P} = Data
 ) ->
-    Results = goblet_game:calculate_round(Actions, B0),
-    Msg = goblet_protocol:encode(match_state_resp, [ID, Results]),
-    goblet_protocol:match_broadcast(Msg, ID),
+    B1 = goblet_game:calculate_round(A, B0),
+    goblet_protocol:match_state_update(B1, [], 'EXECUTE', P, [], ID),
     logger:notice("60000ms has passed for animations, back to decision"),
     TimeOut = {{timeout, decide}, 20000, execute},
     {next_state, decision, Data, [TimeOut]};
