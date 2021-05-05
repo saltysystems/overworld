@@ -56,7 +56,7 @@ initialize_board(Board, [Player | Rest]) ->
     end.
 
 calculate_round(_Actions, Board) ->
-    {[], Board}.
+    Board.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  Internal Functions                                                 %
