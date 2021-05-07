@@ -5,7 +5,7 @@
 -behaviour(gen_statem).
 
 % Public API
--export([start/2, player_ready/2, player_decision/3]).
+-export([start/2, player_ready/2, player_decision/3, get_board_state/1]).
 
 % Callbacks
 -export([init/1, callback_mode/0, terminate/3]).
@@ -15,8 +15,9 @@
 -export([
     prepare/3,
     decision/3,
-    execution/3
-    %finish/4
+    execution/3,
+    %finish/4,
+    board_state/3
 ]).
 
 -define(SERVER(Name), {via, gproc, {n, l, {?MODULE, Name}}}).
@@ -39,6 +40,9 @@ player_ready(Player, MatchID) ->
 player_decision(Player, Actions, MatchID) ->
     gen_statem:cast(?SERVER(MatchID), {decision, Player, Actions}).
 
+get_board_state(MatchID) ->
+    gen_statem:call(?SERVER(MatchID), board_state).
+
 % Callbacks
 init({PlayerList, MatchID}) ->
     M = #match{
@@ -53,6 +57,9 @@ callback_mode() ->
     state_functions.
 
 % State Functions
+board_state({call, From}, board_state, Data) ->
+    Board = Data#match.board,
+    {keep_state, {reply, From, Board}}.
 
 % In prepare stage, we wait for all Players to confirm that they are ready.
 prepare(
@@ -110,8 +117,8 @@ decision(
         case RSet == PSet of
             true ->
                 % All players have made their decision
-                % Cancel the decision timer by setting it to infinity and move
-                % onto execute state
+                % Cancel the decision timer by setting it to infinity and
+                % move onto execute state
                 logger:notice(
                     "All players are ready, move on to execution state"
                 ),
@@ -126,7 +133,7 @@ decision(
     NextState;
 decision({timeout, decide}, execute, Data) ->
     % Decisions have timed out, move on
-    logger:notice("20000ms has expired - force move to execution state"),
+    logger:notice("10000ms has expired - force move to execution state"),
     {next_state, execution, Data, [{state_timeout, 10000, decide}]};
 decision(EventType, EventContent, Data) ->
     logger:warning("Got a bad event sent to decision"),
@@ -137,9 +144,6 @@ decision(EventType, EventContent, Data) ->
 % clients have finished with their animations, or we time out after some
 % generous time period (60s ?). We check to see if the match is over, and go
 % to the Finish phase if it is. Otherwise, back to Decision.
-%execution(cast, {execution, Player, Actions}, Data) ->
-%    NewData = Data, % calculate results here
-%    {next_state, decision, NewData, [{state_timeout, 5000, decide}]};
 execution(
     state_timeout,
     decide,
