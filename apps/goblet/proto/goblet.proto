@@ -217,8 +217,13 @@ message MatchPrepResp {
 } 
 
 message MatchDecideReq {
+    message Action {
+        required string type = 1;
+        required int32  x = 2;
+        required int32  y = 3;
+    }
     required string player = 1;
-    required string actions = 2;
+    repeated Action actions = 2;
     required uint32 matchid = 3;
 } 
 
