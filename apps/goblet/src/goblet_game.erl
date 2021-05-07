@@ -8,7 +8,10 @@
 -export([
     new_player/5,
     initialize_board/3,
-    calculate_round/2
+    calculate_round/2,
+    normalize_actions/1,
+    check_valid_actions/1,
+    check_player_alive/1
 ]).
 
 -include_lib("kernel/include/logger.hrl").
@@ -57,6 +60,28 @@ initialize_board(Board, [Player | Rest]) ->
 
 calculate_round(_Actions, Board) ->
     Board.
+
+check_valid_actions([]) ->
+    ok;
+check_valid_actions([{Player, Type, {X,Y}} | T]) ->
+    case goblet_db:player_items_have_action(Player, Type) of
+        [] ->
+            {error, invalid_action};
+        {error, E} ->
+            {error, E};
+        _ ->
+            check_valid_actions(T)
+    end.
+
+check_valid_target([{Player, Type, {X,Y}} | T], MatchID) ->
+    B = goblet_instance:get_board_state(MatchID).
+
+check_player_alive(Player) ->
+    case goblet_db:is_player_alive(Player) of
+        true -> ok;
+        false -> {error, player_dead};
+        {error, E} -> {error, E}
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  Internal Functions                                                 %
