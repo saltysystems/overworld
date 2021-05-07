@@ -499,15 +499,24 @@ match_decide(Message, State) when State#session.authenticated =:= true ->
     Match = goblet_pb:decode_msg(Message, 'MatchDecideReq'),
     MatchID = Match#'MatchDecideReq'.matchid,
     Player = Match#'MatchDecideReq'.player,
-    Actions = Match#'MatchDecideReq'.actions,
+    Actions = action_to_tuple(Player, Match#'MatchDecideReq'.actions),
     Email = State#session.email,
+    % Let's lay out all of the things that need to be true for an action to
+    % go through.
+    %   1. Must be a valid player account
+    %   2. Player must be in the match
+    %   3. Player must be alive currently
+    %   4. Player must have an item with that action
+    %   5. Action must have a valid target
+    %   6. The action must not occur out of bounds
     IsValid =
         case
             goblet_util:run_checks([
                 fun() -> check_valid_player_account(Player, Email) end,
                 fun() -> check_valid_match_player(Player, Email) end,
-                fun() -> check_player_alive(Player) end,
-                fun() -> check_valid_actions(Player, Actions) end
+                fun() -> goblet_game:check_player_alive(Player) end,
+                fun() -> goblet_game:check_valid_type(Actions) end,
+                fun() -> goblet_game:check_valid_target(Actions, MatchID) end
             ])
         of
             ok -> true;
@@ -713,24 +722,15 @@ check_valid_match_player(Player, MatchID) ->
         false -> {error, not_in_match}
     end.
 
-check_valid_actions(_Player, []) ->
-    ok;
-check_valid_actions(Player, [H | T]) ->
-    case goblet_db:player_items_have_action(Player, H) of
-        [] ->
-            {error, invalid_action};
-        {error, E} ->
-            {error, E};
-        _ ->
-            check_valid_actions(Player, T)
-    end.
+action_to_tuple(Player, L) ->
+    action_to_tuple(Player, L, []).
 
-check_player_alive(Player) ->
-    case goblet_db:is_player_alive(Player) of
-        true -> ok;
-        false -> {error, player_dead};
-        {error, E} -> {error, E}
-    end.
+action_to_tuple(_Player, [], Acc) ->
+    Acc;
+action_to_tuple(Player, [H|T], Acc) ->
+    Type = H#'MatchDecideReq.Action'.type,
+    {X,Y} = {H#'MatchDecideReq.Action'.x, H#'MatchDecideReq.Action'.y},
+    action_to_tuple(T, [{Player, Type, {X,Y}} | Acc]).
 
 default_handler(State) ->
     logger:error("Something wont awry with the session.."),
@@ -953,13 +953,3 @@ match_join_test() ->
     Msg5 = goblet_pb:decode_msg(RespMsg5, 'MatchJoinResp'),
     RespObj = Msg5#'MatchJoinResp'.resp,
     ?assertEqual('OK', RespObj#'ResponseObject'.status).
-
-check_valid_actions_test() ->
-    Player = "Chester The Tester",
-    Actions = [move, move],
-    check_valid_actions(Player, Actions).
-
-check_valid_actions_invalid_test() ->
-    Player = "Chester The Tester",
-    Actions = [move, laz0r],
-    check_valid_actions(Player, Actions).
