@@ -84,7 +84,7 @@ decode(<<?MATCH_START:16, T/binary>>, State) ->
     match_start(T, State);
 decode(<<?MATCH_STATE:16, _T/binary>>, State) ->
     logger:notice("Match state request from ~p", [State#session.email]);
-%match_info(T, State);
+    %match_info(T, State);
 decode(<<?MATCH_PREPARE:16, T/binary>>, State) ->
     logger:notice("Match prepare packet from ~p", [State#session.email]),
     match_prepare(T, State);
@@ -469,8 +469,7 @@ match_prepare(Message, State) when State#session.authenticated =:= true ->
     IsValid =
         case
             goblet_util:run_checks([
-                fun() -> check_valid_player_account(Player, Email) end,
-                fun() -> check_valid_match_player(Player, Email) end
+                fun() -> check_valid_player_account(Player, Email) end
             ])
         of
             ok -> true;
@@ -513,10 +512,12 @@ match_decide(Message, State) when State#session.authenticated =:= true ->
         case
             goblet_util:run_checks([
                 fun() -> check_valid_player_account(Player, Email) end,
-                fun() -> check_valid_match_player(Player, Email) end,
+                %fun() -> check_valid_match_player(Player, Email) end, %BROKEN
                 fun() -> goblet_game:check_player_alive(Player) end,
                 fun() -> goblet_game:check_valid_type(Actions) end,
-                fun() -> goblet_game:check_valid_target(Actions, MatchID) end
+                fun() ->
+                    goblet_game:check_valid_target(Actions, MatchID)
+                end
             ])
         of
             ok -> true;
@@ -608,8 +609,11 @@ match_state_update(
     ReadyPlayers,
     MatchID
 ) ->
-    T1 = [pack_tile(X) || X <- Tiles],
-    A1 = [pack_action(X) || X <- Actions],
+    %T1 = [pack_tile(X) || X <- Tiles],
+    %A1 = [pack_action(X) || X <- Actions],
+    
+    T1 = [],
+    A1 = [],
 
     Update = #'MatchStateResp'{
         state = MatchState,
@@ -663,13 +667,14 @@ pack_match({Id, State, Players, PlayersMax, StartTime, Mode, Extra}) ->
         extra = Extra
     }.
 
-pack_tile({X, Y, Occupant, Type, Flags}) ->
+%
+pack_tile({tile, X, Y, _Occupant, _Type, _Flags}) ->
     #'MatchStateResp.Tile'{
         x = X,
         y = Y,
-        type = Type,
-        occupant = Occupant,
-        flags = Flags
+        type = " ",
+        occupant = " ",
+        flags = " "
     }.
 
 pack_action([Phase, Name, Type, XFrom, YFrom, XTo, YTo]) ->
@@ -715,22 +720,23 @@ check_valid_match_owner(Player, MatchID) ->
             {error, E}
     end.
 
-check_valid_match_player(Player, MatchID) ->
-    Players = goblet_lobby:get_match_players(MatchID),
-    case lists:member(Player, Players) of
-        true -> ok;
-        false -> {error, not_in_match}
-    end.
+% TODO: Fix this function. It keeps crashing somehow.
+%check_valid_match_player(Player, MatchID) ->
+%    Players = goblet_lobby:get_match_players(MatchID),
+%    case lists:member(Player, Players) of
+%        true -> ok;
+%        false -> {error, not_in_match}
+%    end.
 
 action_to_tuple(Player, L) ->
     action_to_tuple(Player, L, []).
 
 action_to_tuple(_Player, [], Acc) ->
     Acc;
-action_to_tuple(Player, [H|T], Acc) ->
+action_to_tuple(Player, [H | T], Acc) ->
     Type = H#'MatchDecideReq.Action'.type,
-    {X,Y} = {H#'MatchDecideReq.Action'.x, H#'MatchDecideReq.Action'.y},
-    action_to_tuple(T, [{Player, Type, {X,Y}} | Acc]).
+    {X, Y} = {H#'MatchDecideReq.Action'.x, H#'MatchDecideReq.Action'.y},
+    action_to_tuple(T, [{Player, Type, {X, Y}} | Acc]).
 
 default_handler(State) ->
     logger:error("Something wont awry with the session.."),
