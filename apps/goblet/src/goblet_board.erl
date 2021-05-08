@@ -18,7 +18,8 @@
     get_tile_all/2,
     get_tile_occupant/2,
     get_tile_reachable/4,
-    get_unoccupied_tile/1
+    get_unoccupied_tile/1,
+    get_last_tile/1
 ]).
 
 -type tile_coords() :: {integer(), integer()}.
@@ -285,7 +286,7 @@ get_tile_reachable(T1, T2, Board, MaxDistance) ->
         fun() -> is_tile(empty, T2) end
     ]),
     get_tile_reachable(T1, T2, Board, MaxDistance, CanMove).
-get_tile_reachable(T1, T2, Board, MaxDistance, ok) ->
+get_tile_reachable(T1, T2, _Board, MaxDistance, ok) ->
     {X1, Y1} = T1,
     {X2, Y2} = T2,
     max(abs(Y2 - Y1), abs(X2 - X1)) =< MaxDistance;
@@ -307,6 +308,14 @@ get_unoccupied_tile(TileList) ->
         _ ->
             get_unoccupied_tile(NewTileList)
     end.
+
+%----------------------------------------------------------------------
+% @doc Get the largest floor tile
+%----------------------------------------------------------------------
+-spec get_last_tile(list()) -> tile_coords().
+get_last_tile(TileList) ->
+    [Last | _Rest] = lists:reverse(TileList),
+    Last#tile.coordinates.
 
 %%=========================================================================
 %% Internal functions
