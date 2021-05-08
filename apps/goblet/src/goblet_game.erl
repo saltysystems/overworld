@@ -11,7 +11,8 @@
     calculate_round/2,
     normalize_actions/1,
     check_valid_actions/1,
-    check_player_alive/1
+    check_player_alive/1,
+    check_valid_target/2
 ]).
 
 -include_lib("kernel/include/logger.hrl").
@@ -63,7 +64,7 @@ calculate_round(_Actions, Board) ->
 
 check_valid_actions([]) ->
     ok;
-check_valid_actions([{Player, Type, {X,Y}} | T]) ->
+check_valid_actions([{Player, Type, {_X, _Y}} | T]) ->
     case goblet_db:player_items_have_action(Player, Type) of
         [] ->
             {error, invalid_action};
@@ -73,8 +74,23 @@ check_valid_actions([{Player, Type, {X,Y}} | T]) ->
             check_valid_actions(T)
     end.
 
-check_valid_target([{Player, Type, {X,Y}} | T], MatchID) ->
-    B = goblet_instance:get_board_state(MatchID).
+check_valid_target([], _MatchID) ->
+    ok;
+check_valid_target([{_Player, _Type, {X, Y}} | T], MatchID) ->
+    % what is a valid target? can't go out of bounds, for one.
+    B = goblet_instance:get_board_state(MatchID),
+    {MaxX, MaxY} = goblet_board:get_last_tile(B),
+    case within_bounds(X, MaxX, Y, MaxY) of
+        {error, E} ->
+            {error, E};
+        _ ->
+            check_valid_target(T, MatchID)
+    end.
+
+within_bounds(X, MaxX, Y, MaxY) when 0 > X; X > MaxX; 0 > Y; Y > MaxY ->
+    {error, out_of_bounds};
+within_bounds(_X, _MaxX, _Y, _MaxY) ->
+    ok.
 
 check_player_alive(Player) ->
     case goblet_db:is_player_alive(Player) of
@@ -198,3 +214,35 @@ phases_test() ->
     Collected = MP ++ MP2,
     % Group the phases
     phases(Collected).
+
+within_bounds_ok_test() ->
+    X = 3,
+    MaxX = 3,
+    Y = 3,
+    MaxY = 3,
+    R = within_bounds(X, MaxX, Y, MaxY),
+    ?assertEqual(ok, R).
+
+within_bounds_oobX_test() ->
+    X = 3,
+    MaxX = 2,
+    Y = 3,
+    MaxY = 3,
+    R = within_bounds(X, MaxX, Y, MaxY),
+    ?assertEqual({error, out_of_bounds}, R).
+
+within_bounds_oobY_test() ->
+    X = 3,
+    MaxX = 3,
+    Y = 3,
+    MaxY = 2,
+    R = within_bounds(X, MaxX, Y, MaxY),
+    ?assertEqual({error, out_of_bounds}, R).
+
+within_bounds_negative_test() ->
+    X = -1,
+    MaxX = 3,
+    Y = 3,
+    MaxY = 3,
+    R = within_bounds(X, MaxX, Y, MaxY),
+    ?assertEqual({error, out_of_bounds}, R).
