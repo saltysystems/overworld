@@ -10,11 +10,15 @@
     account_by_email/1,
     account_login/2,
     create_player/5,
+    mob_by_name/1,
+    mob_instance/1,
     delete_player/2,
     delete_orphaned_player/1,
     player_by_name/1,
     player_inventory/1,
     player_items_have_action/2,
+    player_shadow/1,
+    player_unshadow/4,
     is_valid_player/1,
     is_valid_player_account/2,
     is_player_alive/1,
@@ -24,7 +28,6 @@
     get_item/1,
     item_to_player/2,
     item_from_player/2,
-    %purge_item_from_players/1,
     get_all_item_owners/1,
     salt_and_hash/2
 ]).
@@ -78,6 +81,29 @@ account_by_email(Email) ->
     end,
     mnesia:activity(transaction, Fun).
 
+-spec mob_instance(list()) -> tuple() | {error, atom()}.
+mob_instance(Name) ->
+    case mob_by_name(Name) of
+        {error, _} ->
+            [];
+        M ->
+            {io_lib:format("~s_~p", [M#goblet_mob.name, rand:uniform(1024)]),
+                M#goblet_mob.health, M#goblet_mob.energy,
+                M#goblet_mob.flags, M#goblet_mob.inventory}
+    end.
+
+-spec mob_by_name(list()) -> tuple() | {error, atom()}.
+mob_by_name(Name) ->
+    Fun = fun() ->
+        case mnesia:read({goblet_mob, Name}) of
+            [Player] ->
+                Player;
+            [] ->
+                {error, no_such_mob}
+        end
+    end,
+    mnesia:activity(transaction, Fun).
+
 -spec player_by_name(list()) -> tuple() | {error, atom()}.
 player_by_name(Name) ->
     Fun = fun() ->
@@ -88,6 +114,39 @@ player_by_name(Name) ->
                 {error, no_such_player}
         end
     end,
+    mnesia:activity(transaction, Fun).
+
+-spec player_shadow(list()) -> tuple() | {error, atom()}.
+player_shadow(Name) ->
+    case player_by_name(Name) of
+        {error, _} ->
+            [];
+        P ->
+            {P#goblet_player.name, P#goblet_player.health,
+                P#goblet_player.energy, P#goblet_player.flags,
+                P#goblet_player.inventory}
+    end.
+
+-spec player_unshadow(list(), pos_integer(), pos_integer(), list()) ->
+    ok | {error, atom()}.
+player_unshadow(Name, Health, Energy, Flags) ->
+    Fun =
+        fun() ->
+            case mnesia:read({goblet_player, Name}) of
+                [] ->
+                    {error, no_such_player};
+                [Player] ->
+                    mnesia:write(
+                        goblet_player,
+                        Player#goblet_player{
+                            health = Health,
+                            energy = Energy,
+                            flags = Flags
+                        },
+                        write
+                    )
+            end
+        end,
     mnesia:activity(transaction, Fun).
 
 -spec player_inventory(list()) -> list() | {error, atom()}.
@@ -145,7 +204,8 @@ create_player(Name, Colors, Symbols, Role, Account) ->
                         symbols = Symbols,
                         role = Role,
                         health = 100,
-                        status_effects = [],
+                        energy = 100,
+                        flags = [],
                         inventory = []
                     },
                     write
