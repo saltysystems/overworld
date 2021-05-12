@@ -18,7 +18,8 @@
     get_tile_all/2,
     get_tile_occupant/2,
     get_tile_reachable/4,
-    get_unoccupied_tile/1,
+    get_first_unoccupied_tile/1,
+    get_random_unoccupied_tile/1,
     get_last_tile/1
 ]).
 
@@ -294,19 +295,41 @@ get_tile_reachable(_T1, _T2, _Board, _MovementFun, _CanMove) ->
     false.
 
 %----------------------------------------------------------------------
-% @doc Get a random floor tile who has no occupant. Recurse through the list
-%      until an unoccupied tile can be found. Crash horribly if there are no
-%      free tiles.
+% @doc Get the first floor tile which has no occupant. Recurse through the
+%      list until an unoccupied tile can be found. Crash horribly if there
+%      are no free tiles.
 % @end
 %----------------------------------------------------------------------
--spec get_unoccupied_tile(list()) -> tuple().
-get_unoccupied_tile(TileList) ->
+-spec get_first_unoccupied_tile(list()) -> tuple().
+get_first_unoccupied_tile(TileList) ->
     {_, Tile, NewTileList} = lists:keytake(?FLOOR, #tile.type, TileList),
     case Tile#tile.occupant of
         [] ->
             Tile#tile.coordinates;
         _ ->
-            get_unoccupied_tile(NewTileList)
+            get_first_unoccupied_tile(NewTileList)
+    end.
+
+%----------------------------------------------------------------------
+% @doc Get a random floor tile who has no occupant. Recurse through the list
+%      until an unoccupied tile can be found. Crash horribly if there are no
+%      free tiles.
+% @end
+%----------------------------------------------------------------------
+-spec get_random_unoccupied_tile(list()) -> tuple().
+get_random_unoccupied_tile(TileList) ->
+    % Sort the tile list randomly. Stack overflo like a pro
+    RList = [
+        X
+     || {_, X} <- lists:sort([{random:uniform(), N} || N <- TileList])
+    ],
+    {_, Tile, NewTileList} = lists:keytake(?FLOOR, #tile.type, RList),
+    case Tile#tile.occupant of
+        [] ->
+            Tile#tile.coordinates;
+        _ ->
+            % No need to sort the list another time
+            get_first_unoccupied_tile(NewTileList)
     end.
 
 %----------------------------------------------------------------------
