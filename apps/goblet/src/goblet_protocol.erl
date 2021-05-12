@@ -2,7 +2,6 @@
 
 -export([
     decode/2,
-    encode/2,
     pack_match/1,
     account_new/1,
     account_login/1,
@@ -84,7 +83,7 @@ decode(<<?MATCH_START:16, T/binary>>, State) ->
     match_start(T, State);
 decode(<<?MATCH_STATE:16, _T/binary>>, State) ->
     logger:notice("Match state request from ~p", [State#session.email]);
-    %match_info(T, State);
+%match_info(T, State);
 decode(<<?MATCH_PREPARE:16, T/binary>>, State) ->
     logger:notice("Match prepare packet from ~p", [State#session.email]),
     match_prepare(T, State);
@@ -97,21 +96,6 @@ decode(<<OpCode:16, _T/binary>>, State) ->
         State#session.email
     ]),
     {ok, State}.
-
-%%-------------------------------------------------------------------------
-%% @doc Encode a message to send to the player or the match
-%% @end
-%%-------------------------------------------------------------------------
-encode(match_state_resp, _Results) ->
-    %Msg = goblet_pb:encode_msg(#'MatchStateResp'....
-    Msg = <<>>,
-    OpCode = <<?MATCH_STATE:16>>,
-    [OpCode, Msg];
-encode(UnknownMsg, _Results) ->
-    logger:warning(
-        "Requested encoding of an unknown or unimplemented message type: ~p",
-        [UnknownMsg]
-    ).
 
 %%----------------------------------------------------------------------------
 %% @doc Encodes a log message to be sent back to the client
@@ -499,9 +483,10 @@ match_decide(Message, State) when State#session.authenticated =:= true ->
     MatchID = Match#'MatchDecideReq'.matchid,
     Player = Match#'MatchDecideReq'.player,
     Actions = action_to_tuple(Player, Match#'MatchDecideReq'.actions),
+    Inv = goblet_db:player_inventory(Player),
     Email = State#session.email,
-    % Let's lay out all of the things that need to be true for an action to
-    % go through.
+    % Let's lay out all of the things that need to be true for an action
+    % to go through.
     %   1. Must be a valid player account
     %   2. Player must be in the match
     %   3. Player must be alive currently
@@ -514,7 +499,7 @@ match_decide(Message, State) when State#session.authenticated =:= true ->
                 fun() -> check_valid_player_account(Player, Email) end,
                 %fun() -> check_valid_match_player(Player, Email) end, %BROKEN
                 fun() -> goblet_game:check_player_alive(Player) end,
-                fun() -> goblet_game:check_valid_type(Actions) end,
+                fun() -> goblet_game:check_valid_items(Actions, Inv) end,
                 fun() ->
                     goblet_game:check_valid_target(Actions, MatchID)
                 end
@@ -602,8 +587,8 @@ player_list(_Message, State) ->
     pos_integer()
 ) -> ok.
 match_state_update(
-    Tiles,
-    Actions,
+    _Tiles,
+    _Actions,
     MatchState,
     PlayerList,
     ReadyPlayers,
@@ -611,7 +596,7 @@ match_state_update(
 ) ->
     %T1 = [pack_tile(X) || X <- Tiles],
     %A1 = [pack_action(X) || X <- Actions],
-    
+
     T1 = [],
     A1 = [],
 
@@ -667,26 +652,25 @@ pack_match({Id, State, Players, PlayersMax, StartTime, Mode, Extra}) ->
         extra = Extra
     }.
 
+%pack_tile({tile, X, Y, _Occupant, _Type, _Flags}) ->
+%    #'MatchStateResp.Tile'{
+%        x = X,
+%        y = Y,
+%        type = " ",
+%        occupant = " ",
+%        flags = " "
+%    }.
 %
-pack_tile({tile, X, Y, _Occupant, _Type, _Flags}) ->
-    #'MatchStateResp.Tile'{
-        x = X,
-        y = Y,
-        type = " ",
-        occupant = " ",
-        flags = " "
-    }.
-
-pack_action([Phase, Name, Type, XFrom, YFrom, XTo, YTo]) ->
-    #'MatchStateResp.Action'{
-        phase = Phase,
-        name = Name,
-        type = Type,
-        x_from = XFrom,
-        y_from = YFrom,
-        x_to = XTo,
-        y_to = YTo
-    }.
+%pack_action([Phase, Name, Type, XFrom, YFrom, XTo, YTo]) ->
+%    #'MatchStateResp.Action'{
+%        phase = Phase,
+%        name = Name,
+%        type = Type,
+%        x_from = XFrom,
+%        y_from = YFrom,
+%        x_to = XTo,
+%        y_to = YTo
+%    }.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Check the validity of various parameters                              %
@@ -734,9 +718,9 @@ action_to_tuple(Player, L) ->
 action_to_tuple(_Player, [], Acc) ->
     Acc;
 action_to_tuple(Player, [H | T], Acc) ->
-    Type = H#'MatchDecideReq.Action'.type,
+    Item = H#'MatchDecideReq.Action'.item,
     {X, Y} = {H#'MatchDecideReq.Action'.x, H#'MatchDecideReq.Action'.y},
-    action_to_tuple(T, [{Player, Type, {X, Y}} | Acc]).
+    action_to_tuple(T, [{Player, Item, {X, Y}} | Acc]).
 
 default_handler(State) ->
     logger:error("Something wont awry with the session.."),
