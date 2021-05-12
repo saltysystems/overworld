@@ -8,9 +8,10 @@
 -export([
     new_player/5,
     initialize_board/3,
-    calculate_round/2,
+    initialize_mobs/2,
+    calculate_round/1,
     normalize_actions/1,
-    check_valid_actions/1,
+    check_valid_items/2,
     check_player_alive/1,
     check_valid_target/2
 ]).
@@ -19,6 +20,7 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -record(action, {ap, name, from, target}).
+-record(gamestate, {mobs, players, actions, board}).
 
 %======================================================================
 % Public API
@@ -47,11 +49,12 @@ new_player(Name, Colors, Symbols, Role, Account) ->
 initialize_board(X, Y, Players) ->
     Board = goblet_board:new(X, Y),
     initialize_board(Board, Players).
+%TODO: Add mob initialization
 
 initialize_board(Board, []) ->
     Board;
 initialize_board(Board, [Player | Rest]) ->
-    Coords = goblet_board:get_unoccupied_tile(Board),
+    Coords = goblet_board:get_first_unoccupied_tile(Board),
     case goblet_board:add_pawn(Player, Coords, Board) of
         {error, Board} ->
             Board;
@@ -59,20 +62,68 @@ initialize_board(Board, [Player | Rest]) ->
             initialize_board(B1, Rest)
     end.
 
-calculate_round(_Actions, Board) ->
-    Board.
-
-check_valid_actions([]) ->
-    ok;
-check_valid_actions([{Player, Type, {_X, _Y}} | T]) ->
-    case goblet_db:player_items_have_action(Player, Type) of
-        [] ->
-            {error, invalid_action};
-        {error, E} ->
-            {error, E};
-        _ ->
-            check_valid_actions(T)
+initialize_mobs(Board, [Mob | Rest]) ->
+    Coords = goblet_board:get_random_unoccupied_tile(Board),
+    case goblet_board:add_pawn(Mob, Coords, Board) of
+        {error, Board} ->
+            Board;
+        B1 ->
+            initialize_board(B1, Rest)
     end.
+
+calculate_round({Actions, Mobs, Players, Board}) ->
+    % TODO: Need to run the pipeline for EACH moment in the round.
+    G0 = #gamestate{
+        actions = Actions,
+        mobs = Mobs,
+        players = Players,
+        board = Board
+    },
+    GN = goblet_util:pipeline(G0, [
+        fun(S) -> cleanup_dead(S, mobs) end,
+        fun(S) -> cleanup_dead(S, players) end,
+        fun(S) -> update_status_effects(S) end,
+        fun(S) -> regenerate_stats(S) end,
+        fun(S) -> process_actions(S) end
+    ]),
+    NewPlayerNames = update_players(GN),
+    % Then return the updated gamestate to the caller
+    {[], GN#gamestate.mobs, NewPlayerNames, GN#gamestate.board}.
+
+% Stubs
+cleanup_dead(S, _Any) ->
+    S.
+update_status_effects(S) ->
+    S.
+regenerate_stats(S) ->
+    S.
+process_actions(S) ->
+    S.
+update_players(#gamestate{players = _Players} = S) ->
+    S.
+
+check_valid_items([], _Inventory) ->
+    ok;
+check_valid_items([{Player, Item, {_X, _Y}} | T], Inventory) ->
+    Inv = goblet_db:player_inventory(Player),
+    case lists:member(Item, Inv) of
+        false ->
+            {error, invalid_action};
+        _ ->
+            check_valid_items(T, Inventory)
+    end.
+
+%check_valid_actions([]) ->
+%    ok;
+%check_valid_actions([{Player, Type, {_X, _Y}} | T]) ->
+%    case goblet_db:player_items_have_action(Player, Type) of
+%        [] ->
+%            {error, invalid_action};
+%        {error, E} ->
+%            {error, E};
+%        _ ->
+%            check_valid_actions(T)
+%    end.
 
 check_valid_target([], _MatchID) ->
     ok;
