@@ -5,11 +5,12 @@
 -behaviour(gen_statem).
 
 % Public API
--export([start/2, 
-        player_ready/2, 
-        player_decision/3, 
-        get_board_state/1, 
-        get_players/1
+-export([
+    start/2,
+    player_ready/2,
+    player_decision/3,
+    get_board_state/1,
+    get_players/1
 ]).
 
 % Required gen_statem callbacks
@@ -26,7 +27,7 @@
 
 -define(SERVER(Name), {via, gproc, {n, l, {?MODULE, Name}}}).
 
--record(match, {id, playerlist, readyplayers, board, actions = []}).
+-record(match, {id, mobs, playerlist, readyplayers, board, actions = []}).
 
 % Public API
 start(PlayerList, MatchID) ->
@@ -58,7 +59,8 @@ init({PlayerList, MatchID}) ->
         readyplayers = [],
         board = goblet_game:initialize_board(1, 1, PlayerList)
     },
-    {ok, prepare_phase, M}.
+    M0 =
+        {ok, prepare_phase, M}.
 
 callback_mode() ->
     state_functions.
@@ -158,7 +160,16 @@ execution_phase(
     Data
 ) ->
     #match{id = ID, board = B0, actions = A, playerlist = P} = Data,
-    B1 = goblet_game:calculate_round(A, B0),
+    % Create a "shadow" of the player that contains a subset of the
+    % information needed to do round calculations and may go through many
+    % perturbations before settling. This should save potentially many
+    % database calls by working only in process memory, and make the
+    % transaction atomic.
+    PlayerShadows = [goblet_db:player_shadow(X) || X <- P],
+    Mobs = [],
+    {_A1, _M1, P1, B1} = goblet_game:calculate_round(
+        {A, Mobs, PlayerShadows, B0}
+    ),
     goblet_protocol:match_state_update(B1, [], 'EXECUTE', P, [], ID),
     logger:notice("(Execute) 10000ms have elapsed. -> Decison"),
     TimeOut = {{timeout, decide}, 20000, execute},
