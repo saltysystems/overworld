@@ -218,7 +218,7 @@ message MatchPrepResp {
 
 message MatchDecideReq {
     message Action {
-        required string type = 1;
+        required string item = 1;
         required int32  x = 2;
         required int32  y = 3;
     }
