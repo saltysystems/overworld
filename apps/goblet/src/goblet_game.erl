@@ -21,6 +21,8 @@
 
 -record(action, {ap, name, from, target}).
 -record(gamestate, {mobs, players, actions, board}).
+%TODO - maybe use a record
+%-record(entity, {name, health, energy, flags, inventory}).
 
 %======================================================================
 % Public API
@@ -79,28 +81,73 @@ calculate_round({Actions, Mobs, Players, Board}) ->
         players = Players,
         board = Board
     },
+    % Clean up dead players at the beginning of the round as a maintenance
+    % task of sorts - the clients should have seen Health go to 0 or less
+    % and played a destruction animation appropriately.
     GN = goblet_util:pipeline(G0, [
-        fun(S) -> cleanup_dead(S, mobs) end,
-        fun(S) -> cleanup_dead(S, players) end,
+        fun(S) -> cleanup_dead(S) end,
+        fun(S) -> cleanup_dead(S) end,
         fun(S) -> update_status_effects(S) end,
-        fun(S) -> regenerate_stats(S) end,
+        fun(S) -> regenerate_energy(S) end,
         fun(S) -> process_actions(S) end
     ]),
     NewPlayerNames = update_players(GN),
     % Then return the updated gamestate to the caller
     {[], GN#gamestate.mobs, NewPlayerNames, GN#gamestate.board}.
 
-% Stubs
-cleanup_dead(S, _Any) ->
-    S.
+cleanup_dead(S) ->
+    Mobs = S#gamestate.mobs,
+    Players = S#gamestate.players,
+    DeadMobs = cleanup_dead(S#gamestate.mobs, []),
+    DeadPlayers = cleanup_dead(S#gamestate.players, []),
+    S#gamestate{mobs = Mobs -- DeadMobs, players = Players -- DeadPlayers}.
+
+cleanup_dead([], Acc) ->
+    Acc;
+cleanup_dead([{_N, Health, _E, _F, _I} = H | T], Acc) when Health =< 0 ->
+    cleanup_dead(T, [H | Acc]);
+cleanup_dead([_H | T], Acc) ->
+    cleanup_dead(T, Acc).
+
 update_status_effects(S) ->
+    % stubby stub
     S.
-regenerate_stats(S) ->
-    S.
+
+regenerate_energy(S) ->
+    Mobs = regenerate_energy(S#gamestate.mobs, []),
+    Players = regenerate_energy(S#gamestate.players, []),
+    S#gamestate{mobs = Mobs, players = Players}.
+
+regenerate_energy([], Acc) ->
+    Acc;
+regenerate_energy([{_N, _H, E, _F, _I} = H | T], Acc) when E >= 100 ->
+    regenerate_energy(T, [H | Acc]);
+regenerate_energy([{N, H, Energy, F, I} | T], Acc) ->
+    % Cap energy at 100
+    E =
+        if
+            Energy + 10 > 100 ->
+                100;
+            true ->
+                Energy
+        end,
+    regenerate_energy(T, [{N, H, E, F, I} | Acc]).
+
+% the big kahuna
 process_actions(S) ->
     S.
-update_players(#gamestate{players = _Players} = S) ->
-    S.
+
+
+update_players(#gamestate{players = Players}) ->
+    % commit each player's updates to the database
+    Results = [
+        {Name, goblet_db:player_unshadow(Name, Health, Energy, Flags)}
+     || {Name, Health, Energy, Flags, _I} <- Players
+    ],
+    % Then return the names of the players
+    % (note this effectively throws away the result of the side effects.
+    % might want to check for errors in the future.)
+    [Name || {Name, _} <- Results].
 
 check_valid_items([], _Inventory) ->
     ok;
