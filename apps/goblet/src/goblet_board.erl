@@ -321,7 +321,7 @@ get_random_unoccupied_tile(TileList) ->
     % Sort the tile list randomly. Stack overflo like a pro
     RList = [
         X
-     || {_, X} <- lists:sort([{random:uniform(), N} || N <- TileList])
+     || {_, X} <- lists:sort([{rand:uniform(), N} || N <- TileList])
     ],
     {_, Tile, NewTileList} = lists:keytake(?FLOOR, #tile.type, RList),
     case Tile#tile.occupant of
