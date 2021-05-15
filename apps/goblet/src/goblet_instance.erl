@@ -59,8 +59,7 @@ init({PlayerList, MatchID}) ->
         readyplayers = [],
         board = goblet_game:initialize_board(1, 1, PlayerList)
     },
-    M0 =
-        {ok, prepare_phase, M}.
+    {ok, prepare_phase, M}.
 
 callback_mode() ->
     state_functions.
@@ -167,7 +166,7 @@ execution_phase(
     % transaction atomic.
     PlayerShadows = [goblet_db:player_shadow(X) || X <- P],
     Mobs = [],
-    {_A1, _M1, P1, B1} = goblet_game:calculate_round(
+    {_A1, _M1, _P1, B1} = goblet_game:calculate_round(
         {A, Mobs, PlayerShadows, B0}
     ),
     goblet_protocol:match_state_update(B1, [], 'EXECUTE', P, [], ID),
