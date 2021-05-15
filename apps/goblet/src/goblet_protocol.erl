@@ -493,6 +493,8 @@ match_decide(Message, State) when State#session.authenticated =:= true ->
     %   4. Player must have an item with that action
     %   5. Action must have a valid target
     %   6. The action must not occur out of bounds
+    %   TODO: Validate that the target is the correct type of target (coords
+    %   vs object name)
     IsValid =
         case
             goblet_util:run_checks([
@@ -719,8 +721,19 @@ action_to_tuple(_Player, [], Acc) ->
     Acc;
 action_to_tuple(Player, [H | T], Acc) ->
     Item = H#'MatchDecideReq.Action'.item,
-    {X, Y} = {H#'MatchDecideReq.Action'.x, H#'MatchDecideReq.Action'.y},
-    action_to_tuple(T, [{Player, Item, {X, Y}} | Acc]).
+    Coordinates =
+        {H#'MatchDecideReq.Action'.x, H#'MatchDecideReq.Action'.y},
+    Target = H#'MatchDecideReq.Action'.target,
+    % First check if the target type is "Target", for tracking weapons.
+    % Otherwise use coordinates.
+    TargetType =
+        case Target of
+            undefined ->
+                Coordinates;
+            _ ->
+                Target
+        end,
+    action_to_tuple(T, [{Player, Item, TargetType} | Acc]).
 
 default_handler(State) ->
     logger:error("Something wont awry with the session.."),
@@ -908,7 +921,7 @@ match_join_test() ->
         symbol = [1, 3],
         role = 'DESTROYER'
     }),
-    {[RespOp3, _RespMsg3], _State} = goblet_protocol:player_new(
+    {[RespOp3, _RespMsg3], _} = goblet_protocol:player_new(
         Message3,
         State
     ),
@@ -924,7 +937,7 @@ match_join_test() ->
         matchid = MatchID
     }),
 
-    {[RespOp4, RespMsg4], _State} = goblet_protocol:match_join(
+    {[RespOp4, RespMsg4], _} = goblet_protocol:match_join(
         JoinMsg2,
         State
     ),
@@ -934,7 +947,7 @@ match_join_test() ->
     ?assertEqual('OK', RespObj#'ResponseObject'.status),
     match_deregister_session(MatchID),
 
-    {[RespOp5, RespMsg5], _State} = goblet_protocol:match_join(
+    {[RespOp5, RespMsg5], _} = goblet_protocol:match_join(
         JoinMsg3,
         State
     ),
