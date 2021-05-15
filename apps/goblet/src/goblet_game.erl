@@ -343,7 +343,7 @@ phases_test() ->
 
 process_action_list_test() ->
     % Items from the db..
-    % "Missile MK I', "Repair MK I", "Beam MK I", "Scanner MK I",
+    % "Missile MK I", "Repair MK I", "Beam MK I", "Scanner MK I",
     % "Reactor MK I",
     % First create the list of actions as it comes from the instance server.
     P1 = [
