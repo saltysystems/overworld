@@ -11,6 +11,7 @@
     initialize_mobs/2,
     calculate_round/1,
     normalize_actions/1,
+    phases/1,
     check_valid_items/2,
     check_player_alive/1,
     check_valid_target/2
@@ -19,7 +20,7 @@
 -include_lib("kernel/include/logger.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
--record(action, {ap, name, from, target}).
+-record(action, {type, ap, who, target}).
 -record(gamestate, {mobs, players, actions, board}).
 %TODO - maybe use a record
 %-record(entity, {name, health, energy, flags, inventory}).
@@ -135,8 +136,38 @@ regenerate_energy([{N, H, Energy, F, I} | T], Acc) ->
 
 % the big kahuna
 process_actions(S) ->
-    S.
+    Actions = process_action_list(S#gamestate.actions),
+    Phases = phases(lists:flatten(Actions)),
+    % Once we have phases, start processing them and build the "playlist" for
+    % the client
+    process_phases(Phases).
 
+process_phases(_Phases) ->
+    ok.
+%TODO: Process the phase list, which is a list of lists.
+%      Need to process each phase, calculate damage/heals/status
+%      then build the result list for the clients.
+
+process_action_list(List) ->
+    process_action_list(List, []).
+process_action_list([], Acc) ->
+    Acc;
+process_action_list([PlayersActions | Rest], Acc) ->
+    % For each player in the list, convert the actions to a record
+    R = make_action_record(PlayersActions),
+    % Then normalize the actions
+    N = normalize_actions(R),
+    % Then call recursively with the rest
+    process_action_list(Rest, [N | Acc]).
+
+make_action_record(Actions) ->
+    make_action_record(Actions, []).
+make_action_record([], Acc) ->
+    Acc;
+make_action_record([{Player, Item, Target} | Rest], Acc) ->
+    {Type, AP} = goblet_db:item_type_and_ap(Item),
+    Action = #action{type = Type, ap = AP, who = Player, target = Target},
+    make_action_record(Rest, [Action | Acc]).
 
 update_players(#gamestate{players = Players}) ->
     % commit each player's updates to the database
@@ -197,15 +228,8 @@ check_player_alive(Player) ->
         {error, E} -> {error, E}
     end.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%  Internal Functions                                                 %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 normalize_actions(ActionList) ->
-    % Take a list of actions for a player, e.g.
-    %    [{1,shoot}, {2, move, {4, laz0r}]
-    % and then normalize it such that the AP costs are translated into Phases:
-    %  [{1,shoot}, {3, move}, {7, laz0r}]
+    % First we need to split the list by Who committed the action
     normalize_actions(ActionList, []).
 
 normalize_actions([], Acc) ->
@@ -224,8 +248,8 @@ normalize_actions([H | T], [AccH | AccT]) ->
 % The ActionList must already do the math needed to handle this
 phases(ActionList) ->
     % Get the largest key
-    % AP must be the first item in the record, hence 2nd key
-    S = lists:keysort(2, ActionList),
+    % AP must be the second item in the record, hence 3rd key
+    S = lists:keysort(3, ActionList),
     % Get the last element of the list
     MaxPhase = lists:last(S),
     % Recurse through the phases, pairing up matching keys into the same
@@ -275,9 +299,9 @@ is_valid_role(Role) ->
 %======================================================================
 normalize_actions_test() ->
     Actions = [
-        #action{name = shoot, ap = 2, from = "player1", target = "player2"},
-        #action{name = move, ap = 1, from = "player1", target = {0, 0}},
-        #action{name = laz0r, ap = 6, from = "player2", target = "player1"}
+        #action{type = shoot, ap = 2, who = "player1", target = "player2"},
+        #action{type = move, ap = 1, who = "player1", target = {0, 0}},
+        #action{type = laz0r, ap = 6, who = "player2", target = "player1"}
     ],
     % Convert AP to Phases
     MP = normalize_actions(Actions),
@@ -286,32 +310,60 @@ normalize_actions_test() ->
 
 phases_test() ->
     P1_Actions = [
-        #action{name = shoot, ap = 2, from = "player1", target = "player2"},
-        #action{name = move, ap = 1, from = "player1", target = {0, 0}},
-        #action{name = laz0r, ap = 6, from = "player1", target = "player2"}
+        #action{type = shoot, ap = 2, who = "player1", target = "player2"},
+        #action{type = move, ap = 1, who = "player1", target = {0, 0}},
+        #action{type = laz0r, ap = 6, who = "player1", target = "player2"}
     ],
     P2_Actions = [
-        #action{name = move, ap = 1, from = "player2", target = {1, 1}},
-        #action{name = shoot, ap = 2, from = "player2", target = "player1"},
+        #action{type = move, ap = 1, who = "player2", target = {1, 1}},
+        #action{type = shoot, ap = 2, who = "player2", target = "player1"},
         #action{
-            name = shield,
+            type = shield,
             ap = 3,
-            from = "player2",
+            who = "player2",
             target = "player1"
         },
         #action{
-            name = missile,
+            type = missile,
             ap = 3,
-            from = "player2",
+            who = "player2",
             target = "player1"
         }
     ],
     % Convert AP to Phases
     MP = normalize_actions(P1_Actions),
     MP2 = normalize_actions(P2_Actions),
-    Collected = MP ++ MP2,
     % Group the phases
-    phases(Collected).
+    [P1, P2, P3, P4, P5] = phases(MP ++ MP2),
+    ?assertEqual(1, length(P1)),
+    ?assertEqual(1, length(P2)),
+    ?assertEqual(2, length(P3)),
+    ?assertEqual(1, length(P4)),
+    ?assertEqual(2, length(P5)).
+
+process_action_list_test() ->
+    % Items from the db..
+    % "Missile MK I', "Repair MK I", "Beam MK I", "Scanner MK I",
+    % "Reactor MK I",
+    % First create the list of actions as it comes from the instance server.
+    P1 = [
+        {"Chester", "Reactor MK I", {3, 4}},
+        {"Chester", "Beam MK I", {1, 2}}
+    ],
+    P2 = [{"Tad", "Beam MK I", {3, 4}}, {"Tad", "Repair MK I", "Chester"}],
+    P3 = [
+        {"Ralph", "Scanner MK I", {1, 1}},
+        {"Ralph", "Scanner MK I", {1, 2}}
+    ],
+    R = process_action_list([P1, P2, P3]),
+    ?assertEqual(length(R), 3),
+    % Now process into phases
+    [R1, R2, R3, R4, R5] = phases(lists:flatten(R)),
+    ?assertEqual(1, length(R1)),
+    ?assertEqual(2, length(R2)),
+    ?assertEqual(1, length(R3)),
+    ?assertEqual(1, length(R4)),
+    ?assertEqual(1, length(R5)).
 
 within_bounds_ok_test() ->
     X = 3,
