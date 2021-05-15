@@ -494,7 +494,8 @@ match_decide(Message, State) when State#session.authenticated =:= true ->
     %   5. Action must have a valid target
     %   6. The action must not occur out of bounds
     %   TODO: Validate that the target is the correct type of target (coords
-    %   vs object name)
+    %   vs object name). If there's no coordinates and no target, must throw
+    %   an error.
     IsValid =
         case
             goblet_util:run_checks([
