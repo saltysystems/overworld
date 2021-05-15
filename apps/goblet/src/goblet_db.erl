@@ -26,6 +26,7 @@
     create_item/8,
     delete_item/1,
     get_item/1,
+    item_type_and_ap/1,
     item_to_player/2,
     item_from_player/2,
     get_all_item_owners/1,
@@ -364,6 +365,15 @@ get_item(Item) ->
             Other ->
                 Other
         end
+    end,
+    mnesia:activity(transaction, Fun).
+
+-spec item_type_and_ap(list()) -> {pos_integer(), pos_integer()}.
+item_type_and_ap(Item) ->
+    Fun = fun() ->
+        [I] = mnesia:read({goblet_item, Item}),
+        % lets just crash as early as possible
+        {I#goblet_item.action, I#goblet_item.ap}
     end,
     mnesia:activity(transaction, Fun).
 
