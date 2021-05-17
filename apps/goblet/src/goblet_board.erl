@@ -13,6 +13,7 @@
     add_pawn/3,
     rm_pawn/2,
     mv_pawn/3,
+    get_pawn/2,
     reveal_tile/3,
     hide_tile/3,
     get_tile_all/2,
@@ -22,6 +23,8 @@
     get_random_unoccupied_tile/1,
     get_last_tile/1
 ]).
+
+-include_lib("eunit/include/eunit.hrl").
 
 -type tile_coords() :: {integer(), integer()}.
 -type tile_type() :: w | f.
@@ -216,6 +219,16 @@ mv_pawn(CoordinatesFrom, CoordinatesTo, TileList) ->
         _ ->
             {error, TileList}
     end.
+
+%---------------------------------------------------------------------------
+% @doc Moves any occupant of the first argument to the position of the
+%      second argument. Returns an updated list.
+% @end
+%---------------------------------------------------------------------------
+-spec get_pawn(list(), list()) -> tile_coords().
+get_pawn(Name, TileList) ->
+    Tile = lists:keyfind(Name, #tile.occupant, TileList),
+    Tile#tile.coordinates.
 
 %---------------------------------------------------------------------------
 % @doc Adds one unique instance of a playerID to this tile. Does not
@@ -625,3 +638,8 @@ reducedWang(RightTile, BelowTile) ->
         % everything else
         _ -> reducedWang(RightTile, BelowTile)
     end.
+
+
+% Unit tests
+
+
