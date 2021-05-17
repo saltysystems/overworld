@@ -10,8 +10,6 @@
     initialize_board/3,
     initialize_mobs/2,
     calculate_round/1,
-    normalize_actions/1,
-    phases/1,
     check_valid_items/2,
     check_player_alive/1,
     check_valid_target/2
@@ -85,8 +83,7 @@ calculate_round({Actions, Mobs, Players, Board}) ->
     % Clean up dead players at the beginning of the round as a maintenance
     % task of sorts - the clients should have seen Health go to 0 or less
     % and played a destruction animation appropriately.
-    GN = goblet_util:pipeline(G0, [
-        fun(S) -> cleanup_dead(S) end,
+    {_Resp, GN} = goblet_util:pipeline(G0, [
         fun(S) -> cleanup_dead(S) end,
         fun(S) -> update_status_effects(S) end,
         fun(S) -> regenerate_energy(S) end,
@@ -110,6 +107,16 @@ cleanup_dead([{_N, Health, _E, _F, _I} = H | T], Acc) when Health =< 0 ->
 cleanup_dead([_H | T], Acc) ->
     cleanup_dead(T, Acc).
 
+cleanup_dead_test() -> 
+    P0 = [ 
+            {"Chester", 100, 100, [], []},
+            {"Leser", -10, 100, [], []},
+            {a_mob_01, 0, 10, [], []}
+    ],
+    Deads = cleanup_dead(P0, []),
+    [{Name, _, _, _, _}] = P0 -- Deads,
+    ?assertEqual("Chester", Name).
+
 update_status_effects(S) ->
     % stubby stub
     S.
@@ -130,24 +137,116 @@ regenerate_energy([{N, H, Energy, F, I} | T], Acc) ->
             Energy + 10 > 100 ->
                 100;
             true ->
-                Energy
+                Energy + 10
         end,
     regenerate_energy(T, [{N, H, E, F, I} | Acc]).
 
+regenerate_energy_test() ->
+    P0 = [ 
+            {"Chester", 100, 100, [], []},
+            {a_mob_01, 40, 10, [], []}
+    ],
+    [H|T] = lists:reverse(regenerate_energy(P0, [])),
+    {_,_,E0,_,_} = H,
+    [{_,_,E1,_,_}] = T,
+    ?assertEqual(100, E0),
+    ?assertEqual(20, E1).
+    
 % the big kahuna
 process_actions(S) ->
     Actions = process_action_list(S#gamestate.actions),
     Phases = phases(lists:flatten(Actions)),
     % Once we have phases, start processing them and build the "playlist" for
     % the client
-    process_phases(Phases).
+    % Can also clear the actions since we broke it out into the phase list
+    % so there's no need to pass around extraneous data
+    process_phases(Phases, S#gamestate{actions=[]}).
 
-process_phases(_Phases) ->
-    ok.
-%TODO: Process the phase list, which is a list of lists.
-%      Need to process each phase, calculate damage/heals/status
-%      then build the result list for the clients.
+process_phases([], Gamestate) ->
+    Gamestate;
+process_phases(Phases, Gamestate) ->
+    % Prob could replace with lists:foldl  ?
+    process_phases(Phases, Gamestate, []).
 
+process_phases([], Gamestate, Response) ->
+    % Order needs to be preserved, so reverse the list.
+    {lists:reverse(Response), Gamestate};
+process_phases([Head|Tail], Gamestate, Response) ->
+    Result = update_gamestate(Head, Gamestate),
+    process_phases(Tail, Gamestate, [Result|Response]).
+
+    
+update_gamestate([], G) ->
+    % return new gamestate
+    G;
+update_gamestate([H|T], G) ->
+    case H#action.type of
+        move ->
+            Player = H#action.who,
+            % Deduct energy as appropriate
+            % TODO: Prototype is AP * 10 for energy cost
+            P1 = deduct_energy(Player, #action.ap * 10, G#gamestate.players),
+            G1 = G#gamestate{players=P1},
+            % TODO: Calculate damage if player goes under 0 energy
+            % Update the board
+            Board = G1#gamestate.board,
+            Coords = goblet_board:get_pawn(Player, Board),
+            {ok, NewBoard} = goblet_board:mv_pawn(Coords, H#action.target, Board),
+            G2 = G1#gamestate{board=NewBoard},
+            update_gamestate(T, G2);
+        Type ->
+            % Do nothing if the action type isn't recognized.
+            logger:warning("Action '~p' not understood. Cowardly doing nothing", [Type]),
+            update_gamestate(T, G)
+    end.
+
+update_gamestate_test() ->
+    P0 = [ 
+            {"Chester", 100, 100, [], []}
+        ],
+    M0 = [
+            {a_mob_01, 40, 10, [], []}
+    ],
+    A0 = #action{type=move, ap=3, who="Chester", target={1,3}},
+    B0 = initialize_board(1, 1, ["Chester"]),
+    % mobs, players, actions, board
+    G0 = #gamestate{mobs=M0, players=P0, actions=A0, board=B0},
+    G1 = update_gamestate([A0], G0),
+    Location = goblet_board:get_pawn("Chester", G1#gamestate.board),
+    ?assertEqual({1,3}, Location).
+    
+    
+deduct_energy(Name, Cost, PlayerList) ->
+    % If we can't find the player we should probably just crash.
+    {N,H,E,F,I} = lists:keyfind(Name, 1, PlayerList),
+    {E1, H1} = 
+        if
+            E - Cost < 0 ->
+                % TODO: Player should suffer some damage, let's put a sample
+                % val in for now until it's threaded through appropriately.
+                % Also need some way to indicate whatever that is to the client
+                % so the client knows how to warn the player.  This might be
+                % where the lua scripts help as well.
+                {E - Cost, H - 10};
+            true -> 
+                {E - Cost, H}
+        end,
+    lists:keyreplace(Name, 1, PlayerList, {N,H1,E1,F,I}).
+
+% trying out putting the tests with the funs otherwise I have to jump around
+deduct_energy_test() ->
+    PlayerList = [ 
+            {"Chester", 100, 100, [], []},
+            {"Lester", 120, 90, [], []}
+    ],
+    Who = "Chester",
+    [H0|_T0] = deduct_energy(Who, 30, PlayerList),
+    ?assertEqual({"Chester", 100, 70, [], []}, H0),
+    % Now test over-deducting 
+    [H1|_T1] = deduct_energy(Who, 120, PlayerList),
+    ?assertEqual({"Chester", 90, -20, [], []}, H1).
+
+    
 process_action_list(List) ->
     process_action_list(List, []).
 process_action_list([], Acc) ->
@@ -169,7 +268,8 @@ make_action_record([{Player, Item, Target} | Rest], Acc) ->
     Action = #action{type = Type, ap = AP, who = Player, target = Target},
     make_action_record(Rest, [Action | Acc]).
 
-update_players(#gamestate{players = Players}) ->
+update_players(S) ->
+    Players = S#gamestate.players,
     % commit each player's updates to the database
     Results = [
         {Name, goblet_db:player_unshadow(Name, Health, Energy, Flags)}
@@ -228,6 +328,8 @@ check_player_alive(Player) ->
         {error, E} -> {error, E}
     end.
 
+normalize_actions([]) ->
+    [];
 normalize_actions(ActionList) ->
     % First we need to split the list by Who committed the action
     normalize_actions(ActionList, []).
@@ -246,6 +348,8 @@ normalize_actions([H | T], [AccH | AccT]) ->
     normalize_actions(T, [NewList | [AccH | AccT]]).
 
 % The ActionList must already do the math needed to handle this
+phases([]) ->
+    [];
 phases(ActionList) ->
     % Get the largest key
     % AP must be the second item in the record, hence 3rd key
@@ -356,7 +460,19 @@ process_action_list_test() ->
         {"Ralph", "Scanner MK I", {1, 2}}
     ],
     R = process_action_list([P1, P2, P3]),
-    ?assertEqual(length(R), 3),
+    ?assertEqual(length(R), 3).
+
+action_list_phase_test() ->
+    P1 = [
+        {"Chester", "Reactor MK I", {3, 4}},
+        {"Chester", "Beam MK I", {1, 2}}
+    ],
+    P2 = [{"Tad", "Beam MK I", {3, 4}}, {"Tad", "Repair MK I", "Chester"}],
+    P3 = [
+        {"Ralph", "Scanner MK I", {1, 1}},
+        {"Ralph", "Scanner MK I", {1, 2}}
+    ],
+    R = process_action_list([P1, P2, P3]),
     % Now process into phases
     [R1, R2, R3, R4, R5] = phases(lists:flatten(R)),
     ?assertEqual(1, length(R1)),
