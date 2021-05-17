@@ -119,7 +119,8 @@ decision_phase(
     PSet = sets:from_list(PL),
     logger:notice("(Decision) Player ~p has made a decision.", [Player]),
     % Update the match state with the player's decision
-    Data1 = Data#match{actions = [PlayerActions | Actions]},
+    % TODO: this double list doesn't look correct to me. Shouldn't it just be [PA|Actions] ?
+    Data1 = Data#match{actions = [[PlayerActions] | Actions]},
     NextState =
         case RSet == PSet of
             true ->
@@ -165,12 +166,15 @@ execution_phase(
     % database calls by working only in process memory, and make the
     % transaction atomic.
     PlayerShadows = [goblet_db:player_shadow(X) || X <- P],
-    Mobs = [],
-    {_A1, _M1, _P1, B1} = goblet_game:calculate_round(
+    Mobs = [], %TODO fixme
+    logger:notice("Calculating round with the following parameters..."),
+    logger:notice("Mobs: ~p, Players: ~p", [Mobs, PlayerShadows]),
+    logger:notice("Actions: ~p, Board: ~p", [A, B0]),
+    {A1, M1, P1, B1} = goblet_game:calculate_round(
         {A, Mobs, PlayerShadows, B0}
     ),
     goblet_protocol:match_state_update(B1, [], 'EXECUTE', P, [], ID),
-    logger:notice("(Execute) 10000ms have elapsed. -> Decison"),
+    logger:notice("(Execute) 10000ms have elapsed. -> Decision"),
     TimeOut = {{timeout, decide}, 20000, execute},
     {next_state, decision_phase, Data, [TimeOut]};
 execution_phase(EventType, EventContent, Data) ->
