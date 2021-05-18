@@ -27,7 +27,15 @@
 
 -define(SERVER(Name), {via, gproc, {n, l, {?MODULE, Name}}}).
 
--record(match, {id, mobs, playerlist, readyplayers, board, actions = []}).
+%TODO: Generate some mobs!
+-record(match, {
+    id,
+    mobs = [],
+    playerlist,
+    readyplayers,
+    board,
+    actions = []
+}).
 
 % Public API
 start(PlayerList, MatchID) ->
@@ -112,68 +120,51 @@ decision_phase(
     {decision, Player, PlayerActions},
     Data
 ) ->
-    #match{playerlist = PL, readyplayers = RP, actions = Actions} = Data,
-    % TODO: Validate action list
+    #match{playerlist = _PL, readyplayers = RP, actions = Actions} = Data,
     Ready = [Player | RP],
-    RSet = sets:from_list(RP),
-    PSet = sets:from_list(PL),
+    RSet = sets:from_list(Ready),
+    %PSet = sets:from_list(PL),
     logger:notice("(Decision) Player ~p has made a decision.", [Player]),
     % Update the match state with the player's decision
-    % TODO: this double list doesn't look correct to me. Shouldn't it just be [PA|Actions] ?
-    Data1 = Data#match{actions = [[PlayerActions] | Actions]},
-    NextState =
-        case RSet == PSet of
-            true ->
-                % All players have made their decision
-                % Cancel the decision timer by setting it to infinity and
-                % move onto execute state
-                logger:notice(
-                    "(Decision) All players are ready. -> Execution"
-                ),
-                TimeOut = {{timeout, decide}, infinity, execute},
-                {next_state, execution_phase,
-                    Data1#match{readyplayers = []}, [
-                        TimeOut
-                    ]};
-            false ->
-                {next_state, decision_phase, Data1#match{
-                    readyplayers = Ready
-                }}
-        end,
-    logger:notice("(Decision) Ready players are: ~p", [Ready]),
-    NextState;
+    Data1 = Data#match{actions = [PlayerActions | Actions]},
+    {next_state, decision_phase, Data1#match{
+        readyplayers = sets:to_list(RSet)
+    }};
 decision_phase({timeout, decide}, execute, Data) ->
     % Decisions have timed out, move on
-    logger:notice("(Decision) 20000ms have elapsed. -> Execution"),
-    {next_state, execution_phase, Data, [{state_timeout, 10000, decide}]};
-decision_phase(EventType, EventContent, Data) ->
-    handle_event(EventType, EventContent, Data).
-
-% In the execution phase, we group actions, calculate the results, and give
-% the clients a bit of time to play animations. Then we expect to hear the
-% clients have finished with their animations, or we time out after some
-% generous time period (60s ?). We check to see if the match is over, and go
-% to the Finish phase if it is. Otherwise, back to Decision.
-execution_phase(
-    state_timeout,
-    decide,
-    Data
-) ->
-    #match{id = ID, board = B0, actions = A, playerlist = P} = Data,
+    logger:notice(
+        "(Decision) 20000ms have elapsed. Updating match state.."
+    ),
+    #match{id = ID, board = B0, actions = A, playerlist = P, mobs = M} =
+        Data,
     % Create a "shadow" of the player that contains a subset of the
     % information needed to do round calculations and may go through many
     % perturbations before settling. This should save potentially many
     % database calls by working only in process memory, and make the
     % transaction atomic.
     PlayerShadows = [goblet_db:player_shadow(X) || X <- P],
-    Mobs = [], %TODO fixme
     logger:notice("Calculating round with the following parameters..."),
-    logger:notice("Mobs: ~p, Players: ~p", [Mobs, PlayerShadows]),
+    logger:notice("Mobs: ~p, Players: ~p", [M, PlayerShadows]),
     logger:notice("Actions: ~p, Board: ~p", [A, B0]),
-    {A1, M1, P1, B1} = goblet_game:calculate_round(
-        {A, Mobs, PlayerShadows, B0}
+    {A1, M1, P1, B1, Replay} = goblet_game:calculate_round(
+        {A, M, PlayerShadows, B0}
     ),
+    logger:notice("Replay is: ~p", [Replay]),
+    logger:notice("Done updating match state."),
     goblet_protocol:match_state_update(B1, [], 'EXECUTE', P, [], ID),
+    % Reset ready players
+    Data1 = Data#match{
+        readyplayers = [],
+        board = B1,
+        playerlist = P1,
+        mobs = M1,
+        actions = A1
+    },
+    {next_state, execution_phase, Data1, [{state_timeout, 10000, decide}]};
+decision_phase(EventType, EventContent, Data) ->
+    handle_event(EventType, EventContent, Data).
+
+execution_phase(state_timeout, decide, Data) ->
     logger:notice("(Execute) 10000ms have elapsed. -> Decision"),
     TimeOut = {{timeout, decide}, 20000, execute},
     {next_state, decision_phase, Data, [TimeOut]};
