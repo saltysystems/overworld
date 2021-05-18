@@ -353,10 +353,15 @@ maybe_start(Match, Matches) ->
     {ok, UpdatedMatches}.
 
 repack_match(Match) ->
-    {Match#goblet_match.id, Match#goblet_match.state,
-        Match#goblet_match.players, Match#goblet_match.players_max,
-        Match#goblet_match.start_time, Match#goblet_match.mode,
-        Match#goblet_match.extra}.
+    {
+        Match#goblet_match.id,
+        Match#goblet_match.state,
+        Match#goblet_match.players,
+        Match#goblet_match.players_max,
+        Match#goblet_match.start_time,
+        Match#goblet_match.mode,
+        Match#goblet_match.extra
+    }.
 
 %%===================================================================
 %% Unit Tests
