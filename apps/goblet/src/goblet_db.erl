@@ -88,9 +88,16 @@ mob_instance(Name) ->
         {error, _} ->
             [];
         M ->
-            {io_lib:format("~s_~p", [M#goblet_mob.name, rand:uniform(1024)]),
-                M#goblet_mob.health, M#goblet_mob.energy,
-                M#goblet_mob.flags, M#goblet_mob.inventory}
+            {
+                io_lib:format("~s_~p", [
+                    M#goblet_mob.name,
+                    rand:uniform(1024)
+                ]),
+                M#goblet_mob.health,
+                M#goblet_mob.energy,
+                M#goblet_mob.flags,
+                M#goblet_mob.inventory
+            }
     end.
 
 -spec mob_by_name(list()) -> tuple() | {error, atom()}.
@@ -123,9 +130,13 @@ player_shadow(Name) ->
         {error, _} ->
             [];
         P ->
-            {P#goblet_player.name, P#goblet_player.health,
-                P#goblet_player.energy, P#goblet_player.flags,
-                P#goblet_player.inventory}
+            {
+                P#goblet_player.name,
+                P#goblet_player.health,
+                P#goblet_player.energy,
+                P#goblet_player.flags,
+                P#goblet_player.inventory
+            }
     end.
 
 -spec player_unshadow(list(), pos_integer(), pos_integer(), list()) ->
