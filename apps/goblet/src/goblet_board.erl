@@ -639,7 +639,4 @@ reducedWang(RightTile, BelowTile) ->
         _ -> reducedWang(RightTile, BelowTile)
     end.
 
-
 % Unit tests
-
-
