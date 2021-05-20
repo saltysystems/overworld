@@ -137,6 +137,7 @@ regenerate_energy([], Acc) ->
 regenerate_energy([{_N, _H, E, _F, _I} = H | T], Acc) when E >= 100 ->
     regenerate_energy(T, [H | Acc]);
 regenerate_energy([{N, H, Energy, F, I} | T], Acc) ->
+    %TODO Replace this with an item
     % Cap energy at 100
     E =
         if
@@ -206,7 +207,11 @@ update_gamestate([H | T], G) ->
                 ),
                 % De-tuple the action .. ?
                 R0 = G1#gamestate.replay,
-                R1 = {H#action.who, H#action.type, H#action.target},
+                R1 = {
+                    H#action.who,
+                    atom_to_list(H#action.type),
+                    H#action.target
+                },
                 G1#gamestate{board = NewBoard, replay = [R1 | R0]};
             Type ->
                 % Do nothing if the action type isn't recognized.
