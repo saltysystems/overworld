@@ -590,29 +590,64 @@ player_list(_Message, State) ->
     pos_integer()
 ) -> ok.
 match_state_update(
-    _Tiles,
-    _Actions,
+    Board,
+    Replay,
     MatchState,
     PlayerList,
     ReadyPlayers,
     MatchID
 ) ->
-    %T1 = [pack_tile(X) || X <- Tiles],
-    %A1 = [pack_action(X) || X <- Actions],
-
-    T1 = [],
-    A1 = [],
-
+    % TODO: Decide if we want to have flags or not
+    logger:notice("Board0 is: ~p", [Board]),
+    B1 = [
+        #'MatchStateResp.Tile'{x = X0, y = Y0, type = T0, occupant = W0}
+     || {X0, Y0, T0, W0} <- Board
+    ],
+    logger:notice("Board is: ~p", [B1]),
+    R1 = [
+        #'MatchStateResp.Action'{type = T1, who = W1, x = X1, y = Y1}
+     || {W1, T1, {X1, Y1}} <- Replay
+    ],
+    logger:notice("Actions are: ~p", [R1]),
     Update = #'MatchStateResp'{
         state = MatchState,
-        tile = T1,
+        board = B1,
         playerlist = PlayerList,
         readyplayers = ReadyPlayers,
-        actions = A1
+        replay = R1
     },
     Msg = goblet_pb:encode_msg(Update),
     OpCode = <<?MATCH_STATE:16>>,
     match_broadcast([OpCode, Msg], MatchID).
+
+match_state_update_test() ->
+    B0 = [
+        #'MatchStateResp.Tile'{
+            x = 1,
+            y = 2,
+            type = "f",
+            occupant = ["Chester"],
+            flags = []
+        }
+    ],
+    R0 = [
+        #'MatchStateResp.Action'{
+            type = "move",
+            who = "Chester",
+            x = 1,
+            y = 3
+        }
+    ],
+    M = #'MatchStateResp'{
+        state = 'EXECUTE',
+        board = B0,
+        playerlist = ["Chester"],
+        readyplayers = ["Chester"],
+        replay = R0
+    },
+    Bin = goblet_pb:encode_msg(M),
+    % succesful encoding
+    ?assertEqual(true, is_binary(Bin)).
 
 %%=========================================================================
 %% Internal functions
@@ -734,7 +769,7 @@ action_to_tuple(Player, [H | T], Acc) ->
             _ ->
                 Target
         end,
-    action_to_tuple(T, [{Player, Item, TargetType} | Acc]).
+    action_to_tuple(Player, T, [{Player, Item, TargetType} | Acc]).
 
 default_handler(State) ->
     logger:error("Something wont awry with the session.."),
