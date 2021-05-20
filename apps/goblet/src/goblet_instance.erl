@@ -10,7 +10,8 @@
     player_ready/2,
     player_decision/3,
     get_board_state/1,
-    get_players/1
+    get_players/1,
+    finalize/1
 ]).
 
 % Required gen_statem callbacks
@@ -21,8 +22,8 @@
 -export([
     prepare_phase/3,
     decision_phase/3,
-    execution_phase/3
-    %finish_phase/4,
+    execution_phase/3,
+    finish_phase/3
 ]).
 
 -define(SERVER(Name), {via, gproc, {n, l, {?MODULE, Name}}}).
@@ -58,6 +59,10 @@ get_board_state(MatchID) ->
 
 get_players(MatchID) ->
     gen_statem:call(?SERVER(MatchID), player_list).
+
+% Execute this to abruptly end a match and send it to finalizing state.
+finalize(MatchID) ->
+    gen_statem:cast(?SERVER(MatchID), finalize).
 
 % Callbacks
 init({PlayerList, MatchID}) ->
@@ -149,9 +154,14 @@ decision_phase({timeout, decide}, execute, Data) ->
     {A1, M1, P1, B1, Replay} = goblet_game:calculate_round(
         {A, M, PlayerShadows, B0}
     ),
-    logger:notice("Replay is: ~p", [Replay]),
+    % need to unpack the tiles into a plain tuple. still very unhappy with
+    % this
+    Tiles = [
+        {X, Y, atom_to_list(Type), [Who]}
+     || {_, {X, Y}, Type, _, Who, _} <- B1
+    ],
+    goblet_protocol:match_state_update(Tiles, Replay, 'EXECUTE', P, [], ID),
     logger:notice("Done updating match state."),
-    goblet_protocol:match_state_update(B1, [], 'EXECUTE', P, [], ID),
     % Reset ready players
     Data1 = Data#match{
         readyplayers = [],
@@ -171,10 +181,16 @@ execution_phase(state_timeout, decide, Data) ->
 execution_phase(EventType, EventContent, Data) ->
     handle_event(EventType, EventContent, Data).
 
+finish_phase(state_timeout, Timer, _Data) ->
+    % We just latch onto any running timer and wait for it to fire
+    logger:notice("(Finish) Final timer has executed): ~p", [Timer]).
+
 handle_event({call, From}, board_state, #match{board = B} = Data) ->
     {keep_state, Data, [{reply, From, B}]};
 handle_event({call, From}, player_list, #match{playerlist = P} = Data) ->
     {keep_state, Data, [{reply, From, P}]};
+handle_event(cast, finalize, Data) ->
+    {next_state, finish_phase, Data};
 % Handle all other events
 handle_event(cast, _EventContent, Data) ->
     {keep_state, Data};
