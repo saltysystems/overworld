@@ -38,17 +38,16 @@ the following way:
 ```
 
 `.hrl` files are explicitly excluded because some of the data is formatted in a
-particular way there. If anyone has a way to mark sections as 'no format' I
-would love to know.
+particular way there. 
 
 Run dialyzer and try to eliminate errors to the best of your ability:
 ```bash
   rebar3 dialyzer
 ```
 
-Any new function will need to have a corresponding test written for it in
-`apps/goblet/src/tests`. You should validate that `eunit:run_test(<your
-module>)` succeeds as expected.
+Ideally, any new function would have a corresponding test written for it
+following the function definition.  You should validate that
+`eunit:run_test(<your module>)` succeeds as expected.
 
 You should also attempt to annotate functions with type specs as best as
 possible.
