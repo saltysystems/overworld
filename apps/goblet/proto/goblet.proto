@@ -193,19 +193,16 @@ message MatchStateResp {
         repeated string flags = 5;
     }
     message Action {
-        required int32 phase = 1;
-        required string name = 2;
-        required ItemAction type = 3;
-        required int32 x_from = 4;
-        required int32 y_from = 5;
-        required int32 x_to = 6;
-        required int32 y_to = 7;
+        required string type = 1;
+        required string who = 2;
+        required int32 x = 3;
+        required int32 y = 4;
     }
     required MatchStateMachine state = 1;
-    repeated Tile tile = 2;    
+    repeated Tile board = 2;    
     repeated string playerlist = 3;
     repeated string readyplayers = 4;
-    repeated Action actions = 5;
+    repeated Action replay = 5;
 }
 
 message MatchPrepReq {
