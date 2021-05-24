@@ -598,12 +598,10 @@ match_state_update(
     MatchID
 ) ->
     % TODO: Decide if we want to have flags or not
-    logger:notice("Board0 is: ~p", [Board]),
     B1 = [
         #'MatchStateResp.Tile'{x = X0, y = Y0, type = T0, occupant = W0}
      || {X0, Y0, T0, W0} <- Board
     ],
-    logger:notice("Board is: ~p", [B1]),
     R1 = [
         #'MatchStateResp.Action'{type = T1, who = W1, x = X1, y = Y1}
      || {W1, T1, {X1, Y1}} <- Replay
