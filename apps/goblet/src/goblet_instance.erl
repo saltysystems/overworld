@@ -11,7 +11,7 @@
     player_decision/3,
     get_board_state/1,
     get_players/1,
-    finalize/1
+    stop/1
 ]).
 
 % Required gen_statem callbacks
@@ -61,8 +61,8 @@ get_players(MatchID) ->
     gen_statem:call(?SERVER(MatchID), player_list).
 
 % Execute this to abruptly end a match and send it to finalizing state.
-finalize(MatchID) ->
-    gen_statem:cast(?SERVER(MatchID), finalize).
+stop(MatchID) ->
+    gen_statem:cast(?SERVER(MatchID), stop).
 
 % Callbacks
 init({PlayerList, MatchID}) ->
@@ -174,22 +174,32 @@ decision_phase({timeout, decide}, execute, Data) ->
 decision_phase(EventType, EventContent, Data) ->
     handle_event(EventType, EventContent, Data).
 
-execution_phase(state_timeout, decide, Data) ->
+execution_phase(state_timeout, decide, #match{playerlist=P, id=ID} = Data) ->
     logger:notice("(Execute) 10000ms have elapsed. -> Decision"),
+    goblet_protocol:match_state_update([], [], 'DECIDE', P, [], ID),
     TimeOut = {{timeout, decide}, 20000, execute},
     {next_state, decision_phase, Data, [TimeOut]};
 execution_phase(EventType, EventContent, Data) ->
     handle_event(EventType, EventContent, Data).
 
-finish_phase(state_timeout, Timer, _Data) ->
+finish_phase(state_timeout, Timer, #match{playerlist=P, id=ID} = Data) ->
     % We just latch onto any running timer and wait for it to fire
-    logger:notice("(Finish) Final timer has executed): ~p", [Timer]).
+    logger:notice("(Finish) Final timer has executed: ~p", [Timer]),
+    goblet_protocol:match_state_update([], [], 'FINISH', P, [], ID),
+    Status = save_and_exit(Data),
+    {stop, Status}.
+
+save_and_exit(#match{id=ID}) ->
+    %TODO: Save data at the end of match, update a player's inventory or
+    %      whatever.
+    goblet_lobby:delete_match(ID),
+    ok.
 
 handle_event({call, From}, board_state, #match{board = B} = Data) ->
     {keep_state, Data, [{reply, From, B}]};
 handle_event({call, From}, player_list, #match{playerlist = P} = Data) ->
     {keep_state, Data, [{reply, From, P}]};
-handle_event(cast, finalize, Data) ->
+handle_event(cast, stop, Data) ->
     {next_state, finish_phase, Data};
 % Handle all other events
 handle_event(cast, _EventContent, Data) ->
@@ -197,6 +207,7 @@ handle_event(cast, _EventContent, Data) ->
 handle_event({call, From}, _EventContent, Data) ->
     {keep_state, Data, [{reply, From, {error, unknown_handler}}]}.
 
-terminate(_Reason, _State, _Data) ->
+terminate(_Reason, _State, Data) ->
     %TODO: Save the player progress
-    ok.
+    logger:notice("(Finish) Terminate has been called"),
+    save_and_exit(Data).
