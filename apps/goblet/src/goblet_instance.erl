@@ -148,9 +148,9 @@ decision_phase({timeout, decide}, execute, Data) ->
     % database calls by working only in process memory, and make the
     % transaction atomic.
     PlayerShadows = [goblet_db:player_shadow(X) || X <- P],
-    logger:notice("Calculating round with the following parameters..."),
-    logger:notice("Mobs: ~p, Players: ~p", [M, PlayerShadows]),
-    logger:notice("Actions: ~p, Board: ~p", [A, B0]),
+    logger:debug("Calculating round with the following parameters..."),
+    logger:debug("Mobs: ~p, Players: ~p", [M, PlayerShadows]),
+    logger:debug("Actions: ~p, Board: ~p", [A, B0]),
     {A1, M1, P1, B1, Replay} = goblet_game:calculate_round(
         {A, M, PlayerShadows, B0}
     ),
