@@ -184,7 +184,7 @@ execution_phase(EventType, EventContent, Data) ->
 
 finish_phase(state_timeout, Timer, #match{playerlist=P, id=ID} = Data) ->
     % We just latch onto any running timer and wait for it to fire
-    logger:notice("(Finish) Final timer has executed: ~p", [Timer]),
+    logger:notice("(Finish) Final timer has executed", [Timer]),
     goblet_protocol:match_state_update([], [], 'FINISH', P, [], ID),
     Status = save_and_exit(Data),
     {stop, Status}.
@@ -193,7 +193,7 @@ save_and_exit(#match{id=ID}) ->
     %TODO: Save data at the end of match, update a player's inventory or
     %      whatever.
     goblet_lobby:delete_match(ID),
-    ok.
+    normal.
 
 handle_event({call, From}, board_state, #match{board = B} = Data) ->
     {keep_state, Data, [{reply, From, B}]};
@@ -210,4 +210,6 @@ handle_event({call, From}, _EventContent, Data) ->
 terminate(_Reason, _State, Data) ->
     %TODO: Save the player progress
     logger:notice("(Finish) Terminate has been called"),
-    save_and_exit(Data).
+    case save_and_exit(Data) of
+        normal -> ok
+    end.
