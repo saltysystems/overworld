@@ -11,7 +11,7 @@
     player_decision/3,
     get_board_state/1,
     get_players/1,
-    stop/1
+    finalize/1
 ]).
 
 % Required gen_statem callbacks
@@ -61,8 +61,8 @@ get_players(MatchID) ->
     gen_statem:call(?SERVER(MatchID), player_list).
 
 % Execute this to abruptly end a match and send it to finalizing state.
-stop(MatchID) ->
-    gen_statem:cast(?SERVER(MatchID), stop).
+finalize(MatchID) ->
+    gen_statem:cast(?SERVER(MatchID), finalize).
 
 % Callbacks
 init({PlayerList, MatchID}) ->
@@ -83,7 +83,7 @@ prepare_phase(
     {prepare, Player},
     Data
 ) ->
-    #match{id = ID, playerlist = PlayerList, readyplayers = Ready} = Data,
+    #match{id = ID, board=B, playerlist = PlayerList, readyplayers = Ready} = Data,
     ReadyPlayers = [Player | Ready],
     ReadySet = sets:from_list(ReadyPlayers),
     PlayerSet = sets:from_list(PlayerList),
@@ -97,6 +97,7 @@ prepare_phase(
                 logger:notice(
                     "(Prepare) All players are ready. -> Decision"
                 ),
+                goblet_protocol:match_state_update(B, [], 'DECIDE', PlayerList, [], ID),
                 TimeOut = {{timeout, decide}, 20000, execute},
                 {next_state, decision_phase, Data#match{readyplayers = []},
                     [
@@ -105,6 +106,7 @@ prepare_phase(
             false ->
                 % Not all players are ready, stay in the prepare phase
                 % indefinitely
+                goblet_protocol:match_state_update([], [], 'PREPARE', PlayerList, ReadyPlayers, ID),
                 {next_state, prepare_phase, Data#match{
                     readyplayers = ReadyPlayers
                 }}
@@ -186,20 +188,19 @@ finish_phase(state_timeout, Timer, #match{playerlist=P, id=ID} = Data) ->
     % We just latch onto any running timer and wait for it to fire
     logger:notice("(Finish) Final timer has executed", [Timer]),
     goblet_protocol:match_state_update([], [], 'FINISH', P, [], ID),
-    Status = save_and_exit(Data),
-    {stop, Status}.
+    save_and_exit(Data),
+    {stop, normal}.
 
 save_and_exit(#match{id=ID}) ->
     %TODO: Save data at the end of match, update a player's inventory or
     %      whatever.
-    goblet_lobby:delete_match(ID),
-    normal.
+    goblet_lobby:delete_match(ID).
 
 handle_event({call, From}, board_state, #match{board = B} = Data) ->
     {keep_state, Data, [{reply, From, B}]};
 handle_event({call, From}, player_list, #match{playerlist = P} = Data) ->
     {keep_state, Data, [{reply, From, P}]};
-handle_event(cast, stop, Data) ->
+handle_event(cast, finalize, Data) ->
     {next_state, finish_phase, Data};
 % Handle all other events
 handle_event(cast, _EventContent, Data) ->
@@ -209,7 +210,6 @@ handle_event({call, From}, _EventContent, Data) ->
 
 terminate(_Reason, _State, Data) ->
     %TODO: Save the player progress
-    logger:notice("(Finish) Terminate has been called"),
-    case save_and_exit(Data) of
-        normal -> ok
-    end.
+    logger:notice("(Abort) Terminate has been called"),
+    save_and_exit(Data),
+    ok.
