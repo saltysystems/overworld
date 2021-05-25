@@ -29,9 +29,11 @@ init(Req, State) ->
 %% @doc Terminate callback for cleanup processes
 %% @end
 %%----------------------------------------------------------------------------
-terminate(_Reason, Req, _State) ->
+terminate(_Reason, Req, State) ->
     #{peer := {IP, _Port}} = Req,
     logger:notice("~p: client disconnected", [IP]),
+    logger:notice("Client state at disconnect: ~p", [State]),
+    goblet_protocol:maybe_leave_match(State),
     ok.
 
 %%----------------------------------------------------------------------------
