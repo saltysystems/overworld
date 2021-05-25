@@ -15,6 +15,7 @@ run_checks([H | T]) when is_function(H, 0) ->
     end.
 
 % poor man's pipe
+-spec pipeline(any(), list()) -> any().
 pipeline(Input, Funs) ->
     lists:foldl(fun(F, State) -> F(State) end, Input, Funs).
 
