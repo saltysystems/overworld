@@ -16,7 +16,8 @@
     match_prepare/2,
     match_decide/2,
     match_state_update/6,
-    match_broadcast/2
+    match_broadcast/2,
+    maybe_leave_match/1
 ]).
 
 -export([player_log/1]).
@@ -232,34 +233,36 @@ match_create(Message, State) when State#session.authenticated =:= true ->
             ok -> true;
             Error -> Error
         end,
-    Msg = match_create(Player, Mode, MaxPlayers, Extra, IsValid),
-    OpCode = <<?MATCH_CREATE:16>>,
-    {[OpCode, Msg], State}.
+    match_create(Player, Mode, MaxPlayers, Extra, State, IsValid).
 
-match_create(Player, Mode, MaxPlayers, Extra, true) ->
-    case goblet_lobby:create_match(Player, Mode, MaxPlayers, Extra) of
+match_create(Player, Mode, MaxPlayers, Extra, State0, true) ->
+    {Msg, State1} = case goblet_lobby:create_match(Player, Mode, MaxPlayers, Extra) of
         {ok, M} ->
             % not a stable interface
             MatchID = element(1, M),
             match_register_session(MatchID),
             Resp = #'ResponseObject'{status = 'OK'},
-            goblet_pb:encode_msg(#'MatchCreateResp'{
+            { goblet_pb:encode_msg(#'MatchCreateResp'{
                 resp = Resp,
                 match = pack_match(M)
-            });
+            }), State0#session{match=MatchID} };
         {error, Error} ->
             Resp = #'ResponseObject'{
                 status = 'ERROR',
                 error = atom_to_list(Error)
             },
-            goblet_pb:encode_msg(#'MatchCreateResp'{resp = Resp})
-    end;
-match_create(_Player, _Mode, _MaxPlayers, _Extra, {error, ErrMsg}) ->
+            {goblet_pb:encode_msg(#'MatchCreateResp'{resp = Resp}), State0}
+    end,
+    OpCode = <<?MATCH_CREATE:16>>,
+    {[OpCode, Msg], State1};
+match_create(_Player, _Mode, _MaxPlayers, _Extra, State, {error, ErrMsg}) ->
     Resp = #'ResponseObject'{
         status = 'ERROR',
         error = atom_to_list(ErrMsg)
     },
-    goblet_pb:encode_msg(#'MatchCreateResp'{resp = Resp}).
+    Msg = goblet_pb:encode_msg(#'MatchCreateResp'{resp = Resp}),
+    OpCode = <<?MATCH_CREATE:16>>,
+    {[OpCode, Msg], State}.
 
 %%-------------------------------------------------------------------------
 %% @doc Join a match. Will only join matches for sessions where the player
@@ -309,7 +312,7 @@ match_join(MatchID, Player, State, true) ->
                 goblet_pb:encode_msg(#'MatchJoinResp'{resp = Resp})
         end,
     OpCode = <<?MATCH_JOIN:16>>,
-    {[OpCode, Msg], State};
+    {[OpCode, Msg], State#session{match=MatchID}};
 match_join(_MatchID, _Player, State, {error, ErrMsg}) ->
     Resp = #'ResponseObject'{
         status = 'ERROR',
@@ -671,6 +674,12 @@ match_register_session(MatchID) ->
 match_broadcast(Message, MatchID) ->
     logger:notice("Broadcasting a message to match ~p", [MatchID]),
     gproc:send({p, l, {match, MatchID}}, {self(), event, Message}).
+
+-spec maybe_leave_match(tuple()) -> ok.
+maybe_leave_match(#session{match=MatchID, email=Email}) ->
+    %TODO: Implement notification
+    logger:notice("Match ~p notified that ~p has disconnected", [MatchID, Email]),
+    ok.
 
 match_deregister_session(MatchID) ->
     logger:notice("Deregistered ~p from session ~p", [self(), MatchID]),
