@@ -83,7 +83,12 @@ prepare_phase(
     {prepare, Player},
     Data
 ) ->
-    #match{id = ID, board=B, playerlist = PlayerList, readyplayers = Ready} = Data,
+    #match{
+        id = ID,
+        board = B,
+        playerlist = PlayerList,
+        readyplayers = Ready
+    } = Data,
     ReadyPlayers = [Player | Ready],
     ReadySet = sets:from_list(ReadyPlayers),
     PlayerSet = sets:from_list(PlayerList),
@@ -97,7 +102,14 @@ prepare_phase(
                 logger:notice(
                     "(Prepare) All players are ready. -> Decision"
                 ),
-                goblet_protocol:match_state_update(B, [], 'DECIDE', PlayerList, [], ID),
+                goblet_protocol:match_state_update(
+                    B,
+                    [],
+                    'DECIDE',
+                    PlayerList,
+                    [],
+                    ID
+                ),
                 TimeOut = {{timeout, decide}, 20000, execute},
                 {next_state, decision_phase, Data#match{readyplayers = []},
                     [
@@ -106,7 +118,14 @@ prepare_phase(
             false ->
                 % Not all players are ready, stay in the prepare phase
                 % indefinitely
-                goblet_protocol:match_state_update([], [], 'PREPARE', PlayerList, ReadyPlayers, ID),
+                goblet_protocol:match_state_update(
+                    [],
+                    [],
+                    'PREPARE',
+                    PlayerList,
+                    ReadyPlayers,
+                    ID
+                ),
                 {next_state, prepare_phase, Data#match{
                     readyplayers = ReadyPlayers
                 }}
@@ -176,7 +195,11 @@ decision_phase({timeout, decide}, execute, Data) ->
 decision_phase(EventType, EventContent, Data) ->
     handle_event(EventType, EventContent, Data).
 
-execution_phase(state_timeout, decide, #match{playerlist=P, id=ID} = Data) ->
+execution_phase(
+    state_timeout,
+    decide,
+    #match{playerlist = P, id = ID} = Data
+) ->
     logger:notice("(Execute) 10000ms have elapsed. -> Decision"),
     goblet_protocol:match_state_update([], [], 'DECIDE', P, [], ID),
     TimeOut = {{timeout, decide}, 20000, execute},
@@ -184,14 +207,14 @@ execution_phase(state_timeout, decide, #match{playerlist=P, id=ID} = Data) ->
 execution_phase(EventType, EventContent, Data) ->
     handle_event(EventType, EventContent, Data).
 
-finish_phase(state_timeout, Timer, #match{playerlist=P, id=ID} = Data) ->
+finish_phase(state_timeout, Timer, #match{playerlist = P, id = ID} = Data) ->
     % We just latch onto any running timer and wait for it to fire
     logger:notice("(Finish) Final timer has executed", [Timer]),
     goblet_protocol:match_state_update([], [], 'FINISH', P, [], ID),
     save_and_exit(Data),
     {stop, normal}.
 
-save_and_exit(#match{id=ID}) ->
+save_and_exit(#match{id = ID}) ->
     %TODO: Save data at the end of match, update a player's inventory or
     %      whatever.
     goblet_lobby:delete_match(ID).
