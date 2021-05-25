@@ -83,7 +83,12 @@ prepare_phase(
     {prepare, Player},
     Data
 ) ->
-    #match{id = ID, playerlist = PlayerList, readyplayers = Ready} = Data,
+    #match{
+        id = ID,
+        board = B,
+        playerlist = PlayerList,
+        readyplayers = Ready
+    } = Data,
     ReadyPlayers = [Player | Ready],
     ReadySet = sets:from_list(ReadyPlayers),
     PlayerSet = sets:from_list(PlayerList),
@@ -97,6 +102,14 @@ prepare_phase(
                 logger:notice(
                     "(Prepare) All players are ready. -> Decision"
                 ),
+                goblet_protocol:match_state_update(
+                    B,
+                    [],
+                    'DECIDE',
+                    PlayerList,
+                    [],
+                    ID
+                ),
                 TimeOut = {{timeout, decide}, 20000, execute},
                 {next_state, decision_phase, Data#match{readyplayers = []},
                     [
@@ -105,6 +118,14 @@ prepare_phase(
             false ->
                 % Not all players are ready, stay in the prepare phase
                 % indefinitely
+                goblet_protocol:match_state_update(
+                    [],
+                    [],
+                    'PREPARE',
+                    PlayerList,
+                    ReadyPlayers,
+                    ID
+                ),
                 {next_state, prepare_phase, Data#match{
                     readyplayers = ReadyPlayers
                 }}
@@ -148,9 +169,9 @@ decision_phase({timeout, decide}, execute, Data) ->
     % database calls by working only in process memory, and make the
     % transaction atomic.
     PlayerShadows = [goblet_db:player_shadow(X) || X <- P],
-    logger:notice("Calculating round with the following parameters..."),
-    logger:notice("Mobs: ~p, Players: ~p", [M, PlayerShadows]),
-    logger:notice("Actions: ~p, Board: ~p", [A, B0]),
+    logger:debug("Calculating round with the following parameters..."),
+    logger:debug("Mobs: ~p, Players: ~p", [M, PlayerShadows]),
+    logger:debug("Actions: ~p, Board: ~p", [A, B0]),
     {A1, M1, P1, B1, Replay} = goblet_game:calculate_round(
         {A, M, PlayerShadows, B0}
     ),
@@ -174,16 +195,29 @@ decision_phase({timeout, decide}, execute, Data) ->
 decision_phase(EventType, EventContent, Data) ->
     handle_event(EventType, EventContent, Data).
 
-execution_phase(state_timeout, decide, Data) ->
+execution_phase(
+    state_timeout,
+    decide,
+    #match{playerlist = P, id = ID} = Data
+) ->
     logger:notice("(Execute) 10000ms have elapsed. -> Decision"),
+    goblet_protocol:match_state_update([], [], 'DECIDE', P, [], ID),
     TimeOut = {{timeout, decide}, 20000, execute},
     {next_state, decision_phase, Data, [TimeOut]};
 execution_phase(EventType, EventContent, Data) ->
     handle_event(EventType, EventContent, Data).
 
-finish_phase(state_timeout, Timer, _Data) ->
+finish_phase(state_timeout, Timer, #match{playerlist = P, id = ID} = Data) ->
     % We just latch onto any running timer and wait for it to fire
-    logger:notice("(Finish) Final timer has executed): ~p", [Timer]).
+    logger:notice("(Finish) Final timer has executed", [Timer]),
+    goblet_protocol:match_state_update([], [], 'FINISH', P, [], ID),
+    save_and_exit(Data),
+    {stop, normal}.
+
+save_and_exit(#match{id = ID}) ->
+    %TODO: Save data at the end of match, update a player's inventory or
+    %      whatever.
+    goblet_lobby:delete_match(ID).
 
 handle_event({call, From}, board_state, #match{board = B} = Data) ->
     {keep_state, Data, [{reply, From, B}]};
@@ -197,6 +231,8 @@ handle_event(cast, _EventContent, Data) ->
 handle_event({call, From}, _EventContent, Data) ->
     {keep_state, Data, [{reply, From, {error, unknown_handler}}]}.
 
-terminate(_Reason, _State, _Data) ->
+terminate(_Reason, _State, Data) ->
     %TODO: Save the player progress
+    logger:notice("(Abort) Terminate has been called"),
+    save_and_exit(Data),
     ok.
