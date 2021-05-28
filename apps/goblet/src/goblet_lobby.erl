@@ -81,12 +81,12 @@ get_match_players(MatchID) ->
 %% @end
 %%-------------------------------------------------------------------
 -spec create_match(list(), atom(), integer()) ->
-    {ok, tuple()} | {error, atom()}.
+    {ok, pos_integer()} | {error, atom()}.
 create_match(Player, Mode, MaxPlayers) ->
     create_match(Player, Mode, MaxPlayers, <<>>).
 
 -spec create_match(list(), atom(), integer(), binary()) ->
-    {ok, tuple()} | {error, atom()}.
+    {ok, pos_integer()} | {error, atom()}.
 create_match(Player, Mode, MaxPlayers, Extra) ->
     gen_server:call(
         ?MODULE,
@@ -168,8 +168,8 @@ handle_call(
         extra = Extra
     },
     MatchList = [Match | Matches],
-    Reply = {ok, repack_match(Match)},
-    % Reply with the match list, increment the next available MatchID
+    Reply = {ok, ID},
+    % Reply with the match id, increment the next available MatchID
     {reply, Reply, {ID + 1, MatchList, Timer}};
 handle_call({start_match, MatchID}, _From, {NextID, Matches, Timer}) ->
     Match = match_find(MatchID, Matches),
@@ -305,10 +305,10 @@ match_update(UpdatedMatch, Match, Matches) ->
 maybe_leave(_Player, false) ->
     {ok, false};
 maybe_leave(Player, Match) ->
-    if 
-        Match#goblet_match.state =:= 'PLAYING' -> 
+    if
+        Match#goblet_match.state =:= 'PLAYING' ->
             goblet_instance:remove_player(Player, Match#goblet_match.id);
-        true -> 
+        true ->
             ok
     end,
     Players = Match#goblet_match.players,
@@ -389,7 +389,8 @@ get_matches_empty_test() ->
 add_match_test() ->
     % Note that we don't do any validation here-
     Name = "Chester Tester",
-    {ok, ConfirmedMatch} = create_match(Name, 'DEFAULT', 6),
+    {ok, MatchID} = create_match(Name, 'DEFAULT', 6),
+    ConfirmedMatch = get_match(MatchID),
     {Id, State, Players, PlayerMax, _StartTime, Mode, _Extra} =
         ConfirmedMatch,
     ?assertEqual('CREATING', State),
@@ -416,15 +417,15 @@ join_leave_match_test() ->
         'DESTROYER',
         Email
     ),
-    {ok, MatchParams} = create_match(Name, 'DEFAULT', 6),
-    {MatchId, _S, Players, _PM, _ST, _M, _E} = MatchParams,
+    {ok, MatchID} = create_match(Name, 'DEFAULT', 6),
+    {MatchID, _S, Players, _PM, _ST, _M, _E} = get_match(MatchID),
     ?assertEqual([Name], Players),
     % Try to join again, just for fun
-    {error, Error} = join_match(Name, MatchId),
+    {error, Error} = join_match(Name, MatchID),
     ?assertEqual(Error, already_joined),
     % attempt to leave the match
-    ?assertEqual(ok, leave_match(Name, MatchId)),
-    ?assertEqual({error, no_such_match}, get_match(MatchId)),
+    ?assertEqual(ok, leave_match(Name, MatchID)),
+    ?assertEqual({error, no_such_match}, get_match(MatchID)),
     ?assertEqual(ok, goblet_db:delete_player(Name, Email)),
     ?assertEqual(ok, goblet_db:delete_account(Email)).
 
@@ -440,8 +441,8 @@ start_match_test() ->
         'DESTROYER',
         Email
     ),
-    {ok, MatchParams} = create_match(Name, 'DEFAULT', 6),
-    {MatchId, _S, _P, _PM, _ST, _M, _E} = MatchParams,
+    {ok, MatchId} = create_match(Name, 'DEFAULT', 6),
+    {MatchId, _S, _P, _PM, _ST, _M, _E} = get_match(MatchId),
     % This is validated by the session
     ok = start_match(MatchId),
     % Can we leave a match if its running?
