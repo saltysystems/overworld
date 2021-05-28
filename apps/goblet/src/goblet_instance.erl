@@ -234,7 +234,7 @@ handle_event(cast, finalize, Data) ->
 % Handle all other events
 handle_event(cast, {remove_player, Player}, #match{playerlist = P0} = Data) ->
     P1 = lists:delete(Player, P0),
-    {keep_state, Data#match{playerlist=P1}};
+    {keep_state, Data#match{playerlist = P1}};
 handle_event(cast, _EventContent, Data) ->
     {keep_state, Data};
 handle_event({call, From}, _EventContent, Data) ->
