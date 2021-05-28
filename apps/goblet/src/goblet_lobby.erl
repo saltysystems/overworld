@@ -102,7 +102,7 @@ join_match(Player, MatchID) ->
     gen_server:call(?MODULE, {join_match, Player, MatchID}).
 
 %%-------------------------------------------------------------------
-%% @doc Remove a player from an unstarted match
+%% @doc Remove a player from a match
 %% @end
 %%-------------------------------------------------------------------
 -spec leave_match(list(), integer()) -> ok | {error, atom()}.
@@ -305,6 +305,12 @@ match_update(UpdatedMatch, Match, Matches) ->
 maybe_leave(_Player, false) ->
     {ok, false};
 maybe_leave(Player, Match) ->
+    if 
+        Match#goblet_match.state =:= 'PLAYING' -> 
+            goblet_instance:remove_player(Player, Match#goblet_match.id);
+        true -> 
+            ok
+    end,
     Players = Match#goblet_match.players,
     UpdatedPlayers = lists:delete(Player, Players),
     UpdatedMatch = Match#goblet_match{players = UpdatedPlayers},
