@@ -29,7 +29,12 @@
 -include_lib("kernel/include/logger.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
--record(session, {email = none, authenticated = false, match = false}).
+-record(session, {
+    email = none,
+    authenticated = false,
+    match = false,
+    player = false
+}).
 
 %%=========================================================================
 %% Goblet Protocol.
@@ -238,17 +243,15 @@ match_create(Message, State) when State#session.authenticated =:= true ->
 match_create(Player, Mode, MaxPlayers, Extra, State0, true) ->
     {Msg, State1} =
         case goblet_lobby:create_match(Player, Mode, MaxPlayers, Extra) of
-            {ok, M} ->
-                % not a stable interface
-                MatchID = element(1, M),
+            {ok, MatchID} ->
                 match_register_session(MatchID),
                 Resp = #'ResponseObject'{status = 'OK'},
                 {
                     goblet_pb:encode_msg(#'MatchCreateResp'{
                         resp = Resp,
-                        match = pack_match(M)
+                        match = pack_match(goblet_lobby:get_match(MatchID))
                     }),
-                    State0#session{match = MatchID}
+                    State0#session{match = MatchID, player = Player}
                 };
             {error, Error} ->
                 Resp = #'ResponseObject'{
@@ -319,7 +322,7 @@ match_join(MatchID, Player, State, true) ->
                 goblet_pb:encode_msg(#'MatchJoinResp'{resp = Resp})
         end,
     OpCode = <<?MATCH_JOIN:16>>,
-    {[OpCode, Msg], State#session{match = MatchID}};
+    {[OpCode, Msg], State#session{match = MatchID, player = Player}};
 match_join(_MatchID, _Player, State, {error, ErrMsg}) ->
     Resp = #'ResponseObject'{
         status = 'ERROR',
@@ -683,11 +686,11 @@ match_broadcast(Message, MatchID) ->
     gproc:send({p, l, {match, MatchID}}, {self(), event, Message}).
 
 -spec maybe_leave_match(tuple()) -> ok.
-maybe_leave_match(#session{match = MatchID, email = Email}) ->
-    %TODO: Implement notification
+maybe_leave_match(#session{match = MatchID, player = Player}) ->
+    goblet_lobby:leave_match(MatchID, Player),
     logger:notice("Match ~p notified that ~p has disconnected", [
         MatchID,
-        Email
+        Player
     ]),
     ok.
 
