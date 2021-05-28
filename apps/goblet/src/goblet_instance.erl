@@ -9,6 +9,7 @@
     start/2,
     player_ready/2,
     player_decision/3,
+    remove_player/2,
     get_board_state/1,
     get_players/1,
     finalize/1
@@ -63,6 +64,11 @@ get_players(MatchID) ->
 % Execute this to abruptly end a match and send it to finalizing state.
 finalize(MatchID) ->
     gen_statem:cast(?SERVER(MatchID), finalize).
+
+% Only executes if a player has disconnected and their session dies
+-spec remove_player(list(), pos_integer()) -> ok.
+remove_player(Player, MatchID) ->
+    gen_statem:cast(?SERVER(MatchID), {remove_player, Player}).
 
 % Callbacks
 init({PlayerList, MatchID}) ->
@@ -226,6 +232,9 @@ handle_event({call, From}, player_list, #match{playerlist = P} = Data) ->
 handle_event(cast, finalize, Data) ->
     {next_state, finish_phase, Data};
 % Handle all other events
+handle_event(cast, {remove_player, Player}, #match{playerlist = P0} = Data) ->
+    P1 = lists:delete(Player, P0),
+    {keep_state, Data#match{playerlist=P1}};
 handle_event(cast, _EventContent, Data) ->
     {keep_state, Data};
 handle_event({call, From}, _EventContent, Data) ->
