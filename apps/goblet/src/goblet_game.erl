@@ -63,6 +63,17 @@ initialize_board(Board, [Player | Rest]) ->
             initialize_board(B1, Rest)
     end.
 
+initialize_board_test() ->
+	B = initialize_board(1,1,["Test"]),
+	{tile, {X,Y}, Type, _Flags, Name, _VisibleTo} = lists:keyfind("Test", 5, B),
+	?assertEqual(true, is_integer(X)),
+	?assertEqual(true, is_integer(Y)),
+	?assertEqual(f, Type),
+	?assertEqual("Test", Name).
+	
+
+	
+
 initialize_mobs(Board, [Mob | Rest]) ->
     Coords = goblet_board:get_random_unoccupied_tile(Board),
     case goblet_board:add_pawn(Mob, Coords, Board) of
