@@ -36,6 +36,7 @@
     occupant = [],
     visible_to = []
 }).
+%-type tile() :: #tile{}.
 
 % Some constants
 -define(SHIP_MAX_RANGE, 5).
@@ -293,7 +294,8 @@ get_tile_occupant({X, Y}, TileList) ->
 %----------------------------------------------------------------------
 % @doc Check whether or not a tile is reachable
 %----------------------------------------------------------------------
--spec get_tile_reachable(tuple(), tuple(), list(), pos_integer()) -> boolean().
+-spec get_tile_reachable(tuple(), tuple(), list(), pos_integer()) ->
+    boolean().
 get_tile_reachable(T1, T2, Board, MaxDistance) ->
     CanMove = goblet_util:run_checks([
         fun() -> is_tile(not_a_wall, T1) end,
