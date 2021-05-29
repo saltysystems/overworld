@@ -18,8 +18,24 @@
 -include_lib("kernel/include/logger.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
--record(action, {type, ap, who, target}).
--record(gamestate, {mobs, players, actions, board, replay = []}).
+-record(action, {
+    type,
+    ap,
+    who,
+    target
+}).
+-record(gamestate, {
+    mobs,
+    players,
+    actions,
+    board,
+    replay = []
+}).
+
+-type action() :: #action{}.
+%-export_type([action/4]).
+%-type gamestate() :: #gamestate{}.
+
 %TODO - maybe use a record
 %-record(entity, {name, health, energy, flags, inventory}).
 
@@ -27,8 +43,8 @@
 % Public API
 %======================================================================
 
--spec new_player(list(), list(), list(), atom(), list()) ->
-    ok | {error, any()}.
+%-spec new_player(list(), list(), list(), atom(), list()) ->
+%    ok | {error, any()}.
 new_player(Name, Colors, Symbols, Role, Account) ->
     case
         goblet_util:run_checks([
@@ -46,12 +62,13 @@ new_player(Name, Colors, Symbols, Role, Account) ->
             {error, Error}
     end.
 
--spec initialize_board(pos_integer(), pos_integer(), list()) -> list().
+%-spec initialize_board(pos_integer(), pos_integer(), list()) -> list().
 initialize_board(X, Y, Players) ->
     Board = goblet_board:new(X, Y),
     initialize_board(Board, Players).
 %TODO: Add mob initialization
 
+%-spec initialize_board(list(), list()) -> list().
 initialize_board(Board, []) ->
     Board;
 initialize_board(Board, [Player | Rest]) ->
@@ -64,16 +81,18 @@ initialize_board(Board, [Player | Rest]) ->
     end.
 
 initialize_board_test() ->
-	B = initialize_board(1,1,["Test"]),
-	{tile, {X,Y}, Type, _Flags, Name, _VisibleTo} = lists:keyfind("Test", 5, B),
-	?assertEqual(true, is_integer(X)),
-	?assertEqual(true, is_integer(Y)),
-	?assertEqual(f, Type),
-	?assertEqual("Test", Name).
-	
+    B = initialize_board(1, 1, ["Test"]),
+    {tile, {X, Y}, Type, _Flags, Name, _VisibleTo} = lists:keyfind(
+        "Test",
+        5,
+        B
+    ),
+    ?assertEqual(true, is_integer(X)),
+    ?assertEqual(true, is_integer(Y)),
+    ?assertEqual(f, Type),
+    ?assertEqual("Test", Name).
 
-	
-
+%-spec initialize_mobs(list(), list()) -> list().
 initialize_mobs(Board, [Mob | Rest]) ->
     Coords = goblet_board:get_random_unoccupied_tile(Board),
     case goblet_board:add_pawn(Mob, Coords, Board) of
