@@ -23,7 +23,8 @@ init([]) ->
         #{
             id => goblet_instance,
             start => {goblet_instance, start, []},
-            shutdown => brutal_kill
+            restart => transient
+            %shutdown => brutal_kill
         }
     ],
     {ok, {SupFlags, ChildSpecs}}.

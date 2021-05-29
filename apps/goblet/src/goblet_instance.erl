@@ -31,15 +31,19 @@
 
 %TODO: Generate some mobs!
 -record(match, {
-    id,
-    mobs = [],
-    playerlist,
-    readyplayers,
-    board,
-    actions = []
+    id :: pos_integer(),
+    mobs = [] :: list(),
+    playerlist :: list(),
+    readyplayers :: list(),
+    board :: list(),
+    actions = [] :: list()
 }).
 
+-type match_id() :: pos_integer().
+-type player_name() :: list().
+
 % Public API
+-spec start(list(), match_id()) -> {ok, pid()} | ignore | {error, term()}.
 start(PlayerList, MatchID) ->
     logger:notice("Starting up state machine for Match ~p", [MatchID]),
     gen_statem:start_link(
@@ -49,15 +53,19 @@ start(PlayerList, MatchID) ->
         []
     ).
 
+-spec player_ready(player_name(), match_id()) -> ok.
 player_ready(Player, MatchID) ->
     gen_statem:cast(?SERVER(MatchID), {prepare, Player}).
 
+-spec player_decision(player_name(), list(), match_id()) -> ok.
 player_decision(Player, Actions, MatchID) ->
     gen_statem:cast(?SERVER(MatchID), {decision, Player, Actions}).
 
+-spec get_board_state(match_id()) -> list().
 get_board_state(MatchID) ->
     gen_statem:call(?SERVER(MatchID), board_state).
 
+-spec get_players(match_id()) -> list().
 get_players(MatchID) ->
     gen_statem:call(?SERVER(MatchID), player_list).
 
@@ -213,12 +221,10 @@ execution_phase(
 execution_phase(EventType, EventContent, Data) ->
     handle_event(EventType, EventContent, Data).
 
-finish_phase(state_timeout, Timer, #match{playerlist = P, id = ID} = Data) ->
-    % We just latch onto any running timer and wait for it to fire
-    logger:notice("(Finish) Final timer has executed", [Timer]),
+finish_phase(_EventType, _Timer, #match{playerlist = P, id = ID} = Data) ->
+    logger:notice("(Finish) Final timer has executed"),
     goblet_protocol:match_state_update([], [], 'FINISH', P, [], ID),
-    save_and_exit(Data),
-    {stop, normal}.
+    {stop, normal, Data}.
 
 save_and_exit(#match{id = ID}) ->
     %TODO: Save data at the end of match, update a player's inventory or
@@ -230,7 +236,8 @@ handle_event({call, From}, board_state, #match{board = B} = Data) ->
 handle_event({call, From}, player_list, #match{playerlist = P} = Data) ->
     {keep_state, Data, [{reply, From, P}]};
 handle_event(cast, finalize, Data) ->
-    {next_state, finish_phase, Data};
+    TimeOut = {{timeout, final}, 0, final},
+    {next_state, finish_phase, Data, [TimeOut]};
 % Handle all other events
 handle_event(cast, {remove_player, Player}, #match{playerlist = P0} = Data) ->
     P1 = lists:delete(Player, P0),
@@ -240,8 +247,8 @@ handle_event(cast, _EventContent, Data) ->
 handle_event({call, From}, _EventContent, Data) ->
     {keep_state, Data, [{reply, From, {error, unknown_handler}}]}.
 
-terminate(_Reason, _State, Data) ->
+terminate(Reason, _State, Data) ->
     %TODO: Save the player progress
-    logger:notice("(Abort) Terminate has been called"),
+    logger:debug("(Shutdown) Terminate has been called: ~p", [Reason]),
     save_and_exit(Data),
     ok.

@@ -244,12 +244,13 @@ match_create(Player, Mode, MaxPlayers, Extra, State0, true) ->
     {Msg, State1} =
         case goblet_lobby:create_match(Player, Mode, MaxPlayers, Extra) of
             {ok, MatchID} ->
+                {ok, M} = goblet_lobby:get_match(MatchID),
                 match_register_session(MatchID),
                 Resp = #'ResponseObject'{status = 'OK'},
                 {
                     goblet_pb:encode_msg(#'MatchCreateResp'{
                         resp = Resp,
-                        match = pack_match(goblet_lobby:get_match(MatchID))
+                        match = pack_match(M)
                     }),
                     State0#session{match = MatchID, player = Player}
                 };
@@ -619,7 +620,6 @@ match_state_update(
         #'MatchStateResp.Action'{type = T1, who = W1, x = X1, y = Y1}
      || {W1, T1, {X1, Y1}} <- Replay
     ],
-    logger:notice("Actions are: ~p", [R1]),
     Update = #'MatchStateResp'{
         state = MatchState,
         board = B1,
@@ -686,13 +686,25 @@ match_broadcast(Message, MatchID) ->
     gproc:send({p, l, {match, MatchID}}, {self(), event, Message}).
 
 -spec maybe_leave_match(tuple()) -> ok.
+maybe_leave_match(false) ->
+    % No session whatsoever
+    ok;
+maybe_leave_match(#session{match = false}) ->
+    % Player not in a match, so just exit..
+    logger:notice("Not in a match, clean exit"),
+    ok;
 maybe_leave_match(#session{match = MatchID, player = Player}) ->
-    goblet_lobby:leave_match(MatchID, Player),
-    logger:notice("Match ~p notified that ~p has disconnected", [
-        MatchID,
-        Player
-    ]),
-    ok.
+    case goblet_lobby:get_match(MatchID) of
+        {ok, _Match} ->
+            goblet_lobby:leave_match(Player, MatchID),
+            logger:notice("Match ~p notified that ~p has disconnected", [
+                MatchID,
+                Player
+            ]);
+        _ ->
+            % Match doesn't exist, so no need to try to leave
+            ok
+    end.
 
 match_deregister_session(MatchID) ->
     logger:notice("Deregistered ~p from session ~p", [self(), MatchID]),

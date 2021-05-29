@@ -33,21 +33,29 @@
 
 % Records representing ephemeral objects, such as matches
 -record(goblet_match, {
-    id = -1,
-    state,
-    players = [],
-    players_max,
-    start_time,
-    mode,
-    extra = <<>>
+    id :: match_id(),
+    state :: match_state(),
+    players = [] :: match_players(),
+    players_max :: pos_integer(),
+    start_time :: pos_integer(),
+    mode :: match_mode(),
+    extra = <<>> :: binary()
 }).
+
+-type match_players() :: list().
+-type match_state() :: atom().
+-type match_mode() :: atom().
+-type match_id() :: pos_integer().
+-type match() :: #goblet_match{}.
 
 %%===================================================================
 %% API
 %%===================================================================
+-spec start() -> {ok, pid()} | ignore | {error, term()}.
 start() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
+-spec stop() -> ok.
 stop() ->
     gen_server:stop(?SERVER).
 
@@ -55,7 +63,7 @@ stop() ->
 %% @doc Return a list of matches.
 %% @end
 %%-------------------------------------------------------------------
--spec get_matches() -> list().
+-spec get_matches() -> match_players().
 get_matches() ->
     gen_server:call(?MODULE, get_matches).
 
@@ -63,7 +71,7 @@ get_matches() ->
 %% @doc Return a single match in tuple format.
 %% @end
 %%-------------------------------------------------------------------
--spec get_match(integer()) -> tuple().
+-spec get_match(integer()) -> {ok, tuple()} | {error, atom()}.
 get_match(MatchID) ->
     gen_server:call(?MODULE, {get_match, MatchID}).
 
@@ -80,13 +88,13 @@ get_match_players(MatchID) ->
 %%      with updated fields (state, ID).
 %% @end
 %%-------------------------------------------------------------------
--spec create_match(list(), atom(), integer()) ->
-    {ok, pos_integer()} | {error, atom()}.
+-spec create_match(list(), match_mode(), pos_integer()) ->
+    {ok, match_id()} | {error, atom()}.
 create_match(Player, Mode, MaxPlayers) ->
     create_match(Player, Mode, MaxPlayers, <<>>).
 
--spec create_match(list(), atom(), integer(), binary()) ->
-    {ok, pos_integer()} | {error, atom()}.
+-spec create_match(list(), match_mode(), pos_integer(), binary()) ->
+    {ok, match_id()} | {error, atom()}.
 create_match(Player, Mode, MaxPlayers, Extra) ->
     gen_server:call(
         ?MODULE,
@@ -97,7 +105,7 @@ create_match(Player, Mode, MaxPlayers, Extra) ->
 %% @doc Join a player to a match, so long as it hasn't yet started.
 %% @end
 %%-------------------------------------------------------------------
--spec join_match(list(), integer()) -> {ok, tuple()} | {error, atom()}.
+-spec join_match(list(), match_id()) -> {ok, tuple()} | {error, atom()}.
 join_match(Player, MatchID) ->
     gen_server:call(?MODULE, {join_match, Player, MatchID}).
 
@@ -105,7 +113,7 @@ join_match(Player, MatchID) ->
 %% @doc Remove a player from a match
 %% @end
 %%-------------------------------------------------------------------
--spec leave_match(list(), integer()) -> ok | {error, atom()}.
+-spec leave_match(list(), match_id()) -> ok | {error, atom()}.
 leave_match(Player, MatchID) ->
     gen_server:call(?MODULE, {leave_match, Player, MatchID}).
 
@@ -113,7 +121,7 @@ leave_match(Player, MatchID) ->
 %% @doc Add a match to the lobby server, return a record of the match
 %%      with updated fields (state, ID).
 %%-------------------------------------------------------------------
--spec start_match(integer()) -> ok | {error, atom()}.
+-spec start_match(match_id()) -> ok | {error, atom()}.
 start_match(MatchID) ->
     gen_server:call(?MODULE, {start_match, MatchID}).
 
@@ -122,7 +130,7 @@ start_match(MatchID) ->
 %%      it does not, then do nothing.
 %% @end
 %%-------------------------------------------------------------------
--spec delete_match(integer()) -> ok.
+-spec delete_match(match_id()) -> ok.
 delete_match(MatchID) ->
     gen_server:call(?MODULE, {delete_match, MatchID}).
 
@@ -198,7 +206,6 @@ handle_call(
     {NextID, Matches, Timer}
 ) ->
     Match = match_find(MatchID, Matches),
-    % should basically never fail
     {Reply, UpdatedMatch} = maybe_leave(Player, Match),
     UpdatedMatches =
         case UpdatedMatch#goblet_match.players of
@@ -206,6 +213,8 @@ handle_call(
                 % if no one is in the match after the player leaves, go
                 % ahead and delete the original Match record from the
                 % Matches list
+                logger:notice("Match ~p is empty. Shutting down.", [MatchID]),
+                goblet_instance:finalize(MatchID),
                 match_del(Match, Matches);
             _ ->
                 % otherwise update the Matches list with the latest &
@@ -218,10 +227,18 @@ handle_call({delete_match, MatchID}, _From, {NextID, Matches, Timer}) ->
     NewMatches = match_del(Match, Matches),
     % Find any processes still registered to this session in gproc
     Pids = gproc:lookup_pids({p, l, {match, MatchID}}),
-    logger:notice(
-        "Deleting match ~p.  Pids still attached to this match: ~p",
-        [MatchID, Pids]
-    ),
+    if
+        length(Pids) > 0 ->
+            logger:notice(
+                "Deleting match ~p. ~p clients still attached to this match!",
+                [MatchID, Pids]
+            );
+        true ->
+            logger:notice(
+                "Deleting match ~p.",
+                [MatchID]
+            )
+    end,
     %TODO: We also need encode a MATCH_LEAVE or MATCH_FINISH message to
     %      every client in this match and let them know that it has poofed.
     %      This should also automagically clean up the gproc state.
@@ -390,7 +407,7 @@ add_match_test() ->
     % Note that we don't do any validation here-
     Name = "Chester Tester",
     {ok, MatchID} = create_match(Name, 'DEFAULT', 6),
-    ConfirmedMatch = get_match(MatchID),
+    {ok, ConfirmedMatch} = get_match(MatchID),
     {Id, State, Players, PlayerMax, _StartTime, Mode, _Extra} =
         ConfirmedMatch,
     ?assertEqual('CREATING', State),
@@ -418,7 +435,8 @@ join_leave_match_test() ->
         Email
     ),
     {ok, MatchID} = create_match(Name, 'DEFAULT', 6),
-    {MatchID, _S, Players, _PM, _ST, _M, _E} = get_match(MatchID),
+    {ok, M} = get_match(MatchID),
+    {MatchID, _S, Players, _PM, _ST, _M, _E} = M,
     ?assertEqual([Name], Players),
     % Try to join again, just for fun
     {error, Error} = join_match(Name, MatchID),
@@ -442,7 +460,8 @@ start_match_test() ->
         Email
     ),
     {ok, MatchId} = create_match(Name, 'DEFAULT', 6),
-    {MatchId, _S, _P, _PM, _ST, _M, _E} = get_match(MatchId),
+    {ok, M} = get_match(MatchId),
+    {MatchId, _S, _P, _PM, _ST, _M, _E} = M,
     % This is validated by the session
     ok = start_match(MatchId),
     % Can we leave a match if its running?
