@@ -32,7 +32,7 @@ init(Req, State) ->
 terminate(_Reason, Req, State) ->
     #{peer := {IP, _Port}} = Req,
     logger:notice("~p: client disconnected", [IP]),
-    logger:notice("Client state at disconnect: ~p", [State]),
+    logger:debug("Client state at disconnect: ~p", [State]),
     goblet_protocol:maybe_leave_match(State),
     ok.
 
