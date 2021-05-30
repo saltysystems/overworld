@@ -116,15 +116,17 @@ prepare_phase(
                 logger:notice(
                     "(Prepare) All players are ready. -> Decision"
                 ),
+                TimerMS = 20000,
                 goblet_protocol:match_state_update(
-                    B,
+                    pack_tiles(B),
                     [],
                     'DECIDE',
                     PlayerList,
                     [],
+                    TimerMS,
                     ID
                 ),
-                TimeOut = {{timeout, decide}, 20000, execute},
+                TimeOut = {{timeout, decide}, TimerMS, execute},
                 {next_state, decision_phase, Data#match{readyplayers = []},
                     [
                         TimeOut
@@ -138,6 +140,7 @@ prepare_phase(
                     'PREPARE',
                     PlayerList,
                     ReadyPlayers,
+                    0,
                     ID
                 ),
                 {next_state, prepare_phase, Data#match{
@@ -191,11 +194,8 @@ decision_phase({timeout, decide}, execute, Data) ->
     ),
     % need to unpack the tiles into a plain tuple. still very unhappy with
     % this
-    Tiles = [
-        {X, Y, atom_to_list(Type), [Who]}
-     || {_, {X, Y}, Type, _, Who, _} <- B1
-    ],
-    goblet_protocol:match_state_update(Tiles, Replay, 'EXECUTE', P, [], ID),
+    TimerMS = 10000,
+    goblet_protocol:match_state_update(pack_tiles(B1), Replay, 'EXECUTE', P, [], TimerMS, ID),
     logger:notice("Done updating match state."),
     % Reset ready players
     Data1 = Data#match{
@@ -205,7 +205,7 @@ decision_phase({timeout, decide}, execute, Data) ->
         mobs = M1,
         actions = A1
     },
-    {next_state, execution_phase, Data1, [{state_timeout, 10000, decide}]};
+    {next_state, execution_phase, Data1, [{state_timeout, TimerMS, decide}]};
 decision_phase(EventType, EventContent, Data) ->
     handle_event(EventType, EventContent, Data).
 
@@ -215,16 +215,23 @@ execution_phase(
     #match{playerlist = P, id = ID} = Data
 ) ->
     logger:notice("(Execute) 10000ms have elapsed. -> Decision"),
-    goblet_protocol:match_state_update([], [], 'DECIDE', P, [], ID),
-    TimeOut = {{timeout, decide}, 20000, execute},
+    TimerMS = 20000,
+    goblet_protocol:match_state_update([], [], 'DECIDE', P, [], TimerMS, ID),
+    TimeOut = {{timeout, decide}, TimerMS, execute},
     {next_state, decision_phase, Data, [TimeOut]};
 execution_phase(EventType, EventContent, Data) ->
     handle_event(EventType, EventContent, Data).
 
 finish_phase(_EventType, _Timer, #match{playerlist = P, id = ID} = Data) ->
     logger:notice("(Finish) Final timer has executed"),
-    goblet_protocol:match_state_update([], [], 'FINISH', P, [], ID),
+    goblet_protocol:match_state_update([], [], 'FINISH', P, [], 0, ID),
     {stop, normal, Data}.
+
+pack_tiles(Board) ->
+    [
+        {X, Y, atom_to_list(Type), [Who]}
+     || {_, {X, Y}, Type, _, Who, _} <- Board
+    ].
 
 save_and_exit(#match{id = ID}) ->
     %TODO: Save data at the end of match, update a player's inventory or

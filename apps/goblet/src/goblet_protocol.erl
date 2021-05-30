@@ -15,7 +15,7 @@
     match_info/2,
     match_prepare/2,
     match_decide/2,
-    match_state_update/6,
+    match_state_update/7,
     match_broadcast/2,
     maybe_leave_match/1
 ]).
@@ -601,6 +601,7 @@ player_list(_Message, State) ->
     atom(),
     list(),
     list(),
+    pos_integer(),
     pos_integer()
 ) -> ok.
 match_state_update(
@@ -609,6 +610,7 @@ match_state_update(
     MatchState,
     PlayerList,
     ReadyPlayers,
+    Timer,
     MatchID
 ) ->
     % TODO: Decide if we want to have flags or not
@@ -625,7 +627,8 @@ match_state_update(
         board = B1,
         playerlist = PlayerList,
         readyplayers = ReadyPlayers,
-        replay = R1
+        replay = R1,
+        timer = Timer
     },
     Msg = goblet_pb:encode_msg(Update),
     OpCode = <<?MATCH_STATE:16>>,
