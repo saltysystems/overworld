@@ -7,6 +7,7 @@
     account_login/1,
     player_new/2,
     player_list/2,
+    player_state_update/6,
     match_create/2,
     match_list/2,
     match_join/2,
@@ -22,19 +23,12 @@
 
 -export([player_log/1]).
 
--include("goblet_opcode.hrl").
+-include("goblet_session.hrl").
 -include("goblet_database.hrl").
 -include("goblet_pb.hrl").
 
 -include_lib("kernel/include/logger.hrl").
 -include_lib("eunit/include/eunit.hrl").
-
--record(session, {
-    email = none,
-    authenticated = false,
-    match = false,
-    player = false
-}).
 
 %%=========================================================================
 %% Goblet Protocol.
@@ -592,6 +586,30 @@ player_list(_Message, State) ->
     default_handler(State).
 
 %%------------------------------------------------------------------------
+%% @doc Update a player's info
+%% @end
+%%------------------------------------------------------------------------
+-spec player_state_update(
+    list(),
+    integer(),
+    integer(),
+    list(),
+    list(),
+    pos_integer()
+) -> ok.
+player_state_update(Name, Health, Energy, Flags, Inventory, MatchID) ->
+    Update = #'PlayerInfoResp'{
+        name = Name,
+        health = Health,
+        energy = Energy,
+        flags = Flags,
+        inventory = Inventory
+    },
+    Msg = goblet_pb:encode_msg(Update),
+    OpCode = <<?PLAYER_INFO:16>>,
+    player_notify([OpCode, Msg], MatchID, Name).
+
+%%------------------------------------------------------------------------
 %% @doc Update a match state
 %% @end
 %%------------------------------------------------------------------------
@@ -685,8 +703,13 @@ match_register_session(MatchID) ->
 
 -spec match_broadcast([binary(), ...], integer()) -> ok.
 match_broadcast(Message, MatchID) ->
-    logger:notice("Broadcasting a message to match ~p", [MatchID]),
+    logger:debug("Broadcasting a message to match ~p", [MatchID]),
     gproc:send({p, l, {match, MatchID}}, {self(), event, Message}).
+
+-spec player_notify([binary(), ...], pos_integer(), list()) -> ok.
+player_notify(Message, MatchID, Player) ->
+    logger:debug("Sending a notification to ~p", [Player]),
+    gproc:send({p, l, {match, MatchID}}, {self(), notify, Message, Player}).
 
 -spec maybe_leave_match(tuple()) -> ok.
 maybe_leave_match(false) ->
