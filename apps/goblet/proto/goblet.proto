@@ -121,6 +121,21 @@ message PlayerListResp {
 	optional string error = 3;
 }
 
+message PlayerInfoResp {
+    //TODO: More expanded information for the inventory
+    //      Need to think about the inventory a bit more...
+    //      for instance, how to do ammo. Separate item?
+    //message Item {
+    //    string name = 1;
+    //    int32 ap = 2;
+    //}
+    required string name = 1;
+    required int32 health = 2;
+    required int32 energy = 3;
+    repeated string flags = 4;
+    repeated string inventory = 5;
+}
+
 message PlayerAuthenticate {
 	required bytes id = 1;
 }
