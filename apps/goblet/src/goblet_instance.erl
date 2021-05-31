@@ -192,10 +192,16 @@ decision_phase({timeout, decide}, execute, Data) ->
     {A1, M1, P1, B1, Replay} = goblet_game:calculate_round(
         {A, M, PlayerShadows, B0}
     ),
-    % need to unpack the tiles into a plain tuple. still very unhappy with
-    % this
     TimerMS = 10000,
-    goblet_protocol:match_state_update(pack_tiles(B1), Replay, 'EXECUTE', P, [], TimerMS, ID),
+    goblet_protocol:match_state_update(
+        pack_tiles(B1),
+        Replay,
+        'EXECUTE',
+        P,
+        [],
+        TimerMS,
+        ID
+    ),
     logger:notice("Done updating match state."),
     % Reset ready players
     Data1 = Data#match{
@@ -216,7 +222,15 @@ execution_phase(
 ) ->
     logger:notice("(Execute) 10000ms have elapsed. -> Decision"),
     TimerMS = 20000,
-    goblet_protocol:match_state_update([], [], 'DECIDE', P, [], TimerMS, ID),
+    goblet_protocol:match_state_update(
+        [],
+        [],
+        'DECIDE',
+        P,
+        [],
+        TimerMS,
+        ID
+    ),
     TimeOut = {{timeout, decide}, TimerMS, execute},
     {next_state, decision_phase, Data, [TimeOut]};
 execution_phase(EventType, EventContent, Data) ->
