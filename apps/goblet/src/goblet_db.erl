@@ -18,7 +18,7 @@
     player_inventory/1,
     player_items_have_action/2,
     player_shadow/1,
-    player_unshadow/4,
+    player_unshadow/5,
     is_valid_player/1,
     is_valid_player_account/2,
     is_player_alive/1,
@@ -139,9 +139,9 @@ player_shadow(Name) ->
             }
     end.
 
--spec player_unshadow(list(), pos_integer(), pos_integer(), list()) ->
+-spec player_unshadow(list(), pos_integer(), pos_integer(), list(), list()) ->
     ok | {error, atom()}.
-player_unshadow(Name, Health, Energy, Flags) ->
+player_unshadow(Name, Health, Energy, Flags, Inventory) ->
     Fun =
         fun() ->
             case mnesia:read({goblet_player, Name}) of
@@ -153,7 +153,8 @@ player_unshadow(Name, Health, Energy, Flags) ->
                         Player#goblet_player{
                             health = Health,
                             energy = Energy,
-                            flags = Flags
+                            flags = Flags,
+                            inventory = Inventory
                         },
                         write
                     )
