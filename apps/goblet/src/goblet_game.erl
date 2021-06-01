@@ -323,8 +323,8 @@ update_players(S) ->
     Players = S#gamestate.players,
     % commit each player's updates to the database
     Results = [
-        {Name, goblet_db:player_unshadow(Name, Health, Energy, Flags)}
-     || {Name, Health, Energy, Flags, _I} <- Players
+        {Name, goblet_db:player_unshadow(Name, Health, Energy, Flags, Inventory)}
+     || {Name, Health, Energy, Flags, Inventory} <- Players
     ],
     % Then return the names of the players
     % (note this effectively throws away the result of the side effects.
