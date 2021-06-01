@@ -7,7 +7,7 @@
     account_login/1,
     player_new/2,
     player_list/2,
-    player_state_update/6,
+    player_state_update/2,
     match_create/2,
     match_list/2,
     match_join/2,
@@ -590,14 +590,16 @@ player_list(_Message, State) ->
 %% @end
 %%------------------------------------------------------------------------
 -spec player_state_update(
+    {
     list(),
     integer(),
     integer(),
     list(),
-    list(),
+    list()
+    },
     pos_integer()
 ) -> ok.
-player_state_update(Name, Health, Energy, Flags, Inventory, MatchID) ->
+player_state_update({Name, Health, Energy, Flags, Inventory}, MatchID) ->
     Update = #'PlayerInfoResp'{
         name = Name,
         health = Health,
