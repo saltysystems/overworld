@@ -10,8 +10,10 @@
     account_by_email/1,
     account_login/2,
     create_player/5,
-    mob_by_name/1,
+    create_mob/6,
+    delete_mob/1,
     mob_instance/1,
+    mob_by_name/1,
     delete_player/2,
     delete_orphaned_player/1,
     player_by_name/1,
@@ -109,6 +111,51 @@ mob_by_name(Name) ->
             [] ->
                 {error, no_such_mob}
         end
+    end,
+    mnesia:activity(transaction, Fun).
+
+-spec create_mob(
+    list(),
+    non_neg_integer(),
+    non_neg_integer(),
+    non_neg_integer(),
+    non_neg_integer(),
+    list()
+) ->
+    ok | {error, atom()}.
+create_mob(Name, Appearance, Type, Health, Energy, Inventory) ->
+    Fun = fun() ->
+        case mnesia:read({goblet_mob, Name}) of
+            [] ->
+                NextID = mnesia:dirty_update_counter(
+                    goblet_table_ids,
+                    goblet_player,
+                    1
+                ),
+                mnesia:write(
+                    goblet_mob,
+                    #goblet_mob{
+                        name = Name,
+                        id = NextID,
+                        appearance = Appearance,
+                        type = Type,
+                        health = Health,
+                        energy = Energy,
+                        flags = [],
+                        inventory = Inventory
+                    },
+                    write
+                );
+            _ ->
+                {error, mob_already_exists}
+        end
+    end,
+    mnesia:activity(transaction, Fun).
+
+-spec delete_mob(list()) -> ok.
+delete_mob(Name) ->
+    Fun = fun() ->
+        mnesia:delete({goblet_mob, Name})
     end,
     mnesia:activity(transaction, Fun).
 
@@ -563,6 +610,31 @@ create_item_test() ->
         Price
     ),
     ?assertEqual(ok, Resp).
+
+create_delete_mob_test() ->
+    Name = "Space Bug",
+    Appearance = 0,
+    Type = bug,
+    Health = 100,
+    Energy = 100,
+    Inventory = [],
+    Resp = goblet_db:create_mob(
+        Name,
+        Appearance,
+        Type,
+        Health,
+        Energy,
+        Inventory
+    ),
+    ?assertEqual(ok, Resp),
+    Mob = goblet_db:mob_by_name(Name),
+    ?assertEqual(Mob#goblet_mob.appearance, Appearance),
+    ?assertEqual(Mob#goblet_mob.type, Type),
+    ?assertEqual(Mob#goblet_mob.health, Health),
+    ?assertEqual(Mob#goblet_mob.energy, Energy),
+    ?assertEqual(Mob#goblet_mob.inventory, Inventory),
+    Resp1 = goblet_db:delete_mob(Name),
+    ?assertEqual(ok, Resp1).
 
 item_to_player_test() ->
     Item = "TestGun",
