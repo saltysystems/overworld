@@ -126,7 +126,13 @@ prepare_phase(
                     TimerMS,
                     ID
                 ),
-                [ goblet_protocol:player_state_update(goblet_db:player_shadow(X), ID) || X <- PlayerList ],
+                [
+                    goblet_protocol:player_state_update(
+                        goblet_db:player_shadow(X),
+                        ID
+                    )
+                 || X <- PlayerList
+                ],
                 TimeOut = {{timeout, decide}, TimerMS, execute},
                 {next_state, decision_phase, Data#match{readyplayers = []},
                     [
@@ -205,7 +211,10 @@ decision_phase({timeout, decide}, execute, Data) ->
     ),
     % This is not optimal - create a new shadow for each player after updates
     % and send it back to the player
-    [ goblet_protocol:player_state_update(goblet_db:player_shadow(X), ID) || X <- P ],
+    [
+        goblet_protocol:player_state_update(goblet_db:player_shadow(X), ID)
+     || X <- P
+    ],
     logger:notice("Done updating match state."),
     % Reset ready players
     Data1 = Data#match{
@@ -226,7 +235,10 @@ execution_phase(
 ) ->
     % Create a new shadow for each player after updates
     % and send it back to the player
-    [ goblet_protocol:player_state_update(goblet_db:player_shadow(X), ID) || X <- P ],
+    [
+        goblet_protocol:player_state_update(goblet_db:player_shadow(X), ID)
+     || X <- P
+    ],
     logger:notice("(Execute) 10000ms have elapsed. -> Decision"),
     TimerMS = 20000,
     goblet_protocol:match_state_update(
