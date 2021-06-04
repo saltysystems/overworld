@@ -591,11 +591,11 @@ player_list(_Message, State) ->
 %%------------------------------------------------------------------------
 -spec player_state_update(
     {
-    list(),
-    integer(),
-    integer(),
-    list(),
-    list()
+        list(),
+        integer(),
+        integer(),
+        list(),
+        list()
     },
     pos_integer()
 ) -> ok.
