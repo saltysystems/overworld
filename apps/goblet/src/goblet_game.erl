@@ -64,9 +64,9 @@ new_player(Name, Colors, Symbols, Role, Account) ->
 
 %-spec initialize_board(pos_integer(), pos_integer(), list()) -> list().
 initialize_board(X, Y, Players) ->
-    Board = goblet_board:new(X, Y),
-    initialize_board(Board, Players).
-%TODO: Add mob initialization
+    Board0 = goblet_board:new(X, Y),
+    Board1 = initialize_board(Board0, Players),
+    initialize_mobs(Board1).
 
 %-spec initialize_board(list(), list()) -> list().
 initialize_board(Board, []) ->
@@ -93,6 +93,8 @@ initialize_board_test() ->
     ?assertEqual("Test", Name).
 
 %-spec initialize_mobs(list(), list()) -> list().
+initialize_mobs(Board) ->
+    Board.
 initialize_mobs(Board, [Mob | Rest]) ->
     Coords = goblet_board:get_random_unoccupied_tile(Board),
     case goblet_board:add_pawn(Mob, Coords, Board) of
@@ -323,7 +325,14 @@ update_players(S) ->
     Players = S#gamestate.players,
     % commit each player's updates to the database
     Results = [
-        {Name, goblet_db:player_unshadow(Name, Health, Energy, Flags, Inventory)}
+        {Name,
+            goblet_db:player_unshadow(
+                Name,
+                Health,
+                Energy,
+                Flags,
+                Inventory
+            )}
      || {Name, Health, Energy, Flags, Inventory} <- Players
     ],
     % Then return the names of the players

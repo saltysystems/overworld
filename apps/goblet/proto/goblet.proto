@@ -218,7 +218,7 @@ message MatchStateResp {
     repeated string playerlist = 3;
     repeated string readyplayers = 4;
     repeated Action replay = 5;
-    required int32 timer = 6;
+    optional int32 timer = 6;
 }
 
 message MatchPrepReq {

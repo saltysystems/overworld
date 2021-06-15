@@ -591,11 +591,11 @@ player_list(_Message, State) ->
 %%------------------------------------------------------------------------
 -spec player_state_update(
     {
-    list(),
-    integer(),
-    integer(),
-    list(),
-    list()
+        list(),
+        integer(),
+        integer(),
+        list(),
+        list()
     },
     pos_integer()
 ) -> ok.
@@ -621,7 +621,7 @@ player_state_update({Name, Health, Energy, Flags, Inventory}, MatchID) ->
     atom(),
     list(),
     list(),
-    pos_integer(),
+    integer(),
     pos_integer()
 ) -> ok.
 match_state_update(
@@ -642,14 +642,26 @@ match_state_update(
         #'MatchStateResp.Action'{type = T1, who = W1, x = X1, y = Y1}
      || {W1, T1, {X1, Y1}} <- Replay
     ],
-    Update = #'MatchStateResp'{
-        state = MatchState,
-        board = B1,
-        playerlist = PlayerList,
-        readyplayers = ReadyPlayers,
-        replay = R1,
-        timer = Timer
-    },
+	% If the timer is greater than zero, the client should know. Otherwise we can just throw it out.
+    Update = case Timer > 0 of
+			  true ->
+				   #'MatchStateResp'{
+					state = MatchState,
+					board = B1,
+					playerlist = PlayerList,
+					readyplayers = ReadyPlayers,
+					replay = R1,
+					timer = Timer
+				};
+			  false ->
+				   #'MatchStateResp'{
+					state = MatchState,
+					board = B1,
+					playerlist = PlayerList,
+					readyplayers = ReadyPlayers,
+					replay = R1
+				}
+		   end,
     Msg = goblet_pb:encode_msg(Update),
     OpCode = <<?MATCH_STATE:16>>,
     match_broadcast([OpCode, Msg], MatchID).
