@@ -12,7 +12,8 @@
     calculate_round/1,
     check_valid_items/2,
     check_player_alive/1,
-    check_valid_target/2
+    check_valid_target/2,
+    deduct_energy/3
 ]).
 
 -include_lib("kernel/include/logger.hrl").
@@ -45,7 +46,7 @@
 %======================================================================
 
 %-spec new_player(list(), list(), list(), atom(), list()) ->
-%    ok | {error, any()}.
+%	 ok | {error, any()}.
 new_player(Name, Colors, Symbols, Role, Account) ->
     case
         goblet_util:run_checks([
@@ -233,7 +234,7 @@ update_gamestate([Action | T], G) ->
                     "Something went wrong deducting energy from ~p: ~p",
                     [Who, Error]
                 ),
-				G
+                G
         end,
     update_gamestate(T, GN).
 
@@ -269,8 +270,8 @@ action_processor(Action, CurrentGamestate) ->
     NewGamestate.
 
 %TODO: Think about some kind of meta language to describe this, maybe also a
-%      place where gdminus could fit in. Perhaps something like how Chess moves
-%      are described?
+%	   place where gdminus could fit in. Perhaps something like how Chess moves
+%	   are described?
 -spec record_replay(list(), list(), tuple(), list()) -> list().
 record_replay(Player, Type, Target, CurrentReplay) ->
     Replay = {Player, Type, Target},
@@ -281,12 +282,37 @@ move_maybe_collide(From, To, Board) ->
     case goblet_board:get_tile_occupant(To, Board) of
         [] ->
             move_pawn(From, To, Board);
-        _Occupants ->
-            % Tile is occupied, bounce the player back to the first free space
-            % TODO: Add damage and stuff
-            NewTo = goblet_board:get_nearest_unoccupied_tile(To, Board),
-            move_pawn(From, NewTo, Board)
+        _Occupant ->
+            %TODO: Add damage from collisions
+            % Tile is occupied, bounce the occupant out of the tile
+
+            % just for clarity
+            OccupantPos = To,
+            NewPos = goblet_board:get_nearest_unoccupied_tile(
+                OccupantPos,
+                Board
+            ),
+            NewBoard = move_pawn(OccupantPos, NewPos, Board),
+            % Now move the original player to their intended position
+            move_pawn(From, To, NewBoard)
     end.
+
+move_maybe_collide_test() ->
+    B1 = goblet_board:new(1, 1),
+    P1 = "Chester",
+    PlayerOnePos = goblet_board:get_first_unoccupied_tile(B1),
+    B2 = goblet_board:add_pawn(P1, PlayerOnePos, B1),
+    P2 = "Lester",
+    PlayerTwoPos = goblet_board:get_first_unoccupied_tile(B2),
+    B3 = goblet_board:add_pawn(P2, PlayerTwoPos, B2),
+    B4 = move_maybe_collide(PlayerTwoPos, PlayerOnePos, B3),
+    % Player one should now be bounced to a new position, and P2 moves into
+    % P1's place
+    NewPlayerOnePos = goblet_board:get_pawn(P1, B4),
+    NewPlayerTwoPos = goblet_board:get_pawn(P2, B4),
+    ?assertNotEqual(NewPlayerOnePos, PlayerOnePos),
+    %While Player 2 should now be in Player 1's old position
+    ?assertEqual(NewPlayerTwoPos, PlayerOnePos).
 
 -spec move_pawn(tuple(), tuple(), list()) -> list().
 move_pawn(From, To, Board) ->
@@ -340,13 +366,13 @@ deduct_energy_test() ->
         {"Lester", 120, 90, [], []}
     ],
     Who = "Chester",
-	{Resp0, [H0 | _T0]} = deduct_energy(Who, 30, PlayerList),
-	?assertEqual(Resp0, ok),
+    {Resp0, [H0 | _T0]} = deduct_energy(Who, 30, PlayerList),
+    ?assertEqual(Resp0, ok),
     ?assertEqual({"Chester", 100, 70, [], []}, H0),
     % Now test over-deducting
-	{Resp1, [H0 | _T0]} = deduct_energy(Who, 120, PlayerList),
-	?assertEqual(Resp1, no_energy),
-    ?assertEqual({"Chester", 100, 70, [], []}, H0).
+    {Resp1, [H1 | _T1]} = deduct_energy(Who, 120, PlayerList),
+    ?assertEqual(Resp1, no_energy),
+    ?assertEqual({"Chester", 100, 100, [], []}, H1).
 
 process_action_list(List) ->
     process_action_list(List, []).
@@ -402,16 +428,16 @@ check_valid_items([{Player, Item, {_X, _Y}} | T], Inventory) ->
     end.
 
 %check_valid_actions([]) ->
-%    ok;
+%	 ok;
 %check_valid_actions([{Player, Type, {_X, _Y}} | T]) ->
-%    case goblet_db:player_items_have_action(Player, Type) of
-%        [] ->
-%            {error, invalid_action};
-%        {error, E} ->
-%            {error, E};
-%        _ ->
-%            check_valid_actions(T)
-%    end.
+%	 case goblet_db:player_items_have_action(Player, Type) of
+%		 [] ->
+%			 {error, invalid_action};
+%		 {error, E} ->
+%			 {error, E};
+%		 _ ->
+%			 check_valid_actions(T)
+%	 end.
 
 check_valid_target([], _MatchID) ->
     ok;
