@@ -24,6 +24,7 @@
     who,
     target
 }).
+
 -record(gamestate, {
     mobs,
     players,
@@ -32,7 +33,7 @@
     replay = []
 }).
 
--type action() :: #action{}.
+%-type action() :: #action{}.
 %-export_type([action/4]).
 %-type gamestate() :: #gamestate{}.
 
@@ -95,6 +96,7 @@ initialize_board_test() ->
 %-spec initialize_mobs(list(), list()) -> list().
 initialize_mobs(Board) ->
     Board.
+
 initialize_mobs(Board, [Mob | Rest]) ->
     Coords = goblet_board:get_random_unoccupied_tile(Board),
     case goblet_board:add_pawn(Mob, Coords, Board) of
@@ -213,47 +215,90 @@ process_phases([H | T], Gamestate) ->
 
 update_gamestate([], G) ->
     G;
-update_gamestate([H | T], G) ->
+update_gamestate([Action | T], G) ->
+    %Board = G#gamestate.board,
+    %Coords = goblet_board:get_pawn(Player, Board),
+    Who = Action#action.who,
+    % temporary
+    Cost = Action#action.ap * 10,
+    PlayerList = G#gamestate.players,
     GN =
-        case H#action.type of
+        case deduct_energy(Who, Cost, PlayerList) of
+            {ok, UpdatedPlayerList} ->
+                % New Gamestate with the player energy reduced appropriately
+                G1 = G#gamestate{players = UpdatedPlayerList},
+                action_processor(Action, G1);
+            {error, Err} ->
+                logger:warning(
+                    "Something went wrong deducting energy from ~p: ~p",
+                    [Who, Err]
+                )
+        end,
+    update_gamestate(T, GN).
+
+action_processor(Action, CurrentGamestate) ->
+    Player = Action#action.who,
+    Type = Action#action.type,
+    Target = Action#action.target,
+    Board = CurrentGamestate#gamestate.board,
+    Coords = goblet_board:get_pawn(Player, Board),
+    CurrentReplay = CurrentGamestate#gamestate.replay,
+    NewGamestate =
+        case Type of
             move ->
-                Player = H#action.who,
-                % Deduct energy as appropriate
-                % TODO: Prototype is AP * 10 for energy cost
-                P1 = deduct_energy(
+                NewBoard = move_maybe_collide(Coords, Target, Board),
+                NewReplay = record_replay(
                     Player,
-                    #action.ap * 10,
-                    G#gamestate.players
+                    atom_to_list(Type),
+                    Target,
+                    CurrentReplay
                 ),
-                G1 = G#gamestate{players = P1},
-                % TODO: Calculate damage if player goes under 0 energy
-                % Update the board
-                Board = G1#gamestate.board,
-                Coords = goblet_board:get_pawn(Player, Board),
-                %TODO: Check collision and calculate damage appropriately
-                %      -or- allow stacking. Or both.
-                {ok, NewBoard} = goblet_board:mv_pawn(
-                    Coords,
-                    H#action.target,
-                    Board
-                ),
-                % De-tuple the action .. ?
-                R0 = G1#gamestate.replay,
-                R1 = {
-                    H#action.who,
-                    atom_to_list(H#action.type),
-                    H#action.target
-                },
-                G1#gamestate{board = NewBoard, replay = [R1 | R0]};
-            Type ->
+                CurrentGamestate#gamestate{
+                    board = NewBoard,
+                    replay = NewReplay
+                };
+            _ ->
                 % Do nothing if the action type isn't recognized.
                 logger:warning(
                     "Action '~p' not understood. Cowardly doing nothing",
                     [Type]
                 ),
-                G
+                CurrentGamestate
         end,
-    update_gamestate(T, GN).
+    NewGamestate.
+
+%TODO: Think about some kind of meta language to describe this, maybe also a
+%      place where gdminus could fit in. Perhaps something like how Chess moves
+%      are described?
+-spec record_replay(list(), list(), tuple(), list()) -> list().
+record_replay(Player, Type, Target, CurrentReplay) ->
+    Replay = {Player, Type, Target},
+    [Replay | CurrentReplay].
+
+-spec move_maybe_collide(tuple(), tuple(), list()) -> list().
+move_maybe_collide(From, To, Board) ->
+    case goblet_board:get_tile_occupant(To, Board) of
+        [] ->
+            move_pawn(From, To, Board);
+        _Occupants ->
+            % Tile is occupied, bounce the player back to the first free space
+            % TODO: Add damage and stuff
+            NewTo = goblet_board:get_nearest_unoccupied_tile(To, Board),
+            move_pawn(From, NewTo, Board)
+    end.
+
+-spec move_pawn(tuple(), tuple(), list()) -> list().
+move_pawn(From, To, Board) ->
+    case goblet_board:mv_pawn(From, To, Board) of
+        {ok, Board1} ->
+            Board1;
+        {error, Board} ->
+            logger:warning(
+                "Player attempted illegal move to board position ~p",
+                [To]
+            ),
+            Board
+    end.
 
 update_gamestate_test() ->
     P0 = [
@@ -273,19 +318,19 @@ update_gamestate_test() ->
 deduct_energy(Name, Cost, PlayerList) ->
     % If we can't find the player we should probably just crash.
     {N, H, E, F, I} = lists:keyfind(Name, 1, PlayerList),
-    {E1, H1} =
-        if
-            E - Cost < 0 ->
-                % TODO: Player should suffer some damage, let's put a sample
-                % val in for now until it's threaded through appropriately.
-                % Also need some way to indicate whatever that is to the client
-                % so the client knows how to warn the player.  This might be
-                % where the lua scripts help as well.
-                {E - Cost, H - 10};
-            true ->
-                {E - Cost, H}
-        end,
-    lists:keyreplace(Name, 1, PlayerList, {N, H1, E1, F, I}).
+    E1 = E - Cost,
+    if
+        E1 < 0 ->
+            {no_energy, PlayerList};
+        true ->
+            UpdatedPlayerList = lists:keyreplace(
+                Name,
+                1,
+                PlayerList,
+                {N, H, E - Cost, F, I}
+            ),
+            {ok, UpdatedPlayerList}
+    end.
 
 % trying out putting the tests with the funs otherwise I have to jump around
 deduct_energy_test() ->
@@ -302,6 +347,7 @@ deduct_energy_test() ->
 
 process_action_list(List) ->
     process_action_list(List, []).
+
 process_action_list([], Acc) ->
     Acc;
 process_action_list([PlayersActions | Rest], Acc) ->
@@ -314,6 +360,7 @@ process_action_list([PlayersActions | Rest], Acc) ->
 
 make_action_record(Actions) ->
     make_action_record(Actions, []).
+
 make_action_record([], Acc) ->
     Acc;
 make_action_record([{Player, Item, Target} | Rest], Acc) ->
@@ -333,7 +380,7 @@ update_players(S) ->
                 Flags,
                 Inventory
             )}
-     || {Name, Health, Energy, Flags, Inventory} <- Players
+        || {Name, Health, Energy, Flags, Inventory} <- Players
     ],
     % Then return the names of the players
     % (note this effectively throws away the result of the side effects.
@@ -418,6 +465,7 @@ phases(ActionList) ->
 
 group_phases(N, KeyList) ->
     group_phases(N, KeyList, []).
+
 group_phases(N, _KeyList, Acc) when N == 0 ->
     Acc;
 group_phases(N, KeyList, Acc) ->
