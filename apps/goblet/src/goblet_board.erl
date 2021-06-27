@@ -1,9 +1,9 @@
 %%%-------------------------------------------------------------------------
 %%% @copyright (C) 2021, Salty Systems
 %%% @doc Goblet board representation. This module will provide primitives
-%%%      for adding, moving, removing pawns on tiles. It will also provide
-%%%      low-level functions to reveal and hide tiles, or get the state of
-%%%      a particular tile.
+%%%		 for adding, moving, removing pawns on tiles. It will also provide
+%%%		 low-level functions to reveal and hide tiles, or get the state of
+%%%		 a particular tile.
 %%% @end
 %%%-------------------------------------------------------------------------
 -module(goblet_board).
@@ -136,9 +136,9 @@
 
 %---------------------------------------------------------------------------
 % @doc Initializes the state of the board and returns a map containing the
-%      sector list and tile list. The former defines the high level
-%      structure and hints to the client how to draw the scene, while the
-%      latter holds the state of individual tiles.
+%	   sector list and tile list. The former defines the high level
+%	   structure and hints to the client how to draw the scene, while the
+%	   latter holds the state of individual tiles.
 % @end
 %---------------------------------------------------------------------------
 -spec new(pos_integer(), pos_integer()) -> [{_, _, _, _, _, _}].
@@ -163,10 +163,10 @@ new(_X, _Y) ->
 
 %---------------------------------------------------------------------------
 % @doc Adds a pawn to a tile at the indicated coordinates in a given list.
-%      Explicitly checks for walls, and whether or not the tile is already
-%      occupied. Returns a new list with the updated state. Errors are
-%      indicated on a best effort basis. If the coordinates do not exist,
-%      the function returns successfully but there will be no update.
+%	   Explicitly checks for walls, and whether or not the tile is already
+%	   occupied. Returns a new list with the updated state. Errors are
+%	   indicated on a best effort basis. If the coordinates do not exist,
+%	   the function returns successfully but there will be no update.
 % @end
 %---------------------------------------------------------------------------
 -spec add_pawn(any(), {pos_integer(), pos_integer()}, list()) ->
@@ -192,10 +192,10 @@ add_pawn(Pawn, Coordinates, TileList) ->
 
 %---------------------------------------------------------------------------
 % @doc Removes a pawn from a tile list at the indicated coordinates.
-%      Returns a list with the updated state. Will always return
-%      successfully, but will not validate the state before removing a
-%      pawn. Removing a pawn from an already empty tile is effectively a
-%      no-op.
+%	   Returns a list with the updated state. Will always return
+%	   successfully, but will not validate the state before removing a
+%	   pawn. Removing a pawn from an already empty tile is effectively a
+%	   no-op.
 % @end
 %---------------------------------------------------------------------------
 -spec rm_pawn({non_neg_integer(), non_neg_integer()}, list()) ->
@@ -208,7 +208,7 @@ rm_pawn(Coordinates, TileList) ->
 
 %---------------------------------------------------------------------------
 % @doc Moves any occupant of the first argument to the position of the
-%      second argument. Returns an updated list.
+%	   second argument. Returns an updated list.
 % @end
 %---------------------------------------------------------------------------
 -spec mv_pawn(
@@ -236,7 +236,7 @@ mv_pawn(CoordinatesFrom, CoordinatesTo, TileList) ->
 
 %---------------------------------------------------------------------------
 % @doc Moves any occupant of the first argument to the position of the
-%      second argument. Returns an updated list.
+%	   second argument. Returns an updated list.
 % @end
 %---------------------------------------------------------------------------
 -spec get_pawn(list(), list()) -> tile_coords().
@@ -246,8 +246,8 @@ get_pawn(Name, TileList) ->
 
 %---------------------------------------------------------------------------
 % @doc Adds one unique instance of a playerID to this tile. Does not
-%      guarantee order. Does not allow duplicates and will actively purge
-%      duplicates.  Always returns ok with the updated tile.
+%	   guarantee order. Does not allow duplicates and will actively purge
+%	   duplicates.	Always returns ok with the updated tile.
 % @end
 %---------------------------------------------------------------------------
 -spec reveal_tile(any(), {pos_integer(), pos_integer()}, list()) ->
@@ -266,9 +266,9 @@ reveal_tile(PlayerID, Coordinates, TileList) ->
 
 %---------------------------------------------------------------------------
 % @doc Removes the first (and hopefully only) instance some identifier
-%      (such as Player ID) from the visibility list of the specified tile.
-%      Returns an updated copy of the TileList. Will safely do nothing with
-%      a player for whom the tile that is already hidden.
+%	   (such as Player ID) from the visibility list of the specified tile.
+%	   Returns an updated copy of the TileList. Will safely do nothing with
+%	   a player for whom the tile that is already hidden.
 % @end
 %---------------------------------------------------------------------------
 -spec hide_tile(any(), {pos_integer(), pos_integer()}, list()) ->
@@ -326,8 +326,8 @@ get_tile_reachable(_T1, _T2, _Board, _MovementFun, _CanMove) ->
 
 %----------------------------------------------------------------------
 % @doc Get the first floor tile which has no occupant. Recurse through the
-%      list until an unoccupied tile can be found. Crash horribly if there
-%      are no free tiles.
+%	   list until an unoccupied tile can be found. Crash horribly if there
+%	   are no free tiles.
 % @end
 %----------------------------------------------------------------------
 -spec get_first_unoccupied_tile(list()) -> tuple().
@@ -342,8 +342,8 @@ get_first_unoccupied_tile(TileList) ->
 
 %----------------------------------------------------------------------
 % @doc Get a random floor tile who has no occupant. Recurse through the list
-%      until an unoccupied tile can be found. Crash horribly if there are no
-%      free tiles.
+%	   until an unoccupied tile can be found. Crash horribly if there are no
+%	   free tiles.
 % @end
 %----------------------------------------------------------------------
 -spec get_random_unoccupied_tile(list()) -> tuple().
@@ -364,7 +364,7 @@ get_random_unoccupied_tile(TileList) ->
 
 %----------------------------------------------------------------------
 % @doc Return a list of tiles adjacent to the specified coordinate. Positions
-%      out of bounds will not be returned.
+%	   out of bounds will not be returned.
 % @end
 %----------------------------------------------------------------------
 -spec get_adjacent_tiles(tile_coords(), list()) -> list().
@@ -407,7 +407,7 @@ get_adjacent_tiles_test() ->
 
 %----------------------------------------------------------------------
 % @doc Get the nearest tile that is not a wall and has no current occupant,
-%      relative to the current tile.
+%	   relative to the current tile.
 % @end
 %----------------------------------------------------------------------
 -spec get_nearest_unoccupied_tile(tile_coords(), list()) -> tuple().
@@ -475,10 +475,10 @@ is_valid_unoccupied(_T) ->
 %get_nearest_unoccupied_tile(TileCoords = {X,Y}, TileList, Depth) ->
 %	io:format("Trying coordiantes ~p~n", [TileCoords]),
 %	T = get_tile(TileCoords, TileList),
-%    CanMove = goblet_util:run_checks([
-%        fun() -> is_tile(not_a_wall, T) end,
-%        fun() -> is_tile(empty, T) end
-%    ]),
+%	 CanMove = goblet_util:run_checks([
+%		 fun() -> is_tile(not_a_wall, T) end,
+%		 fun() -> is_tile(empty, T) end
+%	 ]),
 %	io:format("CanMove: ~p~n", [CanMove]),
 %	case CanMove of
 %		ok ->
@@ -507,8 +507,8 @@ is_valid_unoccupied(_T) ->
 
 %----------------------------------------------------------------------
 % @doc We produce an error once we're at max depth, because we give up the
-%      searc. However, we don't necessarily know if the final coordinate is a
-%      valid one, so we filter the errors out.
+%	   searc. However, we don't necessarily know if the final coordinate is a
+%	   valid one, so we filter the errors out.
 % @end
 %----------------------------------------------------------------------
 filter_error(CoordList) ->
@@ -543,7 +543,7 @@ get_last_tile(TileList) ->
 is_tile(empty, Tile) when Tile#tile.occupant =:= [] ->
     ok;
 %is_tile(occupied, Tile) when Tile#tile.occupant =/= [] ->
-%    ok;
+%	 ok;
 is_tile(not_a_wall, Tile) when Tile#tile.type =/= w ->
     ok;
 is_tile(_, _Tile) ->
@@ -564,9 +564,9 @@ update_tile(Coordinates, Tile, TileList) ->
 
 %---------------------------------------------------------------------------
 % @doc The repack function takes a sector list (which is a coordinate pair
-%      + index of the tile type corresponding to a wang tile) and
-%      enumerates all of the individual tiles. This enumerate list is known
-%      to the server but doesn't necessarily need to be known to the player
+%	   + index of the tile type corresponding to a wang tile) and
+%	   enumerates all of the individual tiles. This enumerate list is known
+%	   to the server but doesn't necessarily need to be known to the player
 % @end
 %---------------------------------------------------------------------------
 -spec repack(list(), tuple()) -> list().
@@ -581,9 +581,9 @@ repack(SectorList, GridSize) ->
 
 %---------------------------------------------------------------------------
 % @doc The populate function enumerates all subtiles of the sector by first
-%      matching the Index to a 2D array of tuples containing the initial
-%      states of each tile. It then takes the enumerated initial states and
-%      assigns a coordinate for each tile at the 'room' scope.
+%	   matching the Index to a 2D array of tuples containing the initial
+%	   states of each tile. It then takes the enumerated initial states and
+%	   assigns a coordinate for each tile at the 'room' scope.
 % @end
 %---------------------------------------------------------------------------
 -spec populate(
@@ -610,7 +610,7 @@ populate(SectorCoords, GridSize, Index) ->
             3 -> ?SECTOR_3
         end,
     % For each subtile, we want to transform
-    %   Subtile -> {Xs, Ys, Subtile}
+    %	Subtile -> {Xs, Ys, Subtile}
     Map = maps:new(),
     % OK, we have to subtract 1 here because we want to 0-index
     % i.e., the coodinates should start at {0,0} and go to {Xg - 1, Yg - 1}
@@ -623,10 +623,10 @@ populate(SectorCoords, GridSize, Index) ->
 
 %-------------------------------------------------------------------------------
 % @doc The floodfill function attempts to take all floor tiles and add a flag
-%      "F" to them. Once the flag has been added ,it invokes 4 more copies of
-%      itself recursively to move one grid spacing above, below, to the left,
-%      and to the right. The floodfill does not add flags to wall tiles or any
-%      other type of tile.
+%	   "F" to them. Once the flag has been added ,it invokes 4 more copies of
+%	   itself recursively to move one grid spacing above, below, to the left,
+%	   and to the right. The floodfill does not add flags to wall tiles or any
+%	   other type of tile.
 % @end
 %-------------------------------------------------------------------------------
 -spec floodfill(list(), pos_integer(), pos_integer()) -> list().
@@ -661,9 +661,9 @@ floodfill(TileList, X, Y) ->
 
 %-------------------------------------------------------------------------------
 % @doc Recurses through the list looking for an instance of a floor that does
-%      not have a Flooded flag (F). If the flag doesn't exist, this tile is
-%      unreachable and the function returns false.
-%      Otherwise, if all tiles are reachable, the function returns true.
+%	   not have a Flooded flag (F). If the flag doesn't exist, this tile is
+%	   unreachable and the function returns false.
+%	   Otherwise, if all tiles are reachable, the function returns true.
 % @end
 %-------------------------------------------------------------------------------
 -spec check_flooded_tiles(list()) -> boolean().
@@ -681,9 +681,9 @@ check_flooded_tiles([_Head | Tail]) ->
 
 %-------------------------------------------------------------------------------
 % @doc The boardx and boardy functions are functions that build up a map that
-%      reflects the 2D grid laid out by the "magic" values for each sector.
-%      This function is unfortunately quite heady and could use some serious
-%      tough love.
+%	   reflects the 2D grid laid out by the "magic" values for each sector.
+%	   This function is unfortunately quite heady and could use some serious
+%	   tough love.
 % @end
 %-------------------------------------------------------------------------------
 boardy(X, Y, Map, Subtile, Sector, Scale) when Y == 0 ->
@@ -774,7 +774,7 @@ randomTile() ->
 
 wangHelper(RightTile, BelowTile) ->
     % the canonical direction is:
-    %   << W, S, E, N >>
+    %	<< W, S, E, N >>
     % Ensure that we always match below and to the right
     % South and East of me is North and West of my pal
     <<E, _, _, _>> = RightTile,
@@ -788,7 +788,7 @@ reducedWang(RightTile, BelowTile) ->
     % If the proposed tile from the wangHelper is on a deny list, then it asks
     % the wangHelper to create a new one until a valid tile is created
     % Reminder that the canonical direction is:
-    %   << W, S, E, N >>
+    %	<< W, S, E, N >>
     % Accept seems better than reject for higher order tilings. Maybe move the
     % tile indices to a macro
     % i.e., 2edge2path wang has 2^8 possible tiles but there are about 47 valid ones
