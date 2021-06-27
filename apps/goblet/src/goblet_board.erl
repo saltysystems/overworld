@@ -21,6 +21,8 @@
     get_tile_reachable/4,
     get_first_unoccupied_tile/1,
     get_random_unoccupied_tile/1,
+    %get_nearest_unoccupied_tile/2,
+	get_adjacent_tiles/2,
     get_last_tile/1
 ]).
 
@@ -347,6 +349,115 @@ get_random_unoccupied_tile(TileList) ->
             % No need to sort the list another time
             get_first_unoccupied_tile(NewTileList)
     end.
+
+%----------------------------------------------------------------------
+% @doc Return a list of tiles adjacent to the specified coordinate. Positions
+%      out of bounds will not be returned.
+% @end
+%----------------------------------------------------------------------
+-spec get_adjacent_tiles(tile_coords(), list()) -> list().
+get_adjacent_tiles({X,Y}, TileList) ->
+	Adjacent = [],
+	%TODO: Prob can replace this with a lists:foldl/3
+	N = case get_tile({X,Y-1}, TileList) of
+			false -> Adjacent;
+			T1 -> Adjacent ++ [T1#tile.coordinates]
+		end,
+	S = case get_tile({X,Y+1}, TileList) of
+			false -> N;
+			T2 -> N ++ [T2#tile.coordinates]
+		end,
+	E = case get_tile({X+1,Y}, TileList) of
+			false -> S;
+			T3 -> S ++ [T3#tile.coordinates]
+		end,
+	W = case get_tile({X-1,Y}, TileList) of
+			false -> E;
+			T4 -> E ++ [T4#tile.coordinates]
+		end,
+	lists:flatten(W).
+
+get_adjacent_tiles_test() ->
+	B = new(1,1),
+	[N,S,E,W] = get_adjacent_tiles({1,1}, B),
+	?assertEqual({1,0}, N),
+	?assertEqual({1,2}, S),
+	?assertEqual({2,1}, E),
+	?assertEqual({0,1}, W),
+	% Now try a corner
+	[S1,E1] = get_adjacent_tiles({0,0},B),
+	?assertEqual({0,1}, S1),
+	?assertEqual({1,0}, E1).
+	
+
+
+%----------------------------------------------------------------------
+% @doc Get the nearest tile that is not a wall and has no current occupant,
+%      relative to the current tile.
+% @end
+%----------------------------------------------------------------------
+%-spec get_nearest_unoccupied_tile(tile_coords(), list()) -> tuple().
+%get_nearest_unoccupied_tile(TileCoords, TileList) ->
+%	get_nearest_unoccupied_tile(TileCoords, TileList, 0).
+%
+%get_nearest_unoccupied_tile(TileCoords, _TileList, Depth) when Depth > 5 ->
+%	{error, TileCoords};
+%get_nearest_unoccupied_tile(TileCoords = {X,Y}, TileList, Depth) ->
+%	io:format("Trying coordiantes ~p~n", [TileCoords]),
+%	T = get_tile(TileCoords, TileList),
+%    CanMove = goblet_util:run_checks([
+%        fun() -> is_tile(not_a_wall, T) end,
+%        fun() -> is_tile(empty, T) end
+%    ]),
+%	io:format("CanMove: ~p~n", [CanMove]),
+%	case CanMove of
+%		ok ->
+%			{ok, TileCoords};
+%		_ ->
+%			W = get_nearest_unoccupied_tile({X+1,Y}, TileList, Depth + 1),
+%			io:format("(~p,~p), W: ~p; Depth: ~p~n", [X+1, Y, W, Depth]),
+%			E = get_nearest_unoccupied_tile({X-1,Y}, TileList, Depth + 1),
+%			io:format("(~p,~p), E: ~p; Depth: ~p~n", [X-1, Y, E, Depth]),
+%			N = get_nearest_unoccupied_tile({X,Y+1}, TileList, Depth + 1),
+%			io:format("(~p,~p), N: ~p; Depth: ~p~n", [X, Y+1, N, Depth]),
+%			S = get_nearest_unoccupied_tile({X,Y-1}, TileList, Depth + 1),
+%			io:format("(~p,~p), S: ~p; Depth: ~p~n", [X, Y-1, S, Depth]),
+%			FilteredList = filter_errors([W,E,N,S]),
+%			CandidateList = [ {grid_distance(Candidate, TileCoords),
+%							   Candidate} || Candidate <- FilteredList ],
+%			[{_D,PickCoords}|_Rest] = lists:keysort(1, CandidateList),
+%			{ok, PickCoords}
+%	end.
+
+%get_nearest_unoccupied_tile_test() ->
+%	B = new(1,1),
+%	T = get_random_unoccupied_tile(B),
+%	add_pawn("Charlie", T, B),
+%	get_nearest_unoccupied_tile(T,B).
+
+
+%----------------------------------------------------------------------
+% @doc We produce an error once we're at max depth, because we give up the
+%      searc. However, we don't necessarily know if the final coordinate is a
+%      valid one, so we filter the errors out.
+% @end
+%----------------------------------------------------------------------
+filter_errors(CoordList) ->
+	L = lists:keydelete(error, 1, CoordList),
+	case L == CoordList of
+		true -> CoordList;
+		_ -> filter_errors(L)
+	end.
+
+
+%T#tile.occupant =:= [] and T#tile.type =/= w ->
+
+%----------------------------------------------------------------------
+% @doc Calculate the grid distance between two tiles
+% @end
+%----------------------------------------------------------------------
+grid_distance({X1,Y1}, {X2,Y2}) ->
+	abs(X2 - X1) + abs(Y2 - Y1).
 
 %----------------------------------------------------------------------
 % @doc Get the largest floor tile
