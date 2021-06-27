@@ -21,7 +21,7 @@
     get_tile_reachable/4,
     get_first_unoccupied_tile/1,
     get_random_unoccupied_tile/1,
-    %get_nearest_unoccupied_tile/2,
+    get_nearest_unoccupied_tile/3,
 	get_adjacent_tiles/2,
     get_last_tile/1
 ]).
@@ -397,7 +397,40 @@ get_adjacent_tiles_test() ->
 % @end
 %----------------------------------------------------------------------
 %-spec get_nearest_unoccupied_tile(tile_coords(), list()) -> tuple().
-%get_nearest_unoccupied_tile(TileCoords, TileList) ->
+get_nearest_unoccupied_tile(TileCoords, TileList, CheckedTiles) ->
+	OriginalCoords = TileCoords, % Keep the original coordinates noted for the distance calculation function
+	get_nearest_unoccupied_tile(TileCoords, TileList, CheckedTiles, OriginalCoords).
+
+get_nearest_unoccupied_tile(TileCoords, TileList, CheckedTiles, OriginalCoords) ->
+	case lists:member(TileCoords,CheckedTiles) of
+		true->
+			% Tile was already checked
+			error;
+		false ->
+			T = get_tile(TileCoords, TileList),
+			NewCheckedTiles = [ TileCoords | CheckedTiles ],
+			case is_valid_unoccupied(T) of
+				false ->
+					% First get the adjacent tiles to the current file
+					Adjacent = get_adjacent_tiles(TileCoords, TileList),
+					Candidates = lists:flatten([ get_nearest_unoccupied_tile(X, TileList, NewCheckedTiles, OriginalCoords) || X <- Adjacent ]),
+					FilteredList = filter_error(Candidates),
+					CandidateList = [ {grid_distance(Candidate, OriginalCoords),
+									   Candidate} || Candidate <- FilteredList ],
+					io:format("Candidate list is: ~p~n", [CandidateList]),
+					[{_D,PickCoords}|_Rest] = lists:keysort(1, CandidateList),
+					PickCoords;
+				true -> 
+					TileCoords
+			end
+	end.
+			
+is_valid_unoccupied(T) when T#tile.occupant =:= [], T#tile.type =:= 'f' ->
+	true;
+is_valid_unoccupied(_T) ->
+	false.
+
+
 %	get_nearest_unoccupied_tile(TileCoords, TileList, 0).
 %
 %get_nearest_unoccupied_tile(TileCoords, _TileList, Depth) when Depth > 5 ->
@@ -442,11 +475,11 @@ get_adjacent_tiles_test() ->
 %      valid one, so we filter the errors out.
 % @end
 %----------------------------------------------------------------------
-filter_errors(CoordList) ->
-	L = lists:keydelete(error, 1, CoordList),
+filter_error(CoordList) ->
+	L = lists:delete(error,CoordList),
 	case L == CoordList of
 		true -> CoordList;
-		_ -> filter_errors(L)
+		_ -> filter_error(L)
 	end.
 
 
