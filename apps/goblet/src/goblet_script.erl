@@ -24,11 +24,13 @@ fac(As, St) ->
         [N | _] when is_number(N) -> {[fac(N)], St};
         _ -> badarg_error(fac, As, St)
     end.
+
 fac(0) -> 1;
 fac(N) -> N * fac(N - 1).
 
 create_item(As, St) ->
     {[As], St}.
+
 % Name, ActionPoints, Action, TargetType, TargetDamage, TargetHealth, StatusEffect, Price
 %{goblet_db:create_item(N, AP, Act, TT, TD, TH, SE, Price), St}.
 
