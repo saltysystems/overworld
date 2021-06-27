@@ -131,7 +131,7 @@ prepare_phase(
                         goblet_db:player_shadow(X),
                         ID
                     )
-                 || X <- PlayerList
+                    || X <- PlayerList
                 ],
                 TimeOut = {{timeout, decide}, TimerMS, execute},
                 {next_state, decision_phase, Data#match{readyplayers = []},
@@ -175,15 +175,19 @@ decision_phase(
     RSet = sets:from_list(Ready),
     PSet = sets:from_list(PL),
     logger:notice("(Decision) Player ~p has made a decision.", [Player]),
-	Data1 = Data#match{actions = [PlayerActions | Actions], readyplayers=[sets:to_list(RSet)]},
-	case RSet == PSet of
-		true ->
-			logger:notice("(Decision) All players are ready."),
-            TimeOut = {{timeout, decide}, 0, execute}, % cancel the timer, effectively
-			{next_state, decision_phase, Data1, [TimeOut]};
-		false ->
-			{next_state, decision_phase, Data1}
-	end;
+    Data1 = Data#match{
+        actions = [PlayerActions | Actions],
+        readyplayers = [sets:to_list(RSet)]
+    },
+    case RSet == PSet of
+        true ->
+            logger:notice("(Decision) All players are ready."),
+            % cancel the timer, effectively
+            TimeOut = {{timeout, decide}, 0, execute},
+            {next_state, decision_phase, Data1, [TimeOut]};
+        false ->
+            {next_state, decision_phase, Data1}
+    end;
 decision_phase({timeout, decide}, execute, Data) ->
     % Decisions have timed out, move on
     logger:notice(
@@ -217,7 +221,7 @@ decision_phase({timeout, decide}, execute, Data) ->
     % and send it back to the player
     [
         goblet_protocol:player_state_update(goblet_db:player_shadow(X), ID)
-     || X <- P
+        || X <- P
     ],
     logger:notice("Done updating match state."),
     % Reset ready players
@@ -241,7 +245,7 @@ execution_phase(
     % and send it back to the player
     [
         goblet_protocol:player_state_update(goblet_db:player_shadow(X), ID)
-     || X <- P
+        || X <- P
     ],
     logger:notice("(Execute) 10000ms have elapsed. -> Decision"),
     TimerMS = 20000,
@@ -267,7 +271,7 @@ finish_phase(_EventType, _Timer, #match{playerlist = P, id = ID} = Data) ->
 pack_tiles(Board) ->
     [
         {X, Y, atom_to_list(Type), [Who]}
-     || {_, {X, Y}, Type, _, Who, _} <- Board
+        || {_, {X, Y}, Type, _, Who, _} <- Board
     ].
 
 save_and_exit(#match{id = ID}) ->
