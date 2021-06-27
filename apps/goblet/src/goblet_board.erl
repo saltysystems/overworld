@@ -21,7 +21,7 @@
     get_tile_reachable/4,
     get_first_unoccupied_tile/1,
     get_random_unoccupied_tile/1,
-    get_nearest_unoccupied_tile/3,
+    get_nearest_unoccupied_tile/2,
 	get_adjacent_tiles/2,
     get_last_tile/1
 ]).
@@ -397,9 +397,9 @@ get_adjacent_tiles_test() ->
 % @end
 %----------------------------------------------------------------------
 %-spec get_nearest_unoccupied_tile(tile_coords(), list()) -> tuple().
-get_nearest_unoccupied_tile(TileCoords, TileList, CheckedTiles) ->
+get_nearest_unoccupied_tile(TileCoords, TileList) ->
 	OriginalCoords = TileCoords, % Keep the original coordinates noted for the distance calculation function
-	get_nearest_unoccupied_tile(TileCoords, TileList, CheckedTiles, OriginalCoords).
+	get_nearest_unoccupied_tile(TileCoords, TileList, [], OriginalCoords).
 
 get_nearest_unoccupied_tile(TileCoords, TileList, CheckedTiles, OriginalCoords) ->
 	case lists:member(TileCoords,CheckedTiles) of
