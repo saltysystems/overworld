@@ -228,11 +228,12 @@ update_gamestate([Action | T], G) ->
                 % New Gamestate with the player energy reduced appropriately
                 G1 = G#gamestate{players = UpdatedPlayerList},
                 action_processor(Action, G1);
-            {error, Err} ->
+            {Error, _PlayerList} ->
                 logger:warning(
                     "Something went wrong deducting energy from ~p: ~p",
-                    [Who, Err]
-                )
+                    [Who, Error]
+                ),
+				G
         end,
     update_gamestate(T, GN).
 
@@ -339,11 +340,13 @@ deduct_energy_test() ->
         {"Lester", 120, 90, [], []}
     ],
     Who = "Chester",
-    [H0 | _T0] = deduct_energy(Who, 30, PlayerList),
+	{Resp0, [H0 | _T0]} = deduct_energy(Who, 30, PlayerList),
+	?assertEqual(Resp0, ok),
     ?assertEqual({"Chester", 100, 70, [], []}, H0),
     % Now test over-deducting
-    [H1 | _T1] = deduct_energy(Who, 120, PlayerList),
-    ?assertEqual({"Chester", 90, -20, [], []}, H1).
+	{Resp1, [H0 | _T0]} = deduct_energy(Who, 120, PlayerList),
+	?assertEqual(Resp1, no_energy),
+    ?assertEqual({"Chester", 100, 70, [], []}, H0).
 
 process_action_list(List) ->
     process_action_list(List, []).
