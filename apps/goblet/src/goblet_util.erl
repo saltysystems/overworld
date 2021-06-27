@@ -11,7 +11,7 @@ run_bchecks([]) ->
     ok;
 run_bchecks([H | T]) when is_function(H, 0) ->
     case H() of
-        true -> run_checks(T);
+        true -> run_bchecks(T);
         _ -> false
     end.
 
