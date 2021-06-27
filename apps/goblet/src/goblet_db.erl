@@ -117,7 +117,7 @@ mob_by_name(Name) ->
 -spec create_mob(
     list(),
     non_neg_integer(),
-    non_neg_integer(),
+    atom(),
     non_neg_integer(),
     non_neg_integer(),
     list()
