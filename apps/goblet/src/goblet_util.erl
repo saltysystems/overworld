@@ -1,4 +1,5 @@
 -module(goblet_util).
+
 -export([
     run_checks/1,
     run_bchecks/1,
