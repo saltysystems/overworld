@@ -276,7 +276,7 @@ cleanup_old_matches(Matches) ->
     % Then filter for all matches that are older than 1 hr
     Stale = [
         X
-     || X <- Creating, CurrentTime - X#goblet_match.start_time > 3600
+        || X <- Creating, CurrentTime - X#goblet_match.start_time > 3600
     ],
     % Then just delete those matches. This shouldn't be subject to races
     % because the matches are managed entirely by the lobby server.
@@ -286,9 +286,9 @@ cleanup_old_matches(Matches) ->
     % than 5 minutes.
     Empty = [
         X
-     || X <- M1,
-        length(X#goblet_match.players) =:= 0,
-        CurrentTime - X#goblet_match.start_time > 300
+        || X <- M1,
+           length(X#goblet_match.players) =:= 0,
+           CurrentTime - X#goblet_match.start_time > 300
     ],
     M1 -- Empty.
 
