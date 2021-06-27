@@ -636,32 +636,33 @@ match_state_update(
     % TODO: Decide if we want to have flags or not
     B1 = [
         #'MatchStateResp.Tile'{x = X0, y = Y0, type = T0, occupant = W0}
-     || {X0, Y0, T0, W0} <- Board
+        || {X0, Y0, T0, W0} <- Board
     ],
     R1 = [
         #'MatchStateResp.Action'{type = T1, who = W1, x = X1, y = Y1}
-     || {W1, T1, {X1, Y1}} <- Replay
+        || {W1, T1, {X1, Y1}} <- Replay
     ],
-	% If the timer is greater than zero, the client should know. Otherwise we can just throw it out.
-    Update = case Timer > 0 of
-			  true ->
-				   #'MatchStateResp'{
-					state = MatchState,
-					board = B1,
-					playerlist = PlayerList,
-					readyplayers = ReadyPlayers,
-					replay = R1,
-					timer = Timer
-				};
-			  false ->
-				   #'MatchStateResp'{
-					state = MatchState,
-					board = B1,
-					playerlist = PlayerList,
-					readyplayers = ReadyPlayers,
-					replay = R1
-				}
-		   end,
+    % If the timer is greater than zero, the client should know. Otherwise we can just throw it out.
+    Update =
+        case Timer > 0 of
+            true ->
+                #'MatchStateResp'{
+                    state = MatchState,
+                    board = B1,
+                    playerlist = PlayerList,
+                    readyplayers = ReadyPlayers,
+                    replay = R1,
+                    timer = Timer
+                };
+            false ->
+                #'MatchStateResp'{
+                    state = MatchState,
+                    board = B1,
+                    playerlist = PlayerList,
+                    readyplayers = ReadyPlayers,
+                    replay = R1
+                }
+        end,
     Msg = goblet_pb:encode_msg(Update),
     OpCode = <<?MATCH_STATE:16>>,
     match_broadcast([OpCode, Msg], MatchID).
