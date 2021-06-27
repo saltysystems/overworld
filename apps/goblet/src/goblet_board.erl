@@ -22,7 +22,7 @@
     get_first_unoccupied_tile/1,
     get_random_unoccupied_tile/1,
     get_nearest_unoccupied_tile/2,
-	get_adjacent_tiles/2,
+    get_adjacent_tiles/2,
     get_last_tile/1
 ]).
 
@@ -38,6 +38,7 @@
     occupant = [],
     visible_to = []
 }).
+
 %-type tile() :: #tile{}.
 
 % Some constants
@@ -52,6 +53,7 @@
     {f, f, f, f, f},
     {w, f, f, f, w}
 }).
+
 -define(SECTOR_14, {
     {w, w, w, w, w},
     {f, f, f, f, f},
@@ -59,6 +61,7 @@
     {f, f, f, f, f},
     {w, f, f, f, w}
 }).
+
 -define(SECTOR_13, {
     {w, f, f, f, w},
     {f, f, f, f, w},
@@ -66,6 +69,7 @@
     {f, f, f, f, w},
     {w, f, f, f, w}
 }).
+
 -define(SECTOR_12, {
     {w, w, w, w, w},
     {f, f, f, f, w},
@@ -73,6 +77,7 @@
     {f, f, f, f, w},
     {w, f, f, f, w}
 }).
+
 -define(SECTOR_11, {
     {w, f, f, f, w},
     {f, f, f, f, f},
@@ -80,6 +85,7 @@
     {f, f, f, f, f},
     {w, w, w, w, w}
 }).
+
 -define(SECTOR_10, {
     {w, w, w, w, w},
     {f, f, f, f, f},
@@ -87,6 +93,7 @@
     {f, f, f, f, f},
     {w, w, w, w, w}
 }).
+
 -define(SECTOR_9, {
     {w, f, f, f, w},
     {f, f, f, f, w},
@@ -94,6 +101,7 @@
     {f, f, f, f, w},
     {w, w, w, w, w}
 }).
+
 -define(SECTOR_7, {
     {w, f, f, f, w},
     {w, f, f, f, f},
@@ -101,6 +109,7 @@
     {w, f, f, f, f},
     {w, f, f, f, w}
 }).
+
 -define(SECTOR_6, {
     {w, w, w, w, w},
     {w, f, f, f, f},
@@ -108,6 +117,7 @@
     {w, f, f, f, f},
     {w, f, f, f, w}
 }).
+
 -define(SECTOR_5, {
     {w, f, f, f, w},
     {w, f, f, f, w},
@@ -115,6 +125,7 @@
     {w, f, f, f, w},
     {w, f, f, f, w}
 }).
+
 -define(SECTOR_3, {
     {w, f, f, f, w},
     {w, f, f, f, f},
@@ -305,6 +316,7 @@ get_tile_reachable(T1, T2, Board, MaxDistance) ->
         fun() -> is_tile(empty, T2) end
     ]),
     get_tile_reachable(T1, T2, Board, MaxDistance, CanMove).
+
 get_tile_reachable(T1, T2, _Board, MaxDistance, ok) ->
     {X1, Y1} = T1,
     {X2, Y2} = T2,
@@ -339,7 +351,7 @@ get_random_unoccupied_tile(TileList) ->
     % Sort the tile list randomly. Stack overflo like a pro
     RList = [
         X
-     || {_, X} <- lists:sort([{rand:uniform(), N} || N <- TileList])
+        || {_, X} <- lists:sort([{rand:uniform(), N} || N <- TileList])
     ],
     {_, Tile, NewTileList} = lists:keytake(?FLOOR, #tile.type, RList),
     case Tile#tile.occupant of
@@ -356,80 +368,105 @@ get_random_unoccupied_tile(TileList) ->
 % @end
 %----------------------------------------------------------------------
 -spec get_adjacent_tiles(tile_coords(), list()) -> list().
-get_adjacent_tiles({X,Y}, TileList) ->
-	Adjacent = [],
-	%TODO: Prob can replace this with a lists:foldl/3
-	N = case get_tile({X,Y-1}, TileList) of
-			false -> Adjacent;
-			T1 -> Adjacent ++ [T1#tile.coordinates]
-		end,
-	S = case get_tile({X,Y+1}, TileList) of
-			false -> N;
-			T2 -> N ++ [T2#tile.coordinates]
-		end,
-	E = case get_tile({X+1,Y}, TileList) of
-			false -> S;
-			T3 -> S ++ [T3#tile.coordinates]
-		end,
-	W = case get_tile({X-1,Y}, TileList) of
-			false -> E;
-			T4 -> E ++ [T4#tile.coordinates]
-		end,
-	lists:flatten(W).
+get_adjacent_tiles({X, Y}, TileList) ->
+    Adjacent = [],
+    %TODO: Prob can replace this with a lists:foldl/3
+    N =
+        case get_tile({X, Y - 1}, TileList) of
+            false -> Adjacent;
+            T1 -> Adjacent ++ [T1#tile.coordinates]
+        end,
+    S =
+        case get_tile({X, Y + 1}, TileList) of
+            false -> N;
+            T2 -> N ++ [T2#tile.coordinates]
+        end,
+    E =
+        case get_tile({X + 1, Y}, TileList) of
+            false -> S;
+            T3 -> S ++ [T3#tile.coordinates]
+        end,
+    W =
+        case get_tile({X - 1, Y}, TileList) of
+            false -> E;
+            T4 -> E ++ [T4#tile.coordinates]
+        end,
+    lists:flatten(W).
 
 get_adjacent_tiles_test() ->
-	B = new(1,1),
-	[N,S,E,W] = get_adjacent_tiles({1,1}, B),
-	?assertEqual({1,0}, N),
-	?assertEqual({1,2}, S),
-	?assertEqual({2,1}, E),
-	?assertEqual({0,1}, W),
-	% Now try a corner
-	[S1,E1] = get_adjacent_tiles({0,0},B),
-	?assertEqual({0,1}, S1),
-	?assertEqual({1,0}, E1).
-	
-
+    B = new(1, 1),
+    [N, S, E, W] = get_adjacent_tiles({1, 1}, B),
+    ?assertEqual({1, 0}, N),
+    ?assertEqual({1, 2}, S),
+    ?assertEqual({2, 1}, E),
+    ?assertEqual({0, 1}, W),
+    % Now try a corner
+    [S1, E1] = get_adjacent_tiles({0, 0}, B),
+    ?assertEqual({0, 1}, S1),
+    ?assertEqual({1, 0}, E1).
 
 %----------------------------------------------------------------------
 % @doc Get the nearest tile that is not a wall and has no current occupant,
 %      relative to the current tile.
 % @end
 %----------------------------------------------------------------------
-%-spec get_nearest_unoccupied_tile(tile_coords(), list()) -> tuple().
+-spec get_nearest_unoccupied_tile(tile_coords(), list()) -> tuple().
 get_nearest_unoccupied_tile(TileCoords, TileList) ->
-	OriginalCoords = TileCoords, % Keep the original coordinates noted for the distance calculation function
-	get_nearest_unoccupied_tile(TileCoords, TileList, [], OriginalCoords).
+    % Keep the original coordinates noted for the distance calculation function
+    OriginalCoords = TileCoords,
+    get_nearest_unoccupied_tile(TileCoords, TileList, [], OriginalCoords).
 
-get_nearest_unoccupied_tile(TileCoords, TileList, CheckedTiles, OriginalCoords) ->
-	case lists:member(TileCoords,CheckedTiles) of
-		true->
-			% Tile was already checked
-			error;
-		false ->
-			T = get_tile(TileCoords, TileList),
-			NewCheckedTiles = [ TileCoords | CheckedTiles ],
-			case is_valid_unoccupied(T) of
-				false ->
-					% First get the adjacent tiles to the current file
-					Adjacent = get_adjacent_tiles(TileCoords, TileList),
-					Candidates = lists:flatten([ get_nearest_unoccupied_tile(X, TileList, NewCheckedTiles, OriginalCoords) || X <- Adjacent ]),
-					FilteredList = filter_error(Candidates),
-					CandidateList = [ {grid_distance(Candidate, OriginalCoords),
-									   Candidate} || Candidate <- FilteredList ],
-					io:format("Candidate list is: ~p~n", [CandidateList]),
-					[{_D,PickCoords}|_Rest] = lists:keysort(1, CandidateList),
-					PickCoords;
-				true -> 
-					TileCoords
-			end
-	end.
-			
+get_nearest_unoccupied_tile(
+    TileCoords,
+    TileList,
+    CheckedTiles,
+    OriginalCoords
+) ->
+    case lists:member(TileCoords, CheckedTiles) of
+        true ->
+            % Tile was already checked
+            error;
+        false ->
+            T = get_tile(TileCoords, TileList),
+            NewCheckedTiles = [TileCoords | CheckedTiles],
+            case is_valid_unoccupied(T) of
+                false ->
+                    % First get the adjacent tiles to the current file
+                    Adjacent = get_adjacent_tiles(TileCoords, TileList),
+                    Candidates = lists:flatten([
+                        get_nearest_unoccupied_tile(
+                            X,
+                            TileList,
+                            NewCheckedTiles,
+                            OriginalCoords
+                        )
+                        || X <- Adjacent
+                    ]),
+                    % Remove any tiles that have simply returned 'error', as
+                    % they've already been checked
+                    FilteredList = filter_error(Candidates),
+                    % Create a candidate list with the distance from the
+                    % candidate tile to the original tile
+                    CandidateList = [
+                        {grid_distance(Candidate, OriginalCoords),
+                            Candidate}
+                        || Candidate <- FilteredList
+                    ],
+                    % Then sort by distance, picking the closest free tile first
+                    [{_D, PickCoords} | _Rest] = lists:keysort(
+                        1,
+                        CandidateList
+                    ),
+                    PickCoords;
+                true ->
+                    TileCoords
+            end
+    end.
+
 is_valid_unoccupied(T) when T#tile.occupant =:= [], T#tile.type =:= 'f' ->
-	true;
+    true;
 is_valid_unoccupied(_T) ->
-	false.
-
+    false.
 
 %	get_nearest_unoccupied_tile(TileCoords, TileList, 0).
 %
@@ -468,7 +505,6 @@ is_valid_unoccupied(_T) ->
 %	add_pawn("Charlie", T, B),
 %	get_nearest_unoccupied_tile(T,B).
 
-
 %----------------------------------------------------------------------
 % @doc We produce an error once we're at max depth, because we give up the
 %      searc. However, we don't necessarily know if the final coordinate is a
@@ -476,12 +512,11 @@ is_valid_unoccupied(_T) ->
 % @end
 %----------------------------------------------------------------------
 filter_error(CoordList) ->
-	L = lists:delete(error,CoordList),
-	case L == CoordList of
-		true -> CoordList;
-		_ -> filter_error(L)
-	end.
-
+    L = lists:delete(error, CoordList),
+    case L == CoordList of
+        true -> CoordList;
+        _ -> filter_error(L)
+    end.
 
 %T#tile.occupant =:= [] and T#tile.type =/= w ->
 
@@ -489,8 +524,8 @@ filter_error(CoordList) ->
 % @doc Calculate the grid distance between two tiles
 % @end
 %----------------------------------------------------------------------
-grid_distance({X1,Y1}, {X2,Y2}) ->
-	abs(X2 - X1) + abs(Y2 - Y1).
+grid_distance({X1, Y1}, {X2, Y2}) ->
+    abs(X2 - X1) + abs(Y2 - Y1).
 
 %----------------------------------------------------------------------
 % @doc Get the largest floor tile
@@ -541,7 +576,7 @@ repack(SectorList, GridSize) ->
     % add a field for flags
     [
         #tile{coordinates = Coordinates, type = Type, flags = []}
-     || {Coordinates, Type} <- RepackedList
+        || {Coordinates, Type} <- RepackedList
     ].
 
 %---------------------------------------------------------------------------
