@@ -279,22 +279,29 @@ record_replay(Player, Type, Target, CurrentReplay) ->
 
 -spec move_maybe_collide(tuple(), tuple(), list()) -> list().
 move_maybe_collide(From, To, Board) ->
-    case goblet_board:get_tile_occupant(To, Board) of
+    FromOcc = goblet_board:get_tile_occupant(From, Board),
+    ToOcc = goblet_board:get_tile_occupant(To, Board),
+    case FromOcc of
         [] ->
             move_pawn(From, To, Board);
-        _Occupant ->
-            %TODO: Add damage from collisions
-            % Tile is occupied, bounce the occupant out of the tile
-
-            % just for clarity
-            OccupantPos = To,
-            NewPos = goblet_board:get_nearest_unoccupied_tile(
-                OccupantPos,
-                Board
-            ),
-            NewBoard = move_pawn(OccupantPos, NewPos, Board),
-            % Now move the original player to their intended position
-            move_pawn(From, To, NewBoard)
+        FromOcc ->
+            if
+                FromOcc == ToOcc ->
+                    logger:warning(
+                        "Occupant is the same in both tiles, doing nothing"
+                    ),
+                    Board;
+                true ->
+                    % just for clarity
+                    OccupantPos = To,
+                    NewPos = goblet_board:get_nearest_unoccupied_tile(
+                        OccupantPos,
+                        Board
+                    ),
+                    NewBoard = move_pawn(OccupantPos, NewPos, Board),
+                    % Now move the original player to their intended position
+                    move_pawn(From, To, NewBoard)
+            end
     end.
 
 move_maybe_collide_test() ->
@@ -409,7 +416,7 @@ update_players(S) ->
                 Flags,
                 Inventory
             )}
-        || {Name, Health, Energy, Flags, Inventory} <- Players
+     || {Name, Health, Energy, Flags, Inventory} <- Players
     ],
     % Then return the names of the players
     % (note this effectively throws away the result of the side effects.
