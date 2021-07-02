@@ -253,5 +253,6 @@ message MatchIntentResp {
         optional string target = 4;
     }
     required string player = 1;
+    // maybe more in the future ? just a single require for now
     required Action action = 2;
 }
