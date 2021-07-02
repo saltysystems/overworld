@@ -13,6 +13,7 @@
     check_valid_items/2,
     check_player_alive/1,
     check_valid_target/2,
+    maybe_notify_intent/2,
     deduct_energy/3
 ]).
 
@@ -23,7 +24,8 @@
     type,
     ap,
     who,
-    target
+    target,
+    visible
 }).
 
 -record(gamestate, {
@@ -400,8 +402,15 @@ make_action_record(Actions) ->
 make_action_record([], Acc) ->
     Acc;
 make_action_record([{Player, Item, Target} | Rest], Acc) ->
-    {Type, AP} = goblet_db:item_type_and_ap(Item),
-    Action = #action{type = Type, ap = AP, who = Player, target = Target},
+    {Type, AP, Flags} = goblet_db:item_to_action(Item),
+    Visible = lists:member("visible", Flags),
+    Action = #action{
+        type = Type,
+        ap = AP,
+        who = Player,
+        target = Target,
+        visible = Visible
+    },
     make_action_record(Rest, [Action | Acc]).
 
 update_players(S) ->
@@ -416,7 +425,7 @@ update_players(S) ->
                 Flags,
                 Inventory
             )}
-     || {Name, Health, Energy, Flags, Inventory} <- Players
+        || {Name, Health, Energy, Flags, Inventory} <- Players
     ],
     % Then return the names of the players
     % (note this effectively throws away the result of the side effects.
@@ -653,3 +662,16 @@ within_bounds_negative_test() ->
     MaxY = 3,
     R = within_bounds(X, MaxX, Y, MaxY),
     ?assertEqual({error, out_of_bounds}, R).
+
+% This function is called primarily for its side effects to notify users in a
+% match of something happening
+maybe_notify_intent([], _ID) ->
+    ok;
+maybe_notify_intent([H | T], ID) when H#action.visible == true ->
+    Who = H#action.who,
+    Type = H#action.type,
+    Target = H#action.target,
+    goblet_protocol:match_broadcast_intent(Who, Type, Target, ID),
+    maybe_notify_intent(T, ID);
+maybe_notify_intent([_H | T], ID) ->
+    maybe_notify_intent(T, ID).
