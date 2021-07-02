@@ -669,7 +669,7 @@ maybe_notify_intent([], _ID) ->
     ok;
 maybe_notify_intent([H | T], ID) when H#action.visible == true ->
     Who = H#action.who,
-    Type = H#action.type,
+    Type = atom_to_list(H#action.type),
     Target = H#action.target,
     goblet_protocol:match_broadcast_intent(Who, Type, Target, ID),
     maybe_notify_intent(T, ID);
