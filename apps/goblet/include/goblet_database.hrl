@@ -8,4 +8,4 @@
 -record(goblet_player,{name, id, colors, symbols, role, health, energy, flags, inventory}).
 % separate table because separate IDs
 -record(goblet_mob,{name, id, appearance, type, health, energy, flags, inventory}).
--record(goblet_item, {name, id, ap, action, target_type, target_damage, target_health, status_effect, price}).
+-record(goblet_item, {name, id, ap, action, target_type, target_damage, target_health, status_effect, flags, price}).

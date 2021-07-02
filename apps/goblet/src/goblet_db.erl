@@ -25,10 +25,10 @@
     is_valid_player_account/2,
     is_player_alive/1,
     update_player_health/2,
-    create_item/8,
+    create_item/9,
     delete_item/1,
     get_item/1,
-    item_type_and_ap/1,
+    item_to_action/1,
     item_to_player/2,
     item_from_player/2,
     get_all_item_owners/1,
@@ -325,6 +325,7 @@ update_player_health(Name, Value) ->
     non_neg_integer(),
     non_neg_integer(),
     atom(),
+    list(),
     pos_integer()
 ) -> ok | {error, atom()}.
 create_item(
@@ -335,6 +336,7 @@ create_item(
     TargetDamage,
     TargetHealth,
     StatusEffect,
+    Flags,
     Price
 ) ->
     Fun = fun() ->
@@ -356,6 +358,7 @@ create_item(
                         target_damage = TargetDamage,
                         target_health = TargetHealth,
                         status_effect = StatusEffect,
+                        flags = Flags,
                         price = Price
                     },
                     write
@@ -427,12 +430,12 @@ get_item(Item) ->
     end,
     mnesia:activity(transaction, Fun).
 
--spec item_type_and_ap(list()) -> {pos_integer(), pos_integer()}.
-item_type_and_ap(Item) ->
+-spec item_to_action(list()) -> {pos_integer(), pos_integer(), list()}.
+item_to_action(Item) ->
     Fun = fun() ->
         [I] = mnesia:read({goblet_item, Item}),
         % lets just crash as early as possible
-        {I#goblet_item.action, I#goblet_item.ap}
+        {I#goblet_item.action, I#goblet_item.ap, I#goblet_item.flags}
     end,
     mnesia:activity(transaction, Fun).
 
@@ -597,6 +600,7 @@ create_item_test() ->
     TargetDamage = 10,
     TargetHealth = 0,
     StatusEffect = none,
+    Flags = [],
     Price = 1000,
     Resp = goblet_db:create_item(
         Name,
@@ -606,6 +610,7 @@ create_item_test() ->
         TargetDamage,
         TargetHealth,
         StatusEffect,
+        Flags,
         Price
     ),
     ?assertEqual(ok, Resp).
