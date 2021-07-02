@@ -34,3 +34,4 @@
 -define(MATCH_DECIDE, 16#2082).  % send decision
 -define(MATCH_EXECUTE, 16#2084). % cue to play animations
 -define(MATCH_FINISH,16#2086). % show summary screen
+-define(MATCH_INTENT, 16#2088). % send notification of an intended action

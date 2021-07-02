@@ -244,3 +244,14 @@ message MatchDecideReq {
 message MatchDecideResp {
     required ResponseObject resp = 1;
 } 
+
+message MatchIntentResp {
+    message Action {
+        required string type = 1;
+        optional int32  x = 2;
+        optional int32  y = 3;
+        optional string target = 4;
+    }
+    required string player = 1;
+    required Action action = 2;
+}
