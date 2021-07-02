@@ -667,11 +667,13 @@ within_bounds_negative_test() ->
 % match of something happening
 maybe_notify_intent([], _ID) ->
     ok;
-maybe_notify_intent([H | T], ID) when H#action.visible == true ->
-    Who = H#action.who,
-    Type = atom_to_list(H#action.type),
-    Target = H#action.target,
-    goblet_protocol:match_broadcast_intent(Who, Type, Target, ID),
-    maybe_notify_intent(T, ID);
-maybe_notify_intent([_H | T], ID) ->
+maybe_notify_intent([{Who, Item, Target} | T], ID) -> 
+    {Action, _AP, Flags} = goblet_db:item_to_action(Item),
+    case lists:member(visible, Flags) of 
+        true ->
+            logger:notice("Notifying match ~p of ~p's action ~p", [ID, Who, Action]),
+            goblet_protocol:match_broadcast_intent(Who, atom_to_list(Action), Target, ID);
+        false ->
+            ok
+    end,
     maybe_notify_intent(T, ID).
