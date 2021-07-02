@@ -699,7 +699,7 @@ match_state_update_test() ->
 
 %TODO Implement mode where Target :: string
 -spec match_broadcast_intent(list(), list(), {pos_integer(), pos_integer()}, pos_integer()) -> ok.
-match_broadcast_intent(Type, Who, {X, Y}, MatchID) ->
+match_broadcast_intent(Who, Type, {X, Y}, MatchID) ->
     Action = #'MatchIntentResp.Action'{
         type = Type,
         x = X,
