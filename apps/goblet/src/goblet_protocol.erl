@@ -18,6 +18,7 @@
     match_decide/2,
     match_state_update/7,
     match_broadcast/2,
+    match_broadcast_intent/4,
     maybe_leave_match/1
 ]).
 
@@ -695,6 +696,35 @@ match_state_update_test() ->
     Bin = goblet_pb:encode_msg(M),
     % succesful encoding
     ?assertEqual(true, is_binary(Bin)).
+
+%TODO Implement mode where Target :: string
+-spec match_broadcast_intent(list(), list(), {pos_integer(), pos_integer()}, pos_integer()) -> ok.
+match_broadcast_intent(Type, Who, {X, Y}, MatchID) ->
+    Action = #'MatchIntentResp.Action'{
+        type = Type,
+        x = X,
+        y = Y
+    },
+    M = #'MatchIntentResp'{player = Who, action = Action},
+    Msg = goblet_pb:encode_msg(M),
+    OpCode = <<?MATCH_INTENT:16>>,
+    match_broadcast([OpCode, Msg], MatchID).
+
+match_broadcast_intent_encode_test() ->
+    % Test the protobuf messages
+    Who = "Chester",
+    Type = "move",
+    X = 4,
+    Y = 3,
+    Action = #'MatchIntentResp.Action'{
+        type = Type,
+        x = X,
+        y = Y
+    },
+    M = #'MatchIntentResp'{player = Who, action = Action},
+    Msg = goblet_pb:encode_msg(M),
+    ?assertEqual(true, is_binary(Msg)).
+
 
 %%=========================================================================
 %% Internal functions
