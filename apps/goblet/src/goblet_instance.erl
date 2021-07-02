@@ -170,7 +170,9 @@ decision_phase(
     {decision, Player, PlayerActions},
     Data
 ) ->
-    #match{playerlist = PL, readyplayers = RP, actions = Actions} = Data,
+    #match{id = ID, playerlist = PL, readyplayers = RP, actions = Actions} =
+        Data,
+    goblet_game:maybe_notify_intent(Actions, ID),
     Ready = [Player | RP],
     RSet = sets:from_list(Ready),
     PSet = sets:from_list(PL),
