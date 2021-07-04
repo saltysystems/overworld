@@ -16,6 +16,7 @@
     get_pawn/2,
     reveal_tile/3,
     hide_tile/3,
+	grid_distance/2,
     get_tile_all/2,
     get_tile_occupant/2,
     get_tile_reachable/4,
@@ -474,43 +475,6 @@ is_valid_unoccupied(T) when T#tile.occupant =:= [], T#tile.type =:= 'f' ->
     true;
 is_valid_unoccupied(_T) ->
     false.
-
-%	get_nearest_unoccupied_tile(TileCoords, TileList, 0).
-%
-%get_nearest_unoccupied_tile(TileCoords, _TileList, Depth) when Depth > 5 ->
-%	{error, TileCoords};
-%get_nearest_unoccupied_tile(TileCoords = {X,Y}, TileList, Depth) ->
-%	io:format("Trying coordiantes ~p~n", [TileCoords]),
-%	T = get_tile(TileCoords, TileList),
-%	 CanMove = goblet_util:run_checks([
-%		 fun() -> is_tile(not_a_wall, T) end,
-%		 fun() -> is_tile(empty, T) end
-%	 ]),
-%	io:format("CanMove: ~p~n", [CanMove]),
-%	case CanMove of
-%		ok ->
-%			{ok, TileCoords};
-%		_ ->
-%			W = get_nearest_unoccupied_tile({X+1,Y}, TileList, Depth + 1),
-%			io:format("(~p,~p), W: ~p; Depth: ~p~n", [X+1, Y, W, Depth]),
-%			E = get_nearest_unoccupied_tile({X-1,Y}, TileList, Depth + 1),
-%			io:format("(~p,~p), E: ~p; Depth: ~p~n", [X-1, Y, E, Depth]),
-%			N = get_nearest_unoccupied_tile({X,Y+1}, TileList, Depth + 1),
-%			io:format("(~p,~p), N: ~p; Depth: ~p~n", [X, Y+1, N, Depth]),
-%			S = get_nearest_unoccupied_tile({X,Y-1}, TileList, Depth + 1),
-%			io:format("(~p,~p), S: ~p; Depth: ~p~n", [X, Y-1, S, Depth]),
-%			FilteredList = filter_errors([W,E,N,S]),
-%			CandidateList = [ {grid_distance(Candidate, TileCoords),
-%							   Candidate} || Candidate <- FilteredList ],
-%			[{_D,PickCoords}|_Rest] = lists:keysort(1, CandidateList),
-%			{ok, PickCoords}
-%	end.
-
-%get_nearest_unoccupied_tile_test() ->
-%	B = new(1,1),
-%	T = get_random_unoccupied_tile(B),
-%	add_pawn("Charlie", T, B),
-%	get_nearest_unoccupied_tile(T,B).
 
 %----------------------------------------------------------------------
 % @doc We produce an error once we're at max depth, because we give up the
