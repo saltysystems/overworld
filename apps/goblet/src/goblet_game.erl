@@ -48,7 +48,7 @@
 %======================================================================
 
 %-spec new_player(list(), list(), list(), atom(), list()) ->
-%	 ok | {error, any()}.
+%    ok | {error, any()}.
 new_player(Name, Colors, Symbols, Role, Account) ->
     case
         goblet_util:run_checks([
@@ -272,8 +272,8 @@ action_processor(Action, CurrentGamestate) ->
     NewGamestate.
 
 %TODO: Think about some kind of meta language to describe this, maybe also a
-%	   place where gdminus could fit in. Perhaps something like how Chess moves
-%	   are described?
+%      place where gdminus could fit in. Perhaps something like how Chess moves
+%      are described?
 -spec record_replay(list(), list(), tuple(), list()) -> list().
 record_replay(Player, Type, Target, CurrentReplay) ->
     Replay = {Player, Type, Target},
@@ -285,7 +285,12 @@ move_maybe_collide(From, To, Board) ->
     ToOcc = goblet_board:get_tile_occupant(To, Board),
     case FromOcc of
         [] ->
-            move_pawn(From, To, Board);
+            case goblet_board:grid_distance(From,To) =< 1 of
+                true ->
+                    move_pawn(From, To, Board);
+                false -> 
+                    Board
+            end;
         FromOcc ->
             if
                 FromOcc == ToOcc ->
@@ -444,16 +449,16 @@ check_valid_items([{Player, Item, {_X, _Y}} | T], Inventory) ->
     end.
 
 %check_valid_actions([]) ->
-%	 ok;
+%    ok;
 %check_valid_actions([{Player, Type, {_X, _Y}} | T]) ->
-%	 case goblet_db:player_items_have_action(Player, Type) of
-%		 [] ->
-%			 {error, invalid_action};
-%		 {error, E} ->
-%			 {error, E};
-%		 _ ->
-%			 check_valid_actions(T)
-%	 end.
+%    case goblet_db:player_items_have_action(Player, Type) of
+%        [] ->
+%            {error, invalid_action};
+%        {error, E} ->
+%            {error, E};
+%        _ ->
+%            check_valid_actions(T)
+%    end.
 
 check_valid_target([], _MatchID) ->
     ok;
