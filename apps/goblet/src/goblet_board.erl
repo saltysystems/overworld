@@ -16,7 +16,7 @@
     get_pawn/2,
     reveal_tile/3,
     hide_tile/3,
-	grid_distance/2,
+    grid_distance/2,
     get_tile_all/2,
     get_tile_occupant/2,
     get_tile_reachable/4,
