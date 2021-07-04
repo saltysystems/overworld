@@ -84,7 +84,7 @@ init({PlayerList, MatchID}) ->
         id = MatchID,
         playerlist = PlayerList,
         readyplayers = [],
-        board = goblet_game:initialize_board(1, 1, PlayerList)
+        board = goblet_game:initialize_board(2, 2, PlayerList)
     },
     {ok, prepare_phase, M}.
 
@@ -107,6 +107,8 @@ prepare_phase(
     ReadySet = sets:from_list(ReadyPlayers),
     PlayerSet = sets:from_list(PlayerList),
     logger:notice("Player ~p is now ready in Match ~p.", [Player, ID]),
+    logger:notice("PlayerSet is ~p", [PlayerSet]),
+    logger:notice("ReadySet is ~p", [ReadySet]),
     NextState =
         case PlayerSet == ReadySet of
             true ->
@@ -173,13 +175,13 @@ decision_phase(
     #match{id = ID, playerlist = PL, readyplayers = RP, actions = Actions} =
         Data,
     goblet_game:maybe_notify_intent(PlayerActions, ID),
-    Ready = [Player | RP],
+    Ready = [ Player | RP ],
     RSet = sets:from_list(Ready),
     PSet = sets:from_list(PL),
     logger:notice("(Decision) Player ~p has made a decision.", [Player]),
     Data1 = Data#match{
         actions = [PlayerActions | Actions],
-        readyplayers = [sets:to_list(RSet)]
+        readyplayers = sets:to_list(RSet)
     },
     case RSet == PSet of
         true ->
