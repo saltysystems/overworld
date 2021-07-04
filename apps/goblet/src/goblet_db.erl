@@ -430,7 +430,7 @@ get_item(Item) ->
     end,
     mnesia:activity(transaction, Fun).
 
--spec item_to_action(list()) -> {pos_integer(), pos_integer(), list()}.
+-spec item_to_action(list()) -> {atom(), pos_integer(), list()}.
 item_to_action(Item) ->
     Fun = fun() ->
         [I] = mnesia:read({goblet_item, Item}),
