@@ -285,10 +285,10 @@ move_maybe_collide(From, To, Board) ->
     ToOcc = goblet_board:get_tile_occupant(To, Board),
     case FromOcc of
         [] ->
-            case goblet_board:grid_distance(From,To) =< 1 of
+            case goblet_board:grid_distance(From, To) =< 1 of
                 true ->
                     move_pawn(From, To, Board);
-                false -> 
+                false ->
                     Board
             end;
         FromOcc ->
