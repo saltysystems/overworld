@@ -351,7 +351,7 @@ get_random_unoccupied_tile(TileList) ->
     % Sort the tile list randomly. Stack overflo like a pro
     RList = [
         X
-        || {_, X} <- lists:sort([{rand:uniform(), N} || N <- TileList])
+     || {_, X} <- lists:sort([{rand:uniform(), N} || N <- TileList])
     ],
     {_, Tile, NewTileList} = lists:keytake(?FLOOR, #tile.type, RList),
     case Tile#tile.occupant of
@@ -440,7 +440,7 @@ get_nearest_unoccupied_tile(
                             NewCheckedTiles,
                             OriginalCoords
                         )
-                        || X <- Adjacent
+                     || X <- Adjacent
                     ]),
                     % Remove any tiles that have simply returned 'error', as
                     % they've already been checked
@@ -448,16 +448,23 @@ get_nearest_unoccupied_tile(
                     % Create a candidate list with the distance from the
                     % candidate tile to the original tile
                     CandidateList = [
-                        {grid_distance(Candidate, OriginalCoords),
-                            Candidate}
-                        || Candidate <- FilteredList
+                        {
+                            grid_distance(Candidate, OriginalCoords),
+                            Candidate
+                        }
+                     || Candidate <- FilteredList
                     ],
                     % Then sort by distance, picking the closest free tile first
-                    [{_D, PickCoords} | _Rest] = lists:keysort(
-                        1,
-                        CandidateList
-                    ),
-                    PickCoords;
+                    case CandidateList of
+                        [] ->
+                            [];
+                        _ ->
+                            [{_D, Pick} | _Rest] = lists:keysort(
+                                1,
+                                CandidateList
+                            ),
+                            Pick
+                    end;
                 true ->
                     TileCoords
             end
@@ -576,7 +583,7 @@ repack(SectorList, GridSize) ->
     % add a field for flags
     [
         #tile{coordinates = Coordinates, type = Type, flags = []}
-        || {Coordinates, Type} <- RepackedList
+     || {Coordinates, Type} <- RepackedList
     ].
 
 %---------------------------------------------------------------------------
