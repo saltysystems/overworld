@@ -698,7 +698,12 @@ match_state_update_test() ->
     ?assertEqual(true, is_binary(Bin)).
 
 %TODO Implement mode where Target :: string
--spec match_broadcast_intent(list(), list(), {pos_integer(), pos_integer()}, pos_integer()) -> ok.
+-spec match_broadcast_intent(
+    list(),
+    list(),
+    {pos_integer(), pos_integer()},
+    pos_integer()
+) -> ok.
 match_broadcast_intent(Who, Type, {X, Y}, MatchID) ->
     Action = #'MatchIntentResp.Action'{
         type = Type,
@@ -724,7 +729,6 @@ match_broadcast_intent_encode_test() ->
     M = #'MatchIntentResp'{player = Who, action = Action},
     Msg = goblet_pb:encode_msg(M),
     ?assertEqual(true, is_binary(Msg)).
-
 
 %%=========================================================================
 %% Internal functions
