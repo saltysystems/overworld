@@ -175,7 +175,7 @@ decision_phase(
     #match{id = ID, playerlist = PL, readyplayers = RP, actions = Actions} =
         Data,
     goblet_game:maybe_notify_intent(PlayerActions, ID),
-    Ready = [ Player | RP ],
+    Ready = [Player | RP],
     RSet = sets:from_list(Ready),
     PSet = sets:from_list(PL),
     logger:notice("(Decision) Player ~p has made a decision.", [Player]),
