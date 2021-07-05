@@ -283,14 +283,13 @@ record_replay(Player, Type, Target, CurrentReplay) ->
 move_maybe_collide(From, To, Board) ->
     FromOcc = goblet_board:get_tile_occupant(From, Board),
     ToOcc = goblet_board:get_tile_occupant(To, Board),
+	GridDistance = goblet_board:grid_distance(From, To),
+	move_maybe_collide(From, To, Board, GridDistance).
+
+move_maybe_collide(From, To, Board, GridDistance) when GridDistance =< 1 ->
     case FromOcc of
         [] ->
-            case goblet_board:grid_distance(From, To) =< 1 of
-                true ->
-                    move_pawn(From, To, Board);
-                false ->
-                    Board
-            end;
+            move_pawn(From, To, Board);
         FromOcc ->
             if
                 FromOcc == ToOcc ->
@@ -309,7 +308,9 @@ move_maybe_collide(From, To, Board) ->
                     % Now move the original player to their intended position
                     move_pawn(From, To, NewBoard)
             end
-    end.
+    end;
+move_maybe_collide(From, To, Board, GridDistance) ->
+	Board.
 
 move_maybe_collide_test() ->
     B1 = goblet_board:new(1, 1),
