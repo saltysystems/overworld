@@ -12,7 +12,7 @@
     create_player/5,
     create_mob/6,
     delete_mob/1,
-    mob_instance/1,
+    mob_instance/2,
     mob_by_name/1,
     delete_player/2,
     delete_orphaned_player/1,
@@ -84,8 +84,8 @@ account_by_email(Email) ->
     end,
     mnesia:activity(transaction, Fun).
 
--spec mob_instance(list()) -> tuple() | {error, atom()}.
-mob_instance(Name) ->
+-spec mob_instance(list(), pos_integer()) -> tuple() | {error, atom()}.
+mob_instance(Name, UniqueID) ->
     case mob_by_name(Name) of
         {error, _} ->
             [];
@@ -93,8 +93,10 @@ mob_instance(Name) ->
             {
                 io_lib:format("~s_~p", [
                     M#goblet_mob.name,
-                    rand:uniform(1024)
+                    UniqueID
                 ]),
+                M#goblet_mob.appearance,
+                M#goblet_mob.type,
                 M#goblet_mob.health,
                 M#goblet_mob.energy,
                 M#goblet_mob.flags,
@@ -106,8 +108,8 @@ mob_instance(Name) ->
 mob_by_name(Name) ->
     Fun = fun() ->
         case mnesia:read({goblet_mob, Name}) of
-            [Player] ->
-                Player;
+            [Mob] ->
+                Mob;
             [] ->
                 {error, no_such_mob}
         end
