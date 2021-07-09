@@ -281,8 +281,8 @@ record_replay(Player, Type, Target, CurrentReplay) ->
 
 -spec move_maybe_collide(tuple(), tuple(), list()) -> list().
 move_maybe_collide(From, To, Board) ->
-	GridDistance = goblet_board:grid_distance(From, To),
-	move_maybe_collide(From, To, Board, GridDistance).
+    GridDistance = goblet_board:grid_distance(From, To),
+    move_maybe_collide(From, To, Board, GridDistance).
 
 move_maybe_collide(From, To, Board, GridDistance) when GridDistance =< 1 ->
     FromOcc = goblet_board:get_tile_occupant(From, Board),
@@ -310,7 +310,7 @@ move_maybe_collide(From, To, Board, GridDistance) when GridDistance =< 1 ->
             end
     end;
 move_maybe_collide(_From, _To, Board, _GridDistance) ->
-	Board.
+    Board.
 
 move_maybe_collide_test() ->
     B1 = goblet_board:new(1, 1),
