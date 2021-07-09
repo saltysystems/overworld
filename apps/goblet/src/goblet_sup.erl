@@ -36,6 +36,10 @@ init([]) ->
         #{
             id => goblet_instance_sup,
             start => {goblet_instance_sup, start_link, []}
+        },
+        #{
+            id => goblet_entity_sup,
+            start => {goblet_entity_sup, start_link, []}
         }
     ],
     {ok, {SupFlags, ChildSpecs}}.
