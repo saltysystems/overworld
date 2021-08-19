@@ -822,7 +822,7 @@ pack_match({Id, State, Players, PlayersMax, StartTime, Mode, Extra}) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % TODO: Use z_stdlib email validator function? Who cares tho really.
-check_valid_email(Email) when length(Email) > 0 ->
+check_valid_email(Email = [_|_]) ->
     ok;
 check_valid_email(_Email) ->
     {error, invalid_email}.
