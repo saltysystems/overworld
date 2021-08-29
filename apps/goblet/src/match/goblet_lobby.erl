@@ -280,7 +280,7 @@ cleanup_old_matches(Matches) ->
     ],
     % Then just delete those matches. This shouldn't be subject to races
     % because the matches are managed entirely by the lobby server.
-    logger:notice("Cleaned up ~p old matches", [length(Stale)]),
+    %logger:notice("Cleaned up ~p old matches", [length(Stale)]),
     M1 = Matches -- Stale,
     % Clean up matches in any state that have 0 players in them and older
     % than 5 minutes.
