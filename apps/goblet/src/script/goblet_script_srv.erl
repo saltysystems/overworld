@@ -1,7 +1,7 @@
 -module(goblet_script_srv).
 -behaviour(gen_server).
 
--include("goblet_api_funs.hrl").
+-include("api/goblet_api_funs.hrl").
 
 -define(SERVER(Name), {via, gproc, {n, l, {?MODULE, Name}}}).
 
