@@ -36,18 +36,16 @@
 
 % Script messages?
 
-% Player movement, combat, etc ?
-
 % Lobby and match creation commands
-%-define(MATCH_LIST, 16#2010).
-%-define(MATCH_CREATE, 16#2020).
-%-define(MATCH_JOIN, 16#2030).
-%-define(MATCH_LEAVE, 16#2040).
-%-define(MATCH_START, 16#2050).
-%-define(MATCH_INFO, 16#2060).
-%-define(MATCH_STATE, 16#2070).
-%-define(MATCH_PREPARE, 16#2080). % acknowledge match ready
-%-define(MATCH_DECIDE, 16#2082).  % send decision
-%-define(MATCH_EXECUTE, 16#2084). % cue to play animations
-%-define(MATCH_FINISH,16#2086). % show summary screen
-%-define(MATCH_INTENT, 16#2088). % send notification of an intended action
+-define(MATCH_LIST, 16#2010).
+-define(MATCH_CREATE, 16#2020).
+-define(MATCH_JOIN, 16#2030).
+-define(MATCH_LEAVE, 16#2040).
+-define(MATCH_START, 16#2050).
+-define(MATCH_INFO, 16#2060).
+-define(MATCH_STATE, 16#2070).
+-define(MATCH_PREPARE, 16#2080). % acknowledge match ready
+-define(MATCH_DECIDE, 16#2082).  % send decision
+-define(MATCH_EXECUTE, 16#2084). % cue to play animations
+-define(MATCH_FINISH,16#2086). % show summary screen
+-define(MATCH_INTENT, 16#2088). % send notification of an intended action
