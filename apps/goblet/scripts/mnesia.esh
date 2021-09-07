@@ -2,7 +2,7 @@
 %% -*- erlang -*-
 %%! -smp enable ls-mnesia debug verbose
 
--include("../include/goblet_database.hrl").
+-include("../include/db/goblet_database.hrl").
 
 -record(goblet_table_ids, {table_name, last_id}).
 
