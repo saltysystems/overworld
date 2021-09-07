@@ -10,7 +10,7 @@
 
 -include_lib("kernel/include/logger.hrl").
 
--include("goblet_session.hrl").
+-include("net/goblet_session.hrl").
 
 %%===========================================================================
 %% Cowboy Handler Callbacks
