@@ -2,15 +2,15 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
--include("goblet_database.hrl").
+-include("db/goblet_database.hrl").
 
 -export([
     create_account/2,
     delete_account/1,
     account_by_email/1,
     account_login/2,
-    create_player/5,
-    create_mob/6,
+    create_player/2,
+    create_mob/2,
     delete_mob/1,
     mob_instance/2,
     mob_by_name/1,
@@ -20,11 +20,11 @@
     player_inventory/1,
     player_items_have_action/2,
     player_shadow/1,
-    player_unshadow/5,
+    player_unshadow/3,
     is_valid_player/1,
     is_valid_player_account/2,
-    is_player_alive/1,
-    update_player_health/2,
+    %is_player_alive/1,
+    %update_player_health/2,
     create_item/9,
     delete_item/1,
     get_item/1,
@@ -94,13 +94,13 @@ mob_instance(Name, UniqueID) ->
                 io_lib:format("~s_~p", [
                     M#goblet_mob.name,
                     UniqueID
-                ]),
-                M#goblet_mob.appearance,
-                M#goblet_mob.type,
-                M#goblet_mob.health,
-                M#goblet_mob.energy,
-                M#goblet_mob.flags,
-                M#goblet_mob.inventory
+                ])
+                %M#goblet_mob.appearance,
+                %M#goblet_mob.type,
+                %M#goblet_mob.health,
+                %M#goblet_mob.energy,
+                %M#goblet_mob.flags,
+                %M#goblet_mob.inventory
             }
     end.
 
@@ -118,19 +118,15 @@ mob_by_name(Name) ->
 
 -spec create_mob(
     list(),
-    non_neg_integer(),
-    atom(),
-    non_neg_integer(),
-    non_neg_integer(),
     list()
 ) -> ok | {error, atom()}.
-create_mob(Name, Appearance, Type, Health, Energy, Inventory) ->
+create_mob(Name, Inventory) ->
     Fun = fun() ->
         case mnesia:read({goblet_mob, Name}) of
             [] ->
                 NextID = mnesia:dirty_update_counter(
                     goblet_table_ids,
-                    goblet_player,
+                    goblet_mob,
                     1
                 ),
                 mnesia:write(
@@ -138,11 +134,6 @@ create_mob(Name, Appearance, Type, Health, Energy, Inventory) ->
                     #goblet_mob{
                         name = Name,
                         id = NextID,
-                        appearance = Appearance,
-                        type = Type,
-                        health = Health,
-                        energy = Energy,
-                        flags = [],
                         inventory = Inventory
                     },
                     write
@@ -180,8 +171,6 @@ player_shadow(Name) ->
         P ->
             {
                 P#goblet_player.name,
-                P#goblet_player.health,
-                P#goblet_player.energy,
                 P#goblet_player.flags,
                 P#goblet_player.inventory
             }
@@ -189,12 +178,10 @@ player_shadow(Name) ->
 
 -spec player_unshadow(
     list(),
-    pos_integer(),
-    pos_integer(),
     list(),
     list()
 ) -> ok | {error, atom()}.
-player_unshadow(Name, Health, Energy, Flags, Inventory) ->
+player_unshadow(Name, Flags, Inventory) ->
     Fun = fun() ->
         case mnesia:read({goblet_player, Name}) of
             [] ->
@@ -203,8 +190,6 @@ player_unshadow(Name, Health, Energy, Flags, Inventory) ->
                 mnesia:write(
                     goblet_player,
                     Player#goblet_player{
-                        health = Health,
-                        energy = Energy,
                         flags = Flags,
                         inventory = Inventory
                     },
@@ -239,19 +224,19 @@ is_valid_player_account(Player, Email) ->
             lists:member(Player, Account#goblet_account.player_ids)
     end.
 
--spec is_player_alive(list()) -> true | false | {error, any()}.
-is_player_alive(Name) ->
-    case player_by_name(Name) of
-        {error, E} ->
-            {error, E};
-        Player ->
-            % we can get fancy with components and such later.
-            Player#goblet_player.health >= 0
-    end.
+%-spec is_player_alive(list()) -> true | false | {error, any()}.
+%is_player_alive(Name) ->
+%    case player_by_name(Name) of
+%        {error, E} ->
+%            {error, E};
+%        Player ->
+%            % we can get fancy with components and such later.
+%            Player#goblet_player.health >= 0
+%    end.
 
--spec create_player(list(), list(), list(), atom(), list()) ->
+-spec create_player(list(), list()) ->
     ok | {error, atom()}.
-create_player(Name, Colors, Symbols, Role, Account) ->
+create_player(Name, Account) ->
     Fun = fun() ->
         case mnesia:read({goblet_player, Name}) of
             [] ->
@@ -265,13 +250,9 @@ create_player(Name, Colors, Symbols, Role, Account) ->
                     #goblet_player{
                         name = Name,
                         id = NextID,
-                        colors = Colors,
-                        symbols = Symbols,
-                        role = Role,
-                        health = 100,
-                        energy = 100,
                         flags = [],
-                        inventory = []
+                        inventory = [],
+                        shipgrid = #{}
                     },
                     write
                 ),
@@ -303,21 +284,21 @@ delete_player(Name, Account) ->
     end,
     mnesia:activity(transaction, Fun).
 
--spec update_player_health(list(), integer()) -> ok.
-update_player_health(Name, Value) ->
-    Fun = fun() ->
-        case mnesia:read({goblet_player, Name}) of
-            [] ->
-                {error, no_such_player};
-            [Player] ->
-                mnesia:write(
-                    goblet_player,
-                    Player#goblet_player{health = Value},
-                    write
-                )
-        end
-    end,
-    mnesia:activity(transaction, Fun).
+%-spec update_player_health(list(), integer()) -> ok.
+%update_player_health(Name, Value) ->
+%    Fun = fun() ->
+%        case mnesia:read({goblet_player, Name}) of
+%            [] ->
+%                {error, no_such_player};
+%            [Player] ->
+%                mnesia:write(
+%                    goblet_player,
+%                    Player#goblet_player{health = Value},
+%                    write
+%                )
+%        end
+%    end,
+%    mnesia:activity(transaction, Fun).
 
 -spec create_item(
     list(),
@@ -513,6 +494,9 @@ delete_orphaned_player(Name) ->
     end,
     mnesia:activity(transaction, Fun).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Account functions              %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 account_login(Email, Password) ->
     case account_by_email(Email) of
         {error, Error} ->
@@ -634,10 +618,6 @@ create_delete_mob_test() ->
     ),
     ?assertEqual(ok, Resp),
     Mob = goblet_db:mob_by_name(Name),
-    ?assertEqual(Mob#goblet_mob.appearance, Appearance),
-    ?assertEqual(Mob#goblet_mob.type, Type),
-    ?assertEqual(Mob#goblet_mob.health, Health),
-    ?assertEqual(Mob#goblet_mob.energy, Energy),
     ?assertEqual(Mob#goblet_mob.inventory, Inventory),
     Resp1 = goblet_db:delete_mob(Name),
     ?assertEqual(ok, Resp1).
