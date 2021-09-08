@@ -4,16 +4,18 @@
 
 -include("db/goblet_database.hrl").
 
+% Account stuff, probably shouldn't expose to clients
 -export([
     create_account/2,
     delete_account/1,
     account_by_email/1,
     account_login/2,
+    salt_and_hash/2
+]).
+
+% Player things, probably shouldn't expose to clients
+-export([
     create_player/2,
-    create_mob/2,
-    delete_mob/1,
-    mob_instance/2,
-    mob_by_name/1,
     delete_player/2,
     delete_orphaned_player/1,
     player_by_name/1,
@@ -23,16 +25,25 @@
     player_unshadow/3,
     is_valid_player/1,
     is_valid_player_account/2,
-    %is_player_alive/1,
-    %update_player_health/2,
+]).
+
+% Mobs 
+-export([
+    create_mob/2,
+    delete_mob/1,
+    mob_instance/2,
+    mob_by_name/1
+]).
+
+% Items
+-export([
     create_item/9,
     delete_item/1,
     get_item/1,
     item_to_action/1,
     item_to_player/2,
     item_from_player/2,
-    get_all_item_owners/1,
-    salt_and_hash/2
+    get_all_item_owners/1
 ]).
 
 -spec create_account(list(), list()) -> ok | {error, atom()}.
