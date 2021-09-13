@@ -6,43 +6,45 @@
 
 % Functions exported to the scripting interface
 -export([
-         new/3,
-         new/4,
-         delete/1,
-         wang_index/1,
-         name/1,
-         attributes/1
-   ]).
+    new/3,
+    new/4,
+    delete/1,
+    wang_index/1,
+    name/1,
+    attributes/1
+]).
 
 -type id() :: pos_integer().
 -type wang_index() :: 0..15.
--type component_type() :: engine | weapon | cargo | defensive. % WIP
+% WIP
+-type component_type() :: engine | weapon | cargo | defensive.
 
 -spec new(list(), wang_index(), component_type()) -> id().
 new(Name, WangIndex, Type) ->
-   new(Name, WangIndex, Type, maps:new()).
+    new(Name, WangIndex, Type, maps:new()).
+
 -spec new(list(), wang_index(), component_type(), map()) -> id().
 new(Name, WangIndex, Type, Attributes) when is_map(Attributes) ->
     Fun = fun() ->
-                NextID = mnesia:dirty_update_counter(
-                    goblet_table_ids,
-                    goblet_ship_component,
-                    1
-                ),
-                mnesia:write(
-                    goblet_ship_component,
-                    #goblet_ship_component{
-                        name = Name,
-                        id = NextID,
-                        wang_index = WangIndex,
-                        type = Type,
-                        attributes = Attributes
-                    },
-                    write),
-                NextID
+        NextID = mnesia:dirty_update_counter(
+            goblet_table_ids,
+            goblet_ship_component,
+            1
+        ),
+        mnesia:write(
+            goblet_ship_component,
+            #goblet_ship_component{
+                name = Name,
+                id = NextID,
+                wang_index = WangIndex,
+                type = Type,
+                attributes = Attributes
+            },
+            write
+        ),
+        NextID
     end,
     mnesia:activity(transaction, Fun).
-
 
 -spec delete(id()) -> ok | {error, atom()}.
 delete(ID) when is_integer(ID) ->
@@ -81,7 +83,7 @@ wang_index(ID) ->
         case mnesia:read({goblet_ship_component, ID}) of
             [Component] ->
                 Component#goblet_ship_component.wang_index;
-            [] -> 
+            [] ->
                 {error, no_such_ship_component}
         end
     end,
@@ -93,7 +95,7 @@ name(ID) ->
         case mnesia:read({goblet_ship_component, ID}) of
             [Component] ->
                 Component#goblet_ship_component.name;
-            [] -> 
+            [] ->
                 {error, no_such_ship_component}
         end
     end,
@@ -105,7 +107,7 @@ attributes(ID) ->
         case mnesia:read({goblet_ship_component, ID}) of
             [Component] ->
                 Component#goblet_ship_component.attributes;
-            [] -> 
+            [] ->
                 {error, no_such_ship_component}
         end
     end,
