@@ -24,7 +24,7 @@
     player_shadow/1,
     player_unshadow/3,
     is_valid_player/1,
-    is_valid_player_account/2,
+    is_valid_player_account/2
 ]).
 
 % Mobs 
@@ -35,7 +35,7 @@
     mob_by_name/1
 ]).
 
-% Items
+% Items - OK to expose
 -export([
     create_item/9,
     delete_item/1,
