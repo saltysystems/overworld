@@ -27,7 +27,7 @@
     is_valid_player_account/2
 ]).
 
-% Mobs 
+% Mobs
 -export([
     create_mob/2,
     delete_mob/1,
@@ -245,8 +245,7 @@ is_valid_player_account(Player, Email) ->
 %            Player#goblet_player.health >= 0
 %    end.
 
--spec create_player(list(), list()) ->
-    ok | {error, atom()}.
+-spec create_player(list(), list()) -> ok | {error, atom()}.
 create_player(Name, Account) ->
     Fun = fun() ->
         case mnesia:read({goblet_player, Name}) of
