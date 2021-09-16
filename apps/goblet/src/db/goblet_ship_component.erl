@@ -7,24 +7,27 @@
 % Functions exported to the scripting interface
 -export([
     new/3,
-    new/4,
+    new/5,
     delete/1,
+    info/1,
     wang_index/1,
     name/1,
+    appearance/1,
     attributes/1
 ]).
 
--type id() :: pos_integer().
+-type id() :: non_neg_integer().
 -type wang_index() :: 0..15.
-% WIP
--type component_type() :: engine | weapon | cargo | defensive.
+-type component_type() :: string().
+-type name() :: string().
+-type appearance() :: non_neg_integer().
 
--spec new(list(), wang_index(), component_type()) -> id().
+-spec new(name(), wang_index(), component_type()) -> id().
 new(Name, WangIndex, Type) ->
-    new(Name, WangIndex, Type, maps:new()).
+    new(Name, WangIndex, Type, 0, maps:new()).
 
--spec new(list(), wang_index(), component_type(), map()) -> id().
-new(Name, WangIndex, Type, Attributes) when is_map(Attributes) ->
+-spec new(name(), wang_index(), appearance(), component_type(), map()) -> id().
+new(Name, WangIndex, Type, Appearance, Attributes) when is_map(Attributes) ->
     Fun = fun() ->
         NextID = mnesia:dirty_update_counter(
             goblet_table_ids,
@@ -38,6 +41,7 @@ new(Name, WangIndex, Type, Attributes) when is_map(Attributes) ->
                 id = NextID,
                 wang_index = WangIndex,
                 type = Type,
+                appearance = Appearance,
                 attributes = Attributes
             },
             write
@@ -77,6 +81,28 @@ delete(ID) when is_integer(ID) ->
     end,
     mnesia:activity(transaction, Fun).
 
+% This returns an API-safe Map that can be stored as a dict in GDMinus
+info(ID) ->
+    Fun = fun() ->
+        case mnesia:read({goblet_ship_component, ID}) of
+            [Component] ->
+                Component;
+            [] ->
+                {error, no_such_ship_component}
+        end
+    end,
+    Result = mnesia:activity(transaction, Fun),
+    #{
+      name=>Result#goblet_ship_component.name,
+      wang_index=>Result#goblet_ship_component.wang_index,
+      type=>Result#goblet_ship_component.type,
+      appearance=>Result#goblet_ship_component.appearance,
+      attributes=>Result#goblet_ship_component.attributes
+     }.
+
+
+
+
 -spec wang_index(id()) -> wang_index() | {error, atom()}.
 wang_index(ID) ->
     Fun = fun() ->
@@ -107,6 +133,18 @@ attributes(ID) ->
         case mnesia:read({goblet_ship_component, ID}) of
             [Component] ->
                 Component#goblet_ship_component.attributes;
+            [] ->
+                {error, no_such_ship_component}
+        end
+    end,
+    mnesia:activity(transaction, Fun).
+
+-spec appearance(id()) -> non_neg_integer().
+appearance(ID) ->
+    Fun = fun() ->
+        case mnesia:read({goblet_ship_component, ID}) of
+            [Component] ->
+                Component#goblet_ship_component.appearance;
             [] ->
                 {error, no_such_ship_component}
         end
