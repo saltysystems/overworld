@@ -8,4 +8,4 @@
 -record(goblet_player,{name, id, flags, inventory, shipgrid}).
 -record(goblet_mob,{name, id, flags, inventory, shipgrid, script}).
 -record(goblet_item, {name, id, ap, action, target_type, target_damage, target_health, status_effect, flags, price}).
--record(goblet_ship_component, {id, name, wang_index, type, attributes}).
+-record(goblet_ship_component, {id, name, wang_index, type, appearance, attributes}).
