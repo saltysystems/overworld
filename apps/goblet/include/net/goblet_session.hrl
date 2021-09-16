@@ -16,6 +16,8 @@
 -define(ACCOUNT_NEW, 16#1040).
 -define(ACCOUNT_LOGIN, 16#1045).
 -define(PLAYER_NEW, 16#1050).
+-define(PLAYER_LOG, 16#1050).
+-define(PLAYER_INFO, 16#1050).
 -define(PLAYER_LIST, 16#1055).
 
 % Chat messages, incl. PMs and ignore
