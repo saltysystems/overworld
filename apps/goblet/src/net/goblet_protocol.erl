@@ -24,8 +24,8 @@
 
 -export([player_log/1]).
 
--include("goblet_session.hrl").
--include("goblet_database.hrl").
+-include("net/goblet_session.hrl").
+-include("db/goblet_database.hrl").
 -include("goblet_pb.hrl").
 
 -include_lib("kernel/include/logger.hrl").
