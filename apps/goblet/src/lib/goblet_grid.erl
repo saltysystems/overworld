@@ -31,7 +31,7 @@ new(M, N) ->
 new(N, M, Object) ->
     Coords = [{R, C} || R <- lists:seq(1, M), C <- lists:seq(1, N)],
     lists:foldl(
-        fun(X, Map) -> maps:put(X, #tile{object=Object}, Map) end,
+        fun(X, Map) -> maps:put(X, #tile{object = Object}, Map) end,
         maps:new(),
         Coords
     ).
@@ -57,7 +57,7 @@ get_row(Row, Map) ->
 put_obj({X, Y}, What, Map) ->
     Tile = #tile{object = What},
     M1 = maps:put({X, Y}, Tile, Map),
-    set_flag({X,Y}, nonempty, M1).
+    set_flag({X, Y}, nonempty, M1).
 
 -spec put_col(pos_integer(), any(), map()) -> map().
 put_col(Col, NewVal, Map) ->
@@ -80,16 +80,16 @@ put_row(Row, NewVal, Map) ->
 -spec floodfill(coords(), map()) -> map().
 floodfill(Coordinates, Map0) ->
     case maps:get(Coordinates, Map0, out_of_bounds) of
-        out_of_bounds -> 
+        out_of_bounds ->
             Map0;
-        _ -> 
+        _ ->
             NonEmpty = has_flag(Coordinates, nonempty, Map0),
             Flooded = has_flag(Coordinates, flood, Map0),
             floodfill(Coordinates, false, NonEmpty, Flooded, Map0)
     end.
 
-floodfill({X,Y}, false, true, false, Map0) ->
-    Map1 = set_flag({X,Y}, flood, Map0),
+floodfill({X, Y}, false, true, false, Map0) ->
+    Map1 = set_flag({X, Y}, flood, Map0),
     % each subsequent func needs to use the updated board
     % from the last one.. lists:foldl ?
     Map2 = floodfill({X + 1, Y}, Map1),
@@ -111,7 +111,7 @@ is_contiguous(Coords, Map0) ->
     % when we put semi-initialized cells into the object field e.g. thru
     % goblet_ship_grid:new().
     %
-    Map2 = get_nonempty(Map1), 
+    Map2 = get_nonempty(Map1),
     % Get all tiles with a flag
     Map3 = get_flooded(Map2),
     % If the map is unchanged, then all objects are connected and the tile is
@@ -119,39 +119,42 @@ is_contiguous(Coords, Map0) ->
     Map3 == Map2.
 
 -spec get_nonempty(map()) -> map().
-
 get_nonempty(Map) ->
     % feels hackish. TODO - decide if its worth cleaning this up. as is, we
     % pass the entire map into a map predicate, which feels a bit funny. same
     % with get_empty/1
-    Pred = fun({R,C}, _V) -> has_flag({R,C}, nonempty, Map) == true  end,
+    Pred = fun({R, C}, _V) -> has_flag({R, C}, nonempty, Map) == true end,
     maps:filter(Pred, Map).
 
 -spec get_empty(map()) -> map().
 get_empty(Map) ->
-    Pred = fun({R,C}, _V) -> has_flag({R,C}, nonempty, Map) == false end,
+    Pred = fun({R, C}, _V) -> has_flag({R, C}, nonempty, Map) == false end,
     maps:filter(Pred, Map).
 
 -spec get_flooded(map()) -> map().
 get_flooded(Map) ->
-    Pred = fun({_R,_C}, V) -> maps:get(flood, V#tile.flags, false) == true end,
+    Pred = fun({_R, _C}, V) ->
+        maps:get(flood, V#tile.flags, false) == true
+    end,
     maps:filter(Pred, Map).
 
 -spec get_unflooded(map()) -> map().
 get_unflooded(Map) ->
-    Pred = fun({_R,_C}, V) -> maps:get(flood, V#tile.flags, false) == false end,
+    Pred = fun({_R, _C}, V) ->
+        maps:get(flood, V#tile.flags, false) == false
+    end,
     maps:filter(Pred, Map).
 
 -spec set_flag(coords(), any(), map()) -> map().
 set_flag(Coordinates, Flag, Map0) ->
     Tile0 = maps:get(Coordinates, Map0),
-    Tile1= Tile0#tile{flags= maps:put(Flag, true, Tile0#tile.flags)},
+    Tile1 = Tile0#tile{flags = maps:put(Flag, true, Tile0#tile.flags)},
     maps:put(Coordinates, Tile1, Map0).
 
 -spec unset_flag(coords(), any(), map()) -> map().
 unset_flag(Coordinates, Flag, Map0) ->
     Tile0 = maps:get(Coordinates, Map0),
-    Tile1= Tile0#tile{flags= maps:remove(Flag, Tile0#tile.flags)},
+    Tile1 = Tile0#tile{flags = maps:remove(Flag, Tile0#tile.flags)},
     maps:put(Coordinates, Tile1, Map0).
 
 -spec has_flag(any(), coords(), map()) -> boolean().
