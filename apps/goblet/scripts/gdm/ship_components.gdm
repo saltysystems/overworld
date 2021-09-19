@@ -17,6 +17,6 @@ for i in range(10):
     var wang_index = 4
     var type = "engine"
     var appearance = 0 
-    var attributes = {"hp": i*3, "thrust": round((i+1)*6/2) }
+    var attributes = {"hp": i*3, "thrust": round((i+1)*6/2.5) }
     var id = goblet.ship_component_new(name, wang_index, type, appearance, attributes)
-    print(goblet.ship_component_info(id))
+    print(goblet.ship_component_get(id))
