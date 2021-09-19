@@ -9,7 +9,7 @@
     new/5,
     delete/1,
     get/1,
-%    put/1,
+    %    put/1,
     id/1,
     name/1,
     wang_index/1,
@@ -24,11 +24,16 @@
 -type name() :: string().
 -type appearance() :: non_neg_integer().
 -type attributes() :: map().
+
 -opaque component() :: #goblet_ship_component{}.
+
 -export_type([component/0]).
 
--spec new(name(), wang_index(), appearance(), type(), map()) -> id() | {error, atom()}.
-new(Name, WangIndex, Type, Appearance, Attributes) when is_map(Attributes) ->
+-spec new(name(), wang_index(), appearance(), type(), map()) ->
+    id() | {error, atom()}.
+new(Name, WangIndex, Type, Appearance, Attributes) when
+    is_map(Attributes)
+->
     Fun = fun() ->
         NextID = mnesia:dirty_update_counter(
             goblet_table_ids,
@@ -97,34 +102,42 @@ get(ID) ->
     mnesia:activity(transaction, Fun).
 
 -spec id(component()) -> id().
-id(Component) -> 
+id(Component) ->
     Component#goblet_ship_component.id.
 
 -spec name(component()) -> name().
-name(Component) -> 
+name(Component) ->
     Component#goblet_ship_component.name.
 
 -spec wang_index(component()) -> wang_index().
-wang_index(Component) -> 
+wang_index(Component) ->
     Component#goblet_ship_component.wang_index.
 
 -spec appearance(component()) -> appearance().
-appearance(Component) -> 
+appearance(Component) ->
     Component#goblet_ship_component.appearance.
 
 -spec attributes(component()) -> attributes().
-attributes(Component) -> 
+attributes(Component) ->
     Component#goblet_ship_component.attributes.
 
 % Convert the opaque object into a simple map - useful for e.g. GDMinus.
 % Note that the map is sort of "read only" - no destructive updates to the map.
--spec to_map(component()) -> #{name := name(), id := id(), wang_index := wang_index(), type := type(), appearance := appearance(), attributes := attributes()}.
+-spec to_map(component()) ->
+    #{
+        name := name(),
+        id := id(),
+        wang_index := wang_index(),
+        type := type(),
+        appearance := appearance(),
+        attributes := attributes()
+    }.
 to_map(Component) ->
     #{
-      name=>Component#goblet_ship_component.name,
-      id=>Component#goblet_ship_component.id,
-      wang_index=>Component#goblet_ship_component.wang_index,
-      type=>Component#goblet_ship_component.type,
-      appearance=>Component#goblet_ship_component.appearance,
-      attributes=>Component#goblet_ship_component.attributes
-     }.
+        name => Component#goblet_ship_component.name,
+        id => Component#goblet_ship_component.id,
+        wang_index => Component#goblet_ship_component.wang_index,
+        type => Component#goblet_ship_component.type,
+        appearance => Component#goblet_ship_component.appearance,
+        attributes => Component#goblet_ship_component.attributes
+    }.
