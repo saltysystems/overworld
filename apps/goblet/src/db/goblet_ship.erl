@@ -1,4 +1,4 @@
--module(goblet_ship_component).
+-module(goblet_ship).
 
 -include_lib("eunit/include/eunit.hrl").
 
@@ -6,27 +6,28 @@
 
 % Functions exported to the scripting interface
 -export([
-    new/3,
     new/5,
     delete/1,
-    info/1,
-    wang_index/1,
+    get/1,
+%    put/1,
+    id/1,
     name/1,
+    wang_index/1,
     appearance/1,
-    attributes/1
+    attributes/1,
+    to_map/1
 ]).
 
 -type id() :: non_neg_integer().
 -type wang_index() :: 0..15.
--type component_type() :: string().
+-type type() :: string().
 -type name() :: string().
 -type appearance() :: non_neg_integer().
+-type attributes() :: map().
+-opaque component() :: #goblet_ship_component{}.
+-export_type([component/0]).
 
--spec new(name(), wang_index(), component_type()) -> id().
-new(Name, WangIndex, Type) ->
-    new(Name, WangIndex, Type, 0, maps:new()).
-
--spec new(name(), wang_index(), appearance(), component_type(), map()) -> id().
+-spec new(name(), wang_index(), appearance(), type(), map()) -> id() | {error, atom()}.
 new(Name, WangIndex, Type, Appearance, Attributes) when is_map(Attributes) ->
     Fun = fun() ->
         NextID = mnesia:dirty_update_counter(
@@ -50,7 +51,9 @@ new(Name, WangIndex, Type, Appearance, Attributes) when is_map(Attributes) ->
     end,
     mnesia:activity(transaction, Fun).
 
--spec delete(id()) -> ok | {error, atom()}.
+-spec delete(id() | component()) -> ok | {error, atom()}.
+delete(Component) when is_record(Component, goblet_ship_component) ->
+    delete(id(Component));
 delete(ID) when is_integer(ID) ->
     Fun = fun() ->
         % Items can't be removed simply without orphan objects in
@@ -81,8 +84,8 @@ delete(ID) when is_integer(ID) ->
     end,
     mnesia:activity(transaction, Fun).
 
-% This returns an API-safe Map that can be stored as a dict in GDMinus
-info(ID) ->
+-spec get(id()) -> component().
+get(ID) ->
     Fun = fun() ->
         case mnesia:read({goblet_ship_component, ID}) of
             [Component] ->
@@ -91,62 +94,37 @@ info(ID) ->
                 {error, no_such_ship_component}
         end
     end,
-    Result = mnesia:activity(transaction, Fun),
+    mnesia:activity(transaction, Fun).
+
+-spec id(component()) -> id().
+id(Component) -> 
+    Component#goblet_ship_component.id.
+
+-spec name(component()) -> name().
+name(Component) -> 
+    Component#goblet_ship_component.name.
+
+-spec wang_index(component()) -> wang_index().
+wang_index(Component) -> 
+    Component#goblet_ship_component.wang_index.
+
+-spec appearance(component()) -> appearance().
+appearance(Component) -> 
+    Component#goblet_ship_component.appearance.
+
+-spec attributes(component()) -> attributes().
+attributes(Component) -> 
+    Component#goblet_ship_component.attributes.
+
+% Convert the opaque object into a simple map - useful for e.g. GDMinus.
+% Note that the map is sort of "read only" - no destructive updates to the map.
+-spec to_map(component()) -> #{name := name(), id := id(), wang_index := wang_index(), type := type(), appearance := appearance(), attributes := attributes()}.
+to_map(Component) ->
     #{
-      name=>Result#goblet_ship_component.name,
-      wang_index=>Result#goblet_ship_component.wang_index,
-      type=>Result#goblet_ship_component.type,
-      appearance=>Result#goblet_ship_component.appearance,
-      attributes=>Result#goblet_ship_component.attributes
+      name=>Component#goblet_ship_component.name,
+      id=>Component#goblet_ship_component.id,
+      wang_index=>Component#goblet_ship_component.wang_index,
+      type=>Component#goblet_ship_component.type,
+      appearance=>Component#goblet_ship_component.appearance,
+      attributes=>Component#goblet_ship_component.attributes
      }.
-
-
-
-
--spec wang_index(id()) -> wang_index() | {error, atom()}.
-wang_index(ID) ->
-    Fun = fun() ->
-        case mnesia:read({goblet_ship_component, ID}) of
-            [Component] ->
-                Component#goblet_ship_component.wang_index;
-            [] ->
-                {error, no_such_ship_component}
-        end
-    end,
-    mnesia:activity(transaction, Fun).
-
--spec name(id()) -> string() | {error, atom()}.
-name(ID) ->
-    Fun = fun() ->
-        case mnesia:read({goblet_ship_component, ID}) of
-            [Component] ->
-                Component#goblet_ship_component.name;
-            [] ->
-                {error, no_such_ship_component}
-        end
-    end,
-    mnesia:activity(transaction, Fun).
-
--spec attributes(id()) -> map() | {error, atom()}.
-attributes(ID) ->
-    Fun = fun() ->
-        case mnesia:read({goblet_ship_component, ID}) of
-            [Component] ->
-                Component#goblet_ship_component.attributes;
-            [] ->
-                {error, no_such_ship_component}
-        end
-    end,
-    mnesia:activity(transaction, Fun).
-
--spec appearance(id()) -> non_neg_integer().
-appearance(ID) ->
-    Fun = fun() ->
-        case mnesia:read({goblet_ship_component, ID}) of
-            [Component] ->
-                Component#goblet_ship_component.appearance;
-            [] ->
-                {error, no_such_ship_component}
-        end
-    end,
-    mnesia:activity(transaction, Fun).
