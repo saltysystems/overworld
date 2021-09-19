@@ -2,20 +2,23 @@
 
 -include("game/goblet_shipgrid.hrl").
 
--export([new/0, put_cell/3, get_cell/2, valid_adjacent/3, apply_rotation/2]).
+-export([
+    new/0,
+    put_cell/3, put_cell/4,
+    get_cell/2,
+    validate/1,
+    apply_rotation/2
+]).
 
 -type coords() :: {pos_integer(), pos_integer()}.
--type ttype() :: empty | component.
-%-type wang_bitmask() :: [pos_integer(), pos_integer(), pos_integer(), pos_integer()].
 -type wang_bitmask() :: <<_:4>>.
 -type wang_index() :: 0..15.
 -type direction() :: north | south | east | west.
 -type rotation() :: 0 | 1 | 2 | 3.
 
 -record(cell, {
-    type = empty :: ttype(),
-    id = "",
-    flags = [],
+    type :: atom(),
+    object :: goblet_ship:component(),
     % <<W,S,E,N>>
     wang_bitmask = <<0, 0, 0, 0>> :: wang_bitmask()
 }).
@@ -24,23 +27,28 @@
 new() ->
     goblet_grid:new(?SHIPGRID_SIZE_X, ?SHIPGRID_SIZE_Y, #cell{}).
 
--spec put_cell(coords(), ttype(), map()) -> map().
-put_cell(Coords, ID, Map) ->
-    put_cell(Coords, ID, 0, Map).
+-spec put_cell(coords(), goblet_ship:component(), map()) -> map().
+put_cell(Coords, Component, Map) ->
+    put_cell(Coords, Component, 0, Map).
 
--spec put_cell(coords(), ttype(), rotation(), map()) -> map().
-put_cell(Coords, ID, Rotation, Map) ->
+-spec put_cell(coords(), goblet_ship:component(), rotation(), map()) ->
+    map().
+put_cell(Coords, Component, Rotation, Map) ->
     % Lookup the wang index, flags, etc.
-    WangIndex = apply_rotation(goblet_db:item_wang_bitmask(ID), Rotation),
-    goblet_grid:put(
+    Index = goblet_ship:wang_index(Component),
+    goblet_grid:put_obj(
         Coords,
-        #cell{id = ID, type = component, wang_bitmask = WangIndex},
+        #cell{
+            object = Component,
+            type = component,
+            wang_bitmask = apply_rotation(Index, Rotation)
+        },
         Map
     ).
 
 -spec get_cell(coords(), map()) -> map().
 get_cell(Coords, Map) ->
-    goblet_grid:get(Coords, Map).
+    goblet_grid:get_obj(Coords, Map).
 
 % Rotate the specified cell by bitshifting Index by R.
 % e.g., <<0,0,1,1>> -> <<0,1,1,0>>
@@ -54,6 +62,38 @@ apply_rotation(<<A, B, C, D>>, R) ->
 
 index_to_bitstring(Index) ->
     <<<<X:8>> || <<X:1>> <= <<Index:4>>>>.
+
+-spec validate(map()) -> {boolean(), atom()}.
+% Validate a ship layout in a couple of passes.
+validate(Map) ->
+    % Get the first non-empty tile.
+    [{Coords, _Val} | _] = maps:to_list(goblet_grid:get_nonempty(Map)),
+    {Result, Reason} =
+        case goblet_grid:is_contiguous(Coords, Map) of
+            false ->
+                {false, non_contiguous};
+            _ ->
+                valid_wang_tree(Coords, Map)
+        end.
+
+valid_wang_tree({X, Y} = Coords, Map) ->
+    % Coordinates need to be non-empty to start the validation
+    case goblet_grid:has_flag(Coords, checked, Map) of
+        false ->
+            % Get all of the nonempty cells, which should be contiguous from
+            % an earlier pass.
+            %Cells = goblet_grid:get_nonempty(Map),
+            ok;
+        % Don't have the flag, so check
+        % [
+        %    valid_adjacent(Coords, {X+1,Y}, Map),
+        %    valid_adjacent(Coords, {X,Y+1}, Map),
+        %    valid_adjacent(Coords, {X-1,Y}, Map),
+        %    valid_adjacent(Coords, {X,Y-1}, Map)
+        %    ];
+        true ->
+            ok
+    end.
 
 -spec valid_adjacent(coords(), coords(), map()) -> boolean().
 % Given two coordinate pairs, determine if the wang tiling is valid.
@@ -108,3 +148,6 @@ wang_adjacent(<<1, _, _, _>>, <<_, _, 1, _>>, west) ->
     true;
 wang_adjacent(_C1, _C2, _Direction) ->
     false.
+
+%-spec valid_wang_tree(map()) -> boolean().
+%valid_wang_tree(Map) ->
