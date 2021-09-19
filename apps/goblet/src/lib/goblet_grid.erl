@@ -1,37 +1,43 @@
 -module(goblet_grid).
 
 -export([
-    new/1, new/2,
+    new/2, new/3,
     get_col/2,
     put_col/3,
     get_row/2,
     put_row/3,
-    put/3,
-    get/2,
+    put_obj/3,
+    get_obj/2,
     floodfill/2,
-    is_contiguous/2
+    is_contiguous/2,
+    get_empty/1,
+    get_nonempty/1,
+    get_flooded/1,
+    get_unflooded/1,
+    set_flag/3,
+    unset_flag/3,
+    has_flag/3
 ]).
 
 -type coords() :: {pos_integer(), pos_integer()}.
 
--record(tile, {flags = [], object}).
-
-% Create a square grid of size Size.
--spec new(pos_integer()) -> map().
-new(Size) ->
-    new(Size, Size).
+-record(tile, {flags = #{}, object}).
 
 -spec new(pos_integer(), pos_integer()) -> map().
-new(N, M) ->
+new(M, N) ->
+    new(M, N, undefined).
+
+-spec new(pos_integer(), pos_integer(), any()) -> map().
+new(N, M, Object) ->
     Coords = [{R, C} || R <- lists:seq(1, M), C <- lists:seq(1, N)],
     lists:foldl(
-        fun(X, Map) -> maps:put(X, #tile{}, Map) end,
+        fun(X, Map) -> maps:put(X, #tile{object=Object}, Map) end,
         maps:new(),
         Coords
     ).
 
--spec get(coords(), map()) -> any().
-get({X, Y}, Map) ->
+-spec get_obj(coords(), map()) -> any().
+get_obj({X, Y}, Map) ->
     Tile = maps:get({X, Y}, Map),
     Tile#tile.object.
 
@@ -47,10 +53,11 @@ get_row(Row, Map) ->
 
 %-spec get_subgrid(StartCoords, EndCoords, map()) -> map().
 
--spec put(coords(), any(), map()) -> map().
-put({X, Y}, What, Map) ->
+-spec put_obj(coords(), any(), map()) -> map().
+put_obj({X, Y}, What, Map) ->
     Tile = #tile{object = What},
-    maps:put({X, Y}, Tile, Map).
+    M1 = maps:put({X, Y}, Tile, Map),
+    set_flag({X,Y}, nonempty, M1).
 
 -spec put_col(pos_integer(), any(), map()) -> map().
 put_col(Col, NewVal, Map) ->
@@ -71,28 +78,26 @@ put_row(Row, NewVal, Map) ->
     maps:merge(Map, Filter).
 
 -spec floodfill(coords(), map()) -> map().
-floodfill({X, Y}, Map0) ->
-    Tile = maps:get({X, Y}, Map0, out_of_bounds),
-    case Tile of
-        % if there is already a flag here, do nothing
-        Tile when length(Tile#tile.flags) > 0 ->
+floodfill(Coordinates, Map0) ->
+    case maps:get(Coordinates, Map0, out_of_bounds) of
+        out_of_bounds -> 
             Map0;
-        % if the cell has nothing in it, do nothing
-        Tile when Tile#tile.object == undefined ->
-            Map0;
-        % if the key doesn't exist (i.e., out of bounds), also do nothing
-        out_of_bounds ->
-            Map0;
-        _ ->
-            % Put the atom 'f' into the flags to set the flag
-            NewTile = Tile#tile{flags = [f]},
-            Map1 = maps:put({X, Y}, NewTile, Map0),
-            % each subsequent func needs to use the updated board from the last one
-            Map2 = floodfill({X + 1, Y}, Map1),
-            Map3 = floodfill({X, Y + 1}, Map2),
-            Map4 = floodfill({X - 1, Y}, Map3),
-            floodfill({X, Y - 1}, Map4)
+        _ -> 
+            NonEmpty = has_flag(Coordinates, nonempty, Map0),
+            Flooded = has_flag(Coordinates, flood, Map0),
+            floodfill(Coordinates, false, NonEmpty, Flooded, Map0)
     end.
+
+floodfill({X,Y}, false, true, false, Map0) ->
+    Map1 = set_flag({X,Y}, flood, Map0),
+    % each subsequent func needs to use the updated board
+    % from the last one.. lists:foldl ?
+    Map2 = floodfill({X + 1, Y}, Map1),
+    Map3 = floodfill({X, Y + 1}, Map2),
+    Map4 = floodfill({X - 1, Y}, Map3),
+    floodfill({X, Y - 1}, Map4);
+floodfill(_Coords, _OOB, _NonEmpty, _Flooded, Map0) ->
+    Map0.
 
 % Performs a floodfill starting at the specified coordinates.
 % If all defined tiles (i.e., #tile.object != 'undefined') are flooded, then
@@ -101,11 +106,55 @@ floodfill({X, Y}, Map0) ->
 is_contiguous(Coords, Map0) ->
     Map1 = floodfill(Coords, Map0),
     % First get all non-empty tiles:
-    Pred1 = fun({_R, _C}, V) -> V =/= #tile{} end,
-    Map2 = maps:filter(Pred1, Map1),
-    % Now Filter out only the ones that have no flag
-    Pred2 = fun({_R, _C}, V) -> V#tile.flags =/= [] end,
+    %
+    % TODO: Broken - there's no way for goblet_grid to know about "nonempty"
+    % when we put semi-initialized cells into the object field e.g. thru
+    % goblet_ship_grid:new().
+    %
+    Map2 = get_nonempty(Map1), 
+    % Get all tiles with a flag
+    Map3 = get_flooded(Map2),
     % If the map is unchanged, then all objects are connected and the tile is
     % floodable.  Otherwise the map is not floodable.
-    Map3 = maps:filter(Pred2, Map2),
     Map3 == Map2.
+
+-spec get_nonempty(map()) -> map().
+
+get_nonempty(Map) ->
+    % feels hackish. TODO - decide if its worth cleaning this up. as is, we
+    % pass the entire map into a map predicate, which feels a bit funny. same
+    % with get_empty/1
+    Pred = fun({R,C}, _V) -> has_flag({R,C}, nonempty, Map) == true  end,
+    maps:filter(Pred, Map).
+
+-spec get_empty(map()) -> map().
+get_empty(Map) ->
+    Pred = fun({R,C}, _V) -> has_flag({R,C}, nonempty, Map) == false end,
+    maps:filter(Pred, Map).
+
+-spec get_flooded(map()) -> map().
+get_flooded(Map) ->
+    Pred = fun({_R,_C}, V) -> maps:get(flood, V#tile.flags, false) == true end,
+    maps:filter(Pred, Map).
+
+-spec get_unflooded(map()) -> map().
+get_unflooded(Map) ->
+    Pred = fun({_R,_C}, V) -> maps:get(flood, V#tile.flags, false) == false end,
+    maps:filter(Pred, Map).
+
+-spec set_flag(coords(), any(), map()) -> map().
+set_flag(Coordinates, Flag, Map0) ->
+    Tile0 = maps:get(Coordinates, Map0),
+    Tile1= Tile0#tile{flags= maps:put(Flag, true, Tile0#tile.flags)},
+    maps:put(Coordinates, Tile1, Map0).
+
+-spec unset_flag(coords(), any(), map()) -> map().
+unset_flag(Coordinates, Flag, Map0) ->
+    Tile0 = maps:get(Coordinates, Map0),
+    Tile1= Tile0#tile{flags= maps:remove(Flag, Tile0#tile.flags)},
+    maps:put(Coordinates, Tile1, Map0).
+
+-spec has_flag(any(), coords(), map()) -> boolean().
+has_flag(Coordinates, Flag, Map0) ->
+    Tile = maps:get(Coordinates, Map0),
+    maps:get(Flag, Tile#tile.flags, false).
