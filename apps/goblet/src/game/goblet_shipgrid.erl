@@ -11,17 +11,21 @@
 ]).
 
 -type coords() :: {pos_integer(), pos_integer()}.
--type wang_bitmask() :: <<_:4>>.
+-type wang_bitmask() :: <<_:4>> | <<_:32>>.
 -type wang_index() :: 0..15.
 -type direction() :: north | south | east | west.
 -type rotation() :: 0 | 1 | 2 | 3.
 
 -record(cell, {
     type :: atom(),
-    object :: goblet_ship:component(),
+    object :: goblet_ship:component() | undefined,
     % <<W,S,E,N>>
     wang_bitmask = <<0, 0, 0, 0>> :: wang_bitmask()
 }).
+
+-opaque cell() :: #cell{}.
+
+-export_type([cell/0]).
 
 -spec new() -> map().
 new() ->
@@ -46,13 +50,13 @@ put_cell(Coords, Component, Rotation, Map) ->
         Map
     ).
 
--spec get_cell(coords(), map()) -> map().
+-spec get_cell(coords(), map()) -> cell().
 get_cell(Coords, Map) ->
     goblet_grid:get_obj(Coords, Map).
 
 % Rotate the specified cell by bitshifting Index by R.
 % e.g., <<0,0,1,1>> -> <<0,1,1,0>>
--spec apply_rotation(wang_index(), rotation()) -> binary().
+-spec apply_rotation(wang_index() | bitstring(), rotation()) -> binary().
 apply_rotation(Index, R) when is_integer(Index) ->
     apply_rotation(index_to_bitstring(Index), R);
 apply_rotation(<<A, B, C, D>>, 0) ->
@@ -62,7 +66,6 @@ apply_rotation(<<A, B, C, D>>, R) ->
 
 index_to_bitstring(Index) ->
     <<<<X:8>> || <<X:1>> <= <<Index:4>>>>.
-
 
 -spec validate(map()) -> boolean().
 % Validate a ship layout in a couple of passes.
@@ -78,17 +81,16 @@ validate(Map) ->
             valid_wang_tree(CoordList, Map, [])
     end.
 
-
--spec valid_wang_tree([coords(), ...], map(), [boolean(), ...]) -> boolean().
+-spec valid_wang_tree([coords(), ...], map(), [] | [boolean(), ...]) ->
+    boolean().
 valid_wang_tree([], _Map, Acc) ->
-    % Logically AND all of the boolean values. 
+    % Logically AND all of the boolean values.
     lists:foldl(fun(X, Bool) -> X and Bool end, true, Acc);
-valid_wang_tree(Components = [{X,Y} | Remaining], Map, Acc) ->
-    CheckList = [{X+1,Y}, {X,Y+1}, {X-1, Y}, {X,Y-1}],
-    Intersection = [ A || A <- Components, B <- CheckList, A =:= B ],
-    Valids = [ valid_adjacent(Next, {X,Y}, Map) || Next <- Intersection ],
+valid_wang_tree(Components = [{X, Y} | Remaining], Map, Acc) ->
+    CheckList = [{X + 1, Y}, {X, Y + 1}, {X - 1, Y}, {X, Y - 1}],
+    Intersection = [A || A <- Components, B <- CheckList, A =:= B],
+    Valids = [valid_adjacent(Next, {X, Y}, Map) || Next <- Intersection],
     valid_wang_tree(Remaining, Map, Valids ++ Acc).
-
 
 -spec valid_adjacent(coords(), coords(), map()) -> boolean().
 % Given two coordinate pairs, determine if the wang tiling is valid.
@@ -141,8 +143,5 @@ wang_adjacent(<<_, _, 1, _>>, <<1, _, _, _>>, east) ->
     true;
 wang_adjacent(<<1, _, _, _>>, <<_, _, 1, _>>, west) ->
     true;
-wang_adjacent(C2, C1, Direction) ->
+wang_adjacent(_C2, _C1, _Direction) ->
     false.
-
-%-spec valid_wang_tree(map()) -> boolean().
-%valid_wang_tree(Map) ->
