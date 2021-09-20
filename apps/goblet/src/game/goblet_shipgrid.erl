@@ -63,37 +63,32 @@ apply_rotation(<<A, B, C, D>>, R) ->
 index_to_bitstring(Index) ->
     <<<<X:8>> || <<X:1>> <= <<Index:4>>>>.
 
--spec validate(map()) -> {boolean(), atom()}.
+
+-spec validate(map()) -> boolean().
 % Validate a ship layout in a couple of passes.
 validate(Map) ->
     % Get the first non-empty tile.
-    [{Coords, _Val} | _] = maps:to_list(goblet_grid:get_nonempty(Map)),
-    {Result, Reason} =
-        case goblet_grid:is_contiguous(Coords, Map) of
-            false ->
-                {false, non_contiguous};
-            _ ->
-                valid_wang_tree(Coords, Map)
-        end.
-
-valid_wang_tree({X, Y} = Coords, Map) ->
-    % Coordinates need to be non-empty to start the validation
-    case goblet_grid:has_flag(Coords, checked, Map) of
+    Cells = goblet_grid:get_nonempty(Map),
+    CoordList = goblet_grid:get_coordinate_list(Cells),
+    [Coords | _] = CoordList,
+    case goblet_grid:is_contiguous(Coords, Map) of
         false ->
-            % Get all of the nonempty cells, which should be contiguous from
-            % an earlier pass.
-            %Cells = goblet_grid:get_nonempty(Map),
-            ok;
-        % Don't have the flag, so check
-        % [
-        %    valid_adjacent(Coords, {X+1,Y}, Map),
-        %    valid_adjacent(Coords, {X,Y+1}, Map),
-        %    valid_adjacent(Coords, {X-1,Y}, Map),
-        %    valid_adjacent(Coords, {X,Y-1}, Map)
-        %    ];
-        true ->
-            ok
+            false;
+        _ ->
+            valid_wang_tree(CoordList, Map, [])
     end.
+
+
+-spec valid_wang_tree([coords(), ...], map(), [boolean(), ...]) -> boolean().
+valid_wang_tree([], _Map, Acc) ->
+    % Logically AND all of the boolean values. 
+    lists:foldl(fun(X, Bool) -> X and Bool end, true, Acc);
+valid_wang_tree(Components = [{X,Y} | Remaining], Map, Acc) ->
+    CheckList = [{X+1,Y}, {X,Y+1}, {X-1, Y}, {X,Y-1}],
+    Intersection = [ A || A <- Components, B <- CheckList, A =:= B ],
+    Valids = [ valid_adjacent(Next, {X,Y}, Map) || Next <- Intersection ],
+    valid_wang_tree(Remaining, Map, Valids ++ Acc).
+
 
 -spec valid_adjacent(coords(), coords(), map()) -> boolean().
 % Given two coordinate pairs, determine if the wang tiling is valid.
@@ -122,14 +117,14 @@ valid_adjacent({X1, Y1} = Coords1, {X2, Y2} = Coords2, Map) ->
             );
         {0, 1} ->
             wang_adjacent(
-                Cell1#cell.wang_bitmask,
                 Cell2#cell.wang_bitmask,
+                Cell1#cell.wang_bitmask,
                 north
             );
         {0, -1} ->
             wang_adjacent(
-                Cell1#cell.wang_bitmask,
                 Cell2#cell.wang_bitmask,
+                Cell1#cell.wang_bitmask,
                 south
             )
     end.
@@ -146,7 +141,7 @@ wang_adjacent(<<_, _, 1, _>>, <<1, _, _, _>>, east) ->
     true;
 wang_adjacent(<<1, _, _, _>>, <<_, _, 1, _>>, west) ->
     true;
-wang_adjacent(_C1, _C2, _Direction) ->
+wang_adjacent(C2, C1, Direction) ->
     false.
 
 %-spec valid_wang_tree(map()) -> boolean().
