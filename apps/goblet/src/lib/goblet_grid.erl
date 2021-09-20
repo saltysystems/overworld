@@ -159,16 +159,16 @@ unset_flag(Coordinates, Flag, Map0) ->
     Tile1 = Tile0#tile{flags = maps:remove(Flag, Tile0#tile.flags)},
     maps:put(Coordinates, Tile1, Map0).
 
--spec has_flag(any(), coords(), map()) -> boolean().
+-spec has_flag(coords(), any(), map()) -> boolean().
 has_flag(Coordinates, Flag, Map0) ->
     Tile = maps:get(Coordinates, Map0),
     maps:get(Flag, Tile#tile.flags, false).
 
 -spec grid_distance(coords(), coords()) -> pos_integer().
-grid_distance({X1,Y1}, {X2,Y2}) ->
+grid_distance({X1, Y1}, {X2, Y2}) ->
     abs(X2 - X1) + abs(Y2 - Y1).
 
 -spec get_coordinate_list(map()) -> list().
 get_coordinate_list(Map) ->
     L = maps:to_list(Map),
-    [ Coords || {Coords, _Val} <- L ].
+    [Coords || {Coords, _Val} <- L].
