@@ -16,7 +16,9 @@
     get_unflooded/1,
     set_flag/3,
     unset_flag/3,
-    has_flag/3
+    has_flag/3,
+    grid_distance/2,
+    get_coordinate_list/1
 ]).
 
 -type coords() :: {pos_integer(), pos_integer()}.
@@ -161,3 +163,12 @@ unset_flag(Coordinates, Flag, Map0) ->
 has_flag(Coordinates, Flag, Map0) ->
     Tile = maps:get(Coordinates, Map0),
     maps:get(Flag, Tile#tile.flags, false).
+
+-spec grid_distance(coords(), coords()) -> pos_integer().
+grid_distance({X1,Y1}, {X2,Y2}) ->
+    abs(X2 - X1) + abs(Y2 - Y1).
+
+-spec get_coordinate_list(map()) -> list().
+get_coordinate_list(Map) ->
+    L = maps:to_list(Map),
+    [ Coords || {Coords, _Val} <- L ].
