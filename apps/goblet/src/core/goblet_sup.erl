@@ -33,6 +33,7 @@ init([]) ->
     },
     ChildSpecs = [
         #{id => goblet_lobby, start => {goblet_lobby, start, []}},
+        #{id => goblet_protocol2, start => {goblet_protocol2, start, []}},
         #{
             id => goblet_instance_sup,
             start => {goblet_instance_sup, start_link, []}

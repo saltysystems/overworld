@@ -10,7 +10,9 @@
 
 -include_lib("kernel/include/logger.hrl").
 
--include("net/goblet_session.hrl").
+-type ws_result() :: {ok, any()} | {reply, [binary(), ...], any()}.
+
+-export_type([ws_result/0]).
 
 %%===========================================================================
 %% Cowboy Handler Callbacks
@@ -20,10 +22,13 @@
 %% @doc Handler is initialized for any new connection and logs the foreign IP
 %% @end
 %%---------------------------------------------------------------------------
-init(Req, State) ->
+init(Req, _St0) ->
     #{peer := {IP, _Port}} = Req,
     logger:notice("~p: client connected.", [IP]),
-    {cowboy_websocket, Req, State}.
+    SessionID = erlang:unique_integer(),
+    gproc:reg({p, l, client_session}, SessionID),
+    St1 = goblet_session:set_id(SessionID, goblet_session:new()),
+    {cowboy_websocket, Req, St1}.
 
 %%---------------------------------------------------------------------------
 %% @doc Terminate callback for cleanup processes
@@ -33,7 +38,6 @@ terminate(_Reason, Req, State) ->
     #{peer := {IP, _Port}} = Req,
     logger:notice("~p: client disconnected", [IP]),
     logger:debug("Client state at disconnect: ~p", [State]),
-    goblet_protocol:maybe_leave_match(State),
     ok.
 
 %%---------------------------------------------------------------------------
@@ -44,7 +48,7 @@ terminate(_Reason, Req, State) ->
 %% @end
 %%---------------------------------------------------------------------------
 websocket_init(State) ->
-    Msg = goblet_protocol:player_log("CONNECTION ESTABLISHED"),
+    Msg = goblet_session:encode_log("CONNECTION ESTABLISHED"),
     {reply, {binary, Msg}, State}.
 
 %%---------------------------------------------------------------------------
@@ -52,10 +56,11 @@ websocket_init(State) ->
 %%      decoder for further processing. All other messages are discarded.
 %% @end
 %%---------------------------------------------------------------------------
+-spec websocket_handle({binary, [binary(), ...]}, any()) -> ws_result().
 websocket_handle({binary, Msg}, State) ->
     % protocol decoding will reply with an 'ok' for asynchronous messages or
     % will give us a binary to send back to the client
-    case goblet_protocol:decode(Msg, State) of
+    case goblet_protocol2:decode(Msg, State) of
         {ok, NewState} ->
             {ok, NewState};
         {Msg1, NewState} ->
@@ -70,19 +75,20 @@ websocket_handle(_Frame, State) ->
 %%      that back to the client.
 %% @end
 %%--------------------------------------------------------------------------
-% if we get a message sent to our Pid that looks like something from another
-% process (or myself), reply it back to the client
-websocket_info({_Pid, event, Msg}, State) ->
-    logger:notice("Received event, forwarding to client"),
+websocket_info({_Pid, broadcast, Msg}, State) ->
+    logger:notice("Received broadcast message, forwarding to client"),
     {reply, {binary, Msg}, State};
-websocket_info({_Pid, notify, Msg, Player}, State) when
-    State#session.player =:= Player
-->
-    logger:notice("Received notification for ~p", [Player]),
-    {reply, {binary, Msg}, State};
-websocket_info({_Pid, notify, _Msg, _Player}, State) ->
-    % otherwise ignore because the message isn't meant for this session
-    {ok, State};
+websocket_info({_Pid, multicast, Msg, Who}, State) ->
+    ID = goblet_session:get_id(State),
+    case lists:member(ID, Who) of
+        true ->
+            logger:notice(
+                "Received message for this client, forwarding to client"
+            ),
+            {reply, {binary, Msg}, State};
+        false ->
+            {ok, State}
+    end;
 websocket_info(Info, State) ->
     logger:notice("Got a message from another process: ~p", [Info]),
     {ok, State}.
