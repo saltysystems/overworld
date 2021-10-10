@@ -1,0 +1,9 @@
+var name = "Bigly Engine Mk1"
+var wang_index = 4
+var type = "engine"
+var id = goblet.ship_component_new(name, wang_index, type)
+var attribute = goblet.ship_component_attributes(id)
+
+var HP = str(attribute["hp"])
+
+print(name +"'s HP: " + HP)

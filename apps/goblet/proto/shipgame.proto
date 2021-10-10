@@ -1,0 +1,268 @@
+syntax = "proto2";
+
+package shipgame;
+
+// Match bits
+enum MatchState {
+    CREATING  = 0;
+    PLAYING   = 1;
+    FINISHING = 2;
+}
+enum MatchMode {
+    DEFAULT   = 0;
+    BLITZ     = 1;
+    STRATEGIC = 2;
+}
+
+enum MatchStateMachine {
+    PREPARE = 0;
+    DECIDE = 1;
+    EXECUTE = 2;
+    FINISH = 3;
+}
+
+enum PlayerRole {
+    DESTROYER   = 0;
+    INTERCEPTOR = 1;
+    CARRIER     = 2;
+    COMMAND     = 3;
+}
+
+enum ItemAction {
+    SELF   = 0;
+    DIRECT = 1; // affects 1 tile
+    LINEAR = 2; // affects a line of tiles 
+    AREA   = 3; // affects tile + all adjacent
+}
+
+// General response message
+message ResponseObject {
+	enum Status {
+		OK = 0;
+		ERROR = 1;
+	}
+	required Status status = 1;
+	optional string error = 2;
+}
+
+// Match info
+message MatchInfo {
+    required uint32 id = 1;
+    required MatchState state = 2;
+    repeated string players = 3;
+    required uint32 players_max = 4;
+    required uint64 start_time = 5;
+    required MatchMode mode = 6;
+    required uint32 duration = 7;
+    optional bytes extra = 8;
+}
+
+/////////////////////////////////////////////////////////
+
+message AccountNewReq {
+	required string email = 1;
+	required string password = 2;
+}
+
+message AccountNewResp {
+	enum Status {
+		OK = 0;
+		ERROR = 1;
+	}
+	required Status status = 1;
+	optional string error = 2;
+}
+
+message AccountLoginReq {
+	required string email = 1;
+	required string password = 2;
+}
+
+message AccountLoginResp {
+	enum Status {
+		OK = 0;
+		ERROR = 1;
+	}
+	required Status status = 1;
+	repeated string players = 2;
+	optional string error = 3;
+}
+
+// opcode 0x1050
+message PlayerNewReq {
+	required string name = 1;
+	repeated string color = 2;
+	repeated uint32 symbol = 3;
+	required PlayerRole role = 4;
+}
+
+// opcode 0x1060 
+message PlayerNewResp {
+	enum Status {
+		OK = 0;
+		ERROR = 1;
+	}
+	required Status status = 1;
+	optional string error = 3;
+}
+
+// no corresponding Request
+message PlayerListResp {
+	enum Status {
+		OK = 0;
+		ERROR = 1;
+	}
+	required Status status = 1;
+    repeated string players = 2;
+	optional string error = 3;
+}
+
+message PlayerInfoResp {
+    //TODO: More expanded information for the inventory
+    //      Need to think about the inventory a bit more...
+    //      for instance, how to do ammo. Separate item?
+    //message Item {
+    //    string name = 1;
+    //    int32 ap = 2;
+    //}
+    required string name = 1;
+    required int32 health = 2;
+    required int32 energy = 3;
+    repeated string flags = 4;
+    repeated string inventory = 5;
+}
+
+message PlayerAuthenticate {
+	required bytes id = 1;
+}
+
+message ClientLog {
+	required string msg = 2;
+}
+
+message MatchListResp {
+    required ResponseObject resp = 1;
+    repeated MatchInfo matches = 2;
+}
+
+message MatchCreateReq {
+    required string player = 1;
+    required MatchMode mode = 2;
+    required uint32 players_max = 3;
+    optional bytes extra = 4;
+}
+
+message MatchCreateResp {
+    required ResponseObject resp = 1;
+    optional MatchInfo match = 2;
+}
+
+message MatchJoinReq {
+    required string player = 1;
+    required uint32 matchid = 2;
+}
+
+message MatchJoinResp {
+    required ResponseObject resp = 1;
+    optional MatchInfo match = 2;
+}
+
+message MatchLeaveReq {
+    required string player = 1;
+    required uint32 matchid = 2;
+}
+
+message MatchLeaveResp {
+    required ResponseObject resp = 1;
+}
+
+message MatchStartReq {
+    required string player = 1;
+    required uint32 matchid = 2;
+}
+
+message MatchStartResp {
+    required ResponseObject resp = 1;
+}
+
+message MatchInfoReq {
+    required string player = 1;
+    required uint32 matchid = 2;
+} 
+
+message MatchInfoResp {
+    required ResponseObject resp = 1;
+    optional MatchInfo match = 2;
+} 
+
+message MatchStateResp {
+    message Tile {
+        required int32 x = 1;
+        required int32 y = 2;
+        required string type = 3;
+        repeated string occupant = 4;
+        repeated string flags = 5;
+    }
+    message Action {
+        required string type = 1;
+        required string who = 2;
+        required int32 x = 3;
+        required int32 y = 4;
+    }
+    required MatchStateMachine state = 1;
+    repeated Tile board = 2;    
+    repeated string playerlist = 3;
+    repeated string readyplayers = 4;
+    repeated Action replay = 5;
+    optional int32 timer = 6;
+}
+
+message MatchPrepReq {
+    required string player = 1;
+    required uint32 matchid = 2;
+} 
+message MatchPrepResp {
+    required ResponseObject resp = 1;
+} 
+
+message MatchDecideReq {
+    message Action {
+        required string item = 1;
+        optional int32  x = 2;
+        optional int32  y = 3;
+        optional string target = 4;
+    }
+    required string player = 1;
+    repeated Action actions = 2;
+    required uint32 matchid = 3;
+} 
+
+message MatchDecideResp {
+    required ResponseObject resp = 1;
+} 
+
+message MatchIntentResp {
+    message Action {
+        required string type = 1;
+        optional int32  x = 2;
+        optional int32  y = 3;
+        optional string target = 4;
+    }
+    required string player = 1;
+    // maybe more in the future ? just a single require for now
+    required Action action = 2;
+}
+
+message ShipValidateReq {
+    message Component { 
+        required int32 x = 1;
+        required int32 y = 2;
+        required int32 id = 3;
+        required int32 rotation = 4;
+    }
+    repeated Component components = 1;
+}
+
+message ShipValidateResp {
+   required ResponseObject resp = 1; 
+}

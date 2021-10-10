@@ -576,90 +576,90 @@ account_login_badpass_test() ->
     Resp = goblet_db:account_login(Email, Password),
     ?assertEqual(false, Resp).
 
-create_player_test() ->
-    Email = "TestUser@doesntexist.notadomain",
-    Name = "Chester McTester",
-    Colors = ["#f00d00", "#ffffff", "#deabee"],
-    Symbols = [1, 3],
-    Role = 'DESTROYER',
-    Resp = goblet_db:create_player(Name, Colors, Symbols, Role, Email),
-    ?assertEqual(ok, Resp),
-    % Now check to see that the player is properly associated with the
-    Acct = goblet_db:account_by_email(Email),
-    ?assertEqual(["Chester McTester"], Acct#goblet_account.player_ids).
+%create_player_test() ->
+%    Email = "TestUser@doesntexist.notadomain",
+%    Name = "Chester McTester",
+%    Colors = ["#f00d00", "#ffffff", "#deabee"],
+%    Symbols = [1, 3],
+%    Role = 'DESTROYER',
+%    Resp = goblet_db:create_player(Name, Colors, Symbols, Role, Email),
+%    ?assertEqual(ok, Resp),
+%    % Now check to see that the player is properly associated with the
+%    Acct = goblet_db:account_by_email(Email),
+%    ?assertEqual(["Chester McTester"], Acct#goblet_account.player_ids).
 
-create_item_test() ->
-    Name = "TestGun",
-    AP = 3,
-    Action = testgun,
-    TargetType = direct,
-    TargetDamage = 10,
-    TargetHealth = 0,
-    StatusEffect = none,
-    Flags = [],
-    Price = 1000,
-    Resp = goblet_db:create_item(
-        Name,
-        AP,
-        Action,
-        TargetType,
-        TargetDamage,
-        TargetHealth,
-        StatusEffect,
-        Flags,
-        Price
-    ),
-    ?assertEqual(ok, Resp).
-
-create_delete_mob_test() ->
-    Name = "Space Bug",
-    Appearance = 0,
-    Type = bug,
-    Health = 100,
-    Energy = 100,
-    Inventory = [],
-    Resp = goblet_db:create_mob(
-        Name,
-        Appearance,
-        Type,
-        Health,
-        Energy,
-        Inventory
-    ),
-    ?assertEqual(ok, Resp),
-    Mob = goblet_db:mob_by_name(Name),
-    ?assertEqual(Mob#goblet_mob.inventory, Inventory),
-    Resp1 = goblet_db:delete_mob(Name),
-    ?assertEqual(ok, Resp1).
-
-item_to_player_test() ->
-    Item = "TestGun",
-    Player = "Chester McTester",
-    Resp = goblet_db:item_to_player(Item, Player),
-    ?assertEqual(ok, Resp),
-    P = goblet_db:player_by_name(Player),
-    Inv = P#goblet_player.inventory,
-    ?assertEqual(true, lists:member(Item, Inv)).
-
-player_items_have_action_test() ->
-    Player = "Chester McTester",
-    Resp = goblet_db:player_items_have_action(Player, testgun),
-    ?assertEqual(["TestGun"], Resp).
-
-get_all_item_owners_test() ->
-    Player = "Chester McTester",
-    Item = "TestGun",
-    [Resp] = get_all_item_owners(Item),
-    ?assertEqual(Resp, Player).
-
-delete_item_test() ->
-    Item = "TestGun",
-    Resp1 = goblet_db:delete_item(Item),
-    ?assertEqual(ok, Resp1),
-    P = "Chester McTester",
-    Resp2 = goblet_db:player_inventory(P),
-    ItemExists = lists:member(Item, Resp2),
-    ?assertEqual(false, ItemExists).
+%create_item_test() ->
+%    Name = "TestGun",
+%    AP = 3,
+%    Action = testgun,
+%    TargetType = direct,
+%    TargetDamage = 10,
+%    TargetHealth = 0,
+%    StatusEffect = none,
+%    Flags = [],
+%    Price = 1000,
+%    Resp = goblet_db:create_item(
+%        Name,
+%        AP,
+%        Action,
+%        TargetType,
+%        TargetDamage,
+%        TargetHealth,
+%        StatusEffect,
+%        Flags,
+%        Price
+%    ),
+%    ?assertEqual(ok, Resp).
+%
+%create_delete_mob_test() ->
+%    Name = "Space Bug",
+%    Appearance = 0,
+%    Type = bug,
+%    Health = 100,
+%    Energy = 100,
+%    Inventory = [],
+%    Resp = goblet_db:create_mob(
+%        Name,
+%        Appearance,
+%        Type,
+%        Health,
+%        Energy,
+%        Inventory
+%    ),
+%    ?assertEqual(ok, Resp),
+%    Mob = goblet_db:mob_by_name(Name),
+%    ?assertEqual(Mob#goblet_mob.inventory, Inventory),
+%    Resp1 = goblet_db:delete_mob(Name),
+%    ?assertEqual(ok, Resp1).
+%
+%item_to_player_test() ->
+%    Item = "TestGun",
+%    Player = "Chester McTester",
+%    Resp = goblet_db:item_to_player(Item, Player),
+%    ?assertEqual(ok, Resp),
+%    P = goblet_db:player_by_name(Player),
+%    Inv = P#goblet_player.inventory,
+%    ?assertEqual(true, lists:member(Item, Inv)).
+%
+%player_items_have_action_test() ->
+%    Player = "Chester McTester",
+%    Resp = goblet_db:player_items_have_action(Player, testgun),
+%    ?assertEqual(["TestGun"], Resp).
+%
+%get_all_item_owners_test() ->
+%    Player = "Chester McTester",
+%    Item = "TestGun",
+%    [Resp] = get_all_item_owners(Item),
+%    ?assertEqual(Resp, Player).
+%
+%delete_item_test() ->
+%    Item = "TestGun",
+%    Resp1 = goblet_db:delete_item(Item),
+%    ?assertEqual(ok, Resp1),
+%    P = "Chester McTester",
+%    Resp2 = goblet_db:player_inventory(P),
+%    ItemExists = lists:member(Item, Resp2),
+%    ?assertEqual(false, ItemExists).
 
 delete_player_test() ->
     Email = "TestUser@doesntexist.notadomain",

@@ -33,14 +33,13 @@
     code_change/3
 ]).
 
-%-include("net/goblet_session.hrl").
 -include("db/goblet_database.hrl").
 -include("goblet_pb.hrl").
 
 -include_lib("kernel/include/logger.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
--opaque opcode() :: <<_:4>>.
+-opaque opcode() :: <<_:16>>.
 
 -export_type([opcode/0]).
 
