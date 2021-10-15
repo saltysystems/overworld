@@ -1,4 +1,5 @@
 -module(goblet_instance).
+
 %
 %-include_lib("eunit/include/eunit.hrl").
 %
