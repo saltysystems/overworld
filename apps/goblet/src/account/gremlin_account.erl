@@ -1,6 +1,6 @@
--module(goblet_account).
+-module(gremlin_account).
 
--behaviour(goblet_rpc).
+-behaviour(gremlin_rpc).
 
 % Required callbacks for Goblet
 -export([
@@ -13,7 +13,7 @@
     login/2
 ]).
 
--include("goblet_pb.hrl").
+-include("gremlin_pb.hrl").
 
 -include_lib("kernel/include/logger.hrl").
 -include_lib("eunit/include/eunit.hrl").
@@ -37,15 +37,15 @@ rpc_info() ->
 %% @doc Registers a new account, storing it in the database
 %% @end
 %%----------------------------------------------------------------------------
--spec new(binary(), goblet_session:session()) ->
-    {[binary(), ...], goblet_session:session()}.
+-spec new(binary(), gremlin_session:session()) ->
+    {[binary(), ...], gremlin_session:session()}.
 new(Message, Session) ->
-    Decode = goblet_pb:decode_msg(Message, 'AccountNewReq'),
+    Decode = gremlin_pb:decode_msg(Message, 'AccountNewReq'),
     Email = Decode#'AccountNewReq'.email,
     Password = Decode#'AccountNewReq'.password,
     IsValid =
         case
-            goblet_util:run_checks([
+            gremlin_util:run_checks([
                 fun() -> check_valid_email(Email) end,
                 fun() -> check_valid_password(Password) end
             ])
@@ -57,23 +57,23 @@ new(Message, Session) ->
 
 new(Email, Password, true, Session) ->
     {Msg, Session1} =
-        case goblet_db:create_account(Email, Password) of
+        case gremlin_db:create_account(Email, Password) of
             {error, Error} ->
-                Reply = goblet_protocol2:response(
+                Reply = gremlin_protocol2:response(
                     error,
                     atom_to_list(Error)
                 ),
                 {Reply, Session};
             _ ->
-                Reply = goblet_protocol2:response(ok),
-                S1 = goblet_session:set_authenticated(true, Session),
-                S2 = goblet_session:set_email(Email, S1),
+                Reply = gremlin_protocol2:response(ok),
+                S1 = gremlin_session:set_authenticated(true, Session),
+                S2 = gremlin_session:set_email(Email, S1),
                 {Reply, S2}
         end,
     OpCode = <<?ACCOUNT_NEW:16>>,
     {[OpCode, Msg], Session1};
 new(_Email, _Password, {error, ErrMsg}, Session) ->
-    Msg = goblet_protocol2:response(error, atom_to_list(ErrMsg)),
+    Msg = gremlin_protocol2:response(error, atom_to_list(ErrMsg)),
     OpCode = <<?ACCOUNT_NEW:16>>,
     {[OpCode, Msg], Session}.
 
@@ -81,26 +81,26 @@ new_test() ->
     % Generate a message mocking a new player registration
     Email = "TestUser@doesntexist.notadomain",
     Password = "TestPassword1234",
-    goblet_db:delete_account(Email),
-    Msg = goblet_pb:encode_msg(#'AccountNewReq'{
+    gremlin_db:delete_account(Email),
+    Msg = gremlin_pb:encode_msg(#'AccountNewReq'{
         email = Email,
         password = Password
     }),
-    {[RespOp, RespMsg], _State} = new(Msg, goblet_session:new()),
+    {[RespOp, RespMsg], _State} = new(Msg, gremlin_session:new()),
     ?assertEqual(<<?ACCOUNT_NEW:16>>, RespOp),
-    DecodedResp = goblet_pb:decode_msg(RespMsg, 'GenResponse'),
+    DecodedResp = gremlin_pb:decode_msg(RespMsg, 'GenResponse'),
     ?assertEqual('OK', DecodedResp#'GenResponse'.status).
 
 new_already_exists_test() ->
     Email = "TestUser@doesntexist.notadomain",
     Password = "TestPassword1234",
-    Msg = goblet_pb:encode_msg(#'AccountNewReq'{
+    Msg = gremlin_pb:encode_msg(#'AccountNewReq'{
         email = Email,
         password = Password
     }),
-    {[RespOp, RespMsg], _State} = new(Msg, goblet_session:new()),
+    {[RespOp, RespMsg], _State} = new(Msg, gremlin_session:new()),
     ?assertEqual(<<?ACCOUNT_NEW:16>>, RespOp),
-    DecodedResp = goblet_pb:decode_msg(RespMsg, 'GenResponse'),
+    DecodedResp = gremlin_pb:decode_msg(RespMsg, 'GenResponse'),
     ?assertEqual('ERROR', DecodedResp#'GenResponse'.status),
     ?assertEqual(
         "email_already_registered",
@@ -111,29 +111,29 @@ new_already_exists_test() ->
 %% @doc Login the user and mutate the session state
 %% @end
 %%----------------------------------------------------------------------------
--spec login(binary(), goblet_session:session()) ->
-    {[binary(), ...], goblet_session:session()}.
+-spec login(binary(), gremlin_session:session()) ->
+    {[binary(), ...], gremlin_session:session()}.
 login(Message, Session) ->
-    Decode = goblet_pb:decode_msg(Message, 'AccountNewReq'),
+    Decode = gremlin_pb:decode_msg(Message, 'AccountNewReq'),
     Email = Decode#'AccountNewReq'.email,
     Password = Decode#'AccountNewReq'.password,
     {Msg, NewState} =
-        case goblet_db:account_login(Email, Password) of
+        case gremlin_db:account_login(Email, Password) of
             true ->
-                Reply = goblet_protocol2:response(ok),
-                S1 = goblet_session:set_email(Email, Session),
-                S2 = goblet_session:set_authenticated(true, S1),
+                Reply = gremlin_protocol2:response(ok),
+                S1 = gremlin_session:set_email(Email, Session),
+                S2 = gremlin_session:set_authenticated(true, S1),
                 {Reply, S2};
             false ->
                 logger:warning("Invalid password attempt for ~p", [Email]),
-                Reply = goblet_protocol2:response(
+                Reply = gremlin_protocol2:response(
                     error,
                     "invalid password"
                 ),
                 {Reply, Session};
             {error, Err} ->
                 logger:warning("No account exists for ~p", [Email]),
-                Reply = goblet_protocol2:response(error, atom_to_list(Err)),
+                Reply = gremlin_protocol2:response(error, atom_to_list(Err)),
                 {Reply, Session}
         end,
     OpCode = <<?ACCOUNT_LOGIN:16>>,
@@ -142,25 +142,25 @@ login(Message, Session) ->
 login_bad_password_test() ->
     Email = "TestUser@doesntexist.notadomain",
     Password = "Password",
-    Msg = goblet_pb:encode_msg(#'AccountLoginReq'{
+    Msg = gremlin_pb:encode_msg(#'AccountLoginReq'{
         email = Email,
         password = Password
     }),
-    {[RespOp, RespMsg], _State} = login(Msg, goblet_session:new()),
+    {[RespOp, RespMsg], _State} = login(Msg, gremlin_session:new()),
     ?assertEqual(<<?ACCOUNT_LOGIN:16>>, RespOp),
-    DecodedResp = goblet_pb:decode_msg(RespMsg, 'GenResponse'),
+    DecodedResp = gremlin_pb:decode_msg(RespMsg, 'GenResponse'),
     ?assertEqual('ERROR', DecodedResp#'GenResponse'.status).
 
 login_test() ->
     Email = "TestUser@doesntexist.notadomain",
     Password = "TestPassword1234",
-    Msg = goblet_pb:encode_msg(#'AccountLoginReq'{
+    Msg = gremlin_pb:encode_msg(#'AccountLoginReq'{
         email = Email,
         password = Password
     }),
-    {[RespOp, RespMsg], _State} = login(Msg, goblet_session:new()),
+    {[RespOp, RespMsg], _State} = login(Msg, gremlin_session:new()),
     ?assertEqual(<<?ACCOUNT_LOGIN:16>>, RespOp),
-    DecodedResp = goblet_pb:decode_msg(RespMsg, 'GenResponse'),
+    DecodedResp = gremlin_pb:decode_msg(RespMsg, 'GenResponse'),
     ?assertEqual('OK', DecodedResp#'GenResponse'.status).
 
 %%----------------------------------------------------------------------------
