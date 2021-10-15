@@ -3,9 +3,9 @@
 -export([setup_api/0]).
 
 % EXAMPLE
-funs() -> 
+funs() ->
     [
-     {"gremlin.pow", fun([X,Y]) -> math:pow(X,Y) end}
+        {"gremlin.pow", fun([X, Y]) -> math:pow(X, Y) end}
     ].
 
 setup_api() ->
