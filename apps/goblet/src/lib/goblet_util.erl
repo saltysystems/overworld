@@ -30,6 +30,7 @@ run_checks([H | T]) when is_function(H, 0) ->
 pipeline(Input, Funs) ->
     lists:foldl(fun(F, State) -> F(State) end, Input, Funs).
 
+-spec any_in_list(list(), list()) -> list().
 any_in_list(L1, L2) ->
     % Checks to see if any item in L1 is present in L2
     [X || X <- L1, lists:member(X, L2) == true].
