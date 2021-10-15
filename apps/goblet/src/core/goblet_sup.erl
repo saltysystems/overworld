@@ -31,13 +31,22 @@ init([]) ->
         intensity => 1,
         period => 5
     },
+    Modules = [
+        goblet_account,
+        goblet_chat,
+        goblet_game_msg,
+        goblet_session
+    ],
     ChildSpecs = [
-        #{id => goblet_lobby, start => {goblet_lobby, start, []}},
-        #{id => goblet_protocol2, start => {goblet_protocol2, start, []}},
+        %#{id => goblet_lobby, start => {goblet_lobby, start, []}},
         #{
-            id => goblet_instance_sup,
-            start => {goblet_instance_sup, start_link, []}
+            id => goblet_protocol2,
+            start => {goblet_protocol2, start, [Modules]}
         },
+        %#{
+        %    id => goblet_instance_sup,
+        %    start => {goblet_instance_sup, start_link, []}
+        %},
         #{
             id => goblet_script_sup,
             start => {goblet_script_sup, start_link, []}
