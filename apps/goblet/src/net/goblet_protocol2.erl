@@ -14,10 +14,11 @@
 
 % public API
 -export([
-    start/0,
+    start/1,
     stop/0,
     registered_ops/0,
     register/1,
+    op_info/1,
     decode/2,
     response/1,
     response/2
@@ -51,9 +52,9 @@
 %% @doc Start the gen_server
 %% @end
 %%-------------------------------------------------------------------------
--spec start() -> {ok, pid()} | ignore | {error, term()}.
-start() ->
-    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+-spec start([atom(), ...]) -> {ok, pid()} | ignore | {error, term()}.
+start(Modules) ->
+    gen_server:start_link({local, ?SERVER}, ?MODULE, [Modules], []).
 
 %%-------------------------------------------------------------------------
 %% @doc Stop the gen_server
@@ -102,6 +103,14 @@ registered_ops() ->
     gen_server:call(?MODULE, registered_ops).
 
 %%-------------------------------------------------------------------------
+%% @doc Return the MFA for a particular opcode
+%% @end
+%%-------------------------------------------------------------------------
+-spec op_info(pos_integer()) -> mfa().
+op_info(OpCode) ->
+    gen_server:call(?MODULE, {op_info, OpCode}).
+
+%%-------------------------------------------------------------------------
 %% @doc Encode a general response with reasoning
 %% @end
 %%-------------------------------------------------------------------------
@@ -121,19 +130,27 @@ response(error, Msg) ->
 %% gen_server callbacks
 %%============================================================================
 
-init([]) ->
-    {ok, #{}}.
+init([Modules]) ->
+    % Register all functions defined in ?INITIAL_MODULES
+    InitialState = lists:foldl(
+        fun(Item, Map) -> reg(Item, Map) end,
+        #{},
+        Modules
+    ),
+    {ok, InitialState}.
 
 handle_call({register, Module}, _From, St0) ->
     % Get list of opcodes to register for Module
-    RPCs = erlang:apply(Module, rpc_info, []),
-    St1 = lists:foldl(fun(Item, Map) -> reg_op(Item, Map) end, St0, RPCs),
+    St1 = reg(Module, St0),
     {reply, ok, St1};
 handle_call({decode, Message, Session}, _From, St0) ->
     Reply = route(Message, Session, St0),
     {reply, Reply, St0};
 handle_call(registered_ops, _From, St0) ->
     Reply = maps:keys(St0),
+    {reply, Reply, St0};
+handle_call({op_info, OpCode}, _From, St0) ->
+    Reply = maps:get(OpCode, St0, undefined),
     {reply, Reply, St0}.
 
 handle_cast(_Request, St0) ->
@@ -166,6 +183,10 @@ route(<<OpCode:16, Message/binary>>, Session, Routes) ->
             % Apply the callback with only the content of the message
             erlang:apply(Module, Fun, [Message])
     end.
+
+reg(Module, St0) ->
+    RPCs = erlang:apply(Module, rpc_info, []),
+    lists:foldl(fun(Item, Map) -> reg_op(Item, Map) end, St0, RPCs).
 
 reg_op({OpCode, Callback}, St0) ->
     % Check if it exists
