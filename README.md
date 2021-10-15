@@ -1,6 +1,6 @@
-Goblet Game Server
+Gremlin Game Server
 =================================================
-Goblet is a multiplayer game server powered by Erlang/OTP. The project is
+Gremlin is a multiplayer game server powered by Erlang/OTP. The project is
 focused on building tools for the creation of persistent multiplayer worlds,
 including account management, database persistence, instances/sharding, NPCs,
 server-side scripting and more.
@@ -10,7 +10,7 @@ Ultima Online, EverQuest, Star Wars Galaxies, and the many colorful and
 creative user-generated worlds built with platforms like BYOND and Neverwinter
 Nights.
 
-Goblet is Free Software, licensed under the Affero General Public License v3. 
+Gremlin is Free Software, licensed under the Affero General Public License v3. 
 
 
 Getting started
