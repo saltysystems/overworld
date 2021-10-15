@@ -1,9 +1,9 @@
 %%%-------------------------------------------------------------------
-%% @doc goblet public API
+%% @doc gremlin public API
 %% @end
 %%%-------------------------------------------------------------------
 
--module(goblet_app).
+-module(gremlin_app).
 
 -behaviour(application).
 
@@ -14,7 +14,7 @@
 start(_StartType, _StartArgs) ->
     Dispatch = cowboy_router:compile([
         {'_', [
-            {"/ws", goblet_websocket, #session{}}
+            {"/ws", gremlin_websocket, #session{}}
         ]}
     ]),
     {ok, _} = cowboy:start_clear(
@@ -25,7 +25,7 @@ start(_StartType, _StartArgs) ->
         ],
         #{env => #{dispatch => Dispatch}}
     ),
-    goblet_sup:start_link().
+    gremlin_sup:start_link().
 
 stop(_State) ->
     ok.
