@@ -1,6 +1,0 @@
-%% encoding: UTF-8
-{application,goblet}.
-{modules,[goblet_app,goblet_board,goblet_db,goblet_db_tests,goblet_instance,
-          goblet_instance_server_tests,goblet_instance_sup,goblet_lobby,
-          goblet_protocol,goblet_protocol_tests,goblet_script,
-          goblet_space_player,goblet_sup,goblet_util,goblet_websocket]}.

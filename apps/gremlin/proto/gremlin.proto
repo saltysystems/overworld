@@ -1,0 +1,34 @@
+syntax = "proto2";
+
+package gremlin;
+
+/////////////////////////////////////////////////////////
+// General messages                                    //
+/////////////////////////////////////////////////////////
+
+message GenResponse {
+	enum Status {
+		OK = 0;
+		ERROR = 1;
+	}
+	required Status status = 1;
+	optional string msg = 2;
+}
+
+/////////////////////////////////////////////////////////
+// Account Messages                                    //
+/////////////////////////////////////////////////////////
+
+message AccountNewReq {
+	required string email = 1;
+	required string password = 2;
+}
+
+message AccountLoginReq {
+	required string email = 1;
+	required string password = 2;
+}
+
+message ClientLog {
+	required string msg = 2;
+}
