@@ -60,7 +60,7 @@ websocket_init(State) ->
 websocket_handle({binary, Msg}, State) ->
     % protocol decoding will reply with an 'ok' for asynchronous messages or
     % will give us a binary to send back to the client
-    case gremlin_protocol2:decode(Msg, State) of
+    case gremlin_protocol:decode(Msg, State) of
         {ok, NewState} ->
             {ok, NewState};
         {Msg1, NewState} ->
