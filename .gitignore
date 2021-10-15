@@ -2,4 +2,4 @@ _build/
 apps/gremlin/rebar.lock
 rebar.lock
 apps/gremlin/include/gremlin_pb.hrl
-apps/gremlin/src/gremlin_pb.erl
+apps/gremlin/src/net/gremlin_pb.erl
