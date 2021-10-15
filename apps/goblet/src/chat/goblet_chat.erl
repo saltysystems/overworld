@@ -9,10 +9,12 @@
 
 % Chat messages, incl. PMs and ignore
 -define(CHAT_WHO, 16#0200).
+-define(CHAT_LIST, 16#0205).
 -define(CHAT_JOIN, 16#0210).
--define(CHAT_MSG, 16#0220).
--define(CHAT_WHISPER, 16#0230).
--define(CHAT_SYSTEM_MSG, 16#0240).
+-define(CHAT_PART, 16#0220).
+-define(CHAT_MSG, 16#0230).
+-define(CHAT_WHISPER, 16#0240).
+-define(CHAT_SYSTEM_MSG, 16#0250).
 
 -spec rpc_info() -> [{pos_integer(), mfa()}, ...].
 rpc_info() ->
@@ -23,5 +25,3 @@ rpc_info() ->
         {?CHAT_SYSTEM_MSG, {?MODULE, system_msg, 2}},
         {?CHAT_WHISPER, {?MODULE, whisper, 2}}
     ].
-
-% TODO - draw the rest of the fscking owl
