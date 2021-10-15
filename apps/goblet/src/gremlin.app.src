@@ -1,0 +1,18 @@
+{application, gremlin,
+ [{description, "Multiplayer game server"},
+  {vsn, "1.0.0"},
+  {registered, []},
+  {mod, {gremlin_app, []}},
+  {applications,
+   [kernel,
+    stdlib,
+	gproc,
+	mnesia,
+	cowboy
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {licenses, ["GNU AGPL"]},
+  {links, []}
+ ]}.
