@@ -1,9 +1,9 @@
 %%%-------------------------------------------------------------------
-%% @doc goblet top level supervisor.
+%% @doc gremlin top level supervisor.
 %% @end
 %%%-------------------------------------------------------------------
 
--module(goblet_sup).
+-module(gremlin_sup).
 
 -behaviour(supervisor).
 
@@ -32,29 +32,27 @@ init([]) ->
         period => 5
     },
     Modules = [
-        goblet_account,
-        goblet_chat,
-        goblet_game_msg,
-        goblet_session
+        gremlin_account,
+        gremlin_chat,
+        gremlin_session
     ],
     ChildSpecs = [
-        %#{id => goblet_lobby, start => {goblet_lobby, start, []}},
         #{
-            id => goblet_protocol2,
-            start => {goblet_protocol2, start, [Modules]}
+            id => gremlin_protocol,
+            start => {gremlin_protocol, start, [Modules]}
         },
         %#{
-        %    id => goblet_instance_sup,
-        %    start => {goblet_instance_sup, start_link, []}
+        %    id => gremlin_instance_sup,
+        %    start => {gremlin_instance_sup, start_link, []}
         %},
         #{
-            id => goblet_script_sup,
-            start => {goblet_script_sup, start_link, []}
+            id => gremlin_script_sup,
+            start => {gremlin_script_sup, start_link, []}
         }
         %,
         %        #{
-        %            id => goblet_entity_sup,
-        %            start => {goblet_entity_sup, start_link, []}
+        %            id => gremlin_entity_sup,
+        %            start => {gremlin_entity_sup, start_link, []}
         %        }
     ],
     {ok, {SupFlags, ChildSpecs}}.
