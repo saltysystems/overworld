@@ -59,13 +59,13 @@ new(Email, Password, true, Session) ->
     {Msg, Session1} =
         case gremlin_db:create_account(Email, Password) of
             {error, Error} ->
-                Reply = gremlin_protocol2:response(
+                Reply = gremlin_protocol:response(
                     error,
                     atom_to_list(Error)
                 ),
                 {Reply, Session};
             _ ->
-                Reply = gremlin_protocol2:response(ok),
+                Reply = gremlin_protocol:response(ok),
                 S1 = gremlin_session:set_authenticated(true, Session),
                 S2 = gremlin_session:set_email(Email, S1),
                 {Reply, S2}
@@ -73,7 +73,7 @@ new(Email, Password, true, Session) ->
     OpCode = <<?ACCOUNT_NEW:16>>,
     {[OpCode, Msg], Session1};
 new(_Email, _Password, {error, ErrMsg}, Session) ->
-    Msg = gremlin_protocol2:response(error, atom_to_list(ErrMsg)),
+    Msg = gremlin_protocol:response(error, atom_to_list(ErrMsg)),
     OpCode = <<?ACCOUNT_NEW:16>>,
     {[OpCode, Msg], Session}.
 
@@ -120,20 +120,22 @@ login(Message, Session) ->
     {Msg, NewState} =
         case gremlin_db:account_login(Email, Password) of
             true ->
-                Reply = gremlin_protocol2:response(ok),
+                Reply = gremlin_protocol:response(ok),
                 S1 = gremlin_session:set_email(Email, Session),
                 S2 = gremlin_session:set_authenticated(true, S1),
                 {Reply, S2};
             false ->
                 logger:warning("Invalid password attempt for ~p", [Email]),
-                Reply = gremlin_protocol2:response(
+                Reply = gremlin_protocol:response(
                     error,
                     "invalid password"
                 ),
                 {Reply, Session};
             {error, Err} ->
                 logger:warning("No account exists for ~p", [Email]),
-                Reply = gremlin_protocol2:response(error, atom_to_list(Err)),
+                Reply = gremlin_protocol:response(
+                    error, atom_to_list(Err)
+                ),
                 {Reply, Session}
         end,
     OpCode = <<?ACCOUNT_LOGIN:16>>,
