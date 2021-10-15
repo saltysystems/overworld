@@ -1,5 +1,5 @@
 _build/
-apps/goblet/rebar.lock
+apps/gremlin/rebar.lock
 rebar.lock
-apps/goblet/include/goblet_pb.hrl
-apps/goblet/src/goblet_pb.erl
+apps/gremlin/include/gremlin_pb.hrl
+apps/gremlin/src/gremlin_pb.erl
