@@ -1,6 +1,6 @@
--sname goblet
+-sname gremlin
 
--setcookie goblet_cookie
+-setcookie gremlin_cookie
 
 +K true
 +A30
