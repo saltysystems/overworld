@@ -15,9 +15,8 @@
 -define(CHAT_SYSTEM_MSG, 16#0250).
 
 -define(RPC(OpCode, Callback, Arity, ProtoMessage),
-            {OpCode, {{?MODULE, Callback, Arity}, {gremlin_pb, ProtoMessage}}}
-             ).
-
+    {OpCode, {{?MODULE, Callback, Arity}, {gremlin_pb, ProtoMessage}}}
+).
 
 -spec rpc_info() -> [{pos_integer(), mfa()}, ...].
 rpc_info() ->
