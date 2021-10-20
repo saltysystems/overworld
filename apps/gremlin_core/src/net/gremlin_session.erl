@@ -22,12 +22,13 @@
     get_email/1,
     set_authenticated/2,
     get_authenticated/1,
+    % alias for get_authenticated
+    is_authenticated/1,
     set_game_info/2,
     get_game_info/1
 ]).
 
 -include("db/gremlin_database.hrl").
--include("gremlin_pb.hrl").
 
 -include_lib("kernel/include/logger.hrl").
 -include_lib("eunit/include/eunit.hrl").
@@ -38,12 +39,14 @@
     id :: integer() | undefined,
     email :: string() | undefined,
     authenticated = false :: boolean(),
-    game_info :: any() | undefined
+    game_info = #{} :: map() | undefined
 }).
 
 -opaque session() :: #session{}.
+-opaque state_update() :: session() | {iodata(), session()}.
 
 -export_type([session/0]).
+-export_type([state_update/0]).
 
 -define(PROTOCOLVERSION, 1).
 
@@ -57,19 +60,19 @@
 %% @end
 %%----------------------------------------------------------------------------
 
-% System commands, account creation, etc
+-define(RPC(OpCode, Callback, Arity, ProtoMessage),
+            {OpCode, {{?MODULE, Callback, Arity}, {gremlin_pb, ProtoMessage}}}
+             ).
 -define(VERSION, 16#0010).
 -define(HEARTBEAT, 16#0020).
+-define(SESSION_LOG, 16#0050).
 
-% Session commands and messages
--define(SESSION_LOG, 16#0150).
-
--spec rpc_info() -> [{pos_integer(), mfa()}, ...].
+-spec rpc_info() -> [{{pos_integer(), mfa()}, atom()}, ...].
 rpc_info() ->
     [
-        {?VERSION, {?MODULE, version, 1}},
-        {?HEARTBEAT, {?MODULE, heartbeat, 1}},
-        {?SESSION_LOG, {?MODULE, log, 2}}
+        ?RPC(?VERSION, version, 1, none),
+        ?RPC(?HEARTBEAT, heartbeat, 1, none),
+        ?RPC(?SESSION_LOG, log, 2, session_log)
     ].
 
 %%===========================================================================
@@ -84,7 +87,7 @@ rpc_info() ->
 encode_log(Message) ->
     OpCode = <<?SESSION_LOG:16>>,
     Sanitized = sanitize_message(Message),
-    Msg = gremlin_pb:encode_msg(#'ClientLog'{msg = Sanitized}),
+    Msg = gremlin_pb:encode_msg(#{msg => Sanitized}, session_log),
     [OpCode, Msg].
 
 -spec encode_log_test() -> ok.
@@ -94,8 +97,8 @@ encode_log_test() ->
     % Check that the expected OpCode comes back
     ?assertEqual(OpCode, <<?SESSION_LOG:16>>),
     % Check that the message decodes correctly
-    Decoded = gremlin_pb:decode_msg(Message, 'ClientLog'),
-    ToList = Decoded#'ClientLog'.msg,
+    Decoded = gremlin_pb:decode_msg(Message, session_log),
+    ToList = maps:get(msg, Decoded),
     ?assertEqual(OriginalMessage, ToList),
     ok.
 
@@ -177,6 +180,14 @@ set_authenticated(Bool, Session) ->
 -spec get_authenticated(session()) -> boolean().
 get_authenticated(Session) ->
     Session#session.authenticated.
+
+%%----------------------------------------------------------------------------
+%% @doc Return the session authentication status. Alias for get_authenticated
+%% @end
+%%----------------------------------------------------------------------------
+-spec is_authenticated(session()) -> boolean().
+is_authenticated(Session) ->
+    get_authenticated(Session).
 
 %%----------------------------------------------------------------------------
 %% @doc Set the game info map

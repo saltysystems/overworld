@@ -92,9 +92,9 @@ salt_and_hash(Password, Salt) ->
     crypto:hash(sha256, <<BinaryPassword/binary, Salt/binary>>).
 
 valid_password(Password, Hash, Salt) when is_binary(Password) ->
-    Hash =:= gremlin_db:salt_and_hash(Password, Salt);
+    Hash =:= salt_and_hash(Password, Salt);
 valid_password(Password, Hash, Salt) ->
-    Hash =:= gremlin_db:salt_and_hash(binary:list_to_bin(Password), Salt).
+    Hash =:= salt_and_hash(binary:list_to_bin(Password), Salt).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Tests                                                                %
@@ -104,47 +104,47 @@ create_get_account_test() ->
     % Create an account
     Email = "TestUser@doesntexist.notadomain",
     Password = "TestPassword1234",
-    Resp = gremlin_db:create(Email, Password),
+    Resp = create(Email, Password),
     ?assertEqual(ok, Resp),
 
     % Get the account by name
-    Resp1 = gremlin_db:get_by_email(Email),
+    Resp1 = get_by_email(Email),
     ?assertEqual(Email, Resp1#gremlin_account.email),
     ?assert(Resp1#gremlin_account.id > 0),
 
     % Try to make an account that already exists
-    RespAgain = gremlin_db:create(Email, Password),
+    RespAgain = create(Email, Password),
     ?assertEqual({error, email_already_registered}, RespAgain).
 
 login_fake_test() ->
     Email = "nobody@notadomain",
     Password = "TestPassword1234",
-    Resp = gremlin_db:login(Email, Password),
+    Resp = login(Email, Password),
     ?assertEqual({error, no_such_account}, Resp).
 
 login_test() ->
     Email = "TestUser@doesntexist.notadomain",
     Password = "TestPassword1234",
-    Resp = gremlin_db:login(Email, Password),
+    Resp = login(Email, Password),
     ?assertEqual(true, Resp).
 
 login_badpass_test() ->
     Email = "TestUser@doesntexist.notadomain",
     Password = "thewrongpassword",
-    Resp = gremlin_db:login(Email, Password),
+    Resp = login(Email, Password),
     ?assertEqual(false, Resp).
 
 delete_test() ->
     % Delete an account
     Email = "TestUser@doesntexist.notadomain",
-    Resp = gremlin_db:delete(Email),
+    Resp = delete(Email),
     ?assertEqual(ok, Resp),
     % should always succeed when deleting
-    RespAgain = gremlin_db:delete(Email),
+    RespAgain = delete(Email),
     ?assertEqual(ok, RespAgain).
 
 get_by_email_no_acct_test() ->
     % Try to get the record for an account that doesn't exist
     Email = "TestUser@doesntexist.notadomain",
-    Resp = gremlin_db:get_by_email(Email),
+    Resp = get_by_email(Email),
     ?assertEqual({error, no_such_account}, Resp).
