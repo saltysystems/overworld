@@ -61,8 +61,8 @@
 %%----------------------------------------------------------------------------
 
 -define(RPC(OpCode, Callback, Arity, ProtoMessage),
-            {OpCode, {{?MODULE, Callback, Arity}, {gremlin_pb, ProtoMessage}}}
-             ).
+    {OpCode, {{?MODULE, Callback, Arity}, {gremlin_pb, ProtoMessage}}}
+).
 -define(VERSION, 16#0010).
 -define(HEARTBEAT, 16#0020).
 -define(SESSION_LOG, 16#0050).
