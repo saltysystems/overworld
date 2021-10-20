@@ -24,10 +24,6 @@ install(Nodes) ->
             rpc:multicall(Nodes, application, start, [mnesia]),
 			counter_create_table(Nodes),
 			account_create_table(Nodes),
-			player_create_table(Nodes),
-			mob_create_table(Nodes),
-			item_create_table(Nodes),
-			ship_component_create_table(Nodes),
 			setup_counters([gremlin_account]),
             rpc:multicall(Nodes, application, stop, [mnesia]);
         Err -> 

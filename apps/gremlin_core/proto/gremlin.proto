@@ -6,12 +6,12 @@ package gremlin;
 // General messages                                    //
 /////////////////////////////////////////////////////////
 
-message GenResponse {
-	enum Status {
+message gen_response {
+	enum status {
 		OK = 0;
 		ERROR = 1;
 	}
-	required Status status = 1;
+	required status status = 1;
 	optional string msg = 2;
 }
 
@@ -19,16 +19,20 @@ message GenResponse {
 // Account Messages                                    //
 /////////////////////////////////////////////////////////
 
-message AccountNewReq {
+message account_new {
 	required string email = 1;
 	required string password = 2;
 }
 
-message AccountLoginReq {
+message account_login {
 	required string email = 1;
 	required string password = 2;
 }
 
-message ClientLog {
-	required string msg = 2;
+/////////////////////////////////////////////////////////
+// Session Messages                                    //
+/////////////////////////////////////////////////////////
+message session_log {
+	required string msg = 1;
+    required bytes color = 2;
 }

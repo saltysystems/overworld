@@ -35,7 +35,6 @@
 ]).
 
 -include("db/gremlin_database.hrl").
--include("gremlin_pb.hrl").
 
 -include_lib("kernel/include/logger.hrl").
 -include_lib("eunit/include/eunit.hrl").
@@ -90,9 +89,31 @@ decode(Message, Session) ->
 %%-------------------------------------------------------------------------
 -spec response(ok | error) -> binary().
 response(ok) ->
-    gremlin_pb:encode_msg(#'GenResponse'{status = 'OK'});
+    gremlin_pb:encode_msg(#{status => 'OK'}, gen_response);
 response(error) ->
-    gremlin_pb:encode_msg(#'GenResponse'{status = 'ERROR'}).
+    gremlin_pb:encode_msg(#{status => 'ERROR'}, gen_response).
+
+%%-------------------------------------------------------------------------
+%% @doc Encode a general response with reasoning
+%% @end
+%%-------------------------------------------------------------------------
+-spec response(ok | error, string()) -> binary().
+response(ok, Msg) ->
+    gremlin_pb:encode_msg(
+        #{
+            status => 'OK',
+            msg => Msg
+        },
+        gen_response
+    );
+response(error, Msg) ->
+    gremlin_pb:encode_msg(
+        #{
+            status => 'ERROR',
+            msg => Msg
+        },
+        gen_response
+    ).
 
 %%-------------------------------------------------------------------------
 %% @doc Get a list of opcodes registered with the server
@@ -109,22 +130,6 @@ registered_ops() ->
 -spec op_info(pos_integer()) -> mfa().
 op_info(OpCode) ->
     gen_server:call(?MODULE, {op_info, OpCode}).
-
-%%-------------------------------------------------------------------------
-%% @doc Encode a general response with reasoning
-%% @end
-%%-------------------------------------------------------------------------
--spec response(ok | error, string()) -> binary().
-response(ok, Msg) ->
-    gremlin_pb:encode_msg(#'GenResponse'{
-        status = 'OK',
-        msg = Msg
-    });
-response(error, Msg) ->
-    gremlin_pb:encode_msg(#'GenResponse'{
-        status = 'ERROR',
-        msg = Msg
-    }).
 
 %%============================================================================
 %% gen_server callbacks
@@ -169,17 +174,17 @@ code_change(_OldVsn, St0, _Extra) ->
 %% Internal functions
 %%============================================================================
 -spec route(<<_:16, _:_*8>>, gremlin_session:session(), map()) ->
-    gremlin_websocket:ws_result().
+    gremlin_session:net_msg().
 route(<<OpCode:16, Message/binary>>, Session, Routes) ->
     logger:debug("Got OpCode: ~p~n", [OpCode]),
     case maps:get(OpCode, Routes, unknown) of
         unknown ->
             logger:debug("Got an unknown OpCode: ~p~n", [OpCode]);
-        {Module, Fun, 2} ->
+        {{Module, Fun, 2, _ProtoMsg}, _Proto} ->
             % Apply the callback with the session state and the content of the
             % message
             erlang:apply(Module, Fun, [Message, Session]);
-        {Module, Fun, 1} ->
+        {{Module, Fun, 1, _ProtoMsg}, _Proto} ->
             % Apply the callback with only the content of the message
             erlang:apply(Module, Fun, [Message])
     end.
@@ -188,11 +193,11 @@ reg(Module, St0) ->
     RPCs = erlang:apply(Module, rpc_info, []),
     lists:foldl(fun(Item, Map) -> reg_op(Item, Map) end, St0, RPCs).
 
-reg_op({OpCode, Callback}, St0) ->
+reg_op({OpCode, Args}, St0) ->
     % Check if it exists
     case maps:get(OpCode, St0, undefined) of
         undefined ->
-            maps:put(OpCode, Callback, St0);
+            maps:put(OpCode, Args, St0);
         _ ->
             St0
     end.

@@ -13,24 +13,26 @@
     login/2
 ]).
 
--include("gremlin_pb.hrl").
-
 -include_lib("kernel/include/logger.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
 %%----------------------------------------------------------------------------
 %% @doc Required callback for Goblet. Register the ?ACCOUNT_NEW and
-%%      ?ACCOUNT_LOGIN opcodes and associated functions.
+%%      ?ACCOUNT_LOGIN opcodes, callbacks and messages.
 %% @end
 %%----------------------------------------------------------------------------
+
+-define(RPC(OpCode, Callback, Arity, ProtoMessage),
+    {OpCode, {{?MODULE, Callback, Arity}, {gremlin_pb, ProtoMessage}}}
+).
 -define(ACCOUNT_NEW, 16#0100).
 -define(ACCOUNT_LOGIN, 16#0110).
 
--spec rpc_info() -> [{pos_integer(), mfa()}, ...].
+-spec rpc_info() -> gremlin_rpc:rpc_info().
 rpc_info() ->
     [
-        {?ACCOUNT_NEW, {?MODULE, new, 2}},
-        {?ACCOUNT_LOGIN, {?MODULE, login, 2}}
+        ?RPC(?ACCOUNT_NEW, new, 2, gen_response),
+        ?RPC(?ACCOUNT_LOGIN, login, 2, gen_response)
     ].
 
 %%----------------------------------------------------------------------------
@@ -38,11 +40,11 @@ rpc_info() ->
 %% @end
 %%----------------------------------------------------------------------------
 -spec new(binary(), gremlin_session:session()) ->
-    {[binary(), ...], gremlin_session:session()}.
+    gremlin_session:net_msg().
 new(Message, Session) ->
-    Decode = gremlin_pb:decode_msg(Message, 'AccountNewReq'),
-    Email = Decode#'AccountNewReq'.email,
-    Password = Decode#'AccountNewReq'.password,
+    Decode = gremlin_pb:decode_msg(Message, account_new),
+    Email = maps:get(email, Decode),
+    Password = maps:get(password, Decode),
     IsValid =
         case
             gremlin_util:run_checks([
@@ -57,7 +59,7 @@ new(Message, Session) ->
 
 new(Email, Password, true, Session) ->
     {Msg, Session1} =
-        case gremlin_db:create_account(Email, Password) of
+        case gremlin_db_account:create(Email, Password) of
             {error, Error} ->
                 Reply = gremlin_protocol:response(
                     error,
@@ -71,54 +73,61 @@ new(Email, Password, true, Session) ->
                 {Reply, S2}
         end,
     OpCode = <<?ACCOUNT_NEW:16>>,
-    {[OpCode, Msg], Session1};
+    R = {[OpCode, Msg], Session1},
+    io:format("Response: ~p~n", [R]),
+    R;
 new(_Email, _Password, {error, ErrMsg}, Session) ->
     Msg = gremlin_protocol:response(error, atom_to_list(ErrMsg)),
     OpCode = <<?ACCOUNT_NEW:16>>,
-    {[OpCode, Msg], Session}.
+    R = {[OpCode, Msg], Session},
+    io:format("Response: ~p~n", [R]),
+    R.
 
 new_test() ->
     % Generate a message mocking a new player registration
     Email = "TestUser@doesntexist.notadomain",
     Password = "TestPassword1234",
-    gremlin_db:delete_account(Email),
-    Msg = gremlin_pb:encode_msg(#'AccountNewReq'{
-        email = Email,
-        password = Password
-    }),
+    gremlin_db_account:delete(Email),
+    Msg = gremlin_pb:encode_msg(
+        #{
+            email => Email,
+            password => Password
+        },
+        account_new
+    ),
     {[RespOp, RespMsg], _State} = new(Msg, gremlin_session:new()),
     ?assertEqual(<<?ACCOUNT_NEW:16>>, RespOp),
-    DecodedResp = gremlin_pb:decode_msg(RespMsg, 'GenResponse'),
-    ?assertEqual('OK', DecodedResp#'GenResponse'.status).
+    DecodedResp = gremlin_pb:decode_msg(RespMsg, gen_response),
+    ?assertEqual('OK', maps:get(status, DecodedResp)).
 
 new_already_exists_test() ->
     Email = "TestUser@doesntexist.notadomain",
     Password = "TestPassword1234",
-    Msg = gremlin_pb:encode_msg(#'AccountNewReq'{
-        email = Email,
-        password = Password
-    }),
+    Msg = gremlin_pb:encode_msg(
+        #{
+            email => Email,
+            password => Password
+        },
+        account_new
+    ),
     {[RespOp, RespMsg], _State} = new(Msg, gremlin_session:new()),
     ?assertEqual(<<?ACCOUNT_NEW:16>>, RespOp),
-    DecodedResp = gremlin_pb:decode_msg(RespMsg, 'GenResponse'),
-    ?assertEqual('ERROR', DecodedResp#'GenResponse'.status),
-    ?assertEqual(
-        "email_already_registered",
-        DecodedResp#'GenResponse'.msg
-    ).
+    DecodedResp = gremlin_pb:decode_msg(RespMsg, gen_response),
+    ?assertEqual('ERROR', maps:get(status, DecodedResp)),
+    ?assertEqual("email_already_registered", maps:get(msg, DecodedResp)).
 
 %%----------------------------------------------------------------------------
 %% @doc Login the user and mutate the session state
 %% @end
 %%----------------------------------------------------------------------------
 -spec login(binary(), gremlin_session:session()) ->
-    {[binary(), ...], gremlin_session:session()}.
+    gremlin_session:net_msg().
 login(Message, Session) ->
-    Decode = gremlin_pb:decode_msg(Message, 'AccountNewReq'),
-    Email = Decode#'AccountNewReq'.email,
-    Password = Decode#'AccountNewReq'.password,
+    Decode = gremlin_pb:decode_msg(Message, account_login),
+    Email = maps:get(email, Decode),
+    Password = maps:get(password, Decode),
     {Msg, NewState} =
-        case gremlin_db:account_login(Email, Password) of
+        case gremlin_db_account:login(Email, Password) of
             true ->
                 Reply = gremlin_protocol:response(ok),
                 S1 = gremlin_session:set_email(Email, Session),
@@ -144,26 +153,32 @@ login(Message, Session) ->
 login_bad_password_test() ->
     Email = "TestUser@doesntexist.notadomain",
     Password = "Password",
-    Msg = gremlin_pb:encode_msg(#'AccountLoginReq'{
-        email = Email,
-        password = Password
-    }),
+    Msg = gremlin_pb:encode_msg(
+        #{
+            email => Email,
+            password => Password
+        },
+        account_login
+    ),
     {[RespOp, RespMsg], _State} = login(Msg, gremlin_session:new()),
     ?assertEqual(<<?ACCOUNT_LOGIN:16>>, RespOp),
-    DecodedResp = gremlin_pb:decode_msg(RespMsg, 'GenResponse'),
-    ?assertEqual('ERROR', DecodedResp#'GenResponse'.status).
+    DecodedResp = gremlin_pb:decode_msg(RespMsg, gen_response),
+    ?assertEqual('ERROR', maps:get(status, DecodedResp)).
 
 login_test() ->
     Email = "TestUser@doesntexist.notadomain",
     Password = "TestPassword1234",
-    Msg = gremlin_pb:encode_msg(#'AccountLoginReq'{
-        email = Email,
-        password = Password
-    }),
+    Msg = gremlin_pb:encode_msg(
+        #{
+            email => Email,
+            password => Password
+        },
+        account_login
+    ),
     {[RespOp, RespMsg], _State} = login(Msg, gremlin_session:new()),
     ?assertEqual(<<?ACCOUNT_LOGIN:16>>, RespOp),
-    DecodedResp = gremlin_pb:decode_msg(RespMsg, 'GenResponse'),
-    ?assertEqual('OK', DecodedResp#'GenResponse'.status).
+    DecodedResp = gremlin_pb:decode_msg(RespMsg, gen_response),
+    ?assertEqual('OK', maps:get(status, DecodedResp)).
 
 %%----------------------------------------------------------------------------
 %% Internal functions
