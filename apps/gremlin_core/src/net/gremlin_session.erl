@@ -70,9 +70,18 @@
 -spec rpc_info() -> [{{pos_integer(), mfa()}, atom()}, ...].
 rpc_info() ->
     [
-        ?RPC(?VERSION, version, 1, none),
-        ?RPC(?HEARTBEAT, heartbeat, 1, none),
-        ?RPC(?SESSION_LOG, log, 2, session_log)
+        #{
+            opcode => ?VERSION, mfa => {?MODULE, version, 1}
+        },
+        #{
+            opcode => ?HEARTBEAT, mfa => {?MODULE, heartbeat, 1}
+        },
+        #{
+            opcode => ?SESSION_LOG,
+            mfa => {?MODULE, log, 2},
+            server_msg => session_log,
+            encoder => gremlin_pb
+        }
     ].
 
 %%===========================================================================
