@@ -22,17 +22,26 @@
 %% @end
 %%----------------------------------------------------------------------------
 
--define(RPC(OpCode, Callback, Arity, ProtoMessage),
-    {OpCode, {{?MODULE, Callback, Arity}, {gremlin_pb, ProtoMessage}}}
-).
 -define(ACCOUNT_NEW, 16#0100).
 -define(ACCOUNT_LOGIN, 16#0110).
 
 -spec rpc_info() -> gremlin_rpc:rpc_info().
 rpc_info() ->
     [
-        ?RPC(?ACCOUNT_NEW, new, 2, gen_response),
-        ?RPC(?ACCOUNT_LOGIN, login, 2, gen_response)
+        #{
+            opcode => ?ACCOUNT_NEW,
+            mfa => {?MODULE, new, 2},
+            client_msg => account_new,
+            server_msg => gen_response,
+            encoder => gremlin_pb
+        },
+        #{
+            opcode => ?ACCOUNT_LOGIN,
+            mfa => {?MODULE, login, 2},
+            client_msg => account_login,
+            server_msg => gen_response,
+            encoder => gremlin_pb
+        }
     ].
 
 %%----------------------------------------------------------------------------
