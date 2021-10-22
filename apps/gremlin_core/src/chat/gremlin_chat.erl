@@ -14,18 +14,6 @@
 -define(CHAT_WHISPER, 16#0240).
 -define(CHAT_SYSTEM_MSG, 16#0250).
 
--define(RPC(OpCode, Callback, Arity, ProtoMessage),
-    {OpCode, {{?MODULE, Callback, Arity}, {gremlin_pb, ProtoMessage}}}
-).
-
 -spec rpc_info() -> [{pos_integer(), mfa()}, ...].
 rpc_info() ->
-    [
-        ?RPC(?CHAT_WHO, who, 1, none),
-        ?RPC(?CHAT_LIST, list, 1, none),
-        ?RPC(?CHAT_JOIN, join, 1, none),
-        ?RPC(?CHAT_PART, part, 1, none),
-        ?RPC(?CHAT_MSG, msg, 1, none),
-        ?RPC(?CHAT_SYSTEM_MSG, system_msg, 1, none),
-        ?RPC(?CHAT_WHISPER, whisper, 1, none)
-    ].
+    [].
