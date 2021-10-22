@@ -180,24 +180,29 @@ route(<<OpCode:16, Message/binary>>, Session, Routes) ->
     case maps:get(OpCode, Routes, unknown) of
         unknown ->
             logger:debug("Got an unknown OpCode: ~p~n", [OpCode]);
-        {{Module, Fun, 2, _ProtoMsg}, _Proto} ->
-            % Apply the callback with the session state and the content of the
-            % message
-            erlang:apply(Module, Fun, [Message, Session]);
-        {{Module, Fun, 1, _ProtoMsg}, _Proto} ->
-            % Apply the callback with only the content of the message
-            erlang:apply(Module, Fun, [Message])
+        Map ->
+            case gremlin_rpc:mfa(Map) of
+                {Module, Fun, 2} ->
+                    % Apply the callback with the rest of the message plus
+                    % current session information (authentication status, etc).
+                    erlang:apply(Module, Fun, [Message, Session]);
+                {Module, Fun, 1} ->
+                    % The callback is called "sessionless" - e.g. heartbeats,
+                    % version request, etc.
+                    erlang:apply(Module, Fun, [Message])
+            end
     end.
 
 reg(Module, St0) ->
     RPCs = erlang:apply(Module, rpc_info, []),
     lists:foldl(fun(Item, Map) -> reg_op(Item, Map) end, St0, RPCs).
 
-reg_op({OpCode, Args}, St0) ->
-    % Check if it exists
+reg_op(Map, St0) ->
+    % Get the OpCode from the inner map
+    OpCode = maps:get(opcode, Map),
     case maps:get(OpCode, St0, undefined) of
         undefined ->
-            maps:put(OpCode, Args, St0);
+            maps:put(OpCode, Map, St0);
         _ ->
             St0
     end.
