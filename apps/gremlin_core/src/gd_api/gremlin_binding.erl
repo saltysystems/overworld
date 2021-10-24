@@ -44,7 +44,7 @@ load_scripts([H | T], Seen, Acc) ->
                 false ->
                     Const =
                         "const " ++ string:titlecase(atom_to_list(Encoder)) ++
-                            " = preload('scripts/",
+                            " = preload('",
                     Script = atom_to_list(Encoder) ++ ".gd')",
                     Seen1 = [Encoder | Seen],
                     load_scripts(T, Seen1, [Const ++ Script | Acc]);
@@ -133,6 +133,7 @@ generate_unmarshall([OpInfo | Rest], St0) ->
                     ?TAB ++ "var m = " ++ EncStr ++ "." ++
                     atom_to_list(ServerMsg) ++
                     ".new()\n" ++
+                    ?TAB ++ "var result_code = m.from_bytes(packet)\n" ++
                     ?TAB ++ "if result_code != " ++ EncStr ++
                     ".PB_ERR.NO_ERRORS:\n" ++
                     ?TAB ++ ?TAB ++ "print('[CRITICAL] Error decoding new " ++
@@ -185,7 +186,7 @@ set_parameters([], St0) ->
     St0;
 set_parameters([H | T], St0) ->
     Var = atom_to_list(H),
-    St1 = St0 ++ ?TAB ++ "var m.set_" ++ Var ++ "(" ++ Var ++ ")\n",
+    St1 = St0 ++ ?TAB ++ "m.set_" ++ Var ++ "(" ++ Var ++ ")\n",
     set_parameters(T, St1).
 
 fields_to_str(List) ->
@@ -198,6 +199,8 @@ fields_to_str([{N, T} | Tail], "") ->
         case T of
             {enum, _} ->
                 Name;
+            string ->
+                Name ++ ": " ++ "String";
             Type ->
                 Name ++ ": " ++ atom_to_list(Type)
         end,
@@ -208,6 +211,8 @@ fields_to_str([{N, T} | Tail], Acc) ->
         case T of
             {enum, _} ->
                 Acc ++ ", " ++ Name;
+            string ->
+                Acc ++ ", " ++ Name ++ ": " ++ "String";
             Type ->
                 Acc ++ ", " ++ Name ++ ": " ++ atom_to_list(Type)
         end,
