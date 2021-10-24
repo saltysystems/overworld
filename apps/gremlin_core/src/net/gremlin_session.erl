@@ -78,7 +78,7 @@ rpc_info() ->
         },
         #{
             opcode => ?SESSION_LOG,
-            mfa => {?MODULE, log, 2},
+            mfa => {?MODULE, session_log, 2},
             server_msg => session_log,
             encoder => gremlin_pb
         }
