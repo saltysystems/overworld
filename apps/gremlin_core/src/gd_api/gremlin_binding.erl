@@ -19,31 +19,37 @@ print() ->
     Unmarshall = generate_unmarshall(Ops, []),
     Marshall = generate_marshall(Ops, []),
     Map = #{
-      "preloads" => Preloads,
-      "signals" => Signals,
-      "opcodes" => Opcodes,
-      "router" => Router,
-      "unmarshall" => Unmarshall,
-      "marshall" => Marshall
+        "preloads" => Preloads,
+        "signals" => Signals,
+        "opcodes" => Opcodes,
+        "router" => Router,
+        "unmarshall" => Unmarshall,
+        "marshall" => Marshall
     },
-    T = bbmustache:parse_file("apps/gremlin_core/templates/libgremlin.mustache"),
+    T = bbmustache:parse_file(
+        "apps/gremlin_core/templates/libgremlin.mustache"
+    ),
     bbmustache:compile(T, Map).
-
 
 load_scripts(Ops) ->
     load_scripts(Ops, [], []).
-load_scripts([], _Seen, Acc) -> lists:reverse(Acc);
-load_scripts([H|T], Seen, Acc) ->
+load_scripts([], _Seen, Acc) ->
+    lists:reverse(Acc);
+load_scripts([H | T], Seen, Acc) ->
     case gremlin_rpc:encoder(H) of
-        undefined -> load_scripts(T, Seen, Acc);
-        Encoder -> 
-            case lists:member(Encoder, Seen) of 
+        undefined ->
+            load_scripts(T, Seen, Acc);
+        Encoder ->
+            case lists:member(Encoder, Seen) of
                 false ->
-                    Const = "const " ++ string:titlecase(atom_to_list(Encoder)) ++ " = preload('scripts/",
+                    Const =
+                        "const " ++ string:titlecase(atom_to_list(Encoder)) ++
+                            " = preload('scripts/",
                     Script = atom_to_list(Encoder) ++ ".gd')",
-                    Seen1 = [ Encoder | Seen ],
-                    load_scripts(T, Seen1, [Const ++ Script | Acc ]);
-                true -> load_scripts(T, Seen, Acc)
+                    Seen1 = [Encoder | Seen],
+                    load_scripts(T, Seen1, [Const ++ Script | Acc]);
+                true ->
+                    load_scripts(T, Seen, Acc)
             end
     end.
 
@@ -66,14 +72,15 @@ generate_signals([OpInfo | Rest], SignalsSeen0, St0) ->
     end.
 
 next_signal(_MFA, Encoder, ServerMsg, St0) when
-    Encoder == undefined; ServerMsg == undefined ->
+    Encoder == undefined; ServerMsg == undefined
+->
     St0;
 next_signal(_MFA, Encoder, ServerMsg, St0) ->
     Fields =
         "(" ++ untyped_fields_to_str(field_names({Encoder, ServerMsg})) ++
             ")",
     Signal = "signal " ++ atom_to_list(ServerMsg) ++ Fields,
-    [ Signal | St0 ].
+    [Signal | St0].
 
 generate_opcodes(Ops, St0) ->
     next_opcode(Ops, ok, St0).
@@ -98,7 +105,8 @@ generate_router([OpInfo | Rest], Routes, St0) ->
     {_M, F, _A} = gremlin_rpc:mfa(OpInfo),
     Op =
         "OpCode." ++ string:to_upper(atom_to_list(F)) ++ ":\n" ++
-        ?TAB ++ ?TAB ++ ?TAB ++ "server_" ++ atom_to_list(F) ++ "(payload)",
+            ?TAB ++ ?TAB ++ ?TAB ++ "server_" ++ atom_to_list(F) ++
+            "(payload)",
     generate_router(Rest, Routes, [Op | St0]).
 
 generate_unmarshall([], St0) ->
@@ -115,16 +123,18 @@ generate_unmarshall([OpInfo | Rest], St0) ->
                 "func " ++ "server_" ++ FunStr ++ "(packet):\n" ++
                     ?TAB ++ "print('[INFO] Received a " ++
                     FunStr ++ " packet (no-op)')",
-            generate_unmarshall(Rest, [ Op | St0 ]);
+            generate_unmarshall(Rest, [Op | St0]);
         _ ->
             EncStr = string:titlecase(atom_to_list(Encoder)),
             Op =
                 "func " ++ "server_" ++ FunStr ++ "(packet):\n" ++
                     ?TAB ++ "print('[INFO] Processing a " ++ FunStr ++
                     " packet')\n" ++
-                    ?TAB ++ "var m = " ++ EncStr ++ "." ++ atom_to_list(ServerMsg) ++
+                    ?TAB ++ "var m = " ++ EncStr ++ "." ++
+                    atom_to_list(ServerMsg) ++
                     ".new()\n" ++
-                    ?TAB ++ "if result_code != " ++ EncStr ++ ".PB_ERR.NO_ERRORS:\n" ++
+                    ?TAB ++ "if result_code != " ++ EncStr ++
+                    ".PB_ERR.NO_ERRORS:\n" ++
                     ?TAB ++ ?TAB ++ "print('[CRITICAL] Error decoding new " ++
                     FunStr ++ " packet')\n" ++
                     ?TAB ++ ?TAB ++ "return\n",
@@ -133,7 +143,7 @@ generate_unmarshall([OpInfo | Rest], St0) ->
                 ?TAB ++ "emit_signal('" ++ FunStr ++ "'," ++
                     untyped_fields_to_str(field_names({Encoder, ServerMsg})) ++
                     "\)\n\n",
-            generate_unmarshall(Rest, [ Op ++ Vars ++ Signal | St0 ] )
+            generate_unmarshall(Rest, [Op ++ Vars ++ Signal | St0])
     end.
 
 generate_marshall([], St0) ->
@@ -151,20 +161,22 @@ generate_marshall(
         _ ->
             FunStr = atom_to_list(Fun),
             Fields = field_names({Encoder, ClientMsg}),
-            FieldNames = [ F || {F,_T} <- Fields ],
+            FieldNames = [F || {F, _T} <- Fields],
             FieldStr = fields_to_str(Fields),
             EncStr = string:titlecase(atom_to_list(Encoder)),
             Op =
                 "func " ++ FunStr ++ "(" ++ FieldStr ++ "):\n" ++
-                    ?TAB ++ "var m = " ++ EncStr ++ "." ++ atom_to_list(ClientMsg) ++
+                    ?TAB ++ "var m = " ++ EncStr ++ "." ++
+                    atom_to_list(ClientMsg) ++
                     ".new()\n" ++
                     set_parameters(FieldNames) ++
                     ?TAB ++ "var payload = m.to_bytes()\n" ++
-                    ?TAB ++ "send_message(payload, OpCode." ++ string:to_upper(FunStr) ++
+                    ?TAB ++ "send_message(payload, OpCode." ++
+                    string:to_upper(FunStr) ++
                     ")\n" ++
                     ?TAB ++ "print('[INFO] Sent a " ++ FunStr ++
                     " packet')\n\n",
-            generate_marshall(Rest, [ Op | St0 ])
+            generate_marshall(Rest, [Op | St0])
     end.
 
 set_parameters(Fields) ->
@@ -180,42 +192,46 @@ fields_to_str(List) ->
     fields_to_str(List, "").
 fields_to_str([], Acc) ->
     Acc;
-fields_to_str([{N,T} | Tail], "") ->
+fields_to_str([{N, T} | Tail], "") ->
     Name = atom_to_list(N),
-    Acc1 = case T of
-               {enum, _} ->
-                    Name;
-               Type ->
-                    Name ++ ": " ++ atom_to_list(Type)
-           end,
+    Acc1 =
+        case T of
+            {enum, _} ->
+                Name;
+            Type ->
+                Name ++ ": " ++ atom_to_list(Type)
+        end,
     fields_to_str(Tail, Acc1);
-fields_to_str([{N,T} | Tail], Acc) ->
+fields_to_str([{N, T} | Tail], Acc) ->
     Name = atom_to_list(N),
-    Acc1 = case T of
-               {enum, _} ->
-                    Acc ++ ", " ++ Name;
-               Type ->
-                    Acc ++ ", " ++ Name ++ ": " ++ atom_to_list(Type)
-           end,
+    Acc1 =
+        case T of
+            {enum, _} ->
+                Acc ++ ", " ++ Name;
+            Type ->
+                Acc ++ ", " ++ Name ++ ": " ++ atom_to_list(Type)
+        end,
     fields_to_str(Tail, Acc1).
 
 fields_to_str_test() ->
-    Fields = [{string, string},
-              {float, float},
-              {int32, int32},
-              {int64, int64},
-              {bytes, bytes},
-              {enum, {enum, something}}],
+    Fields = [
+        {string, string},
+        {float, float},
+        {int32, int32},
+        {int64, int64},
+        {bytes, bytes},
+        {enum, {enum, something}}
+    ],
     fields_to_str(Fields).
 
 untyped_fields_to_str(List) ->
     untyped_fields_to_str(List, "").
 untyped_fields_to_str([], Acc) ->
     Acc;
-untyped_fields_to_str([{N,_T} | Tail], "") ->
+untyped_fields_to_str([{N, _T} | Tail], "") ->
     Acc1 = atom_to_list(N),
     untyped_fields_to_str(Tail, Acc1);
-untyped_fields_to_str([{N,_T} | Tail], Acc) ->
+untyped_fields_to_str([{N, _T} | Tail], Acc) ->
     Name = atom_to_list(N),
     Acc1 = Acc ++ "," ++ Name,
     untyped_fields_to_str(Tail, Acc1).
@@ -234,7 +250,7 @@ field_names([H | T], Acc) ->
 
 unmarshall_var({ProtoLib, ProtoMsg}) ->
     %{Fields,_Types} = field_names({ProtoLib, ProtoMsg}),
-    Fields = [ F || {F,_T} <- field_names({ProtoLib, ProtoMsg}) ],
+    Fields = [F || {F, _T} <- field_names({ProtoLib, ProtoMsg})],
     unmarshall_var(Fields, []).
 unmarshall_var([], Acc) ->
     Acc;
