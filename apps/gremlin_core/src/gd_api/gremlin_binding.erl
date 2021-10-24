@@ -1,11 +1,17 @@
 -module(gremlin_binding).
 
 -export([
+    write/0,
     print/0,
     fields_to_str_test/0
 ]).
 
 -define(TAB, [9]).
+
+write() ->
+    file:write_file(
+        "apps/gremlin_core/static/libgremlin.gd", gremlin_binding:print()
+    ).
 
 print() ->
     Ops = [
@@ -59,27 +65,27 @@ generate_signals(OpInfo, St0) ->
 generate_signals([], _Seen, St0) ->
     lists:reverse(St0);
 generate_signals([OpInfo | Rest], SignalsSeen0, St0) ->
-    MFA = gremlin_rpc:mfa(OpInfo),
+    {_M, F, _A} = gremlin_rpc:mfa(OpInfo),
     Encoder = gremlin_rpc:encoder(OpInfo),
     ServerMsg = gremlin_rpc:server_msg(OpInfo),
     case lists:member(ServerMsg, SignalsSeen0) of
         true ->
             generate_signals(Rest, SignalsSeen0, St0);
         false ->
-            St1 = next_signal(MFA, Encoder, ServerMsg, St0),
-            SignalsSeen1 = [ServerMsg | SignalsSeen0],
+            St1 = next_signal(F, Encoder, ServerMsg, St0),
+            SignalsSeen1 = [F | SignalsSeen0],
             generate_signals(Rest, SignalsSeen1, St1)
     end.
 
-next_signal(_MFA, Encoder, ServerMsg, St0) when
+next_signal(_Fun, Encoder, ServerMsg, St0) when
     Encoder == undefined; ServerMsg == undefined
 ->
     St0;
-next_signal(_MFA, Encoder, ServerMsg, St0) ->
+next_signal(Fun, Encoder, ServerMsg, St0) ->
     Fields =
         "(" ++ untyped_fields_to_str(field_names({Encoder, ServerMsg})) ++
             ")",
-    Signal = "signal " ++ atom_to_list(ServerMsg) ++ Fields,
+    Signal = "signal " ++ atom_to_list(Fun) ++ Fields,
     [Signal | St0].
 
 generate_opcodes(Ops, St0) ->
@@ -210,11 +216,11 @@ fields_to_str([{N, T} | Tail], Acc) ->
     Acc1 =
         case T of
             {enum, _} ->
-                Acc ++ ", " ++ Name;
+                Name ++ ", " ++ Acc;
             string ->
-                Acc ++ ", " ++ Name ++ ": " ++ "String";
+                Name ++ ": " ++ "String" ++ ", " ++ Acc;
             Type ->
-                Acc ++ ", " ++ Name ++ ": " ++ atom_to_list(Type)
+                Name ++ ": " ++ atom_to_list(Type) ++ ", " ++ Acc
         end,
     fields_to_str(Tail, Acc1).
 
