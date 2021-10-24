@@ -25,7 +25,9 @@
     % alias for get_authenticated
     is_authenticated/1,
     set_game_info/2,
-    get_game_info/1
+    get_game_info/1,
+    heartbeat/1,
+    version/1
 ]).
 
 -include("db/gremlin_database.hrl").
@@ -89,6 +91,20 @@ rpc_info() ->
 %%===========================================================================
 
 %%----------------------------------------------------------------------------
+%% @doc Receives heartbeat messages
+%% @end
+%%----------------------------------------------------------------------------
+heartbeat(_Message) ->
+    ok.
+
+%%----------------------------------------------------------------------------
+%% @doc Receives VERSION requests
+%% @end
+%%----------------------------------------------------------------------------
+version(_Message) ->
+    ok.
+
+%%----------------------------------------------------------------------------
 %% @doc Encodes a log message to be sent back to the client
 %% @end
 %%----------------------------------------------------------------------------
@@ -96,7 +112,11 @@ rpc_info() ->
 encode_log(Message) ->
     OpCode = <<?SESSION_LOG:16>>,
     Sanitized = sanitize_message(Message),
-    Msg = gremlin_pb:encode_msg(#{msg => Sanitized}, session_log),
+    % Send a 1-byte color message in hex - default black
+    Color = <<000000:8>>,
+    Msg = gremlin_pb:encode_msg(
+        #{color => Color, msg => Sanitized}, session_log
+    ),
     [OpCode, Msg].
 
 -spec encode_log_test() -> ok.
