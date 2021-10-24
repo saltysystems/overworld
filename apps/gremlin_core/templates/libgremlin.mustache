@@ -1,0 +1,136 @@
+extends Node
+
+class_name GremlinClient
+
+{{#preloads}} 
+{{.}}
+{{/preloads}} 
+
+const HEARTBEAT = 1 # second
+
+var ws = WebSocketClient.new()
+
+var timer = 0
+
+export(String) var global_player
+export(Dictionary) var session
+
+###########################################################################
+#  Signals
+###########################################################################
+
+{{#signals}} 
+{{.}}
+{{/signals}}
+
+
+###########################################################################
+#  OpCodes
+###########################################################################
+
+func bytepack(opcode):
+	var buf = StreamPeerBuffer.new()
+	buf.big_endian=true
+	buf.put_16(opcode)
+	return buf.data_array
+
+var OpCode = {
+	{{#opcodes}}
+	{{.}}
+	{{/opcodes}}
+}
+
+
+###########################################################################
+#  Router 
+###########################################################################
+
+func route(packet):
+	var opcode = packet.subarray(0,1)
+	var payload = []
+	if packet.size() > 2:
+		payload = packet.subarray(2,-1)
+	match opcode:
+		{{#router}}
+		{{.}}
+		{{/router}}
+		_:
+			print("[WARNING] Unknown opcode from the server: + opcode)
+
+
+###########################################################################
+#  Payload unmarshalling (server packets)
+###########################################################################
+
+{{#unmarshall}}
+{{.}}
+{{/unmarshall}}
+
+###########################################################################
+#  Payload marshalling (client packets)
+###########################################################################
+
+{{#marshall}}
+{{.}}
+{{/marshall}}
+
+############################################################################
+# Various other utility and initialization functions
+############################################################################
+
+func send_message(payload, opcode):
+	# Create a new packet starting with opcode, append the message if it exists,
+	# then send it across the websocket.
+	var packet = opcode
+	if payload.empty() == true:
+		# Message is empty, just send the bare opcode
+		ws.get_peer(1).put_packet(packet)
+	else:
+		packet.append_array(payload)
+		ws.get_peer(1).put_packet(packet)
+
+############################################################################
+#  Signal Handlers
+############################################################################
+
+func _ready():
+	ws.connect("data_received", self, "_on_data")
+
+# Take the host and whether or not its a TLS conncetion
+func ws_connect(url: String, tls: bool):
+	ws.set_verify_ssl_enabled(tls)
+	print("[INFO] Attempting to connect to ", url)
+	ws.connect_to_url(url+"/ws")
+
+func ws_disconnect():
+	ws.disconnect_from_host(1000,"Goodbye")
+
+func _process(delta):
+	# Poll the socket for new data
+	if ws.get_connection_status() == ws.CONNECTION_CONNECTING || ws.get_connection_status() == ws.CONNECTION_CONNECTED:
+		ws.poll()
+	if ws.get_connection_status() == ws.CONNECTION_CONNECTED:
+		# Write a heartbeat packet out to the server every so often
+		if timer > HEARTBEAT:
+			var socket = ws.get_peer(1)
+			socket.set_write_mode(1)
+			print("[INFO] Sending heartbeat")
+			socket.put_packet(OpCode.HEARTBEAT)
+			timer = 0
+		# Update the timer
+		timer += delta
+
+func _on_data():
+	var packet = ws.get_peer(1).get_packet()
+	route(packet)
+
+func _connection_established(_protocol):
+	print("Connection established")
+	emit_signal("connection_established")
+
+func _connection_closed(msg):
+	print("Connection closed: ", msg)
+
+func _connection_error():
+	print("Connection error")
+	print(ws.get_peer(1))
