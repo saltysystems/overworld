@@ -149,7 +149,12 @@ handle_call({register, Module}, _From, St0) ->
     St1 = reg(Module, St0),
     {reply, ok, St1};
 handle_call({decode, Message, Session}, _From, St0) ->
-    Reply = route(Message, Session, St0),
+    Reply = 
+        case route(Message, Session, St0) of
+            ok -> {ok, Session};
+            {Msg, Session1} -> {Msg, Session1};
+            Msg -> {Msg, Session}
+        end,
     {reply, Reply, St0};
 handle_call(registered_ops, _From, St0) ->
     Reply = maps:keys(St0),
