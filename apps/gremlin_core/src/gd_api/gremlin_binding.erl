@@ -42,6 +42,7 @@ load_scripts(Ops) ->
 load_scripts([], _Seen, Acc) ->
     lists:reverse(Acc);
 load_scripts([H | T], Seen, Acc) ->
+    io:format("Op is: ~p~n", [H]),
     case gremlin_rpc:encoder(H) of
         undefined ->
             load_scripts(T, Seen, Acc);

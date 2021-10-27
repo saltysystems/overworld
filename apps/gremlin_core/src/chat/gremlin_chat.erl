@@ -1,9 +1,9 @@
 -module(gremlin_chat).
 
--behaviour(gremlin_rpc).
+%-behaviour(gremlin_rpc).
 
 % required callbacks for gremlin
--export([rpc_info/0]).
+%-export([rpc_info/0]).
 
 % Chat messages, incl. PMs and ignore
 -define(CHAT_WHO, 16#0200).
@@ -14,6 +14,6 @@
 -define(CHAT_WHISPER, 16#0240).
 -define(CHAT_SYSTEM_MSG, 16#0250).
 
--spec rpc_info() -> [{pos_integer(), mfa()}, ...].
-rpc_info() ->
-    [].
+%-spec rpc_info() -> [].
+%rpc_info() ->
+%    [].

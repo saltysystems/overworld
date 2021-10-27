@@ -25,7 +25,7 @@
 -define(ACCOUNT_NEW, 16#0100).
 -define(ACCOUNT_LOGIN, 16#0110).
 
--spec rpc_info() -> gremlin_rpc:rpc_info().
+-spec rpc_info() -> gremlin_rpc:callbacks().
 rpc_info() ->
     [
         #{

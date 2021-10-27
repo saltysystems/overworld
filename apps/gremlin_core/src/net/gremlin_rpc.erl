@@ -9,17 +9,21 @@
     encoder/1
 ]).
 
+-type rpc() :: #{
+    opcode := pos_integer(),
+    mfa := mfa(),
+    client_msg => atom(),
+    server_msg => atom(),
+    encoder => atom()
+}.
+-export_type([rpc/0]).
+
+-type callbacks() :: [rpc(), ...].
+
+-export_type([callbacks/0]).
+
 -callback rpc_info() ->
-    Callbacks :: [
-        #{
-            opcode := pos_integer(),
-            mfa := mfa(),
-            client_msg => atom(),
-            server_msg => atom(),
-            encoder => atom()
-        },
-        ...
-    ].
+    Callbacks :: [rpc(), ...].
 
 -spec opcode(map()) -> mfa() | undefined.
 opcode(Map) ->

@@ -127,7 +127,7 @@ registered_ops() ->
 %% @doc Return the MFA for a particular opcode
 %% @end
 %%-------------------------------------------------------------------------
--spec op_info(pos_integer()) -> mfa().
+-spec op_info(pos_integer()) -> gremlin_rpc:rpc().
 op_info(OpCode) ->
     gen_server:call(?MODULE, {op_info, OpCode}).
 
@@ -149,7 +149,7 @@ handle_call({register, Module}, _From, St0) ->
     St1 = reg(Module, St0),
     {reply, ok, St1};
 handle_call({decode, Message, Session}, _From, St0) ->
-    Reply = 
+    Reply =
         case route(Message, Session, St0) of
             ok -> {ok, Session};
             {Msg, Session1} -> {Msg, Session1};
