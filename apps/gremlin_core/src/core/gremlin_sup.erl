@@ -33,7 +33,6 @@ init([]) ->
     },
     Modules = [
         gremlin_account,
-        gremlin_chat,
         gremlin_session
     ],
     ChildSpecs = [

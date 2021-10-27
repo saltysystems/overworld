@@ -69,7 +69,7 @@
 -define(HEARTBEAT, 16#0020).
 -define(SESSION_LOG, 16#0050).
 
--spec rpc_info() -> [{{pos_integer(), mfa()}, atom()}, ...].
+-spec rpc_info() -> gremlin_rpc:callbacks().
 rpc_info() ->
     [
         #{
