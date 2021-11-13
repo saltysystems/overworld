@@ -79,7 +79,9 @@ register(Module) ->
 %% @end
 %%-------------------------------------------------------------------------
 -spec decode(binary(), gremlin_session:session()) ->
-    {ok, gremlin_session:session()} | {binary(), gremlin_session:session()}.
+    ok
+    | {ok, gremlin_session:session()}
+    | {binary(), gremlin_session:session()}.
 decode(Message, Session) ->
     gen_server:call(?MODULE, {decode, Message, Session}).
 
@@ -149,12 +151,7 @@ handle_call({register, Module}, _From, St0) ->
     St1 = reg(Module, St0),
     {reply, ok, St1};
 handle_call({decode, Message, Session}, _From, St0) ->
-    Reply =
-        case route(Message, Session, St0) of
-            ok -> {ok, Session};
-            {Msg, Session1} -> {Msg, Session1};
-            Msg -> {Msg, Session}
-        end,
+    Reply = route(Message, Session, St0),
     {reply, Reply, St0};
 handle_call(registered_ops, _From, St0) ->
     Reply = maps:keys(St0),
@@ -181,10 +178,9 @@ code_change(_OldVsn, St0, _Extra) ->
 -spec route(<<_:16, _:_*8>>, gremlin_session:session(), map()) ->
     gremlin_session:net_msg().
 route(<<OpCode:16, Message/binary>>, Session, Routes) ->
-    logger:debug("Got OpCode: ~p~n", [OpCode]),
     case maps:get(OpCode, Routes, unknown) of
         unknown ->
-            logger:debug("Got an unknown OpCode: ~p~n", [OpCode]);
+            logger:notice("Got an unknown OpCode: ~p", [OpCode]);
         Map ->
             case gremlin_rpc:mfa(Map) of
                 {Module, Fun, 2} ->
@@ -194,7 +190,13 @@ route(<<OpCode:16, Message/binary>>, Session, Routes) ->
                 {Module, Fun, 1} ->
                     % The callback is called "sessionless" - e.g. heartbeats,
                     % version request, etc.
-                    erlang:apply(Module, Fun, [Message])
+                    erlang:apply(Module, Fun, [Message]),
+                    % return the session
+                    {ok, Session};
+                undefined ->
+                    % There is no 'C' in this RPC.
+                    logger:notice("No RPC registered for ~p", [OpCode]),
+                    {ok, Session}
             end
     end.
 
