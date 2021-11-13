@@ -24,7 +24,6 @@ init(Req, _St0) ->
     #{peer := {IP, _Port}} = Req,
     logger:notice("~p: client connected.", [IP]),
     SessionID = erlang:unique_integer(),
-    gproc:reg({p, l, client_session}, SessionID),
     St1 = gremlin_session:set_id(SessionID, gremlin_session:new()),
     {cowboy_websocket, Req, St1}.
 
@@ -46,6 +45,7 @@ terminate(_Reason, Req, State) ->
 %% @end
 %%---------------------------------------------------------------------------
 websocket_init(State) ->
+    gproc:reg({n, l, client_session}, ignored),
     Msg = gremlin_session:encode_log("CONNECTION ESTABLISHED"),
     {reply, {binary, Msg}, State}.
 
@@ -54,15 +54,24 @@ websocket_init(State) ->
 %%      decoder for further processing. All other messages are discarded.
 %% @end
 %%---------------------------------------------------------------------------
--spec websocket_handle({binary, [binary(), ...]}, any()) -> ws_result().
-websocket_handle({binary, Msg}, State) ->
+-spec websocket_handle(
+    {binary, [binary(), ...]}, gremlin_session:session()
+) -> ws_result().
+websocket_handle({binary, Msg}, Session) ->
     % protocol decoding will reply with an 'ok' for asynchronous messages or
     % will give us a binary to send back to the client
-    case gremlin_protocol:decode(Msg, State) of
-        {ok, NewState} ->
-            {ok, NewState};
-        {Msg1, NewState} ->
-            {reply, {binary, Msg1}, NewState}
+    case gremlin_protocol:decode(Msg, Session) of
+        % Table of possible returns
+        %   ok -> No reply, keep old session
+        %   {ok, Session1} -> No reply, update session
+        %   {Msg1, Session1} -> Reply message, update session (which may
+        %   ==Session)
+        ok ->
+            {ok, Session};
+        {ok, Session1} ->
+            {ok, Session1};
+        {Msg1, Session1} ->
+            {reply, {binary, Msg1}, Session1}
     end;
 websocket_handle(_Frame, State) ->
     {ok, State}.
@@ -73,19 +82,19 @@ websocket_handle(_Frame, State) ->
 %%      that back to the client.
 %% @end
 %%--------------------------------------------------------------------------
-websocket_info({_Pid, broadcast, Msg}, State) ->
-    logger:notice("Received broadcast message, forwarding to client"),
-    {reply, {binary, Msg}, State};
-websocket_info({_Pid, multicast, Msg, Who}, State) ->
-    ID = gremlin_session:get_id(State),
+websocket_info({_Pid, broadcast, Msg}, Session) ->
+    logger:debug("Received broadcast message, forwarding to client"),
+    {reply, {binary, Msg}, Session};
+websocket_info({_Pid, multicast, Msg, Who}, Session) ->
+    ID = gremlin_session:get_id(Session),
     case lists:member(ID, Who) of
         true ->
-            logger:notice(
+            logger:debug(
                 "Received message for this client, forwarding to client"
             ),
-            {reply, {binary, Msg}, State};
+            {reply, {binary, Msg}, Session};
         false ->
-            {ok, State}
+            {ok, Session}
     end;
 websocket_info(Info, State) ->
     logger:notice("Got a message from another process: ~p", [Info]),
