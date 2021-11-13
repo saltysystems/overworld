@@ -22,11 +22,14 @@
     get_email/1,
     set_authenticated/2,
     get_authenticated/1,
+    set_latency/2,
+    get_latency/1,
     % alias for get_authenticated
     is_authenticated/1,
     set_game_info/2,
     get_game_info/1,
-    heartbeat/1,
+    ping/2,
+    pong/1,
     version/1
 ]).
 
@@ -35,12 +38,14 @@
 -include_lib("kernel/include/logger.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
--type msg() :: [binary(), ...].
+-type msg() :: nonempty_binary() | [binary(), ...].
 
 -record(session, {
     id :: integer() | undefined,
     email :: string() | undefined,
     authenticated = false :: boolean(),
+    % ms
+    latency = 0 :: non_neg_integer(),
     game_info = #{} :: map() | undefined
 }).
 
@@ -66,7 +71,8 @@
     {OpCode, {{?MODULE, Callback, Arity}, {gremlin_pb, ProtoMessage}}}
 ).
 -define(VERSION, 16#0010).
--define(HEARTBEAT, 16#0020).
+-define(PING, 16#0020).
+-define(PONG, 16#0021).
 -define(SESSION_LOG, 16#0050).
 
 -spec rpc_info() -> gremlin_rpc:callbacks().
@@ -76,7 +82,16 @@ rpc_info() ->
             opcode => ?VERSION, mfa => {?MODULE, version, 1}
         },
         #{
-            opcode => ?HEARTBEAT, mfa => {?MODULE, heartbeat, 1}
+            opcode => ?PING,
+            mfa => {?MODULE, ping, 2},
+            client_msg => session_ping,
+            encoder => gremlin_pb
+        },
+        #{
+            opcode => ?PONG,
+            mfa => {?MODULE, pong, 1},
+            server_msg => session_pong,
+            encoder => gremlin_pb
         },
         #{
             opcode => ?SESSION_LOG,
@@ -91,17 +106,34 @@ rpc_info() ->
 %%===========================================================================
 
 %%----------------------------------------------------------------------------
-%% @doc Receives heartbeat messages
+%% @doc Update the latency
 %% @end
 %%----------------------------------------------------------------------------
-heartbeat(_Message) ->
+ping(Msg, Session) ->
+    D = gremlin_pb:decode_msg(Msg, session_ping),
+    ID = maps:get(id, D),
+    Last = gremlin_beacon:get_by_id(ID),
+    Now = erlang:monotonic_time(),
+    Latency = erlang:convert_time_unit(
+        round((Now - Last) / 2), native, millisecond
+    ),
+    Session1 = set_latency(Latency, Session),
+    Resp = gremlin_pb:encode_msg(#{latency => Latency}, session_pong),
+    {[<<?PONG:16>>, Resp], Session1}.
+
+%%----------------------------------------------------------------------------
+%% @doc Receives PONGs from the Client. No op - this is basically a stub to
+%%      ensure proper API generation.
+%% @end
+%%----------------------------------------------------------------------------
+pong(_) ->
     ok.
 
 %%----------------------------------------------------------------------------
 %% @doc Receives VERSION requests
 %% @end
 %%----------------------------------------------------------------------------
-version(_Message) ->
+version(_) ->
     ok.
 
 %%----------------------------------------------------------------------------
@@ -137,7 +169,14 @@ encode_log_test() ->
 %%----------------------------------------------------------------------------
 -spec broadcast(msg()) -> ok.
 broadcast(EncodedMsg) ->
-    gproc:send({p, l, client_session}, {self(), broadcast, EncodedMsg}),
+    case gproc:lookup_pids({n, l, client_session}) of
+        [] ->
+            ok;
+        _ ->
+            gproc:send({n, l, client_session}, {
+                self(), broadcast, EncodedMsg
+            })
+    end,
     ok.
 
 %%----------------------------------------------------------------------------
@@ -193,6 +232,22 @@ set_email(Email, Session) ->
 -spec get_email(session()) -> string().
 get_email(Session) ->
     Session#session.email.
+
+%%----------------------------------------------------------------------------
+%% @doc Set the session latency
+%% @end
+%%----------------------------------------------------------------------------
+-spec set_latency(pos_integer(), session()) -> session().
+set_latency(Latency, Session) ->
+    Session#session{latency = Latency}.
+
+%%----------------------------------------------------------------------------
+%% @doc Return the session latency
+%% @end
+%%----------------------------------------------------------------------------
+-spec get_latency(session()) -> non_neg_integer().
+get_latency(Session) ->
+    Session#session.latency.
 
 %%----------------------------------------------------------------------------
 %% @doc Set the session authentication status
