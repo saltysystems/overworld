@@ -6,13 +6,8 @@ class_name GremlinClient
 {{.}}
 {{/preloads}} 
 
-const HEARTBEAT = 1 # second
-
 var ws = WebSocketClient.new()
 
-var timer = 0
-
-export(String) var global_player
 export(Dictionary) var session
 
 ###########################################################################
@@ -47,6 +42,7 @@ var OpCode = {
 
 func route(packet):
 	var opcode = packet.subarray(0,1)
+	var hex_opcode = str(opcode.hex_encode())
 	var payload = []
 	if packet.size() > 2:
 		payload = packet.subarray(2,-1)
@@ -55,7 +51,7 @@ func route(packet):
 		{{.}}
 		{{/router}}
 		_:
-			print("[WARNING] Unknown opcode from the server:" + opcode)
+			print("[WARNING] Unknown opcode from the server:" + hex_opcode)
 
 
 ###########################################################################
@@ -105,20 +101,10 @@ func ws_connect(url: String, tls: bool):
 func ws_disconnect():
 	ws.disconnect_from_host(1000,"Goodbye")
 
-func _process(delta):
+func _process(_delta):
 	# Poll the socket for new data
 	if ws.get_connection_status() == ws.CONNECTION_CONNECTING || ws.get_connection_status() == ws.CONNECTION_CONNECTED:
 		ws.poll()
-	if ws.get_connection_status() == ws.CONNECTION_CONNECTED:
-		# Write a heartbeat packet out to the server every so often
-		if timer > HEARTBEAT:
-			var socket = ws.get_peer(1)
-			socket.set_write_mode(1)
-			print("[INFO] Sending heartbeat")
-			socket.put_packet(OpCode.HEARTBEAT)
-			timer = 0
-		# Update the timer
-		timer += delta
 
 func _on_data():
 	var packet = ws.get_peer(1).get_packet()
