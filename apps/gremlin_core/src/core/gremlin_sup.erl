@@ -33,26 +33,22 @@ init([]) ->
     },
     Modules = [
         gremlin_account,
-        gremlin_session
+        gremlin_session,
+        gremlin_beacon
     ],
     ChildSpecs = [
         #{
             id => gremlin_protocol,
             start => {gremlin_protocol, start, [Modules]}
         },
-        %#{
-        %    id => gremlin_instance_sup,
-        %    start => {gremlin_instance_sup, start_link, []}
-        %},
         #{
             id => gremlin_script_sup,
             start => {gremlin_script_sup, start_link, []}
+        },
+        #{
+            id => gremlin_beacon,
+            start => {gremlin_beacon, start, []}
         }
-        %,
-        %        #{
-        %            id => gremlin_entity_sup,
-        %            start => {gremlin_entity_sup, start_link, []}
-        %        }
     ],
     {ok, {SupFlags, ChildSpecs}}.
 
