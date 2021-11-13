@@ -36,3 +36,19 @@ message session_log {
 	required string msg = 1;
     required bytes color = 2;
 }
+
+// server --> all clients
+message session_beacon {
+    required uint32 id = 1;
+}
+
+// client --> server
+message session_ping {
+    required uint32 id = 1;
+}
+
+// server -> client
+message session_pong {
+    // send the most recent estimate for latency
+    required uint32 latency = 1;
+}
