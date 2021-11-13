@@ -39,3 +39,82 @@ Messages in Gremlin can be synchronous or asynchronous. Synchronous messages ini
  - `c2s_handler`, which corresponds to some module and function to process the message. Note that your handler's function must be either arity 1 (to process messages without an established session, see `account_new` for an example)  or arity 2.
 
 
+Generating the client library
+---------------------
+
+Gremlin can automatically generate a client library in GDScript usable by Godot v3.x.
+
+This library should be dropped into your scripts folder, along with your protobuf file. You will need to install the [Godobuf](https://github.com/oniksan/godobuf) plugin in order to generate code to marshall/unmarshall data from Protobuf from/to your Godot client. You'll want to autoload it with some name, I suggest `NetworkClient`. 
+
+Once Erlang is running, you can invoke the following to write out a library:
+
+```
+1> gremlin_binding:write().
+```
+
+The library file will live in `apps/gremlin_core/static/libgremlin.gd`. It's up to you to distribute the file. 
+
+
+
+Examples
+--------------
+
+### A simple client message with no response from server.
+
+First we write a protobuf file describing the module:
+
+``` 
+syntax = "proto2";
+
+package my_game;
+
+message hello {
+    required string msg = 1;
+}
+```
+
+By default, GPB will generate an Erlang file named `<your>_<module>_pb.erl`. 
+
+And then write a module that can generate the client call library, and handle the message:
+
+```
+-module(my_module).
+
+-behaviour(gremlin_rpc).
+
+% Required callback for Gremlin
+-export([rpc_info/0]).
+
+% A trivial example where the client can ask the server for buffs
+-export([hello/2]).
+
+-define(HELLO, 16#2000). % This makes the rpc info a bit more readable
+
+-spec rpc_info() -> gremlin_rpc:callbacks().
+rpc_info() -> 
+    [
+        #{ 
+            opcode => ?HELLO,
+            c2s_call => send_hello, % autogenerates a function of the same name
+            c2s_handler => {?MODULE, hello, 2},
+            encoder => my_game
+         }
+    ].
+    
+
+-spec client_hello(binary(), gremlin_session:session()) ->
+client_hello(Data, Session) ->
+    Decoded = my_game_pb:decode_msg(Data, hello)
+    Msg = maps:get(Decoded, msg),
+    logger:notice("Client sends: ~p", [Msg]),
+    {ok, Session}.
+  
+```
+
+A client using `libgremlin.gd` will be able to simply call
+
+```
+NetworkClient.send_hello("Hello world!")
+```
+
+which should be processed by your `my_module` handler after it is routed through Gremlin Core.
