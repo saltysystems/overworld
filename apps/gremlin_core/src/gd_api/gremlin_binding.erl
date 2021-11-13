@@ -78,10 +78,11 @@ generate_signals([OpInfo | Rest], SignalsSeen0, St0) ->
             generate_signals(Rest, SignalsSeen1, St1)
     end.
 
-next_signal(_Fun, Encoder, ServerMsg, St0) when
+next_signal(Fun, Encoder, ServerMsg, St0) when
     Encoder == undefined; ServerMsg == undefined
 ->
-    St0;
+    Signal = "signal " ++ atom_to_list(Fun),
+    [Signal | St0];
 next_signal(Fun, Encoder, ServerMsg, St0) ->
     Fields =
         "(" ++ untyped_fields_to_str(field_names({Encoder, ServerMsg})) ++
@@ -127,9 +128,10 @@ generate_unmarshall([OpInfo | Rest], St0) ->
         undefined ->
             % No message to unpack
             Op =
-                "func " ++ "server_" ++ FunStr ++ "(packet):\n" ++
+                "func " ++ "server_" ++ FunStr ++ "(_packet):\n" ++
                     ?TAB ++ "print('[INFO] Received a " ++
-                    FunStr ++ " packet (no-op)')",
+                    FunStr ++ " packet')\n" ++
+                    ?TAB ++ "emit_signal('" ++ FunStr ++ "')",
             generate_unmarshall(Rest, [Op | St0]);
         _ ->
             EncStr = string:titlecase(atom_to_list(Encoder)),
@@ -167,23 +169,34 @@ generate_marshall(
             % No message to pack
             generate_marshall(Rest, St0);
         _ ->
-            FunStr = atom_to_list(Fun),
-            Fields = field_names({Encoder, ClientMsg}),
-            FieldNames = [F || {F, _T} <- Fields],
-            FieldStr = fields_to_str(Fields),
-            EncStr = string:titlecase(atom_to_list(Encoder)),
             Op =
-                "func " ++ FunStr ++ "(" ++ FieldStr ++ "):\n" ++
-                    ?TAB ++ "var m = " ++ EncStr ++ "." ++
-                    atom_to_list(ClientMsg) ++
-                    ".new()\n" ++
-                    set_parameters(FieldNames) ++
-                    ?TAB ++ "var payload = m.to_bytes()\n" ++
-                    ?TAB ++ "send_message(payload, OpCode." ++
-                    string:to_upper(FunStr) ++
-                    ")\n" ++
-                    ?TAB ++ "print('[INFO] Sent a " ++ FunStr ++
-                    " packet')\n\n",
+                case Encoder of
+                    undefined ->
+                        % define an empty message for ping
+                        FunStr = atom_to_list(Fun),
+                        "func " ++ FunStr ++ "():\n" ++
+                            ?TAB ++ "send_message([], OpCode." ++
+                            string:to_upper(FunStr) ++ ")\n" ++
+                            ?TAB ++ "print('[INFO] Sent a " ++ FunStr ++
+                            " packet')\n\n";
+                    _ ->
+                        FunStr = atom_to_list(Fun),
+                        Fields = field_names({Encoder, ClientMsg}),
+                        FieldNames = [F || {F, _T} <- Fields],
+                        FieldStr = fields_to_str(Fields),
+                        EncStr = string:titlecase(atom_to_list(Encoder)),
+                        "func " ++ FunStr ++ "(" ++ FieldStr ++ "):\n" ++
+                            ?TAB ++ "var m = " ++ EncStr ++ "." ++
+                            atom_to_list(ClientMsg) ++
+                            ".new()\n" ++
+                            set_parameters(FieldNames) ++
+                            ?TAB ++ "var payload = m.to_bytes()\n" ++
+                            ?TAB ++ "send_message(payload, OpCode." ++
+                            string:to_upper(FunStr) ++
+                            ")\n" ++
+                            ?TAB ++ "print('[INFO] Sent a " ++ FunStr ++
+                            " packet')\n\n"
+                end,
             generate_marshall(Rest, [Op | St0])
     end.
 
@@ -208,6 +221,10 @@ fields_to_str([{N, T} | Tail], "") ->
                 Name;
             string ->
                 Name ++ ": " ++ "String";
+            int64 ->
+                Name ++ ": " ++ "int";
+            uint32 ->
+                Name ++ ": " ++ "int";
             Type ->
                 Name ++ ": " ++ atom_to_list(Type)
         end,
@@ -220,6 +237,10 @@ fields_to_str([{N, T} | Tail], Acc) ->
                 Name ++ ", " ++ Acc;
             string ->
                 Name ++ ": " ++ "String" ++ ", " ++ Acc;
+            int64 ->
+                Name ++ ": " ++ "int";
+            uint32 ->
+                Name ++ ": " ++ "int";
             Type ->
                 Name ++ ": " ++ atom_to_list(Type) ++ ", " ++ Acc
         end,
@@ -248,6 +269,24 @@ untyped_fields_to_str([{N, _T} | Tail], Acc) ->
     Acc1 = Acc ++ "," ++ Name,
     untyped_fields_to_str(Tail, Acc1).
 
+% TODO
+%field_requirements({ProtoLib, ProtoMsg}) ->
+%    Defs = erlang:apply(ProtoLib, fetch_msg_def, [ProtoMsg]),
+%    field_requirements(Defs, []).
+%
+%field_requirements([], Acc) ->
+%    Acc;
+%field_requirements([H|T], Acc) ->
+%    Name = maps:get(name, H),
+%    Occurrence = maps:get(occurrence, H),
+%    Acc1 = [{Name, Occurrence} | Acc],
+%    field_requirements(T, Acc1).
+%
+
+% case where a function has no arguments and therefore has no protobuf message.
+% i.e., ping
+field_names({undefined, _ProtoMsg}) ->
+    field_names([], []);
 field_names({ProtoLib, ProtoMsg}) ->
     Defs = erlang:apply(ProtoLib, fetch_msg_def, [ProtoMsg]),
     field_names(Defs, []).
