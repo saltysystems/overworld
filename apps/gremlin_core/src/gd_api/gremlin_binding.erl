@@ -42,7 +42,6 @@ load_scripts(Ops) ->
 load_scripts([], _Seen, Acc) ->
     lists:reverse(Acc);
 load_scripts([H | T], Seen, Acc) ->
-    io:format("Op is: ~p~n", [H]),
     case gremlin_rpc:encoder(H) of
         undefined ->
             load_scripts(T, Seen, Acc);
@@ -67,7 +66,6 @@ generate_signals([], _Seen, St0) ->
     lists:reverse(St0);
 generate_signals([OpInfo | Rest], SignalsSeen0, St0) ->
     % Server ---> Client
-    io:format("processing: ~p~n", [OpInfo]),
     Encoder = gremlin_rpc:encoder(OpInfo),
     MsgFromServer = gremlin_rpc:s2c_call(OpInfo),
     case lists:member(MsgFromServer, SignalsSeen0) of
@@ -234,7 +232,6 @@ set_parameters([{F, _T, O} | Rest], St0) ->
 fields_to_str(List) ->
     fields_to_str(List, "").
 fields_to_str([], Acc) ->
-    io:format("end of function: ~p~n", [Acc]),
     Acc;
 fields_to_str([{N, T, O} | Tail], "") ->
     Name = atom_to_list(N),
@@ -257,11 +254,8 @@ fields_to_str([{N, T, O} | Tail], "") ->
                 % If the parameter is optional, set the parameter to =Null and use no typing
                 Name ++ "=Null"
         end,
-    io:format("Tail is ~p, Acc1 is ~p~n", [Tail, Acc1]),
     fields_to_str(Tail, Acc1);
 fields_to_str([{N, T, O} = H | Tail], Acc) ->
-    io:format("Got H: ~p~n", [H]),
-    io:format("Got Acc: ~p~n", [Acc]),
     Name = atom_to_list(N),
     Acc1 =
         case O of
