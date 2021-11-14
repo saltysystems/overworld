@@ -30,16 +30,16 @@ rpc_info() ->
     [
         #{
             opcode => ?ACCOUNT_NEW,
-            mfa => {?MODULE, new, 2},
-            client_msg => account_new,
-            server_msg => gen_response,
+            c2s_handler => {?MODULE, new, 2},
+            c2s_call => account_new,
+            s2c_call => gen_response,
             encoder => gremlin_pb
         },
         #{
             opcode => ?ACCOUNT_LOGIN,
-            mfa => {?MODULE, login, 2},
-            client_msg => account_login,
-            server_msg => gen_response,
+            c2s_handler => {?MODULE, login, 2},
+            c2s_call => account_login,
+            s2c_call => gen_response,
             encoder => gremlin_pb
         }
     ].
