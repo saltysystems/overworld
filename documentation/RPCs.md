@@ -7,7 +7,7 @@ A gremlin message is constructed as such:
 
 ```
     Framing (2-14 bytes)       OpCode (2 bytes)     Payload (N bytes)
- [--------------------------(------------------|--------------------------)]
+ |--------------------------|------------------|--------------------------|
      WebSocket Data                Gremlin-specific Data
 ```
 
