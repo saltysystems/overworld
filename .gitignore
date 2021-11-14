@@ -1,5 +1,6 @@
 _build/
 apps/gremlin/rebar.lock
 rebar.lock
-apps/gremlin/include/gremlin_pb.hrl
-apps/gremlin/src/net/gremlin_pb.erl
+*_pb.erl
+*.crashdump
+*.tar.gz
