@@ -31,8 +31,7 @@ rpc_info() ->
     [
         #{
             opcode => ?BEACON,
-            mfa => {?MODULE, beacon, 1},
-            server_msg => session_beacon,
+            s2c_call => session_beacon,
             encoder => gremlin_pb
         }
     ].
