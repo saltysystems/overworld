@@ -81,7 +81,8 @@ generate_signals([OpInfo | Rest], SignalsSeen0, St0) ->
     end.
 
 next_signal(MsgFromServer, Encoder, St0) when
-    Encoder == undefined; MsgFromServer == undefined ->
+    Encoder == undefined; MsgFromServer == undefined
+->
     % If there's no msg to be decoded, there's no relevant signal to send.
     % TODO: verify this
     %Signal = "signal " ++ atom_to_list(MsgFromServer),
@@ -103,8 +104,8 @@ next_opcode([OpInfo | Rest], ok, St0) ->
     OpName = opcode_name_string(OpInfo),
     OpString = io_lib:format("~p", [OpCode]),
     Op =
-        string:to_upper(OpName) ++ " = " 
-        ++ "bytepack(" ++ OpString ++ "),",
+        string:to_upper(OpName) ++ " = " ++
+            "bytepack(" ++ OpString ++ "),",
     next_opcode(Rest, ok, [Op | St0]).
 
 generate_router(Operation, St0) ->
@@ -128,7 +129,7 @@ generate_unmarshall([OpInfo | Rest], St0) ->
     FunStr = opcode_name_string(OpInfo),
     write_function(ServerMsg, FunStr, Encoder, Rest, St0).
 
-write_function(undefined, undefined, _Encoder, Rest, St0 ) ->
+write_function(undefined, undefined, _Encoder, Rest, St0) ->
     % No message to unpack, no sensible name to decode. Assume this is a
     % message only meant to be *sent* to the server
     generate_unmarshall(Rest, St0);
@@ -139,9 +140,9 @@ write_function(undefined, FunStr, _Encoder, Rest, St0) ->
         "func " ++ "server_" ++ FunStr ++ "(_packet):\n" ++
             ?TAB ++ "print('[WARN] Received a " ++
             FunStr ++ " packet')\n",
-            % We don't emit a signal for these because I'm not quite sure what
-            % to do with messageless packets from the server.
-            %++ ?TAB ++ "emit_signal('" ++ FunStr ++ "')\n\n",
+    % We don't emit a signal for these because I'm not quite sure what
+    % to do with messageless packets from the server.
+    %++ ?TAB ++ "emit_signal('" ++ FunStr ++ "')\n\n",
     generate_unmarshall(Rest, [Op | St0]);
 write_function(ServerMsg, FunStr, Encoder, Rest, St0) ->
     EncStr = string:titlecase(atom_to_list(Encoder)),
@@ -210,15 +211,16 @@ set_parameters(Fields) ->
     set_parameters(Fields, []).
 set_parameters([], St0) ->
     St0;
-set_parameters([{F,_T,O} | Rest], St0) ->
+set_parameters([{F, _T, O} | Rest], St0) ->
     Var = atom_to_list(F),
-    St1 = case O of 
-        required -> 
-            St0 ++ ?TAB ++ "m.set_" ++ Var ++ "(" ++ Var ++ ")\n";
-        optional ->
-            St0 ++ ?TAB ++ "if " ++ Var ++ ":\n" ++ 
+    St1 =
+        case O of
+            required ->
+                St0 ++ ?TAB ++ "m.set_" ++ Var ++ "(" ++ Var ++ ")\n";
+            optional ->
+                St0 ++ ?TAB ++ "if " ++ Var ++ ":\n" ++
                     ?TAB ++ ?TAB ++ "m.set_" ++ Var ++ "(" ++ Var ++ ")\n"
-    end,
+        end,
     set_parameters(Rest, St1).
 
 %
@@ -238,7 +240,7 @@ fields_to_str([{N, T, O} | Tail], "") ->
     Name = atom_to_list(N),
     Acc1 =
         case O of
-            required -> 
+            required ->
                 case T of
                     {enum, _} ->
                         Name;
@@ -257,13 +259,13 @@ fields_to_str([{N, T, O} | Tail], "") ->
         end,
     io:format("Tail is ~p, Acc1 is ~p~n", [Tail, Acc1]),
     fields_to_str(Tail, Acc1);
-fields_to_str([{N, T, O}=H | Tail], Acc) ->
+fields_to_str([{N, T, O} = H | Tail], Acc) ->
     io:format("Got H: ~p~n", [H]),
     io:format("Got Acc: ~p~n", [Acc]),
     Name = atom_to_list(N),
-    Acc1 = 
+    Acc1 =
         case O of
-            required -> 
+            required ->
                 case T of
                     {enum, _} ->
                         Name ++ ", " ++ Acc;
@@ -340,19 +342,18 @@ unmarshall_var({ProtoLib, ProtoMsg}) ->
     unmarshall_var(field_info({ProtoLib, ProtoMsg}), []).
 unmarshall_var([], Acc) ->
     Acc;
-unmarshall_var([{F,_T,_O} | Rest], Acc) ->
+unmarshall_var([{F, _T, _O} | Rest], Acc) ->
     V =
         ?TAB ++ "var " ++ atom_to_list(F) ++ " = " ++ "m.get_" ++
             atom_to_list(F) ++ "()\n",
     unmarshall_var(Rest, Acc ++ V).
-
 
 opcode_name_string(OpInfo) ->
     OpCode = gremlin_rpc:opcode(OpInfo),
     case gremlin_rpc:c2s_handler(OpInfo) of
         {_M, F, _A} ->
             atom_to_list(F);
-        undefined -> 
+        undefined ->
             % Try the next best guess
             case gremlin_rpc:s2c_call(OpInfo) of
                 undefined -> "undefined_" ++ integer_to_list(OpCode);
