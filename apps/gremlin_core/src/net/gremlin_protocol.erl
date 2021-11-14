@@ -182,7 +182,7 @@ route(<<OpCode:16, Message/binary>>, Session, Routes) ->
         unknown ->
             logger:notice("Got an unknown OpCode: ~p", [OpCode]);
         Map ->
-            case gremlin_rpc:mfa(Map) of
+            case gremlin_rpc:c2s_handler(Map) of
                 {Module, Fun, 2} ->
                     % Apply the callback with the rest of the message plus
                     % current session information (authentication status, etc).
