@@ -71,32 +71,30 @@
     {OpCode, {{?MODULE, Callback, Arity}, {gremlin_pb, ProtoMessage}}}
 ).
 -define(VERSION, 16#0010).
--define(PING, 16#0020).
--define(PONG, 16#0021).
+-define(SESSION_PING, 16#0020).
+-define(SESSION_PONG, 16#0021).
 -define(SESSION_LOG, 16#0050).
 
 -spec rpc_info() -> gremlin_rpc:callbacks().
 rpc_info() ->
     [
         #{
-            opcode => ?VERSION, mfa => {?MODULE, version, 1}
+            opcode => ?VERSION, c2s_handler => {?MODULE, version, 1}
         },
         #{
-            opcode => ?PING,
-            mfa => {?MODULE, ping, 2},
-            client_msg => session_ping,
+            opcode => ?SESSION_PING,
+            c2s_handler => {?MODULE, ping, 2},
+            c2s_call => session_ping,
             encoder => gremlin_pb
         },
         #{
-            opcode => ?PONG,
-            mfa => {?MODULE, pong, 1},
-            server_msg => session_pong,
+            opcode => ?SESSION_PONG,
+            s2c_call => session_pong,
             encoder => gremlin_pb
         },
         #{
             opcode => ?SESSION_LOG,
-            mfa => {?MODULE, session_log, 2},
-            server_msg => session_log,
+            s2c_call => session_log,
             encoder => gremlin_pb
         }
     ].
@@ -119,7 +117,7 @@ ping(Msg, Session) ->
     ),
     Session1 = set_latency(Latency, Session),
     Resp = gremlin_pb:encode_msg(#{latency => Latency}, session_pong),
-    {[<<?PONG:16>>, Resp], Session1}.
+    {[<<?SESSION_PONG:16>>, Resp], Session1}.
 
 %%----------------------------------------------------------------------------
 %% @doc Receives PONGs from the Client. No op - this is basically a stub to
