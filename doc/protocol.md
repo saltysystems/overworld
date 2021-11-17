@@ -115,6 +115,29 @@ A client using `libgremlin.gd` will be able to simply call
 
 ```
 NetworkClient.send_hello("Hello world!")
-```
 
 which should be processed by your `my_module` handler after it is routed through Gremlin Core.
+
+
+Built-in messages
+--------------------
+Gremlin has a few built in messages that you can reuse in your own modules.
+
+### gen_response
+The general response message `gen_response` encodes an an enum of either 0=OK or 1=ERROR with optional error string.
+
+#### Example
+```
+myfun(_Msg, _Session) -> 
+    % Do some stuff with your Msg or Session
+    % decode(Msg),
+    Reply = 
+    case blahblah(Session) of 
+        foo -> 
+            gremlin_protocol:response(ok);
+        bar ->
+            gremlin_protocol:response(error, "Blahblah failed somehow")
+    end,
+    [<<?YOUR_OPCODE:16>>, Reply].
+```
+
