@@ -115,7 +115,7 @@ A client using `libgremlin.gd` will be able to simply call
 
 ```
 NetworkClient.send_hello("Hello world!")
-
+```
 which should be processed by your `my_module` handler after it is routed through Gremlin Core.
 
 
