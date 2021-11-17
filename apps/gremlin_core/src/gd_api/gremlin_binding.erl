@@ -1,5 +1,8 @@
 -module(gremlin_binding).
 
+% this module is heavily iterated upon and is in its 2nd major version.
+% it'll need a third major version to be really solid :)
+
 -export([
     write/0,
     print/0,
@@ -194,7 +197,7 @@ generate_marshall(
                             ?TAB ++ "var m = " ++ EncStr ++ "." ++
                             atom_to_list(ClientMsg) ++
                             ".new()\n" ++
-                            set_parameters(Fields) ++
+                            set_parameters(Fields, Encoder) ++
                             ?TAB ++ "var payload = m.to_bytes()\n" ++
                             ?TAB ++ "send_message(payload, OpCode." ++
                             string:to_upper(FunStr) ++
@@ -205,21 +208,36 @@ generate_marshall(
             generate_marshall(Rest, [Op | St0])
     end.
 
-set_parameters(Fields) ->
-    set_parameters(Fields, []).
-set_parameters([], St0) ->
+set_parameters(Fields, Encoder) ->
+    set_parameters(Fields, Encoder, []).
+set_parameters([], _Encoder, St0) ->
     St0;
-set_parameters([{F, _T, O} | Rest], St0) ->
+set_parameters([{F, T, O} | Rest], Encoder, St0) ->
     Var = atom_to_list(F),
     St1 =
         case O of
             required ->
                 St0 ++ ?TAB ++ "m.set_" ++ Var ++ "(" ++ Var ++ ")\n";
+            repeated ->
+                % if the type is simple and the object is repeated, you want to
+                % use the "add_" construct rather than "set_"
+                case T of
+                    {msg, MsgType} ->
+                        % Message has complex nested types
+                        St0 ++ ?TAB ++ "for item in " ++ Var ++ ":\n" ++
+                            ?TAB ++ ?TAB ++ "var a = m.add_" ++ Var ++
+                            "()\n" ++
+                            marshall_submsg("a", MsgType, Encoder);
+                    _ ->
+                        % Message is some well understood type
+                        St0 ++ ?TAB ++ "for item in " ++ Var ++ ":" ++
+                            ?TAB ++ ?TAB ++ "m.add_" ++ Var ++ "(item)\n"
+                end;
             optional ->
                 St0 ++ ?TAB ++ "if " ++ Var ++ ":\n" ++
                     ?TAB ++ ?TAB ++ "m.set_" ++ Var ++ "(" ++ Var ++ ")\n"
         end,
-    set_parameters(Rest, St1).
+    set_parameters(Rest, Encoder, St1).
 
 %
 % This function has been heavily retrofitted to allow for optional arguments,
@@ -250,12 +268,14 @@ fields_to_str([{N, T, O} | Tail], "") ->
                     Type ->
                         Name ++ ": " ++ atom_to_list(Type)
                 end;
+            repeated ->
+                Name ++ ": Array";
             optional ->
                 % If the parameter is optional, set the parameter to =Null and use no typing
                 Name ++ "=Null"
         end,
     fields_to_str(Tail, Acc1);
-fields_to_str([{N, T, O} = H | Tail], Acc) ->
+fields_to_str([{N, T, O} | Tail], Acc) ->
     Name = atom_to_list(N),
     Acc1 =
         case O of
@@ -272,6 +292,8 @@ fields_to_str([{N, T, O} = H | Tail], Acc) ->
                     Type ->
                         Name ++ ": " ++ atom_to_list(Type) ++ ", " ++ Acc
                 end;
+            repeated ->
+                Name ++ ": " ++ "Array, " ++ Acc;
             optional ->
                 % If the parameter is optional, set the parameter to =Null and use no typing
                 Name ++ "=Null, " ++ Acc
@@ -333,14 +355,41 @@ field_info([H | T], Acc) ->
     field_info(T, Acc1).
 
 unmarshall_var({ProtoLib, ProtoMsg}) ->
-    unmarshall_var(field_info({ProtoLib, ProtoMsg}), []).
-unmarshall_var([], Acc) ->
+    unmarshall_var(field_info({ProtoLib, ProtoMsg}), ProtoLib, []).
+unmarshall_var([], _ProtoLib, Acc) ->
     Acc;
-unmarshall_var([{F, _T, _O} | Rest], Acc) ->
+unmarshall_var([{F, T, O} | Rest], ProtoLib, Acc) ->
     V =
-        ?TAB ++ "var " ++ atom_to_list(F) ++ " = " ++ "m.get_" ++
-            atom_to_list(F) ++ "()\n",
-    unmarshall_var(Rest, Acc ++ V).
+        % First check to see if the message is a repeated one or not
+        case O of
+            repeated ->
+                % We need to iterate through every message. If the repeated
+                % object is a well understood type, Godobuf will automatically
+                % create an array with the repeated type.
+                % Now determine there's a submessage to unpack, or just repeated items
+                case T of
+                    {msg, MessageType} ->
+                        % The message is made of some complex submsg. Out of
+                        % laziness we don't recurse the type detection and just
+                        % assume messages won't be more complex without the
+                        % author having to rewrite the code :)
+                        ?TAB ++ "var " ++ atom_to_list(F) ++ " = []\n" ++
+                            ?TAB ++ "for item in m.get_" ++ atom_to_list(F) ++
+                            "():\n" ++
+                            ?TAB ++ ?TAB ++
+                            submsg_to_gd_dict(MessageType, ProtoLib) ++
+                            ?TAB ++ ?TAB ++ atom_to_list(F) ++
+                            ".append(dict)\n";
+                    _ ->
+                        ?TAB ++ "var " ++ atom_to_list(F) ++ " = " ++
+                            "m.get_" ++
+                            atom_to_list(F) ++ "()\n"
+                end;
+            _ ->
+                ?TAB ++ "var " ++ atom_to_list(F) ++ " = " ++ "m.get_" ++
+                    atom_to_list(F) ++ "()\n"
+        end,
+    unmarshall_var(Rest, ProtoLib, Acc ++ V).
 
 opcode_name_string(OpInfo) ->
     OpCode = gremlin_rpc:opcode(OpInfo),
@@ -354,3 +403,20 @@ opcode_name_string(OpInfo) ->
                 Call -> atom_to_list(Call)
             end
     end.
+
+submsg_to_gd_dict(MessageType, Encoder) ->
+    Fields = field_info({Encoder, MessageType}),
+    KeyVals = [field_to_var_decl(F) || {F, _T, _O} <- Fields],
+    "var dict = { " ++ KeyVals ++ "}\n".
+
+field_to_var_decl(F) ->
+    "'" ++ atom_to_list(F) ++ "': item.get_" ++ atom_to_list(F) ++ "(), ".
+
+marshall_submsg(Var, MessageType, Encoder) ->
+    Fields = field_info({Encoder, MessageType}),
+    [field_to_set(Var, F) || {F, _T, _O} <- Fields].
+
+field_to_set(Var, Field) ->
+    F = atom_to_list(Field),
+    % Nasty - the caller should keep track of the indentation level I guess
+    ?TAB ++ ?TAB ++ Var ++ ".set_" ++ F ++ "(item['" ++ F ++ "'])\n".
