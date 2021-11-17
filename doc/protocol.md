@@ -124,15 +124,15 @@ Built-in messages
 Gremlin has a few built in messages that you can reuse in your own modules.
 
 ### gen_response
-The general response message `gen_response` encodes an an enum of either 0=OK or 1=ERROR with optional error string.
+The general response message `gen_response` encodes an an enum of either 0=OK or 1=ERROR with optional string to describe the error.
 
 #### Example
+Here's an example of a handler that assumes you have a function that can decode the message called `decode` and a function with conditional results called `blahblah`. `gen_response` is invoked here with `ok` returning nothing other than acknowledgement back to the client, and `error` with a rather unhelpful error message.
 ```
-myfun(_Msg, _Session) -> 
-    % Do some stuff with your Msg or Session
-    % decode(Msg),
+myfun(Msg, Session) -> 
+    DecodedMsg = decode(Msg),
     Reply = 
-    case blahblah(Session) of 
+    case blahblah(DecodedMsg, Session) of 
         foo -> 
             gremlin_protocol:response(ok);
         bar ->
