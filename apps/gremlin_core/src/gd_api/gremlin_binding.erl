@@ -10,6 +10,7 @@
 ]).
 
 -define(TAB, [9]).
+-define(DEFAULT_ENCODER, gremlin_pb).
 
 write() ->
     file:write_file(
@@ -89,10 +90,8 @@ next_signal(MsgFromServer, Encoder, St0) when
     %Signal = "signal " ++ atom_to_list(MsgFromServer),
     St0;
 next_signal(MsgFromServer, Encoder, St0) ->
-    Fields =
-        "(" ++ untyped_fields_to_str(field_info({Encoder, MsgFromServer})) ++
-            ")",
-    Signal = "signal " ++ atom_to_list(MsgFromServer) ++ Fields,
+    F = "(" ++ untyped_fields_to_str(field_info({Encoder, MsgFromServer})) ++ ")",
+    Signal = "signal " ++ atom_to_list(MsgFromServer) ++ F,
     [Signal | St0].
 
 generate_opcodes(Ops, St0) ->
@@ -126,7 +125,7 @@ generate_unmarshall([], St0) ->
     St0;
 generate_unmarshall([OpInfo | Rest], St0) ->
     ServerMsg = gremlin_rpc:s2c_call(OpInfo),
-    Encoder = gremlin_rpc:encoder(OpInfo),
+    Encoder = correct_encoder(gremlin_rpc:encoder(OpInfo), ServerMsg),
     FunStr = opcode_name_string(OpInfo),
     write_function(ServerMsg, FunStr, Encoder, Rest, St0).
 
@@ -151,8 +150,7 @@ write_function(ServerMsg, FunStr, Encoder, Rest, St0) ->
         "func " ++ "server_" ++ FunStr ++ "(packet):\n" ++
             ?TAB ++ "print('[INFO] Processing a " ++ FunStr ++
             " packet')\n" ++
-            ?TAB ++ "var m = " ++ EncStr ++ "." ++
-            atom_to_list(ServerMsg) ++
+            ?TAB ++ "var m = " ++ EncStr ++ "." ++ atom_to_list(ServerMsg) ++
             ".new()\n" ++
             ?TAB ++ "var result_code = m.from_bytes(packet)\n" ++
             ?TAB ++ "if result_code != " ++ EncStr ++
@@ -162,7 +160,7 @@ write_function(ServerMsg, FunStr, Encoder, Rest, St0) ->
             ?TAB ++ ?TAB ++ "return\n",
     Vars = unmarshall_var({Encoder, ServerMsg}),
     Signal =
-        ?TAB ++ "emit_signal('" ++ FunStr ++ "'," ++
+        ?TAB ++ "emit_signal('" ++ atom_to_list(ServerMsg) ++ "'," ++
             untyped_fields_to_str(field_info({Encoder, ServerMsg})) ++
             "\)\n\n",
     generate_unmarshall(Rest, [Op ++ Vars ++ Signal | St0]).
@@ -272,7 +270,7 @@ fields_to_str([{N, T, O} | Tail], "") ->
                 Name ++ ": Array";
             optional ->
                 % If the parameter is optional, set the parameter to =Null and use no typing
-                Name ++ "=Null"
+                Name ++ "= null"
         end,
     fields_to_str(Tail, Acc1);
 fields_to_str([{N, T, O} | Tail], Acc) ->
@@ -296,7 +294,7 @@ fields_to_str([{N, T, O} | Tail], Acc) ->
                 Name ++ ": " ++ "Array, " ++ Acc;
             optional ->
                 % If the parameter is optional, set the parameter to =Null and use no typing
-                Name ++ "=Null, " ++ Acc
+                Name ++ "= null, " ++ Acc
         end,
     fields_to_str(Tail, Acc1).
 
@@ -342,7 +340,8 @@ untyped_fields_to_str([{N, _T, _O} | Tail], Acc) ->
 field_info({undefined, _ProtoMsg}) ->
     field_info([], []);
 field_info({ProtoLib, ProtoMsg}) ->
-    Defs = erlang:apply(ProtoLib, fetch_msg_def, [ProtoMsg]),
+    E = correct_encoder(ProtoLib, ProtoMsg),
+    Defs = erlang:apply(E, fetch_msg_def, [ProtoMsg]),
     field_info(Defs, []).
 
 field_info([], Acc) ->
@@ -420,3 +419,15 @@ field_to_set(Var, Field) ->
     F = atom_to_list(Field),
     % Nasty - the caller should keep track of the indentation level I guess
     ?TAB ++ ?TAB ++ Var ++ ".set_" ++ F ++ "(item['" ++ F ++ "'])\n".
+
+% Make a best guess at a fall through for the encoder. I'm not sure I like this so it's not part of the main RPC module.
+correct_encoder(undefined, _) -> undefined;
+correct_encoder(_, undefined) -> undefined;
+correct_encoder(Encoder, Message) ->
+    case erlang:apply(Encoder, find_msg_def, [Message]) of
+        error -> 
+            logger:debug("Couldn't find message ~p for encoder ~p, assuming encoder is ~p!~n", [Message, Encoder, ?DEFAULT_ENCODER]),
+            ?DEFAULT_ENCODER;
+        _ ->
+            Encoder
+    end.
