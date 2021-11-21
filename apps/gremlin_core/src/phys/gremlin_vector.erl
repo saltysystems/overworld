@@ -55,7 +55,7 @@ vertices_to_edges([V1, V2 | Rest], First, Acc) ->
     E = edge_direction(V1, V2),
     vertices_to_edges([V2 | Rest], First, [E | Acc]).
 
--spec project(vector(), vector()) -> [scalar(), ...].
+-spec project([vector(), ...], vector()) -> [scalar(), ...].
 project(Vertices, Axis) ->
     % A vector showing how much of the vertices lies along the axis
     Dots = [dot(Vertex, Axis) || Vertex <- Vertices],
