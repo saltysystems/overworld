@@ -90,7 +90,9 @@ next_signal(MsgFromServer, Encoder, St0) when
     %Signal = "signal " ++ atom_to_list(MsgFromServer),
     St0;
 next_signal(MsgFromServer, Encoder, St0) ->
-    F = "(" ++ untyped_fields_to_str(field_info({Encoder, MsgFromServer})) ++ ")",
+    F =
+        "(" ++ untyped_fields_to_str(field_info({Encoder, MsgFromServer})) ++
+            ")",
     Signal = "signal " ++ atom_to_list(MsgFromServer) ++ F,
     [Signal | St0].
 
@@ -421,12 +423,17 @@ field_to_set(Var, Field) ->
     ?TAB ++ ?TAB ++ Var ++ ".set_" ++ F ++ "(item['" ++ F ++ "'])\n".
 
 % Make a best guess at a fall through for the encoder. I'm not sure I like this so it's not part of the main RPC module.
-correct_encoder(undefined, _) -> undefined;
-correct_encoder(_, undefined) -> undefined;
+correct_encoder(undefined, _) ->
+    undefined;
+correct_encoder(_, undefined) ->
+    undefined;
 correct_encoder(Encoder, Message) ->
     case erlang:apply(Encoder, find_msg_def, [Message]) of
-        error -> 
-            logger:debug("Couldn't find message ~p for encoder ~p, assuming encoder is ~p!~n", [Message, Encoder, ?DEFAULT_ENCODER]),
+        error ->
+            logger:debug(
+                "Couldn't find message ~p for encoder ~p, assuming encoder is ~p!~n",
+                [Message, Encoder, ?DEFAULT_ENCODER]
+            ),
             ?DEFAULT_ENCODER;
         _ ->
             Encoder
