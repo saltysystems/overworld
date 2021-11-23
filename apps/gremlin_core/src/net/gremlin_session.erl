@@ -28,12 +28,12 @@
     is_authenticated/1,
     set_game_info/2,
     get_game_info/1,
+    set_termination_callback/2,
+    get_termination_callback/1,
     ping/2,
     pong/1,
     version/1
 ]).
-
--include("db/gremlin_database.hrl").
 
 -include_lib("kernel/include/logger.hrl").
 -include_lib("eunit/include/eunit.hrl").
@@ -46,7 +46,8 @@
     authenticated = false :: boolean(),
     % ms
     latency = 0 :: non_neg_integer(),
-    game_info = #{} :: map() | undefined
+    game_info = #{} :: map() | undefined,
+    termination_callback :: mfa() | undefined
 }).
 
 -opaque session() :: #session{}.
@@ -286,6 +287,22 @@ set_game_info(Map, Session) ->
 -spec get_game_info(session()) -> map().
 get_game_info(Session) ->
     Session#session.game_info.
+
+%%----------------------------------------------------------------------------
+%% @doc Set the termination callback
+%% @end
+%%----------------------------------------------------------------------------
+-spec set_termination_callback(mfa(), session()) -> map().
+set_termination_callback(Callback, Session) ->
+    Session#session{termination_callback = Callback}.
+
+%%----------------------------------------------------------------------------
+%% @doc Get the termination callback
+%% @end
+%%----------------------------------------------------------------------------
+-spec get_termination_callback(session()) -> map().
+get_termination_callback(Session) ->
+    Session#session.termination_callback.
 
 %%=========================================================================
 %% Internal functions
