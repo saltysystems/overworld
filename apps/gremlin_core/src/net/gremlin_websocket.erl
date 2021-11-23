@@ -35,7 +35,13 @@ terminate(_Reason, Req, State) ->
     #{peer := {IP, _Port}} = Req,
     logger:notice("~p: client disconnected", [IP]),
     logger:debug("Client state at disconnect: ~p", [State]),
-    ok.
+    % Check for a termination callback in the client state
+    case gremlin_session:get_termination_callback(State) of
+        {M, F, 1} ->
+            erlang:apply(M, F, [State]);
+        _ ->
+            ok
+    end.
 
 %%---------------------------------------------------------------------------
 %% @doc Set up the initial state of the websocket handler
