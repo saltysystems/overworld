@@ -61,7 +61,7 @@ project(Vertices, Axis) ->
     Dots = [dot(Vertex, Axis) || Vertex <- Vertices],
     [lists:min(Dots), lists:max(Dots)].
 
--spec overlap([vector(), ...], [vector(), ...]) -> boolean().
+-spec overlap([scalar(), ...], [scalar(), ...]) -> boolean().
 overlap(Projection1, Projection2) ->
     Min1 = lists:min(Projection1),
     Min2 = lists:min(Projection2),
