@@ -30,6 +30,7 @@
     get_game_info/1,
     set_termination_callback/2,
     get_termination_callback/1,
+    session_id/2,
     ping/2,
     pong/1,
     version/1
@@ -72,6 +73,8 @@
     {OpCode, {{?MODULE, Callback, Arity}, {gremlin_pb, ProtoMessage}}}
 ).
 -define(VERSION, 16#0010).
+-define(SESSION_ID_REQ, 16#0015).
+-define(SESSION_ID, 16#0016).
 -define(SESSION_PING, 16#0020).
 -define(SESSION_PONG, 16#0021).
 -define(SESSION_LOG, 16#0050).
@@ -80,7 +83,18 @@
 rpc_info() ->
     [
         #{
-            opcode => ?VERSION, c2s_handler => {?MODULE, version, 1}
+            opcode => ?VERSION, 
+            c2s_handler => {?MODULE, version, 1}
+        },
+        #{  
+            opcode => ?SESSION_ID_REQ,
+            c2s_handler => {?MODULE, session_id_req, 2},
+            c2s_call => session_id_req
+        },
+        #{  
+            opcode => ?SESSION_ID,
+            s2c_call => session_id,
+            encoder => gremlin_pb
         },
         #{
             opcode => ?SESSION_PING,
@@ -134,6 +148,15 @@ pong(_) ->
 %%----------------------------------------------------------------------------
 version(_) ->
     ok.
+
+%%----------------------------------------------------------------------------
+%% @doc Return the session ID back to the caller
+%% @end
+%%----------------------------------------------------------------------------
+session_id(_Msg, Session) ->
+    ID = gremlin_session:get_id(Session),
+    Resp = gremlin_pb:encode_msg(#{id => ID}, session_id),
+    {[<<?SESSION_ID:16>>, Resp], Session}.
 
 %%----------------------------------------------------------------------------
 %% @doc Encodes a log message to be sent back to the client
