@@ -52,3 +52,11 @@ message session_pong {
     // send the most recent estimate for latency
     required uint32 latency = 1;
 }
+
+// server -> client
+message session_id {
+    // send the internal session id back to the client
+    // TODO: think about whether or not this is bad to leak. this implicitly
+    //       assumes we never use the session id for anything secure
+    required int64 id = 1;
+}
