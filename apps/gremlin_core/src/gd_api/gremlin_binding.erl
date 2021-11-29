@@ -263,6 +263,8 @@ fields_to_str([{N, T, O} | Tail], "") ->
                         Name ++ ": " ++ "String";
                     int64 ->
                         Name ++ ": " ++ "int";
+                    uint64 ->
+                        Name ++ ": " ++ "int";
                     sint64 ->
                         Name ++ ": " ++ "int";
                     sint32 ->
@@ -291,7 +293,13 @@ fields_to_str([{N, T, O} | Tail], Acc) ->
                         Name ++ ": " ++ "String" ++ ", " ++ Acc;
                     int64 ->
                         Name ++ ": " ++ "int" ++ ", " ++ Acc;
+                    uint64 ->
+                        Name ++ ": " ++ "int" ++ ", " ++ Acc;
+                    sint64 ->
+                        Name ++ ": " ++ "int" ++ ", " ++ Acc;
                     uint32 ->
+                        Name ++ ": " ++ "int" ++ ", " ++ Acc;
+                    sint32 ->
                         Name ++ ": " ++ "int" ++ ", " ++ Acc;
                     Type ->
                         Name ++ ": " ++ atom_to_list(Type) ++ ", " ++ Acc
