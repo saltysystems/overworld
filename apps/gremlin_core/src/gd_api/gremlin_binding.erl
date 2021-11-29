@@ -263,6 +263,10 @@ fields_to_str([{N, T, O} | Tail], "") ->
                         Name ++ ": " ++ "String";
                     int64 ->
                         Name ++ ": " ++ "int";
+                    sint64 ->
+                        Name ++ ": " ++ "int";
+                    sint32 ->
+                        Name ++ ": " ++ "int";
                     uint32 ->
                         Name ++ ": " ++ "int";
                     Type ->
