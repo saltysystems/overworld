@@ -30,7 +30,7 @@
     get_game_info/1,
     set_termination_callback/2,
     get_termination_callback/1,
-    session_id/2,
+    session_id_req/2,
     ping/2,
     pong/1,
     version/1
@@ -83,15 +83,15 @@
 rpc_info() ->
     [
         #{
-            opcode => ?VERSION, 
+            opcode => ?VERSION,
             c2s_handler => {?MODULE, version, 1}
         },
-        #{  
+        #{
             opcode => ?SESSION_ID_REQ,
             c2s_handler => {?MODULE, session_id_req, 2},
             c2s_call => session_id_req
         },
-        #{  
+        #{
             opcode => ?SESSION_ID,
             s2c_call => session_id,
             encoder => gremlin_pb
@@ -153,7 +153,7 @@ version(_) ->
 %% @doc Return the session ID back to the caller
 %% @end
 %%----------------------------------------------------------------------------
-session_id(_Msg, Session) ->
+session_id_req(_Msg, Session) ->
     ID = gremlin_session:get_id(Session),
     Resp = gremlin_pb:encode_msg(#{id => ID}, session_id),
     {[<<?SESSION_ID:16>>, Resp], Session}.
@@ -191,11 +191,11 @@ encode_log_test() ->
 %%----------------------------------------------------------------------------
 -spec broadcast(msg()) -> ok.
 broadcast(EncodedMsg) ->
-    case gproc:lookup_pids({n, l, client_session}) of
+    case gproc:lookup_pids({p, l, client_session}) of
         [] ->
             ok;
         _ ->
-            gproc:send({n, l, client_session}, {
+            gproc:send({p, l, client_session}, {
                 self(), broadcast, EncodedMsg
             })
     end,
