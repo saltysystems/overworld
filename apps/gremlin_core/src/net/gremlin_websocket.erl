@@ -51,7 +51,7 @@ terminate(_Reason, Req, State) ->
 %% @end
 %%---------------------------------------------------------------------------
 websocket_init(State) ->
-    gproc:reg({n, l, client_session}, ignored),
+    gproc:reg({p, l, client_session}),
     Msg = gremlin_session:encode_log("CONNECTION ESTABLISHED"),
     {reply, {binary, Msg}, State}.
 
