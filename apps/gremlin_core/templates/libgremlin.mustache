@@ -10,6 +10,8 @@ var ws = WebSocketClient.new()
 
 export(Dictionary) var session
 
+var debug = false
+
 ###########################################################################
 #  Signals
 ###########################################################################
@@ -111,12 +113,12 @@ func _on_data():
 	route(packet)
 
 func _connection_established(_protocol):
-	print("Connection established")
+	print("[INFO] Connection established")
 	emit_signal("connection_established")
 
 func _connection_closed(msg):
-	print("Connection closed: ", msg)
+	print("[INFO] Connection closed: ", msg)
 
 func _connection_error():
-	print("Connection error")
+	print("[INFO] Connection error")
 	print(ws.get_peer(1))
