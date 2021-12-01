@@ -150,7 +150,8 @@ write_function(ServerMsg, FunStr, Encoder, Rest, St0) ->
     EncStr = string:titlecase(atom_to_list(Encoder)),
     Op =
         "func " ++ "server_" ++ FunStr ++ "(packet):\n" ++
-            ?TAB ++ "print('[INFO] Processing a " ++ FunStr ++
+            ?TAB ++ "if debug:\n" ++
+            ?TAB ++ ?TAB ++ "print('[DEBUG] Processing a " ++ FunStr ++
             " packet')\n" ++
             ?TAB ++ "var m = " ++ EncStr ++ "." ++ atom_to_list(ServerMsg) ++
             ".new()\n" ++
@@ -187,7 +188,9 @@ generate_marshall(
                         "func " ++ FunStr ++ "():\n" ++
                             ?TAB ++ "send_message([], OpCode." ++
                             string:to_upper(FunStr) ++ ")\n" ++
-                            ?TAB ++ "print('[INFO] Sent a " ++ FunStr ++
+                            ?TAB ++ "if debug:\n" ++
+                            ?TAB ++ ?TAB ++ "print('[INFO] Sent a " ++
+                            FunStr ++
                             " packet')\n\n";
                     _ ->
                         Fields = field_info({Encoder, ClientMsg}),
@@ -202,7 +205,9 @@ generate_marshall(
                             ?TAB ++ "send_message(payload, OpCode." ++
                             string:to_upper(FunStr) ++
                             ")\n" ++
-                            ?TAB ++ "print('[INFO] Sent a " ++ FunStr ++
+                            ?TAB ++ "if debug:\n" ++
+                            ?TAB ++ ?TAB ++ "print('[INFO] Sent a " ++
+                            FunStr ++
                             " packet')\n\n"
                 end,
             generate_marshall(Rest, [Op | St0])
