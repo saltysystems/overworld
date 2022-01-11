@@ -48,7 +48,7 @@ generate_enums(Ops) ->
     generate_enums(Ops, [], []).
 generate_enums([], _Seen, Acc) ->
     Acc;
-generate_enums([H|T], Seen, Acc) ->
+generate_enums([H | T], Seen, Acc) ->
     ProtoLib = get_encoder(H),
     case lists:member(ProtoLib, Seen) of
         true ->
@@ -56,23 +56,27 @@ generate_enums([H|T], Seen, Acc) ->
             generate_enums(T, Seen, Acc);
         false ->
             Enums = erlang:apply(ProtoLib, get_enum_names, []),
-            % Process all enums 
+            % Process all enums
             Comment = "# via " ++ atom_to_list(ProtoLib),
             Acc1 = Acc ++ [Comment] ++ stringify_enums(ProtoLib, Enums),
-            generate_enums(T, [ ProtoLib | Seen ], Acc1)
+            generate_enums(T, [ProtoLib | Seen], Acc1)
     end.
 
 stringify_enums(ProtoLib, Enums) ->
     stringify_enums(ProtoLib, Enums, []).
 stringify_enums(_ProtoLib, [], Acc) ->
     [Acc];
-stringify_enums(ProtoLib, [H|T], Acc) -> 
+stringify_enums(ProtoLib, [H | T], Acc) ->
     % E has the structure [{atom(), non_negative_integer()}, ...]
     EnumName = string:replace(atom_to_list(H), ".", "_"),
     EncStr = string:titlecase(atom_to_list(ProtoLib)),
     Prefix = "enum " ++ EnumName ++ " {\n",
     E = erlang:apply(ProtoLib, fetch_enum_def, [H]),
-    Estr = [ ?TAB ++ atom_to_list(Name) ++ " = " ++ EncStr ++ "." ++ atom_to_list(H) ++ "." ++ atom_to_list(Name) ++ ",\n" || {Name, _Value} <- E ],
+    Estr = [
+        ?TAB ++ atom_to_list(Name) ++ " = " ++ EncStr ++ "." ++
+            atom_to_list(H) ++ "." ++ atom_to_list(Name) ++ ",\n"
+     || {Name, _Value} <- E
+    ],
     Acc1 = Acc ++ Prefix ++ lists:flatten(Estr) ++ "}\n",
     stringify_enums(ProtoLib, T, Acc1).
 
@@ -90,7 +94,7 @@ load_scripts([], _Seen, Acc) ->
     lists:reverse(Acc);
 load_scripts([H | T], Seen, Acc) ->
     case gremlin_rpc:encoder(H) of
-        undefined -> 
+        undefined ->
             % do we need to do anthing for the default case?  e.g., gremlin_pb
             % TODO: If so, maybe use the get_encoder/1 fun
             load_scripts(T, Seen, Acc);
