@@ -5,12 +5,11 @@
 
 -export([
     write/0,
-    print/0,
-    fields_to_str_test/0
+    print/0
 ]).
 
 -define(TAB, [9]).
-% -define(TAB(N), [expand a list of N ascii 9 codes]) % TODO
+-define(TAB(N), lists:foldl(fun(_N, Acc) -> [9] ++ Acc end, [], lists:seq(0,N - 1))).
 -define(DEFAULT_ENCODER, gremlin_pb).
 
 write() ->
@@ -271,7 +270,14 @@ set_parameters([{F, T, O} | Rest], Encoder, St0) ->
     St1 =
         case O of
             required ->
-                St0 ++ ?TAB ++ "m.set_" ++ Var ++ "(" ++ Var ++ ")\n";
+                case T of 
+                    {msg, MsgType} ->
+                        % Message has a complex nested type
+                        St0 ++ ?TAB ++ "var n = m.new_" ++ atom_to_list(MsgType) ++ "()\n" ++
+                        marshall_submsg("n", MsgType, atom_to_list(F), Encoder, 1);
+                    _ ->
+                        St0 ++ ?TAB ++ "m.set_" ++ Var ++ "(" ++ Var ++ ")\n"
+                end;
             repeated ->
                 % if the type is simple and the object is repeated, you want to
                 % use the "add_" construct rather than "set_"
@@ -281,7 +287,7 @@ set_parameters([{F, T, O} | Rest], Encoder, St0) ->
                         St0 ++ ?TAB ++ "for item in " ++ Var ++ ":\n" ++
                             ?TAB ++ ?TAB ++ "var a = m.add_" ++ Var ++
                             "()\n" ++
-                            marshall_submsg("a", MsgType, Encoder);
+                            marshall_submsg("a", MsgType, "item", Encoder, 2);
                     _ ->
                         % Message is some well understood type
                         St0 ++ ?TAB ++ "for item in " ++ Var ++ ":" ++
@@ -326,13 +332,13 @@ fields_to_str([{N, T, O} | Tail], "") ->
                     uint32 ->
                         Name ++ ": " ++ "int";
                     Type ->
-                        Name ++ ": " ++ atom_to_list(Type)
+                        Name ++ ": " ++ maybe_submsg(Type)
                 end;
             repeated ->
                 Name ++ ": Array";
             optional ->
                 % If the parameter is optional, set the parameter to =Null and use no typing
-                Name ++ "= null"
+                Name ++ " = null"
         end,
     fields_to_str(Tail, Acc1);
 fields_to_str([{N, T, O} | Tail], Acc) ->
@@ -356,7 +362,7 @@ fields_to_str([{N, T, O} | Tail], Acc) ->
                     sint32 ->
                         Name ++ ": " ++ "int" ++ ", " ++ Acc;
                     Type ->
-                        Name ++ ": " ++ atom_to_list(Type) ++ ", " ++ Acc
+                        Name ++ ": " ++ maybe_submsg(Type) ++ ", " ++ Acc
                 end;
             repeated ->
                 Name ++ ": " ++ "Array, " ++ Acc;
@@ -366,16 +372,16 @@ fields_to_str([{N, T, O} | Tail], Acc) ->
         end,
     fields_to_str(Tail, Acc1).
 
-fields_to_str_test() ->
-    Fields = [
-        {string, string},
-        {float, float},
-        {int32, int32},
-        {int64, int64},
-        {bytes, bytes},
-        {enum, {enum, something}}
-    ],
-    fields_to_str(Fields).
+% this test is broken
+%fields_to_str_test() ->
+%    Fields = [
+%        {string, string},
+%        {float, float},
+%        {int32, int32},
+%        {int64, int64},
+%        {bytes, bytes}
+%    ],
+%    fields_to_str(Fields).
 
 untyped_fields_to_str(List) ->
     untyped_fields_to_str(List, "").
@@ -443,8 +449,8 @@ unmarshall_var([{F, T, O} | Rest], ProtoLib, Acc) ->
                         ?TAB ++ "var " ++ atom_to_list(F) ++ " = []\n" ++
                             ?TAB ++ "for item in m.get_" ++ atom_to_list(F) ++
                             "():\n" ++
-                            ?TAB ++ ?TAB ++
-                            submsg_to_gd_dict(MessageType, ProtoLib) ++
+                            ?TAB ++ ?TAB ++ "var dict = " ++
+                            submsg_to_gd_dict(MessageType, ProtoLib) ++ "\n" ++
                             ?TAB ++ ?TAB ++ atom_to_list(F) ++
                             ".append(dict)\n";
                     _ ->
@@ -453,8 +459,15 @@ unmarshall_var([{F, T, O} | Rest], ProtoLib, Acc) ->
                             atom_to_list(F) ++ "()\n"
                 end;
             _ ->
-                ?TAB ++ "var " ++ atom_to_list(F) ++ " = " ++ "m.get_" ++
-                    atom_to_list(F) ++ "()\n"
+                case T of 
+                    {msg, MessageType} ->
+                        Submsg = atom_to_list(F) ++ "_msg",
+                        ?TAB ++ "var " ++ atom_to_list(F) ++ "_msg = m.get_" ++ Submsg ++ "()\n" ++
+                        ?TAB ++ "var " ++ atom_to_list(F) ++ " = " ++ submsg_to_gd_dict(MessageType, Submsg, ProtoLib) ++ "\n";
+                    _ -> 
+                        ?TAB ++ "var " ++ atom_to_list(F) ++ " = " ++ "m.get_" ++
+                            atom_to_list(F) ++ "()\n"
+                end
         end,
     unmarshall_var(Rest, ProtoLib, Acc ++ V).
 
@@ -472,21 +485,32 @@ opcode_name_string(OpInfo) ->
     end.
 
 submsg_to_gd_dict(MessageType, Encoder) ->
+    submsg_to_gd_dict(MessageType, "item", Encoder).
+submsg_to_gd_dict(MessageType, Prefix, Encoder) ->
     Fields = field_info({Encoder, MessageType}),
-    KeyVals = [field_to_var_decl(F) || {F, _T, _O} <- Fields],
-    "var dict = { " ++ KeyVals ++ "}\n".
+    %KeyVals = [field_to_var_decl(Prefix,F) || {F, _T, _O} <- Fields],
+    KeyVals = expand_submsgs(Fields, Prefix, Encoder, []),
+    "{ " ++ KeyVals ++ "}".
 
-field_to_var_decl(F) ->
-    "'" ++ atom_to_list(F) ++ "': item.get_" ++ atom_to_list(F) ++ "(), ".
+expand_submsgs([], _Prefix, _Encoder, Acc) ->
+    Acc;
+expand_submsgs([{F, {msg, SubmsgType}, _O} | Rest], Prefix, Encoder, Acc) ->
+    Acc1 = Acc ++ "'" ++ atom_to_list(F) ++ "': " ++ submsg_to_gd_dict(SubmsgType, atom_to_list(F) ++ "_obj", Encoder) ++ ", " ,
+    expand_submsgs(Rest, Prefix, Encoder, Acc1);
+expand_submsgs([{F, _T, _O} | Rest], Prefix, Encoder, Acc) ->
+    Acc1 = Acc ++ field_to_var_decl(Prefix, F),
+    expand_submsgs(Rest, Prefix, Encoder, Acc1).
 
-marshall_submsg(Var, MessageType, Encoder) ->
+field_to_var_decl(Prefix,F) ->
+    "'" ++ atom_to_list(F) ++ "': " ++ Prefix ++ ".get_" ++ atom_to_list(F) ++ "(), ".
+
+marshall_submsg(Var, MessageType, Prefix, Encoder, IndentLevel) ->
     Fields = field_info({Encoder, MessageType}),
-    [field_to_set(Var, F) || {F, _T, _O} <- Fields].
+    [field_to_set(Var, Prefix, F, IndentLevel) || {F, _T, _O} <- Fields].
 
-field_to_set(Var, Field) ->
+field_to_set(Var, Prefix, Field, IndentLevel) ->
     F = atom_to_list(Field),
-    % Nasty - the caller should keep track of the indentation level I guess
-    ?TAB ++ ?TAB ++ Var ++ ".set_" ++ F ++ "(item['" ++ F ++ "'])\n".
+    ?TAB(IndentLevel) ++ Var ++ ".set_" ++ F ++ "(" ++ Prefix ++ "['" ++ F ++ "'])\n".
 
 % Make a best guess at a fall through for the encoder. I'm not sure I like this so it's not part of the main RPC module.
 correct_encoder(undefined, _) ->
@@ -504,3 +528,15 @@ correct_encoder(Encoder, Message) ->
         _ ->
             Encoder
     end.
+
+maybe_submsg({msg, _Type}) ->
+    % Do nothing to submessages. Provide a helper function somewhere.
+    atom_to_list('Dictionary');
+maybe_submsg(Type) ->
+    atom_to_list(Type).
+
+
+%encode_submsg(Encoder, MessageType, [Args]) ->
+%    Fields = field_in
+%    ?TAB ++ "var s = " ++ "m.new_" ++ atom_to_list(MessageType) ++ "()\n"  ++
+%    ?TAB ++ "encode_" ++ atom_to_list(MessageType) ++ "(" ++ untyped_fields_to_str( ++ ")\n"
