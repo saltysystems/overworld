@@ -9,7 +9,9 @@
 ]).
 
 -define(TAB, [9]).
--define(TAB(N), lists:foldl(fun(_N, Acc) -> [9] ++ Acc end, [], lists:seq(0,N - 1))).
+-define(TAB(N),
+    lists:foldl(fun(_N, Acc0) -> [9] ++ Acc0 end, [], lists:seq(0, N - 1))
+).
 -define(DEFAULT_ENCODER, gremlin_pb).
 
 write() ->
@@ -167,7 +169,7 @@ generate_router([OpInfo | Rest], Routes, St0) ->
     OpName = opcode_name_string(OpInfo),
     Op =
         "OpCode." ++ string:to_upper(OpName) ++ ":\n" ++
-            ?TAB ++ ?TAB ++ ?TAB ++ "server_" ++ OpName ++
+            ?TAB(3) ++ "server_" ++ OpName ++
             "(payload)",
     generate_router(Rest, Routes, [Op | St0]).
 
@@ -199,16 +201,16 @@ write_function(ServerMsg, FunStr, Encoder, Rest, St0) ->
     Op =
         "func " ++ "server_" ++ FunStr ++ "(packet):\n" ++
             ?TAB ++ "if debug:\n" ++
-            ?TAB ++ ?TAB ++ "print('[DEBUG] Processing a " ++ FunStr ++
+            ?TAB(2) ++ "print('[DEBUG] Processing a " ++ FunStr ++
             " packet')\n" ++
             ?TAB ++ "var m = " ++ EncStr ++ "." ++ atom_to_list(ServerMsg) ++
             ".new()\n" ++
             ?TAB ++ "var result_code = m.from_bytes(packet)\n" ++
             ?TAB ++ "if result_code != " ++ EncStr ++
             ".PB_ERR.NO_ERRORS:\n" ++
-            ?TAB ++ ?TAB ++ "print('[CRITICAL] Error decoding new " ++
+            ?TAB(2) ++ "print('[CRITICAL] Error decoding new " ++
             FunStr ++ " packet')\n" ++
-            ?TAB ++ ?TAB ++ "return\n",
+            ?TAB(2) ++ "return\n",
     Vars = unmarshall_var({Encoder, ServerMsg}),
     Signal =
         ?TAB ++ "emit_signal('" ++ atom_to_list(ServerMsg) ++ "'," ++
@@ -237,7 +239,7 @@ generate_marshall(
                             ?TAB ++ "send_message([], OpCode." ++
                             string:to_upper(FunStr) ++ ")\n" ++
                             ?TAB ++ "if debug:\n" ++
-                            ?TAB ++ ?TAB ++ "print('[INFO] Sent a " ++
+                            ?TAB(2) ++ "print('[INFO] Sent a " ++
                             FunStr ++
                             " packet')\n\n";
                     _ ->
@@ -254,7 +256,7 @@ generate_marshall(
                             string:to_upper(FunStr) ++
                             ")\n" ++
                             ?TAB ++ "if debug:\n" ++
-                            ?TAB ++ ?TAB ++ "print('[INFO] Sent a " ++
+                            ?TAB(2) ++ "print('[INFO] Sent a " ++
                             FunStr ++
                             " packet')\n\n"
                 end,
@@ -270,13 +272,17 @@ set_parameters([{F, T, O} | Rest], Encoder, St0) ->
     St1 =
         case O of
             required ->
-                case T of 
+                case T of
                     {msg, MsgType} ->
                         % Message has a complex nested type
-                        St0 ++ ?TAB ++ "var n = m.new_" ++ atom_to_list(MsgType) ++ "()\n" ++
-                        marshall_submsg("n", MsgType, atom_to_list(F), Encoder, 1);
+                        St0 ++ ?TAB ++ "var n = m.new_" ++
+                            atom_to_list(MsgType) ++ "()\n" ++
+                            marshall_submsg(
+                                "n", MsgType, atom_to_list(F), Encoder, 1
+                            );
                     _ ->
-                        St0 ++ ?TAB ++ "m.set_" ++ Var ++ "(" ++ Var ++ ")\n"
+                        St0 ++ ?TAB ++ "m.set_" ++ Var ++ "(" ++ Var ++
+                            ")\n"
                 end;
             repeated ->
                 % if the type is simple and the object is repeated, you want to
@@ -285,17 +291,19 @@ set_parameters([{F, T, O} | Rest], Encoder, St0) ->
                     {msg, MsgType} ->
                         % Message has complex nested types
                         St0 ++ ?TAB ++ "for item in " ++ Var ++ ":\n" ++
-                            ?TAB ++ ?TAB ++ "var a = m.add_" ++ Var ++
+                            ?TAB(2) ++ "var a = m.add_" ++ Var ++
                             "()\n" ++
-                            marshall_submsg("a", MsgType, "item", Encoder, 2);
+                            marshall_submsg(
+                                "a", MsgType, "item", Encoder, 2
+                            );
                     _ ->
                         % Message is some well understood type
                         St0 ++ ?TAB ++ "for item in " ++ Var ++ ":" ++
-                            ?TAB ++ ?TAB ++ "m.add_" ++ Var ++ "(item)\n"
+                            ?TAB(2) ++ "m.add_" ++ Var ++ "(item)\n"
                 end;
             optional ->
                 St0 ++ ?TAB ++ "if " ++ Var ++ ":\n" ++
-                    ?TAB ++ ?TAB ++ "m.set_" ++ Var ++ "(" ++ Var ++ ")\n"
+                    ?TAB(2) ++ "m.set_" ++ Var ++ "(" ++ Var ++ ")\n"
         end,
     set_parameters(Rest, Encoder, St1).
 
@@ -449,9 +457,9 @@ unmarshall_var([{F, T, O} | Rest], ProtoLib, Acc) ->
                         ?TAB ++ "var " ++ atom_to_list(F) ++ " = []\n" ++
                             ?TAB ++ "for item in m.get_" ++ atom_to_list(F) ++
                             "():\n" ++
-                            ?TAB ++ ?TAB ++ "var dict = " ++
+                            ?TAB(2) ++ "var dict = " ++
                             submsg_to_gd_dict(MessageType, ProtoLib) ++ "\n" ++
-                            ?TAB ++ ?TAB ++ atom_to_list(F) ++
+                            ?TAB(2) ++ atom_to_list(F) ++
                             ".append(dict)\n";
                     _ ->
                         ?TAB ++ "var " ++ atom_to_list(F) ++ " = " ++
@@ -459,13 +467,17 @@ unmarshall_var([{F, T, O} | Rest], ProtoLib, Acc) ->
                             atom_to_list(F) ++ "()\n"
                 end;
             _ ->
-                case T of 
+                case T of
                     {msg, MessageType} ->
                         Submsg = atom_to_list(F) ++ "_msg",
-                        ?TAB ++ "var " ++ atom_to_list(F) ++ "_msg = m.get_" ++ Submsg ++ "()\n" ++
-                        ?TAB ++ "var " ++ atom_to_list(F) ++ " = " ++ submsg_to_gd_dict(MessageType, Submsg, ProtoLib) ++ "\n";
-                    _ -> 
-                        ?TAB ++ "var " ++ atom_to_list(F) ++ " = " ++ "m.get_" ++
+                        ?TAB ++ "var " ++ atom_to_list(F) ++ "_msg = m.get_" ++
+                            Submsg ++ "()\n" ++
+                            ?TAB ++ "var " ++ atom_to_list(F) ++ " = " ++
+                            submsg_to_gd_dict(MessageType, Submsg, ProtoLib) ++
+                            "\n";
+                    _ ->
+                        ?TAB ++ "var " ++ atom_to_list(F) ++ " = " ++
+                            "m.get_" ++
                             atom_to_list(F) ++ "()\n"
                 end
         end,
@@ -495,14 +507,19 @@ submsg_to_gd_dict(MessageType, Prefix, Encoder) ->
 expand_submsgs([], _Prefix, _Encoder, Acc) ->
     Acc;
 expand_submsgs([{F, {msg, SubmsgType}, _O} | Rest], Prefix, Encoder, Acc) ->
-    Acc1 = Acc ++ "'" ++ atom_to_list(F) ++ "': " ++ submsg_to_gd_dict(SubmsgType, atom_to_list(F) ++ "_obj", Encoder) ++ ", " ,
+    Acc1 =
+        Acc ++ "'" ++ atom_to_list(F) ++ "': " ++
+            submsg_to_gd_dict(
+                SubmsgType, atom_to_list(F) ++ "_obj", Encoder
+            ) ++ ", ",
     expand_submsgs(Rest, Prefix, Encoder, Acc1);
 expand_submsgs([{F, _T, _O} | Rest], Prefix, Encoder, Acc) ->
     Acc1 = Acc ++ field_to_var_decl(Prefix, F),
     expand_submsgs(Rest, Prefix, Encoder, Acc1).
 
-field_to_var_decl(Prefix,F) ->
-    "'" ++ atom_to_list(F) ++ "': " ++ Prefix ++ ".get_" ++ atom_to_list(F) ++ "(), ".
+field_to_var_decl(Prefix, F) ->
+    "'" ++ atom_to_list(F) ++ "': " ++ Prefix ++ ".get_" ++ atom_to_list(F) ++
+        "(), ".
 
 marshall_submsg(Var, MessageType, Prefix, Encoder, IndentLevel) ->
     Fields = field_info({Encoder, MessageType}),
@@ -510,7 +527,8 @@ marshall_submsg(Var, MessageType, Prefix, Encoder, IndentLevel) ->
 
 field_to_set(Var, Prefix, Field, IndentLevel) ->
     F = atom_to_list(Field),
-    ?TAB(IndentLevel) ++ Var ++ ".set_" ++ F ++ "(" ++ Prefix ++ "['" ++ F ++ "'])\n".
+    ?TAB(IndentLevel) ++ Var ++ ".set_" ++ F ++ "(" ++ Prefix ++ "['" ++ F ++
+        "'])\n".
 
 % Make a best guess at a fall through for the encoder. I'm not sure I like this so it's not part of the main RPC module.
 correct_encoder(undefined, _) ->
@@ -534,7 +552,6 @@ maybe_submsg({msg, _Type}) ->
     atom_to_list('Dictionary');
 maybe_submsg(Type) ->
     atom_to_list(Type).
-
 
 %encode_submsg(Encoder, MessageType, [Args]) ->
 %    Fields = field_in
