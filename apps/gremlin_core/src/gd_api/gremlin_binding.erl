@@ -276,7 +276,7 @@ set_parameters([{F, T, O} | Rest], Encoder, St0) ->
                     {msg, MsgType} ->
                         % Message has a complex nested type
                         St0 ++ ?TAB ++ "var n = m.new_" ++
-                            atom_to_list(MsgType) ++ "()\n" ++
+                            atom_to_list(F) ++ "()\n" ++
                             marshall_submsg(
                                 "n", MsgType, atom_to_list(F), Encoder, 1
                             );
@@ -376,7 +376,7 @@ fields_to_str([{N, T, O} | Tail], Acc) ->
                 Name ++ ": " ++ "Array, " ++ Acc;
             optional ->
                 % If the parameter is optional, set the parameter to =Null and use no typing
-                Name ++ "= null, " ++ Acc
+                Name ++ " = null, " ++ Acc
         end,
     fields_to_str(Tail, Acc1).
 
@@ -450,10 +450,6 @@ unmarshall_var([{F, T, O} | Rest], ProtoLib, Acc) ->
                 % Now determine there's a submessage to unpack, or just repeated items
                 case T of
                     {msg, MessageType} ->
-                        % The message is made of some complex submsg. Out of
-                        % laziness we don't recurse the type detection and just
-                        % assume messages won't be more complex without the
-                        % author having to rewrite the code :)
                         ?TAB ++ "var " ++ atom_to_list(F) ++ " = []\n" ++
                             ?TAB ++ "for item in m.get_" ++ atom_to_list(F) ++
                             "():\n" ++
@@ -471,7 +467,7 @@ unmarshall_var([{F, T, O} | Rest], ProtoLib, Acc) ->
                     {msg, MessageType} ->
                         Submsg = atom_to_list(F) ++ "_msg",
                         ?TAB ++ "var " ++ atom_to_list(F) ++ "_msg = m.get_" ++
-                            Submsg ++ "()\n" ++
+                            atom_to_list(F) ++ "()\n" ++
                             ?TAB ++ "var " ++ atom_to_list(F) ++ " = " ++
                             submsg_to_gd_dict(MessageType, Submsg, ProtoLib) ++
                             "\n";
@@ -510,7 +506,7 @@ expand_submsgs([{F, {msg, SubmsgType}, _O} | Rest], Prefix, Encoder, Acc) ->
     Acc1 =
         Acc ++ "'" ++ atom_to_list(F) ++ "': " ++
             submsg_to_gd_dict(
-                SubmsgType, atom_to_list(F) ++ "_obj", Encoder
+                SubmsgType, Prefix ++ ".get_" ++ atom_to_list(F) ++ "()", Encoder
             ) ++ ", ",
     expand_submsgs(Rest, Prefix, Encoder, Acc1);
 expand_submsgs([{F, _T, _O} | Rest], Prefix, Encoder, Acc) ->
