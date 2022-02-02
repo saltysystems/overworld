@@ -5,6 +5,7 @@
 
 -export([
     write/0,
+    pb_to_godot_type/1,
     print/0
 ]).
 
@@ -16,7 +17,7 @@
 
 write() ->
     file:write_file(
-        "apps/gremlin_core/static/libgremlin.gd", gremlin_binding:print()
+        "apps/gremlin_core/priv/static/libgremlin.gd", gremlin_binding:print()
     ).
 
 print() ->
@@ -24,11 +25,13 @@ print() ->
         gremlin_protocol:op_info(X)
      || X <- gremlin_protocol:registered_ops()
     ],
+    Encoders = get_encoders(Ops),
     Preloads = load_scripts(Ops),
     Enums = generate_enums(Ops),
     Signals = generate_signals(Ops, []),
     Opcodes = generate_opcodes(Ops, []),
     Router = generate_router(Ops, []),
+    Submsgs = [ generate_submsgs(E) || E <- Encoders ],
     Unmarshall = generate_unmarshall(Ops, []),
     Marshall = generate_marshall(Ops, []),
     Map = #{
@@ -37,6 +40,7 @@ print() ->
         "signals" => Signals,
         "opcodes" => Opcodes,
         "router" => Router,
+        "submsgs" => Submsgs,
         "unmarshall" => Unmarshall,
         "marshall" => Marshall
     },
@@ -44,6 +48,139 @@ print() ->
         "apps/gremlin_core/templates/libgremlin.mustache"
     ),
     bbmustache:compile(T, Map).
+
+
+pb_to_godot_type(Type) ->
+    case Type of
+        double -> real;
+        float -> real;
+        int32 -> int;
+        int64 -> int;
+        uint32 -> int;
+        uint64 -> int;
+        sint32 -> int;
+        sint64 -> int;
+        fixed32 -> int;
+        fixed64 -> int;
+        sfixed32 -> int;
+        sfixed64 -> int;
+        bool -> bool;
+        string -> 'String';
+        bytes -> 'PoolByteArray';
+        _Other -> void % Do the best you can. 
+    end.
+
+
+get_encoders(Ops) ->
+    get_encoders(Ops, []).
+get_encoders([], Acc) ->
+    Acc;
+get_encoders([H|T], Acc) -> 
+    E = 
+        case maps:get(encoder, H, undefined) of
+            undefined -> gremlin_pb;
+            Encoder -> Encoder
+        end,
+    Acc1 = 
+        case lists:member(E, Acc) of
+            false -> 
+                [ E | Acc ];
+            true ->
+                Acc
+        end,
+    get_encoders(T, Acc1).
+
+filter_for_pure_msgs(Encoder) ->
+    MsgList = erlang:apply(Encoder, get_msg_defs, []),
+    filter_for_pure_msgs(MsgList, []).
+filter_for_pure_msgs([], Acc) ->
+    Acc;
+filter_for_pure_msgs([{{enum, _}, _} | Rest], Acc) ->
+    % Skip enums (for now?)
+    filter_for_pure_msgs(Rest, Acc);
+filter_for_pure_msgs([{{msg,Name}, MapList} | Rest], Acc) ->
+    Predicate = fun(Map) -> 
+                        T = maps:get(type, Map),
+                        case T of
+                            {msg, _} -> false;
+                            _ -> true
+                        end
+                end,
+    FilteredList = lists:filter(Predicate, MapList),
+    % If the lists match, then the message was impure and we should skip it.
+    Acc1 = case FilteredList of
+               MapList -> [ Name | Acc ];
+               _ -> Acc
+           end,
+    filter_for_pure_msgs(Rest, Acc1).
+
+generate_submsgs(Encoder) -> 
+    % Filter for pure messages in this encoder
+    Pures = filter_for_pure_msgs(Encoder),
+    St0 = generate_impure_submsgs(Encoder),
+    % For every pure, create a function snippet
+    St1 = generate_pure_submsgs(Encoder, Pures, []),
+    St0 ++ St1.
+
+generate_pure_submsgs(_Encoder, [], Acc) ->
+    Acc;
+generate_pure_submsgs(Encoder, [vector2 | Rest], Acc) ->
+    % A bit of a cheat for vector2s and other special Godot types that are
+    % not understood by Erlang
+    Signature = "func unpack_vector2(object)\n",
+    Body = ?TAB ++ "var vec = Vector2(object.get_x(), object.get_y())\n",
+    Return = ?TAB ++ "return vec\n",
+    generate_pure_submsgs(Encoder, Rest, [ Signature ++ Body ++ Return | Acc ]);
+generate_pure_submsgs(Encoder, [MessageName | Rest], Acc) ->
+    Defn = erlang:apply(Encoder, fetch_msg_def, [MessageName]),
+    Signature= "func unpack_" ++ atom_to_list(MessageName) ++ "(object):\n",
+    Body = generate_submsg_body(Defn, []),
+    Dict = generate_submsg_dict(Defn),
+    generate_pure_submsgs(Encoder, Rest, Signature ++ Body ++ Dict ++ Acc).
+
+generate_submsg_body([], Acc) ->
+    Acc;
+generate_submsg_body([Defn = #{type := {msg, Submsg}} |T], Acc) ->
+    % Impure submsg does not have well known types and we need to call one of
+    % the lower-level functions to deal with it
+    Name = atom_to_list(maps:get(name, Defn)),
+    Type = atom_to_list(Submsg),
+    Body = ?TAB ++ "var " ++ Name ++ " = unpack_" ++ Type ++ "(object.get_" ++ Name ++ "())\n",
+    generate_submsg_body(T, Body ++ Acc);
+generate_submsg_body([H|T], Acc) ->
+    io:format("message is ~p~n", [H]),
+    % All members of a pure submsg are of well-known types
+    Name = atom_to_list(maps:get(name, H)),
+    % Godobuf should automagically generate arrays as appropriate for
+    % well-knowns, so no need to special case these.
+    Body = ?TAB ++ "var " ++ Name ++ " = object.get_" ++ Name ++ "()\n",
+    generate_submsg_body(T, Body ++ Acc).
+
+generate_submsg_dict(Definitions) ->
+    Pre = ?TAB ++ "var dict = {",
+    generate_submsg_dict(Definitions, Pre).
+generate_submsg_dict([], Acc) ->
+    Acc ++ "}\n" ++
+    ?TAB ++ "return dict\n";
+generate_submsg_dict([H|T], Acc) -> 
+    Name = atom_to_list(maps:get(name, H)),
+    Pair = "'" ++ Name ++ "': " ++ Name ++ ", ",
+    generate_submsg_dict(T, Acc ++ Pair).
+    
+generate_impure_submsgs(Encoder) -> 
+    Pures = filter_for_pure_msgs(Encoder),
+    AllMessages = erlang:apply(Encoder, get_msg_names, []),
+    Impures = AllMessages -- Pures,
+    generate_impure_submsgs(Encoder, Impures, []).
+generate_impure_submsgs(_Encoder, [], Acc) ->
+    Acc;
+generate_impure_submsgs(Encoder, [H|T],Acc) ->
+    Defn = erlang:apply(Encoder, fetch_msg_def, [H]),
+    Signature= "func unpack_" ++ atom_to_list(H) ++ "(object):\n",
+    io:format("Function sig is: ~p~n", [Signature]),
+    Body = generate_submsg_body(Defn, []),
+    Dict = generate_submsg_dict(Defn),
+    generate_impure_submsgs(Encoder, T, Signature ++ Body ++ Dict ++ Acc).
 
 generate_enums(Ops) ->
     generate_enums(Ops, [], []).
@@ -178,45 +315,79 @@ generate_unmarshall([], St0) ->
 generate_unmarshall([OpInfo | Rest], St0) ->
     ServerMsg = gremlin_rpc:s2c_call(OpInfo),
     Encoder = correct_encoder(gremlin_rpc:encoder(OpInfo), ServerMsg),
-    FunStr = opcode_name_string(OpInfo),
-    write_function(ServerMsg, FunStr, Encoder, Rest, St0).
+    %FunStr = opcode_name_string(OpInfo),
+    OpFun = rpc_name(OpInfo),
+    St1 = write_function(ServerMsg, OpFun, Encoder, St0),
+    generate_unmarshall(Rest, St1).
 
-write_function(undefined, undefined, _Encoder, Rest, St0) ->
-    % No message to unpack, no sensible name to decode. Assume this is a
-    % message only meant to be *sent* to the server
-    generate_unmarshall(Rest, St0);
-write_function(undefined, FunStr, _Encoder, Rest, St0) ->
-    % In this case, there's a named function but no servermsg. We can safely
-    % assume that there's simply no arguments for this fun.
-    Op =
-        "func " ++ "server_" ++ FunStr ++ "(_packet):\n" ++
-            ?TAB ++ "print('[WARN] Received a " ++
-            FunStr ++ " packet')\n",
-    % We don't emit a signal for these because I'm not quite sure what
-    % to do with messageless packets from the server.
-    %++ ?TAB ++ "emit_signal('" ++ FunStr ++ "')\n\n",
-    generate_unmarshall(Rest, [Op | St0]);
-write_function(ServerMsg, FunStr, Encoder, Rest, St0) ->
+write_function(undefined, _Undefined, _Encoder, St0) ->
+    % There's no sensible message to unpack or handler to write. Just pass the
+    % current state forward.
+    St0;
+write_function(ProtoMsg, ClientCall, Encoder, St0) ->
     EncStr = string:titlecase(atom_to_list(Encoder)),
+    ClientCallStr = atom_to_list(ClientCall),
+    ProtoMsgStr = atom_to_list(ProtoMsg),
     Op =
-        "func " ++ "server_" ++ FunStr ++ "(packet):\n" ++
+        "func " ++ "server_" ++ ClientCallStr ++ "(packet):\n" ++
             ?TAB ++ "if debug:\n" ++
-            ?TAB(2) ++ "print('[DEBUG] Processing a " ++ FunStr ++
+            ?TAB(2) ++ "print('[DEBUG] Processing a " ++ ClientCallStr ++
             " packet')\n" ++
-            ?TAB ++ "var m = " ++ EncStr ++ "." ++ atom_to_list(ServerMsg) ++
+            ?TAB ++ "var m = " ++ EncStr ++ "." ++ ProtoMsgStr ++
             ".new()\n" ++
             ?TAB ++ "var result_code = m.from_bytes(packet)\n" ++
             ?TAB ++ "if result_code != " ++ EncStr ++
             ".PB_ERR.NO_ERRORS:\n" ++
             ?TAB(2) ++ "print('[CRITICAL] Error decoding new " ++
-            FunStr ++ " packet')\n" ++
+            ClientCallStr ++ " packet')\n" ++
             ?TAB(2) ++ "return\n",
-    Vars = unmarshall_var({Encoder, ServerMsg}),
+    Vars = unmarshall_var({Encoder, ProtoMsg}),
     Signal =
-        ?TAB ++ "emit_signal('" ++ atom_to_list(ServerMsg) ++ "'," ++
-            untyped_fields_to_str(field_info({Encoder, ServerMsg})) ++
+        ?TAB ++ "emit_signal('" ++ ProtoMsgStr ++ "'," ++
+            dict_fields_to_str(field_info({Encoder, ProtoMsg})) ++
             "\)\n\n",
-    generate_unmarshall(Rest, [Op ++ Vars ++ Signal | St0]).
+    [ Op ++ Vars ++ Signal | St0 ].
+
+
+
+
+%write_function(undefined, undefined, _Encoder, Rest, St0) ->
+%    % No message to unpack, no sensible name to decode. Assume this is a
+%    % message only meant to be *sent* to the server
+%    generate_unmarshall(Rest, St0);
+%write_function(undefined, FunStr, _Encoder, Rest, St0) ->
+%    % In this case, there's a named function but no servermsg. We can safely
+%    % assume that there's simply no arguments for this fun.
+%    Op =
+%        "func " ++ "server_" ++ FunStr ++ "(_packet):\n" ++
+%            ?TAB ++ "print('[WARN] Received a " ++
+%            FunStr ++ " packet')\n",
+%    generate_unmarshall(Rest, [Op | St0]);
+%write_function(ServerMsg, FunStr, Encoder, Rest, St0) ->
+%    EncStr = string:titlecase(atom_to_list(Encoder)),
+%    Op =
+%        "func " ++ "server_" ++ FunStr ++ "(packet):\n" ++
+%            ?TAB ++ "if debug:\n" ++
+%            ?TAB(2) ++ "print('[DEBUG] Processing a " ++ FunStr ++
+%            " packet')\n" ++
+%            ?TAB ++ "var m = " ++ EncStr ++ "." ++ atom_to_list(ServerMsg) ++
+%            ".new()\n" ++
+%            ?TAB ++ "var result_code = m.from_bytes(packet)\n" ++
+%            ?TAB ++ "if result_code != " ++ EncStr ++
+%            ".PB_ERR.NO_ERRORS:\n" ++
+%            ?TAB(2) ++ "print('[CRITICAL] Error decoding new " ++
+%            FunStr ++ " packet')\n" ++
+%            ?TAB(2) ++ "return\n",
+%    Vars = unmarshall_var({Encoder, ServerMsg}),
+%    %Signal =
+%    %    ?TAB ++ "emit_signal('" ++ atom_to_list(ServerMsg) ++ "'," ++
+%    %        untyped_fields_to_str(field_info({Encoder, ServerMsg})) ++
+%    %        "\)\n\n",
+%    Signal =
+%        ?TAB ++ "emit_signal('" ++ atom_to_list(ServerMsg) ++ "'," ++
+%            dict_fields_to_str(field_info({Encoder, ServerMsg})) ++
+%            "\)\n\n",
+%    generate_unmarshall(Rest, [Op ++ Vars ++ Signal | St0]).
 
 generate_marshall([], St0) ->
     lists:reverse(St0);
@@ -380,16 +551,17 @@ fields_to_str([{N, T, O} | Tail], Acc) ->
         end,
     fields_to_str(Tail, Acc1).
 
-% this test is broken
-%fields_to_str_test() ->
-%    Fields = [
-%        {string, string},
-%        {float, float},
-%        {int32, int32},
-%        {int64, int64},
-%        {bytes, bytes}
-%    ],
-%    fields_to_str(Fields).
+dict_fields_to_str(List) ->
+    dict_fields_to_str(List, "").
+dict_fields_to_str([], Acc) ->
+    Acc;
+dict_fields_to_str([{N, _T, _O} | Tail], "") ->
+    Acc1 = "d['" ++ atom_to_list(N) ++ "']",
+    dict_fields_to_str(Tail, Acc1);
+dict_fields_to_str([{N, _T, _O} | Tail], Acc) ->
+    Name = atom_to_list(N),
+    Acc1 = Acc ++ "," ++ "d['" ++ Name ++ "']",
+    dict_fields_to_str(Tail, Acc1).
 
 untyped_fields_to_str(List) ->
     untyped_fields_to_str(List, "").
@@ -436,48 +608,12 @@ field_info([H | T], Acc) ->
     field_info(T, Acc1).
 
 unmarshall_var({ProtoLib, ProtoMsg}) ->
-    unmarshall_var(field_info({ProtoLib, ProtoMsg}), ProtoLib, []).
-unmarshall_var([], _ProtoLib, Acc) ->
+    unmarshall_var(field_info({ProtoLib, ProtoMsg}), ProtoMsg, ProtoLib, []).
+unmarshall_var([], _ProtoMsg, _ProtoLib, Acc) ->
     Acc;
-unmarshall_var([{F, T, O} | Rest], ProtoLib, Acc) ->
-    V =
-        % First check to see if the message is a repeated one or not
-        case O of
-            repeated ->
-                % We need to iterate through every message. If the repeated
-                % object is a well understood type, Godobuf will automatically
-                % create an array with the repeated type.
-                % Now determine there's a submessage to unpack, or just repeated items
-                case T of
-                    {msg, MessageType} ->
-                        ?TAB ++ "var " ++ atom_to_list(F) ++ " = []\n" ++
-                            ?TAB ++ "for item in m.get_" ++ atom_to_list(F) ++
-                            "():\n" ++
-                            ?TAB(2) ++ "var dict = " ++
-                            submsg_to_gd_dict(MessageType, ProtoLib) ++ "\n" ++
-                            ?TAB(2) ++ atom_to_list(F) ++
-                            ".append(dict)\n";
-                    _ ->
-                        ?TAB ++ "var " ++ atom_to_list(F) ++ " = " ++
-                            "m.get_" ++
-                            atom_to_list(F) ++ "()\n"
-                end;
-            _ ->
-                case T of
-                    {msg, MessageType} ->
-                        Submsg = atom_to_list(F) ++ "_msg",
-                        ?TAB ++ "var " ++ atom_to_list(F) ++ "_msg = m.get_" ++
-                            atom_to_list(F) ++ "()\n" ++
-                            ?TAB ++ "var " ++ atom_to_list(F) ++ " = " ++
-                            submsg_to_gd_dict(MessageType, Submsg, ProtoLib) ++
-                            "\n";
-                    _ ->
-                        ?TAB ++ "var " ++ atom_to_list(F) ++ " = " ++
-                            "m.get_" ++
-                            atom_to_list(F) ++ "()\n"
-                end
-        end,
-    unmarshall_var(Rest, ProtoLib, Acc ++ V).
+unmarshall_var([{_F, _T, _O} | _Rest], ProtoMsg, ProtoLib, Acc) ->
+    V = ?TAB ++ "var d = get_" ++ atom_to_list(ProtoMsg) ++ "(m)\n",
+    unmarshall_var([], ProtoMsg, ProtoLib, Acc ++ V).
 
 opcode_name_string(OpInfo) ->
     OpCode = gremlin_rpc:opcode(OpInfo),
@@ -492,30 +628,50 @@ opcode_name_string(OpInfo) ->
             end
     end.
 
-submsg_to_gd_dict(MessageType, Encoder) ->
-    submsg_to_gd_dict(MessageType, "item", Encoder).
-submsg_to_gd_dict(MessageType, Prefix, Encoder) ->
-    Fields = field_info({Encoder, MessageType}),
-    %KeyVals = [field_to_var_decl(Prefix,F) || {F, _T, _O} <- Fields],
-    KeyVals = expand_submsgs(Fields, Prefix, Encoder, []),
-    "{ " ++ KeyVals ++ "}".
+rpc_name(OpInfo) ->
+    OpCode = gremlin_rpc:opcode(OpInfo),
+    case gremlin_rpc:c2s_handler(OpInfo) of
+        {_M, F, _A} ->
+            F;
+        undefined ->
+            % Try the next best guess
+            case gremlin_rpc:s2c_call(OpInfo) of
+                undefined -> "undefined_" ++ integer_to_list(OpCode);
+                Call -> Call
+            end
+    end.
 
-expand_submsgs([], _Prefix, _Encoder, Acc) ->
-    Acc;
-expand_submsgs([{F, {msg, SubmsgType}, _O} | Rest], Prefix, Encoder, Acc) ->
-    Acc1 =
-        Acc ++ "'" ++ atom_to_list(F) ++ "': " ++
-            submsg_to_gd_dict(
-                SubmsgType, Prefix ++ ".get_" ++ atom_to_list(F) ++ "()", Encoder
-            ) ++ ", ",
-    expand_submsgs(Rest, Prefix, Encoder, Acc1);
-expand_submsgs([{F, _T, _O} | Rest], Prefix, Encoder, Acc) ->
-    Acc1 = Acc ++ field_to_var_decl(Prefix, F),
-    expand_submsgs(Rest, Prefix, Encoder, Acc1).
+%submsg_to_gd_dict(MessageType, Encoder) ->
+%    submsg_to_gd_dict(MessageType, "item", Encoder).
+%submsg_to_gd_dict(MessageType, Prefix, Encoder) ->
+%    Fields = field_info({Encoder, MessageType}),
+%    %KeyVals = [field_to_var_decl(Prefix,F) || {F, _T, _O} <- Fields],
+%    KeyVals = expand_submsgs(Fields, Prefix, Encoder, []),
+%    "{ " ++ KeyVals ++ "}".
 
-field_to_var_decl(Prefix, F) ->
-    "'" ++ atom_to_list(F) ++ "': " ++ Prefix ++ ".get_" ++ atom_to_list(F) ++
-        "(), ".
+%expand_submsgs([], _Prefix, _Encoder, Acc) ->
+%    Acc;
+%expand_submsgs([{F, {msg, vector2}, _O} | Rest], Prefix, Encoder, Acc) ->
+%    Acc1 = 
+%        Acc ++ "'" ++ atom_to_list(F) ++ "': " ++ "to_vector2_array(" ++
+%        Prefix ++ ".get_" ++ atom_to_list(F) ++ "()" ++ "), ",
+%    expand_submsgs(Rest, Prefix, Encoder, Acc1);
+%expand_submsgs([{F, {msg, SubmsgType}, _O} | Rest], Prefix, Encoder, Acc) ->
+%    Acc1 = 
+%        Acc ++ "'" ++ atom_to_list(F) ++ "': " ++
+%            submsg_to_gd_dict(
+%                SubmsgType,
+%                Prefix ++ ".get_" ++ atom_to_list(F) ++ "()",
+%                Encoder
+%            ) ++ ", ",
+%    expand_submsgs(Rest, Prefix, Encoder, Acc1);
+%expand_submsgs([{F, _T, _O} | Rest], Prefix, Encoder, Acc) ->
+%    Acc1 = Acc ++ field_to_var_decl(Prefix, F),
+%    expand_submsgs(Rest, Prefix, Encoder, Acc1).
+%
+%field_to_var_decl(Prefix, F) ->
+%    "'" ++ atom_to_list(F) ++ "': " ++ Prefix ++ ".get_" ++ atom_to_list(F) ++
+%        "(), ".
 
 marshall_submsg(Var, MessageType, Prefix, Encoder, IndentLevel) ->
     Fields = field_info({Encoder, MessageType}),
