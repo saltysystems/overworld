@@ -71,6 +71,10 @@ func route(packet):
 #  Payload unmarshalling (server packets)
 ###########################################################################
 
+{{#submsgs}}
+{{.}}
+{{/submsgs}}
+
 {{#unmarshall}}
 {{.}}
 {{/unmarshall}}

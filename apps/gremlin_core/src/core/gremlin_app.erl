@@ -15,6 +15,7 @@ start(_StartType, _StartArgs) ->
     Dispatch = cowboy_router:compile([
         {'_', [
             {"/ws", gremlin_websocket, #session{}},
+            {"/client/download", gremlin_dl_handler, []},
             {"/libgremlin.gd", cowboy_static,
                 {file, "apps/gremlin_core/static/libgremlin.gd"}}
         ]}
