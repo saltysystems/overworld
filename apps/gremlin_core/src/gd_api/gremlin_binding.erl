@@ -127,41 +127,61 @@ generate_pure_submsgs(_Encoder, [], Acc) ->
 generate_pure_submsgs(Encoder, [vector2 | Rest], Acc) ->
     % A bit of a cheat for vector2s and other special Godot types that are
     % not understood by Erlang
-    Signature = "func unpack_vector2(object)\n",
-    Body = ?TAB ++ "var vec = Vector2(object.get_x(), object.get_y())\n",
-    Return = ?TAB ++ "return vec\n",
-    generate_pure_submsgs(Encoder, Rest, [ Signature ++ Body ++ Return | Acc ]);
+    Signature = "func unpack_vector2(object):\n",
+    Body = 
+        ?TAB ++ "if typeof(object) == TYPE_ARRAY and object != []:\n" ++
+        ?TAB(2) ++ "var array = []\n" ++ 
+        ?TAB(2) ++ "for obj in object:\n" ++
+        ?TAB(3) ++ "var vec = Vector2(object.get_x(), object.get_y())\n" ++
+        ?TAB(3) ++ "array.append(vec)\n" ++
+        ?TAB(2) ++ "return array\n" ++
+        ?TAB ++ "elif typeof(object) == TYPE_ARRAY and object == []:\n" ++
+        ?TAB(2) ++ "return []\n" ++
+        ?TAB ++ "else:\n" ++
+        ?TAB(2) ++ "var vec = Vector2(object.get_x(), object.get_y())\n" ++
+        ?TAB(2) ++ "return vec\n",
+    generate_pure_submsgs(Encoder, Rest, [ Signature ++ Body | Acc ]);
 generate_pure_submsgs(Encoder, [MessageName | Rest], Acc) ->
     Defn = erlang:apply(Encoder, fetch_msg_def, [MessageName]),
     Signature= "func unpack_" ++ atom_to_list(MessageName) ++ "(object):\n",
-    Body = generate_submsg_body(Defn, []),
-    Dict = generate_submsg_dict(Defn),
-    generate_pure_submsgs(Encoder, Rest, Signature ++ Body ++ Dict ++ Acc).
+    Body = 
+        ?TAB ++ "if typeof(object) == TYPE_ARRAY and object != []:\n" ++
+        ?TAB(2) ++ "var array = []\n" ++
+        ?TAB(2) ++ "for obj in object:\n" ++ 
+        generate_submsg_body(Defn, 3, []) ++ 
+        ?TAB(3) ++ generate_submsg_dict(Defn) ++
+        ?TAB(3) ++ "array.append(dict)\n" ++
+        ?TAB(2) ++ "return array\n" ++
+        ?TAB ++ "elif typeof(object) == TYPE_ARRAY and object == []:\n" ++
+        ?TAB(2) ++ "return []\n" ++
+        ?TAB ++ "else:\n" ++ 
+        generate_submsg_body(Defn, 2, []) ++ 
+        ?TAB(2) ++ generate_submsg_dict(Defn) ++ 
+        ?TAB(2) ++ "return dict\n",
+    generate_pure_submsgs(Encoder, Rest, Signature ++ Body ++ Acc).
 
-generate_submsg_body([], Acc) ->
+generate_submsg_body([], _TabLevel, Acc) ->
     Acc;
-generate_submsg_body([Defn = #{type := {msg, Submsg}} |T], Acc) ->
+generate_submsg_body([Defn = #{type := {msg, Submsg}} |T], TabLevel, Acc) ->
     % Impure submsg does not have well known types and we need to call one of
     % the lower-level functions to deal with it
     Name = atom_to_list(maps:get(name, Defn)),
     Type = atom_to_list(Submsg),
-    Body = ?TAB ++ "var " ++ Name ++ " = unpack_" ++ Type ++ "(object.get_" ++ Name ++ "())\n",
-    generate_submsg_body(T, Body ++ Acc);
-generate_submsg_body([H|T], Acc) ->
-    io:format("message is ~p~n", [H]),
+    Body = ?TAB(TabLevel) ++ "var " ++ Name ++ " = unpack_" ++ Type ++ "(object.get_" ++ Name ++ "())\n",
+    generate_submsg_body(T, TabLevel, Body ++ Acc);
+generate_submsg_body([H|T], TabLevel, Acc) ->
     % All members of a pure submsg are of well-known types
     Name = atom_to_list(maps:get(name, H)),
     % Godobuf should automagically generate arrays as appropriate for
     % well-knowns, so no need to special case these.
-    Body = ?TAB ++ "var " ++ Name ++ " = object.get_" ++ Name ++ "()\n",
-    generate_submsg_body(T, Body ++ Acc).
+    Body = ?TAB(TabLevel) ++ "var " ++ Name ++ " = object.get_" ++ Name ++ "()\n",
+    generate_submsg_body(T, TabLevel, Body ++ Acc).
 
 generate_submsg_dict(Definitions) ->
-    Pre = ?TAB ++ "var dict = {",
+    Pre = "var dict = {",
     generate_submsg_dict(Definitions, Pre).
 generate_submsg_dict([], Acc) ->
-    Acc ++ "}\n" ++
-    ?TAB ++ "return dict\n";
+    Acc ++ "}\n";
 generate_submsg_dict([H|T], Acc) -> 
     Name = atom_to_list(maps:get(name, H)),
     Pair = "'" ++ Name ++ "': " ++ Name ++ ", ",
@@ -177,9 +197,8 @@ generate_impure_submsgs(_Encoder, [], Acc) ->
 generate_impure_submsgs(Encoder, [H|T],Acc) ->
     Defn = erlang:apply(Encoder, fetch_msg_def, [H]),
     Signature= "func unpack_" ++ atom_to_list(H) ++ "(object):\n",
-    io:format("Function sig is: ~p~n", [Signature]),
-    Body = generate_submsg_body(Defn, []),
-    Dict = generate_submsg_dict(Defn),
+    Body = generate_submsg_body(Defn, 1, []),
+    Dict = ?TAB ++ generate_submsg_dict(Defn),
     generate_impure_submsgs(Encoder, T, Signature ++ Body ++ Dict ++ Acc).
 
 generate_enums(Ops) ->
@@ -320,10 +339,16 @@ generate_unmarshall([OpInfo | Rest], St0) ->
     St1 = write_function(ServerMsg, OpFun, Encoder, St0),
     generate_unmarshall(Rest, St1).
 
-write_function(undefined, _Undefined, _Encoder, St0) ->
-    % There's no sensible message to unpack or handler to write. Just pass the
-    % current state forward.
-    St0;
+write_function(undefined, ClientCall, _Encoder, St0) ->
+    % There's no sensible message to unpack or handler to write. 
+    % We still need to make a handler that can understand the opcode because
+    % the message router expects one.
+    ClientCallStr = atom_to_list(ClientCall),
+    Op =  "func " ++ "server_" ++ ClientCallStr ++ "(_packet):\n" ++
+           ?TAB ++ "print('[WARN] Received a " ++
+           ClientCallStr ++ " packet')\n" ++ 
+           ?TAB ++ "return\n",
+    [ Op | St0 ];
 write_function(ProtoMsg, ClientCall, Encoder, St0) ->
     EncStr = string:titlecase(atom_to_list(Encoder)),
     ClientCallStr = atom_to_list(ClientCall),
@@ -612,7 +637,7 @@ unmarshall_var({ProtoLib, ProtoMsg}) ->
 unmarshall_var([], _ProtoMsg, _ProtoLib, Acc) ->
     Acc;
 unmarshall_var([{_F, _T, _O} | _Rest], ProtoMsg, ProtoLib, Acc) ->
-    V = ?TAB ++ "var d = get_" ++ atom_to_list(ProtoMsg) ++ "(m)\n",
+    V = ?TAB ++ "var d = unpack_" ++ atom_to_list(ProtoMsg) ++ "(m)\n",
     unmarshall_var([], ProtoMsg, ProtoLib, Acc ++ V).
 
 opcode_name_string(OpInfo) ->
