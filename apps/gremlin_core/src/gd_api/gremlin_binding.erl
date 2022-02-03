@@ -197,9 +197,21 @@ generate_impure_submsgs(_Encoder, [], Acc) ->
 generate_impure_submsgs(Encoder, [H|T],Acc) ->
     Defn = erlang:apply(Encoder, fetch_msg_def, [H]),
     Signature= "func unpack_" ++ atom_to_list(H) ++ "(object):\n",
-    Body = generate_submsg_body(Defn, 1, []),
-    Dict = ?TAB ++ generate_submsg_dict(Defn),
-    generate_impure_submsgs(Encoder, T, Signature ++ Body ++ Dict ++ Acc).
+    Body = 
+        ?TAB ++ "if typeof(object) == TYPE_ARRAY and object != []:\n" ++
+        ?TAB(2) ++ "var array = []\n" ++
+        ?TAB(2) ++ "for obj in object:\n" ++ 
+        generate_submsg_body(Defn, 3, []) ++ 
+        ?TAB(3) ++ generate_submsg_dict(Defn) ++
+        ?TAB(3) ++ "array.append(dict)\n" ++
+        ?TAB(2) ++ "return array\n" ++
+        ?TAB ++ "elif typeof(object) == TYPE_ARRAY and object == []:\n" ++
+        ?TAB(2) ++ "return []\n" ++
+        ?TAB ++ "else:\n" ++ 
+        generate_submsg_body(Defn, 2, []) ++ 
+        ?TAB(2) ++ generate_submsg_dict(Defn) ++ 
+        ?TAB(2) ++ "return dict\n",
+    generate_impure_submsgs(Encoder, T, Signature ++ Body ++ Acc).
 
 generate_enums(Ops) ->
     generate_enums(Ops, [], []).
