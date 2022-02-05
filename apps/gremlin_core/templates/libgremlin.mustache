@@ -83,6 +83,10 @@ func route(packet):
 #  Payload marshalling (client packets)
 ###########################################################################
 
+{{#marshall_submsgs}}
+{{.}}
+{{/marshall_submsgs}}
+
 {{#marshall}}
 {{.}}
 {{/marshall}}
