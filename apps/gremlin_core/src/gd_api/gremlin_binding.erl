@@ -1,7 +1,8 @@
 -module(gremlin_binding).
 
-% this module is heavily iterated upon and is in its 2nd major version.
-% it'll need a third major version to be really solid :)
+% This module generates GDScript code to handle game-specific signaling.  The
+% module in its 3rd major overhaul and shows no signs of being done.  I have no
+% doubt there will be even more to do with Godot 4.0
 
 -export([
     write/0,
