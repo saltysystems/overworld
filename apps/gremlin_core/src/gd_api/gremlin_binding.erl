@@ -33,6 +33,7 @@ print() ->
     Router = generate_router(Ops, []),
     Submsgs = [ generate_submsgs(E) || E <- Encoders ],
     Unmarshall = generate_unmarshall(Ops, []),
+    MarshallSubmsgs = [ generate_marshall_submsgs(E) || E <- Encoders ],
     Marshall = generate_marshall(Ops, []),
     Map = #{
         "preloads" => Preloads,
@@ -42,6 +43,7 @@ print() ->
         "router" => Router,
         "submsgs" => Submsgs,
         "unmarshall" => Unmarshall,
+        "marshall_submsgs" => MarshallSubmsgs,
         "marshall" => Marshall
     },
     T = bbmustache:parse_file(
@@ -126,13 +128,13 @@ generate_pure_submsgs(_Encoder, [], Acc) ->
     Acc;
 generate_pure_submsgs(Encoder, [vector2 | Rest], Acc) ->
     % A bit of a cheat for vector2s and other special Godot types that are
-    % not understood by Erlang
+    % not understood by Protobuf
     Signature = "func unpack_vector2(object):\n",
     Body = 
         ?TAB ++ "if typeof(object) == TYPE_ARRAY and object != []:\n" ++
         ?TAB(2) ++ "var array = []\n" ++ 
         ?TAB(2) ++ "for obj in object:\n" ++
-        ?TAB(3) ++ "var vec = Vector2(object.get_x(), object.get_y())\n" ++
+        ?TAB(3) ++ "var vec = Vector2(obj.get_x(), obj.get_y())\n" ++
         ?TAB(3) ++ "array.append(vec)\n" ++
         ?TAB(2) ++ "return array\n" ++
         ?TAB ++ "elif typeof(object) == TYPE_ARRAY and object == []:\n" ++
@@ -148,34 +150,34 @@ generate_pure_submsgs(Encoder, [MessageName | Rest], Acc) ->
         ?TAB ++ "if typeof(object) == TYPE_ARRAY and object != []:\n" ++
         ?TAB(2) ++ "var array = []\n" ++
         ?TAB(2) ++ "for obj in object:\n" ++ 
-        generate_submsg_body(Defn, 3, []) ++ 
+        generate_submsg_body(Defn, "obj", 3, []) ++ 
         ?TAB(3) ++ generate_submsg_dict(Defn) ++
         ?TAB(3) ++ "array.append(dict)\n" ++
         ?TAB(2) ++ "return array\n" ++
         ?TAB ++ "elif typeof(object) == TYPE_ARRAY and object == []:\n" ++
         ?TAB(2) ++ "return []\n" ++
         ?TAB ++ "else:\n" ++ 
-        generate_submsg_body(Defn, 2, []) ++ 
+        generate_submsg_body(Defn, "object", 2, []) ++ 
         ?TAB(2) ++ generate_submsg_dict(Defn) ++ 
         ?TAB(2) ++ "return dict\n",
     generate_pure_submsgs(Encoder, Rest, Signature ++ Body ++ Acc).
 
-generate_submsg_body([], _TabLevel, Acc) ->
+generate_submsg_body([], _Prefix, _TabLevel, Acc) ->
     Acc;
-generate_submsg_body([Defn = #{type := {msg, Submsg}} |T], TabLevel, Acc) ->
+generate_submsg_body([Defn = #{type := {msg, Submsg}} |T], Prefix, TabLevel, Acc) ->
     % Impure submsg does not have well known types and we need to call one of
     % the lower-level functions to deal with it
     Name = atom_to_list(maps:get(name, Defn)),
     Type = atom_to_list(Submsg),
-    Body = ?TAB(TabLevel) ++ "var " ++ Name ++ " = unpack_" ++ Type ++ "(object.get_" ++ Name ++ "())\n",
-    generate_submsg_body(T, TabLevel, Body ++ Acc);
-generate_submsg_body([H|T], TabLevel, Acc) ->
+    Body = ?TAB(TabLevel) ++ "var " ++ Name ++ " = unpack_" ++ Type ++ "(" ++ Prefix ++ ".get_" ++ Name ++ "())\n",
+    generate_submsg_body(T, Prefix, TabLevel, Body ++ Acc);
+generate_submsg_body([H|T], Prefix, TabLevel, Acc) ->
     % All members of a pure submsg are of well-known types
     Name = atom_to_list(maps:get(name, H)),
     % Godobuf should automagically generate arrays as appropriate for
     % well-knowns, so no need to special case these.
-    Body = ?TAB(TabLevel) ++ "var " ++ Name ++ " = object.get_" ++ Name ++ "()\n",
-    generate_submsg_body(T, TabLevel, Body ++ Acc).
+    Body = ?TAB(TabLevel) ++ "var " ++ Name ++ " = " ++ Prefix ++ ".get_" ++ Name ++ "()\n",
+    generate_submsg_body(T, Prefix, TabLevel, Body ++ Acc).
 
 generate_submsg_dict(Definitions) ->
     Pre = "var dict = {",
@@ -201,14 +203,14 @@ generate_impure_submsgs(Encoder, [H|T],Acc) ->
         ?TAB ++ "if typeof(object) == TYPE_ARRAY and object != []:\n" ++
         ?TAB(2) ++ "var array = []\n" ++
         ?TAB(2) ++ "for obj in object:\n" ++ 
-        generate_submsg_body(Defn, 3, []) ++ 
+        generate_submsg_body(Defn, "obj", 3, []) ++ 
         ?TAB(3) ++ generate_submsg_dict(Defn) ++
         ?TAB(3) ++ "array.append(dict)\n" ++
         ?TAB(2) ++ "return array\n" ++
         ?TAB ++ "elif typeof(object) == TYPE_ARRAY and object == []:\n" ++
         ?TAB(2) ++ "return []\n" ++
         ?TAB ++ "else:\n" ++ 
-        generate_submsg_body(Defn, 2, []) ++ 
+        generate_submsg_body(Defn, "object", 2, []) ++ 
         ?TAB(2) ++ generate_submsg_dict(Defn) ++ 
         ?TAB(2) ++ "return dict\n",
     generate_impure_submsgs(Encoder, T, Signature ++ Body ++ Acc).
@@ -385,46 +387,37 @@ write_function(ProtoMsg, ClientCall, Encoder, St0) ->
             "\)\n\n",
     [ Op ++ Vars ++ Signal | St0 ].
 
+generate_marshall_submsgs(Encoder) ->
+    AllMessages = erlang:apply(Encoder, get_msg_names, []),
+    generate_marshall_submsgs(AllMessages, Encoder, []).
+generate_marshall_submsgs([], _Encoder, Acc) ->
+    Acc;
+generate_marshall_submsgs([vector2|T], Encoder, Acc) -> 
+    Signature = "func pack_vector2(obj, ref):\n",
+    Body = ?TAB ++ "ref.set_x(obj.x)\n" ++
+           ?TAB ++ "ref.set_y(obj.y)\n",
+    generate_marshall_submsgs(T, Encoder, Signature ++ Body ++ Acc);
+generate_marshall_submsgs([MsgName|T], Encoder, Acc) -> 
+    Defn = erlang:apply(Encoder, fetch_msg_def, [MsgName]),
+    NameStr = atom_to_list(MsgName),
+    Signature = "func pack_" ++ NameStr ++ "(obj, ref):\n",
+    Body = marshall_submsg_body(Defn, []),
+    generate_marshall_submsgs(T, Encoder, Signature ++ Body ++ Acc).
 
+marshall_submsg_body([], Acc) ->
+    Acc ++ "\n";
+marshall_submsg_body([#{name:=Name, type := {msg, SubMsg}}|T], Acc) ->
+    NameStr = atom_to_list(Name),
+    SubMsgStr = atom_to_list(SubMsg),
+    Body = 
+        ?TAB ++ "var " ++ NameStr ++ " = ref.new_" ++ NameStr ++ "()\n" ++ 
+        ?TAB ++ "pack_" ++ SubMsgStr ++ "(obj['" ++ NameStr ++ "'], " ++ NameStr ++ ")\n",
+    marshall_submsg_body(T, Body ++ Acc);
+marshall_submsg_body([#{name:=Name}|T], Acc) ->
+    NameStr = atom_to_list(Name),
+    Body = ?TAB ++ "ref.set_" ++ NameStr ++ "(obj." ++ NameStr ++ ")\n",
+    marshall_submsg_body(T, Body ++ Acc).
 
-
-%write_function(undefined, undefined, _Encoder, Rest, St0) ->
-%    % No message to unpack, no sensible name to decode. Assume this is a
-%    % message only meant to be *sent* to the server
-%    generate_unmarshall(Rest, St0);
-%write_function(undefined, FunStr, _Encoder, Rest, St0) ->
-%    % In this case, there's a named function but no servermsg. We can safely
-%    % assume that there's simply no arguments for this fun.
-%    Op =
-%        "func " ++ "server_" ++ FunStr ++ "(_packet):\n" ++
-%            ?TAB ++ "print('[WARN] Received a " ++
-%            FunStr ++ " packet')\n",
-%    generate_unmarshall(Rest, [Op | St0]);
-%write_function(ServerMsg, FunStr, Encoder, Rest, St0) ->
-%    EncStr = string:titlecase(atom_to_list(Encoder)),
-%    Op =
-%        "func " ++ "server_" ++ FunStr ++ "(packet):\n" ++
-%            ?TAB ++ "if debug:\n" ++
-%            ?TAB(2) ++ "print('[DEBUG] Processing a " ++ FunStr ++
-%            " packet')\n" ++
-%            ?TAB ++ "var m = " ++ EncStr ++ "." ++ atom_to_list(ServerMsg) ++
-%            ".new()\n" ++
-%            ?TAB ++ "var result_code = m.from_bytes(packet)\n" ++
-%            ?TAB ++ "if result_code != " ++ EncStr ++
-%            ".PB_ERR.NO_ERRORS:\n" ++
-%            ?TAB(2) ++ "print('[CRITICAL] Error decoding new " ++
-%            FunStr ++ " packet')\n" ++
-%            ?TAB(2) ++ "return\n",
-%    Vars = unmarshall_var({Encoder, ServerMsg}),
-%    %Signal =
-%    %    ?TAB ++ "emit_signal('" ++ atom_to_list(ServerMsg) ++ "'," ++
-%    %        untyped_fields_to_str(field_info({Encoder, ServerMsg})) ++
-%    %        "\)\n\n",
-%    Signal =
-%        ?TAB ++ "emit_signal('" ++ atom_to_list(ServerMsg) ++ "'," ++
-%            dict_fields_to_str(field_info({Encoder, ServerMsg})) ++
-%            "\)\n\n",
-%    generate_unmarshall(Rest, [Op ++ Vars ++ Signal | St0]).
 
 generate_marshall([], St0) ->
     lists:reverse(St0);
@@ -458,7 +451,8 @@ generate_marshall(
                             ?TAB ++ "var m = " ++ EncStr ++ "." ++
                             atom_to_list(ClientMsg) ++
                             ".new()\n" ++
-                            set_parameters(Fields, Encoder) ++
+                            set_new_parameters(ClientMsg, Encoder) ++ 
+                            %set_parameters(Fields, Encoder) ++
                             ?TAB ++ "var payload = m.to_bytes()\n" ++
                             ?TAB ++ "send_message(payload, OpCode." ++
                             string:to_upper(FunStr) ++
@@ -471,49 +465,20 @@ generate_marshall(
             generate_marshall(Rest, [Op | St0])
     end.
 
-set_parameters(Fields, Encoder) ->
-    set_parameters(Fields, Encoder, []).
-set_parameters([], _Encoder, St0) ->
-    St0;
-set_parameters([{F, T, O} | Rest], Encoder, St0) ->
-    Var = atom_to_list(F),
-    St1 =
-        case O of
-            required ->
-                case T of
-                    {msg, MsgType} ->
-                        % Message has a complex nested type
-                        St0 ++ ?TAB ++ "var n = m.new_" ++
-                            atom_to_list(F) ++ "()\n" ++
-                            marshall_submsg(
-                                "n", MsgType, atom_to_list(F), Encoder, 1
-                            );
-                    _ ->
-                        St0 ++ ?TAB ++ "m.set_" ++ Var ++ "(" ++ Var ++
-                            ")\n"
-                end;
-            repeated ->
-                % if the type is simple and the object is repeated, you want to
-                % use the "add_" construct rather than "set_"
-                case T of
-                    {msg, MsgType} ->
-                        % Message has complex nested types
-                        St0 ++ ?TAB ++ "for item in " ++ Var ++ ":\n" ++
-                            ?TAB(2) ++ "var a = m.add_" ++ Var ++
-                            "()\n" ++
-                            marshall_submsg(
-                                "a", MsgType, "item", Encoder, 2
-                            );
-                    _ ->
-                        % Message is some well understood type
-                        St0 ++ ?TAB ++ "for item in " ++ Var ++ ":" ++
-                            ?TAB(2) ++ "m.add_" ++ Var ++ "(item)\n"
-                end;
-            optional ->
-                St0 ++ ?TAB ++ "if " ++ Var ++ ":\n" ++
-                    ?TAB(2) ++ "m.set_" ++ Var ++ "(" ++ Var ++ ")\n"
-        end,
-    set_parameters(Rest, Encoder, St1).
+set_new_parameters(ClientMsg, Encoder) ->
+    Defn = erlang:apply(Encoder, fetch_msg_def, [ClientMsg]),
+    io:format("Marshallign ~p~n", [ClientMsg]),
+    parameter_body(Defn, []).
+parameter_body([], Acc) ->
+    Acc;
+parameter_body([#{name := Name, type := {msg, SubMsg}}|T], Acc) ->
+    NameStr = atom_to_list(Name),
+    B = ?TAB ++ "pack_" ++ atom_to_list(SubMsg) ++ "(" ++ NameStr ++ ", m.new_" ++ NameStr ++ "())\n",
+    parameter_body(T, B ++ Acc);
+parameter_body([#{name := Name} | T], Acc) ->
+    B = ?TAB ++ "m.set_" ++ atom_to_list(Name) ++ "(" ++ atom_to_list(Name) ++ ")\n",
+    parameter_body(T, B ++ Acc).
+
 
 %
 % This function has been heavily retrofitted to allow for optional arguments,
@@ -612,20 +577,6 @@ untyped_fields_to_str([{N, _T, _O} | Tail], Acc) ->
     Acc1 = Acc ++ "," ++ Name,
     untyped_fields_to_str(Tail, Acc1).
 
-% TODO
-%field_requirements({ProtoLib, ProtoMsg}) ->
-%    Defs = erlang:apply(ProtoLib, fetch_msg_def, [ProtoMsg]),
-%    field_requirements(Defs, []).
-%
-%field_requirements([], Acc) ->
-%    Acc;
-%field_requirements([H|T], Acc) ->
-%    Name = maps:get(name, H),
-%    Occurrence = maps:get(occurrence, H),
-%    Acc1 = [{Name, Occurrence} | Acc],
-%    field_requirements(T, Acc1).
-%
-
 % case where a function has no arguments and therefore has no protobuf message.
 % i.e., ping
 field_info({undefined, _ProtoMsg}) ->
@@ -678,47 +629,6 @@ rpc_name(OpInfo) ->
             end
     end.
 
-%submsg_to_gd_dict(MessageType, Encoder) ->
-%    submsg_to_gd_dict(MessageType, "item", Encoder).
-%submsg_to_gd_dict(MessageType, Prefix, Encoder) ->
-%    Fields = field_info({Encoder, MessageType}),
-%    %KeyVals = [field_to_var_decl(Prefix,F) || {F, _T, _O} <- Fields],
-%    KeyVals = expand_submsgs(Fields, Prefix, Encoder, []),
-%    "{ " ++ KeyVals ++ "}".
-
-%expand_submsgs([], _Prefix, _Encoder, Acc) ->
-%    Acc;
-%expand_submsgs([{F, {msg, vector2}, _O} | Rest], Prefix, Encoder, Acc) ->
-%    Acc1 = 
-%        Acc ++ "'" ++ atom_to_list(F) ++ "': " ++ "to_vector2_array(" ++
-%        Prefix ++ ".get_" ++ atom_to_list(F) ++ "()" ++ "), ",
-%    expand_submsgs(Rest, Prefix, Encoder, Acc1);
-%expand_submsgs([{F, {msg, SubmsgType}, _O} | Rest], Prefix, Encoder, Acc) ->
-%    Acc1 = 
-%        Acc ++ "'" ++ atom_to_list(F) ++ "': " ++
-%            submsg_to_gd_dict(
-%                SubmsgType,
-%                Prefix ++ ".get_" ++ atom_to_list(F) ++ "()",
-%                Encoder
-%            ) ++ ", ",
-%    expand_submsgs(Rest, Prefix, Encoder, Acc1);
-%expand_submsgs([{F, _T, _O} | Rest], Prefix, Encoder, Acc) ->
-%    Acc1 = Acc ++ field_to_var_decl(Prefix, F),
-%    expand_submsgs(Rest, Prefix, Encoder, Acc1).
-%
-%field_to_var_decl(Prefix, F) ->
-%    "'" ++ atom_to_list(F) ++ "': " ++ Prefix ++ ".get_" ++ atom_to_list(F) ++
-%        "(), ".
-
-marshall_submsg(Var, MessageType, Prefix, Encoder, IndentLevel) ->
-    Fields = field_info({Encoder, MessageType}),
-    [field_to_set(Var, Prefix, F, IndentLevel) || {F, _T, _O} <- Fields].
-
-field_to_set(Var, Prefix, Field, IndentLevel) ->
-    F = atom_to_list(Field),
-    ?TAB(IndentLevel) ++ Var ++ ".set_" ++ F ++ "(" ++ Prefix ++ "['" ++ F ++
-        "'])\n".
-
 % Make a best guess at a fall through for the encoder. I'm not sure I like this so it's not part of the main RPC module.
 correct_encoder(undefined, _) ->
     undefined;
@@ -741,8 +651,3 @@ maybe_submsg({msg, _Type}) ->
     atom_to_list('Dictionary');
 maybe_submsg(Type) ->
     atom_to_list(Type).
-
-%encode_submsg(Encoder, MessageType, [Args]) ->
-%    Fields = field_in
-%    ?TAB ++ "var s = " ++ "m.new_" ++ atom_to_list(MessageType) ++ "()\n"  ++
-%    ?TAB ++ "encode_" ++ atom_to_list(MessageType) ++ "(" ++ untyped_fields_to_str( ++ ")\n"
