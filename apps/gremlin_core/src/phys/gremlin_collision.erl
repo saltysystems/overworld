@@ -1,5 +1,5 @@
 -module(gremlin_collision).
--export([new/2, add_entity/3, add_entities/3, check_area/3]).
+-export([new/4, new/2, add_entity/3, add_entities/3, check_area/3]).
 
 % these aren't eunit tests as such, just some scaffolding toward building those
 -export([
@@ -19,16 +19,18 @@
     bbox
 }).
 
+-spec new(integer(), integer(), integer(), integer()) -> erlquad:erlquad_node().
+new(Xmin, Ymin, Xmax, Ymax) ->
+    erlquad:new(Xmin, Ymin, Xmax, Ymax, 5).
+
 -spec new(pos_integer(), pos_integer()) -> erlquad:erlquad_node().
 new(X, Y) ->
     % Create an empty quadtree with no entities.
-
-    %Random internet stuff suggests the depth of the
     erlquad:new(0, 0, X, Y, 5).
-%quadtree should be log4(N) where N is number of
-%entities.
-% log4(25) -> 2.32
-% log4(100) -> 3.32
+    %Random internet stuff suggests the depth of the quadtree should be
+    %log4(N) where N is number of entities.
+    % log4(25) -> 2.32
+    % log4(100) -> 3.32
 
 -spec add_entity(any(), fun(), erlquad:erlquad_node()) ->
     erlquad:erlquad_node().
@@ -64,7 +66,7 @@ check_area(
     Entities = erlquad:area_query(
         Left, Bottom, Right, Top, Quadtree
     ),
-    io:format("Entities in the queried area: ~p~n", [Entities]),
+    %io:format("Entities in the queried area: ~p~n", [Entities]),
     % Create a list of all objects in the area of interest to check.
     ObjPairs = [
         [BoundingBoxFun(Obj1), BoundingBoxFun(Obj2)]
@@ -74,7 +76,7 @@ check_area(
     ],
     % Sort the inner list pair, then delete duplicates
     UniqObjPairs = lists:usort([lists:sort(X) || X <- ObjPairs]),
-    io:format("Total number of unique pairs: ~p~n", [length(UniqObjPairs)]),
+    %io:format("Total number of unique pairs: ~p~n", [length(UniqObjPairs)]),
     [
         {Obj1, Obj2, gremlin_vector:is_collision(Obj1, Obj2)}
      || [Obj1, Obj2] <- UniqObjPairs
