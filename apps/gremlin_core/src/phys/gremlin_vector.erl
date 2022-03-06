@@ -5,6 +5,7 @@
 %      and licensed under the AGPL as a derivative work
 
 -export([
+    length_squared/1,
     dot/2,
     normalize/1,
     orthogonal/1,
@@ -22,6 +23,10 @@
 -type scalar() :: number().
 
 -export_type([vector/0, scalar/0]).
+
+-spec length_squared(vector()) -> float().
+length_squared({X,Y}) -> 
+    math:pow(X,2) + math:pow(Y,2).
 
 -spec dot(vector(), vector()) -> scalar().
 dot({X1, Y1}, {X2, Y2}) ->
