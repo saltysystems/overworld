@@ -58,7 +58,6 @@ add_entities_test() ->
     PositionFun = fun(#test_entity{pos = {X, Y}}) -> {X, Y} end,
     add_entities(Entities, PositionFun, Q).
 
-%-spec check_area({integer(), integer(), integer(), integer()},
 check_area(
     {Left, Bottom, Right, Top}, BoundingBoxFun, Quadtree
 ) ->
@@ -69,16 +68,15 @@ check_area(
     %io:format("Entities in the queried area: ~p~n", [Entities]),
     % Create a list of all objects in the area of interest to check.
     ObjPairs = [
-        [BoundingBoxFun(Obj1), BoundingBoxFun(Obj2)]
+        [Obj1, Obj2]
      || Obj1 <- Entities,
         Obj2 <- Entities,
         Obj1 =/= Obj2
     ],
     % Sort the inner list pair, then delete duplicates
     UniqObjPairs = lists:usort([lists:sort(X) || X <- ObjPairs]),
-    %io:format("Total number of unique pairs: ~p~n", [length(UniqObjPairs)]),
     [
-        {Obj1, Obj2, gremlin_vector:is_collision(Obj1, Obj2)}
+        {Obj1, Obj2, gremlin_vector:is_collision(BoundingBoxFun(Obj1), BoundingBoxFun(Obj2))}
      || [Obj1, Obj2] <- UniqObjPairs
     ].
 
