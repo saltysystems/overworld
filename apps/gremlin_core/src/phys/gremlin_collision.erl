@@ -19,7 +19,8 @@
     bbox
 }).
 
--spec new(integer(), integer(), integer(), integer()) -> erlquad:erlquad_node().
+-spec new(integer(), integer(), integer(), integer()) ->
+    erlquad:erlquad_node().
 new(Xmin, Ymin, Xmax, Ymax) ->
     erlquad:new(Xmin, Ymin, Xmax, Ymax, 5).
 
@@ -27,10 +28,10 @@ new(Xmin, Ymin, Xmax, Ymax) ->
 new(X, Y) ->
     % Create an empty quadtree with no entities.
     erlquad:new(0, 0, X, Y, 5).
-    %Random internet stuff suggests the depth of the quadtree should be
-    %log4(N) where N is number of entities.
-    % log4(25) -> 2.32
-    % log4(100) -> 3.32
+%Random internet stuff suggests the depth of the quadtree should be
+%log4(N) where N is number of entities.
+% log4(25) -> 2.32
+% log4(100) -> 3.32
 
 -spec add_entity(any(), fun(), erlquad:erlquad_node()) ->
     erlquad:erlquad_node().
@@ -76,7 +77,10 @@ check_area(
     % Sort the inner list pair, then delete duplicates
     UniqObjPairs = lists:usort([lists:sort(X) || X <- ObjPairs]),
     [
-        {Obj1, Obj2, gremlin_vector:is_collision(BoundingBoxFun(Obj1), BoundingBoxFun(Obj2))}
+        {Obj1, Obj2,
+            gremlin_vector:is_collision(
+                BoundingBoxFun(Obj1), BoundingBoxFun(Obj2)
+            )}
      || [Obj1, Obj2] <- UniqObjPairs
     ].
 

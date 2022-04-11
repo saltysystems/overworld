@@ -38,5 +38,5 @@ any_in_list(L1, L2) ->
 
 % Remove duplicates from a list
 % https://stackoverflow.com/questions/13673161/remove-duplicate-elements-from-a-list-in-erlang
-remove_dups([])    -> [];
-remove_dups([H|T]) -> [H | [X || X <- remove_dups(T), X /= H]].
+remove_dups([]) -> [];
+remove_dups([H | T]) -> [H | [X || X <- remove_dups(T), X /= H]].
