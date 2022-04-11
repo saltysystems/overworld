@@ -8,28 +8,30 @@ init(Req1, State) ->
     ClientAPI = gremlin_binding:print(),
     Apps = gremlin_protocol:registered_apps(),
     ProtoFiles = protofiles(Apps),
-    {ok, {"file", Zip}} = zip:create("file", [{"libgremlin.gd", ClientAPI} | ProtoFiles], [memory]),
+    {ok, {"file", Zip}} = zip:create(
+        "file", [{"libgremlin.gd", ClientAPI} | ProtoFiles], [memory]
+    ),
     Req2 = cowboy_req:reply(
-             200,
-             #{
-               <<"content-type">> => <<"application/zip">>,
-               <<"content-disposition">> => <<"attachment; filename=libgremlin.zip">>
-              },
-             Zip,
-             Req1
-            ),
+        200,
+        #{
+            <<"content-type">> => <<"application/zip">>,
+            <<"content-disposition">> =>
+                <<"attachment; filename=libgremlin.zip">>
+        },
+        Zip,
+        Req1
+    ),
     {ok, Req2, State}.
 
 -spec protofiles(list()) -> [{string(), string()}, ...].
-protofiles(FileList) -> 
+protofiles(FileList) ->
     protofiles(FileList, []).
 
 protofiles([], Acc) ->
     Acc;
-protofiles([H|T], Acc) ->
+protofiles([H | T], Acc) ->
     Files = {atom_to_list(H) ++ ".proto", protofile(H)},
-    protofiles(T, [Files|Acc]).
-
+    protofiles(T, [Files | Acc]).
 
 % return the path of the proto file for the given application
 -spec protofile(atom()) -> list().

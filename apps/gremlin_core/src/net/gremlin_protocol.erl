@@ -145,7 +145,7 @@ registered_ops() ->
 %% @end
 %%-------------------------------------------------------------------------
 -spec registered_apps() -> [atom(), ...].
-registered_apps() -> 
+registered_apps() ->
     gen_server:call(?MODULE, registered_apps).
 
 %%-------------------------------------------------------------------------
@@ -175,12 +175,12 @@ handle_call({register_op, Module}, _From, St0) ->
     % Get list of opcodes to register for Module
     Ops0 = maps:get(ops, St0),
     Ops1 = reg(Module, Ops0),
-    {reply, ok, St0#{ops=>Ops1}};
+    {reply, ok, St0#{ops => Ops1}};
 handle_call({register_app, Application}, _From, St0) ->
     % Get list of opcodes to register for Module
     Apps0 = maps:get(apps, St0),
     Apps1 = reg_app(Application, Apps0),
-    {reply, ok, St0#{apps=>Apps1}};
+    {reply, ok, St0#{apps => Apps1}};
 handle_call({decode, Message, Session}, _From, St0) ->
     Reply = route(Message, Session, St0),
     {reply, Reply, St0};
@@ -246,7 +246,7 @@ reg_app(App, AppList) ->
         true ->
             AppList;
         false ->
-            [ App | AppList ]
+            [App | AppList]
     end.
 
 reg_op(Map, St0) ->

@@ -32,9 +32,9 @@ print() ->
     Signals = generate_signals(Ops, []),
     Opcodes = generate_opcodes(Ops, []),
     Router = generate_router(Ops, []),
-    Submsgs = [ generate_submsgs(E) || E <- Encoders ],
+    Submsgs = [generate_submsgs(E) || E <- Encoders],
     Unmarshall = generate_unmarshall(Ops, []),
-    MarshallSubmsgs = [ generate_marshall_submsgs(E) || E <- Encoders ],
+    MarshallSubmsgs = [generate_marshall_submsgs(E) || E <- Encoders],
     Marshall = generate_marshall(Ops, []),
     Map = #{
         "preloads" => Preloads,
@@ -51,7 +51,6 @@ print() ->
         "apps/gremlin_core/templates/libgremlin.mustache"
     ),
     bbmustache:compile(T, Map).
-
 
 pb_to_godot_type(Type) ->
     case Type of
@@ -70,24 +69,24 @@ pb_to_godot_type(Type) ->
         bool -> bool;
         string -> 'String';
         bytes -> 'PoolByteArray';
-        _Other -> void % Do the best you can. 
+        % Do the best you can.
+        _Other -> void
     end.
-
 
 get_encoders(Ops) ->
     get_encoders(Ops, []).
 get_encoders([], Acc) ->
     Acc;
-get_encoders([H|T], Acc) -> 
-    E = 
+get_encoders([H | T], Acc) ->
+    E =
         case maps:get(encoder, H, undefined) of
             undefined -> gremlin_pb;
             Encoder -> Encoder
         end,
-    Acc1 = 
+    Acc1 =
         case lists:member(E, Acc) of
-            false -> 
-                [ E | Acc ];
+            false ->
+                [E | Acc];
             true ->
                 Acc
         end,
@@ -101,23 +100,24 @@ filter_for_pure_msgs([], Acc) ->
 filter_for_pure_msgs([{{enum, _}, _} | Rest], Acc) ->
     % Skip enums (for now?)
     filter_for_pure_msgs(Rest, Acc);
-filter_for_pure_msgs([{{msg,Name}, MapList} | Rest], Acc) ->
-    Predicate = fun(Map) -> 
-                        T = maps:get(type, Map),
-                        case T of
-                            {msg, _} -> false;
-                            _ -> true
-                        end
-                end,
+filter_for_pure_msgs([{{msg, Name}, MapList} | Rest], Acc) ->
+    Predicate = fun(Map) ->
+        T = maps:get(type, Map),
+        case T of
+            {msg, _} -> false;
+            _ -> true
+        end
+    end,
     FilteredList = lists:filter(Predicate, MapList),
     % If the lists match, then the message was impure and we should skip it.
-    Acc1 = case FilteredList of
-               MapList -> [ Name | Acc ];
-               _ -> Acc
-           end,
+    Acc1 =
+        case FilteredList of
+            MapList -> [Name | Acc];
+            _ -> Acc
+        end,
     filter_for_pure_msgs(Rest, Acc1).
 
-generate_submsgs(Encoder) -> 
+generate_submsgs(Encoder) ->
     % Filter for pure messages in this encoder
     Pures = filter_for_pure_msgs(Encoder),
     St0 = generate_impure_submsgs(Encoder),
@@ -131,53 +131,59 @@ generate_pure_submsgs(Encoder, [vector2 | Rest], Acc) ->
     % A bit of a cheat for vector2s and other special Godot types that are
     % not understood by Protobuf
     Signature = "func unpack_vector2(object):\n",
-    Body = 
+    Body =
         ?TAB ++ "if typeof(object) == TYPE_ARRAY and object != []:\n" ++
-        ?TAB(2) ++ "var array = []\n" ++ 
-        ?TAB(2) ++ "for obj in object:\n" ++
-        ?TAB(3) ++ "var vec = Vector2(obj.get_x(), obj.get_y())\n" ++
-        ?TAB(3) ++ "array.append(vec)\n" ++
-        ?TAB(2) ++ "return array\n" ++
-        ?TAB ++ "elif typeof(object) == TYPE_ARRAY and object == []:\n" ++
-        ?TAB(2) ++ "return []\n" ++
-        ?TAB ++ "else:\n" ++
-        ?TAB(2) ++ "var vec = Vector2(object.get_x(), object.get_y())\n" ++
-        ?TAB(2) ++ "return vec\n",
-    generate_pure_submsgs(Encoder, Rest, [ Signature ++ Body | Acc ]);
+            ?TAB(2) ++ "var array = []\n" ++
+            ?TAB(2) ++ "for obj in object:\n" ++
+            ?TAB(3) ++ "var vec = Vector2(obj.get_x(), obj.get_y())\n" ++
+            ?TAB(3) ++ "array.append(vec)\n" ++
+            ?TAB(2) ++ "return array\n" ++
+            ?TAB ++ "elif typeof(object) == TYPE_ARRAY and object == []:\n" ++
+            ?TAB(2) ++ "return []\n" ++
+            ?TAB ++ "else:\n" ++
+            ?TAB(2) ++ "var vec = Vector2(object.get_x(), object.get_y())\n" ++
+            ?TAB(2) ++ "return vec\n",
+    generate_pure_submsgs(Encoder, Rest, [Signature ++ Body | Acc]);
 generate_pure_submsgs(Encoder, [MessageName | Rest], Acc) ->
     Defn = erlang:apply(Encoder, fetch_msg_def, [MessageName]),
-    Signature= "func unpack_" ++ atom_to_list(MessageName) ++ "(object):\n",
-    Body = 
+    Signature = "func unpack_" ++ atom_to_list(MessageName) ++ "(object):\n",
+    Body =
         ?TAB ++ "if typeof(object) == TYPE_ARRAY and object != []:\n" ++
-        ?TAB(2) ++ "var array = []\n" ++
-        ?TAB(2) ++ "for obj in object:\n" ++ 
-        generate_submsg_body(Defn, "obj", 3, []) ++ 
-        ?TAB(3) ++ generate_submsg_dict(Defn) ++
-        ?TAB(3) ++ "array.append(dict)\n" ++
-        ?TAB(2) ++ "return array\n" ++
-        ?TAB ++ "elif typeof(object) == TYPE_ARRAY and object == []:\n" ++
-        ?TAB(2) ++ "return []\n" ++
-        ?TAB ++ "else:\n" ++ 
-        generate_submsg_body(Defn, "object", 2, []) ++ 
-        ?TAB(2) ++ generate_submsg_dict(Defn) ++ 
-        ?TAB(2) ++ "return dict\n",
+            ?TAB(2) ++ "var array = []\n" ++
+            ?TAB(2) ++ "for obj in object:\n" ++
+            generate_submsg_body(Defn, "obj", 3, []) ++
+            ?TAB(3) ++ generate_submsg_dict(Defn) ++
+            ?TAB(3) ++ "array.append(dict)\n" ++
+            ?TAB(2) ++ "return array\n" ++
+            ?TAB ++ "elif typeof(object) == TYPE_ARRAY and object == []:\n" ++
+            ?TAB(2) ++ "return []\n" ++
+            ?TAB ++ "else:\n" ++
+            generate_submsg_body(Defn, "object", 2, []) ++
+            ?TAB(2) ++ generate_submsg_dict(Defn) ++
+            ?TAB(2) ++ "return dict\n",
     generate_pure_submsgs(Encoder, Rest, Signature ++ Body ++ Acc).
 
 generate_submsg_body([], _Prefix, _TabLevel, Acc) ->
     Acc;
-generate_submsg_body([Defn = #{type := {msg, Submsg}} |T], Prefix, TabLevel, Acc) ->
+generate_submsg_body(
+    [Defn = #{type := {msg, Submsg}} | T], Prefix, TabLevel, Acc
+) ->
     % Impure submsg does not have well known types and we need to call one of
     % the lower-level functions to deal with it
     Name = atom_to_list(maps:get(name, Defn)),
     Type = atom_to_list(Submsg),
-    Body = ?TAB(TabLevel) ++ "var " ++ Name ++ " = unpack_" ++ Type ++ "(" ++ Prefix ++ ".get_" ++ Name ++ "())\n",
+    Body =
+        ?TAB(TabLevel) ++ "var " ++ Name ++ " = unpack_" ++ Type ++ "(" ++
+            Prefix ++ ".get_" ++ Name ++ "())\n",
     generate_submsg_body(T, Prefix, TabLevel, Body ++ Acc);
-generate_submsg_body([H|T], Prefix, TabLevel, Acc) ->
+generate_submsg_body([H | T], Prefix, TabLevel, Acc) ->
     % All members of a pure submsg are of well-known types
     Name = atom_to_list(maps:get(name, H)),
     % Godobuf should automagically generate arrays as appropriate for
     % well-knowns, so no need to special case these.
-    Body = ?TAB(TabLevel) ++ "var " ++ Name ++ " = " ++ Prefix ++ ".get_" ++ Name ++ "()\n",
+    Body =
+        ?TAB(TabLevel) ++ "var " ++ Name ++ " = " ++ Prefix ++ ".get_" ++ Name ++
+            "()\n",
     generate_submsg_body(T, Prefix, TabLevel, Body ++ Acc).
 
 generate_submsg_dict(Definitions) ->
@@ -185,35 +191,35 @@ generate_submsg_dict(Definitions) ->
     generate_submsg_dict(Definitions, Pre).
 generate_submsg_dict([], Acc) ->
     Acc ++ "}\n";
-generate_submsg_dict([H|T], Acc) -> 
+generate_submsg_dict([H | T], Acc) ->
     Name = atom_to_list(maps:get(name, H)),
     Pair = "'" ++ Name ++ "': " ++ Name ++ ", ",
     generate_submsg_dict(T, Acc ++ Pair).
-    
-generate_impure_submsgs(Encoder) -> 
+
+generate_impure_submsgs(Encoder) ->
     Pures = filter_for_pure_msgs(Encoder),
     AllMessages = erlang:apply(Encoder, get_msg_names, []),
     Impures = AllMessages -- Pures,
     generate_impure_submsgs(Encoder, Impures, []).
 generate_impure_submsgs(_Encoder, [], Acc) ->
     Acc;
-generate_impure_submsgs(Encoder, [H|T],Acc) ->
+generate_impure_submsgs(Encoder, [H | T], Acc) ->
     Defn = erlang:apply(Encoder, fetch_msg_def, [H]),
-    Signature= "func unpack_" ++ atom_to_list(H) ++ "(object):\n",
-    Body = 
+    Signature = "func unpack_" ++ atom_to_list(H) ++ "(object):\n",
+    Body =
         ?TAB ++ "if typeof(object) == TYPE_ARRAY and object != []:\n" ++
-        ?TAB(2) ++ "var array = []\n" ++
-        ?TAB(2) ++ "for obj in object:\n" ++ 
-        generate_submsg_body(Defn, "obj", 3, []) ++ 
-        ?TAB(3) ++ generate_submsg_dict(Defn) ++
-        ?TAB(3) ++ "array.append(dict)\n" ++
-        ?TAB(2) ++ "return array\n" ++
-        ?TAB ++ "elif typeof(object) == TYPE_ARRAY and object == []:\n" ++
-        ?TAB(2) ++ "return []\n" ++
-        ?TAB ++ "else:\n" ++ 
-        generate_submsg_body(Defn, "object", 2, []) ++ 
-        ?TAB(2) ++ generate_submsg_dict(Defn) ++ 
-        ?TAB(2) ++ "return dict\n",
+            ?TAB(2) ++ "var array = []\n" ++
+            ?TAB(2) ++ "for obj in object:\n" ++
+            generate_submsg_body(Defn, "obj", 3, []) ++
+            ?TAB(3) ++ generate_submsg_dict(Defn) ++
+            ?TAB(3) ++ "array.append(dict)\n" ++
+            ?TAB(2) ++ "return array\n" ++
+            ?TAB ++ "elif typeof(object) == TYPE_ARRAY and object == []:\n" ++
+            ?TAB(2) ++ "return []\n" ++
+            ?TAB ++ "else:\n" ++
+            generate_submsg_body(Defn, "object", 2, []) ++
+            ?TAB(2) ++ generate_submsg_dict(Defn) ++
+            ?TAB(2) ++ "return dict\n",
     generate_impure_submsgs(Encoder, T, Signature ++ Body ++ Acc).
 
 generate_enums(Ops) ->
@@ -355,15 +361,16 @@ generate_unmarshall([OpInfo | Rest], St0) ->
     generate_unmarshall(Rest, St1).
 
 write_function(undefined, ClientCall, _Encoder, St0) ->
-    % There's no sensible message to unpack or handler to write. 
+    % There's no sensible message to unpack or handler to write.
     % We still need to make a handler that can understand the opcode because
     % the message router expects one.
     ClientCallStr = atom_to_list(ClientCall),
-    Op =  "func " ++ "server_" ++ ClientCallStr ++ "(_packet):\n" ++
-           ?TAB ++ "print('[WARN] Received a " ++
-           ClientCallStr ++ " packet')\n" ++ 
-           ?TAB ++ "return\n",
-    [ Op | St0 ];
+    Op =
+        "func " ++ "server_" ++ ClientCallStr ++ "(_packet):\n" ++
+            ?TAB ++ "print('[WARN] Received a " ++
+            ClientCallStr ++ " packet')\n" ++
+            ?TAB ++ "return\n",
+    [Op | St0];
 write_function(ProtoMsg, ClientCall, Encoder, St0) ->
     EncStr = string:titlecase(atom_to_list(Encoder)),
     ClientCallStr = atom_to_list(ClientCall),
@@ -386,19 +393,20 @@ write_function(ProtoMsg, ClientCall, Encoder, St0) ->
         ?TAB ++ "emit_signal('" ++ ProtoMsgStr ++ "'," ++
             dict_fields_to_str(field_info({Encoder, ProtoMsg})) ++
             "\)\n\n",
-    [ Op ++ Vars ++ Signal | St0 ].
+    [Op ++ Vars ++ Signal | St0].
 
 generate_marshall_submsgs(Encoder) ->
     AllMessages = erlang:apply(Encoder, get_msg_names, []),
     generate_marshall_submsgs(AllMessages, Encoder, []).
 generate_marshall_submsgs([], _Encoder, Acc) ->
     Acc;
-generate_marshall_submsgs([vector2|T], Encoder, Acc) -> 
+generate_marshall_submsgs([vector2 | T], Encoder, Acc) ->
     Signature = "func pack_vector2(obj, ref):\n",
-    Body = ?TAB ++ "ref.set_x(obj.x)\n" ++
-           ?TAB ++ "ref.set_y(obj.y)\n",
+    Body =
+        ?TAB ++ "ref.set_x(obj.x)\n" ++
+            ?TAB ++ "ref.set_y(obj.y)\n",
     generate_marshall_submsgs(T, Encoder, Signature ++ Body ++ Acc);
-generate_marshall_submsgs([MsgName|T], Encoder, Acc) -> 
+generate_marshall_submsgs([MsgName | T], Encoder, Acc) ->
     Defn = erlang:apply(Encoder, fetch_msg_def, [MsgName]),
     NameStr = atom_to_list(MsgName),
     Signature = "func pack_" ++ NameStr ++ "(obj, ref):\n",
@@ -407,18 +415,18 @@ generate_marshall_submsgs([MsgName|T], Encoder, Acc) ->
 
 marshall_submsg_body([], Acc) ->
     Acc ++ "\n";
-marshall_submsg_body([#{name:=Name, type := {msg, SubMsg}}|T], Acc) ->
+marshall_submsg_body([#{name := Name, type := {msg, SubMsg}} | T], Acc) ->
     NameStr = atom_to_list(Name),
     SubMsgStr = atom_to_list(SubMsg),
-    Body = 
-        ?TAB ++ "var " ++ NameStr ++ " = ref.new_" ++ NameStr ++ "()\n" ++ 
-        ?TAB ++ "pack_" ++ SubMsgStr ++ "(obj['" ++ NameStr ++ "'], " ++ NameStr ++ ")\n",
+    Body =
+        ?TAB ++ "var " ++ NameStr ++ " = ref.new_" ++ NameStr ++ "()\n" ++
+            ?TAB ++ "pack_" ++ SubMsgStr ++ "(obj['" ++ NameStr ++ "'], " ++
+            NameStr ++ ")\n",
     marshall_submsg_body(T, Body ++ Acc);
-marshall_submsg_body([#{name:=Name}|T], Acc) ->
+marshall_submsg_body([#{name := Name} | T], Acc) ->
     NameStr = atom_to_list(Name),
     Body = ?TAB ++ "ref.set_" ++ NameStr ++ "(obj." ++ NameStr ++ ")\n",
     marshall_submsg_body(T, Body ++ Acc).
-
 
 generate_marshall([], St0) ->
     lists:reverse(St0);
@@ -452,7 +460,7 @@ generate_marshall(
                             ?TAB ++ "var m = " ++ EncStr ++ "." ++
                             atom_to_list(ClientMsg) ++
                             ".new()\n" ++
-                            set_new_parameters(ClientMsg, Encoder) ++ 
+                            set_new_parameters(ClientMsg, Encoder) ++
                             %set_parameters(Fields, Encoder) ++
                             ?TAB ++ "var payload = m.to_bytes()\n" ++
                             ?TAB ++ "send_message(payload, OpCode." ++
@@ -472,14 +480,17 @@ set_new_parameters(ClientMsg, Encoder) ->
     parameter_body(Defn, []).
 parameter_body([], Acc) ->
     Acc;
-parameter_body([#{name := Name, type := {msg, SubMsg}}|T], Acc) ->
+parameter_body([#{name := Name, type := {msg, SubMsg}} | T], Acc) ->
     NameStr = atom_to_list(Name),
-    B = ?TAB ++ "pack_" ++ atom_to_list(SubMsg) ++ "(" ++ NameStr ++ ", m.new_" ++ NameStr ++ "())\n",
+    B =
+        ?TAB ++ "pack_" ++ atom_to_list(SubMsg) ++ "(" ++ NameStr ++ ", m.new_" ++
+            NameStr ++ "())\n",
     parameter_body(T, B ++ Acc);
 parameter_body([#{name := Name} | T], Acc) ->
-    B = ?TAB ++ "m.set_" ++ atom_to_list(Name) ++ "(" ++ atom_to_list(Name) ++ ")\n",
+    B =
+        ?TAB ++ "m.set_" ++ atom_to_list(Name) ++ "(" ++ atom_to_list(Name) ++
+            ")\n",
     parameter_body(T, B ++ Acc).
-
 
 %
 % This function has been heavily retrofitted to allow for optional arguments,
