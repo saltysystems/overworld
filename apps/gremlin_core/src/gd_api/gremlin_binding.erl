@@ -50,6 +50,7 @@ print() ->
     T = bbmustache:parse_file(
         "apps/gremlin_core/templates/libgremlin.mustache"
     ),
+    logger:info("Generating network client library..."),
     bbmustache:compile(T, Map).
 
 pb_to_godot_type(Type) ->
@@ -476,7 +477,6 @@ generate_marshall(
 
 set_new_parameters(ClientMsg, Encoder) ->
     Defn = erlang:apply(Encoder, fetch_msg_def, [ClientMsg]),
-    io:format("Marshallign ~p~n", [ClientMsg]),
     parameter_body(Defn, []).
 parameter_body([], Acc) ->
     Acc;
