@@ -25,7 +25,8 @@ init(Req, _St0) ->
     logger:notice("~p: client connected.", [IP]),
     SessionID = erlang:unique_integer(),
     St1 = gremlin_session:set_id(SessionID, gremlin_session:new()),
-    {cowboy_websocket, Req, St1}.
+    St2 = gremlin_session:set_pid(self(), St1),
+    {cowboy_websocket, Req, St2}.
 
 %%---------------------------------------------------------------------------
 %% @doc Terminate callback for cleanup processes
@@ -52,8 +53,9 @@ terminate(_Reason, Req, State) ->
 %%---------------------------------------------------------------------------
 websocket_init(State) ->
     gproc:reg({p, l, client_session}),
+    St1 = gremlin_session:set_pid(self(), State),
     Msg = gremlin_session:encode_log("CONNECTION ESTABLISHED"),
-    {reply, {binary, Msg}, State}.
+    {reply, {binary, Msg}, St1}.
 
 %%---------------------------------------------------------------------------
 %% @doc The websocket handler passes any binary message down to the protocol
@@ -89,7 +91,7 @@ websocket_handle(_Frame, State) ->
 %% @end
 %%--------------------------------------------------------------------------
 websocket_info({_Pid, broadcast, Msg}, Session) ->
-    logger:debug("Received broadcast message, forwarding to client"),
+    logger:notice("Received broadcast message, forwarding to client"),
     {reply, {binary, Msg}, Session};
 websocket_info({_Pid, multicast, Msg, Who}, Session) ->
     ID = gremlin_session:get_id(Session),

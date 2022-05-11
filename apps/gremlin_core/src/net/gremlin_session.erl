@@ -18,6 +18,8 @@
     new/0,
     set_id/2,
     get_id/1,
+    set_pid/2,
+    get_pid/1,
     set_email/2,
     get_email/1,
     set_authenticated/2,
@@ -43,6 +45,7 @@
 
 -record(session, {
     id :: integer() | undefined,
+    pid :: pid() | undefined,
     email :: string() | undefined,
     authenticated = false :: boolean(),
     % ms
@@ -238,6 +241,22 @@ set_id(ID, Session) ->
 -spec get_id(session()) -> integer().
 get_id(Session) ->
     Session#session.id.
+
+%%----------------------------------------------------------------------------
+%% @doc Set the socket PID
+%% @end
+%%----------------------------------------------------------------------------
+-spec set_pid(pid(), session()) -> session().
+set_pid(PID, Session) ->
+    Session#session{pid = PID}.
+
+%%----------------------------------------------------------------------------
+%% @doc Return the socket PID
+%% @end
+%%----------------------------------------------------------------------------
+-spec get_pid(session()) -> pid().
+get_pid(Session) ->
+    Session#session.pid.
 
 %%----------------------------------------------------------------------------
 %% @doc Set the session email
