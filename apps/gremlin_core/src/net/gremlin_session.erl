@@ -20,8 +20,8 @@
     get_id/1,
     set_pid/2,
     get_pid/1,
-    set_email/2,
-    get_email/1,
+    set_type/2,
+    get_type/1,
     set_authenticated/2,
     get_authenticated/1,
     set_latency/2,
@@ -42,16 +42,16 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -type msg() :: nonempty_binary() | [binary(), ...].
+-type player_type() :: 'pc' | 'npc'.
 
 -record(session, {
-    id :: integer() | undefined,
-    pid :: pid() | undefined,
-    email :: string() | undefined,
+    id                    :: integer() | undefined,
+    pid                   :: pid() | undefined,
+    type                  :: player_type(),
     authenticated = false :: boolean(),
-    % ms
-    latency = 0 :: non_neg_integer(),
-    game_info = #{} :: map() | undefined,
-    termination_callback :: mfa() | undefined
+    latency = 0           :: non_neg_integer(), % ms 
+    game_info             :: term() | undefined
+    termination_callback  :: mfa() | undefined
 }).
 
 -opaque session() :: #session{}.
@@ -259,20 +259,20 @@ get_pid(Session) ->
     Session#session.pid.
 
 %%----------------------------------------------------------------------------
-%% @doc Set the session email
+%% @doc Set the type of session, e.g. player or non-player
 %% @end
 %%----------------------------------------------------------------------------
--spec set_email(string(), session()) -> session().
-set_email(Email, Session) ->
-    Session#session{email = Email}.
+-spec set_type(player_type(), session()) -> session().
+set_type(Type, Session) ->
+    Session#session{type = Type}.
 
 %%----------------------------------------------------------------------------
-%% @doc Return the session email
+%% @doc Return the session type
 %% @end
 %%----------------------------------------------------------------------------
--spec get_email(session()) -> string().
-get_email(Session) ->
-    Session#session.email.
+-spec get_type(session()) -> player_type().
+get_type(Session) ->
+    Session#session.type.
 
 %%----------------------------------------------------------------------------
 %% @doc Set the session latency
