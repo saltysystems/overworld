@@ -45,13 +45,14 @@
 -type player_type() :: 'pc' | 'npc'.
 
 -record(session, {
-    id                    :: integer() | undefined,
-    pid                   :: pid() | undefined,
-    type                  :: player_type(),
+    id :: integer() | undefined,
+    pid :: pid() | undefined,
+    type :: player_type(),
     authenticated = false :: boolean(),
-    latency = 0           :: non_neg_integer(), % ms 
-    game_info             :: term() | undefined
-    termination_callback  :: mfa() | undefined
+    % ms
+    latency = 0 :: non_neg_integer(),
+    game_info :: term() | undefined,
+    termination_callback :: mfa() | undefined
 }).
 
 -opaque session() :: #session{}.
