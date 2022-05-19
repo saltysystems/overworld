@@ -10,7 +10,11 @@
 -export([reply/2]).
 -export([stop/1, stop/3]).
 % gen_zone specific calls
+
+% must have corresponding callbacks
 -export([join/3, part/2, action/3]).
+% handled internally
+-export([who/1]).
 
 % gen_server callbacks
 -export([
@@ -31,6 +35,7 @@
 -record(state, {
     cb_mod :: module(),
     cb_data :: term(),
+    players :: map(),
     tick_timer :: undefined | reference(),
     tick_rate :: pos_integer()
 }).
@@ -119,15 +124,36 @@ stop(ServerRef, Reason, Timeout) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% public behavior API
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%
+
 join(ServerRef, Msg, Session) ->
-    gen_server:call(ServerRef, ?TAG_I({join, Msg, Session})).
+    % Check that the session is valid before doing anything
+    case gremlin_session:is_authenticated(Session) of
+        true ->
+            gen_server:call(ServerRef, ?TAG_I({join, Msg, Session}));
+        false ->
+            {ok, Session}
+    end.
 
 part(ServerRef, Session) ->
-    gen_server:call(ServerRef, ?TAG_I({part, Session})).
+    % Check that the session is valid before doing anything
+    case gremlin_session:is_authenticated(Session) of
+        true ->
+            gen_server:call(ServerRef, ?TAG_I({part, Session}));
+        false ->
+            {ok, Session}
+    end.
 
 action(ServerRef, Msg, Session) ->
-    gen_server:call(ServerRef, ?TAG_I({action, Msg, Session})).
+    case gremlin_session:is_authenticated(Session) of
+        true ->
+            gen_server:call(ServerRef, ?TAG_I({action, Msg, Session}));
+        false ->
+            {ok, Session}
+    end.
+
+% Return list of players
+who(ServerRef) ->
+    gen_server:call(ServerRef, ?TAG_I(who)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% gen_server callback functions for internal state
@@ -142,7 +168,8 @@ init({CbMod, CbArgs}) ->
                 cb_mod = CbMod,
                 cb_data = CbData,
                 tick_timer = Timer,
-                tick_rate = ?TICK_RATE
+                tick_rate = ?TICK_RATE,
+                players = #{}
             }};
         ignore ->
             ignore;
@@ -150,24 +177,44 @@ init({CbMod, CbArgs}) ->
             Stop
     end.
 
-handle_call(?TAG_I({Fun, Msg, Session}), _From, St0 = #state{cb_mod = CbMod}) ->
-    Reply =
-        case gremlin_session:is_authenticated(Session) of
-            true ->
-                case Fun of
-                    part ->
-                        CbMod:part(Session);
-                    join ->
-                        CbMod:join(Msg, Session);
-                    action ->
-                        CbMod:action(Msg, Session)
-                end;
-            _ ->
-                % not authorized
-                {ok, Session}
+handle_call(?TAG_I({join, Msg, Session}), _From, St0) ->
+    CbMod = St0#state.cb_mod,
+    CbData = St0#state.cb_data,
+    % This can fail, so check for success.
+    {Reply, St1} =
+        case CbMod:handle_join(Msg, Session, CbData) of
+            {ok, Resp} ->
+                % Create a new key for this player ID, containing the pid and
+                % type
+                Players0 = St0#state.players,
+                {ID, PID, Type} = player_info(Session),
+                Players1 = Players0#{ID => {PID, Type}},
+                St = St0#state{players = Players1},
+                {{ok, Resp}, St};
+            Other ->
+                {Other, St0}
         end,
+    {reply, Reply, St1};
+handle_call(?TAG_I({part, Session}), _From, St0) ->
+    CbMod = St0#state.cb_mod,
+    CbData = St0#state.cb_data,
+    % Delete the key identified by the Session ID
+    ID = gremlin_session:get_id(Session),
+    P1 = maps:remove(ID, St0#state.players),
+    St1 = St0#state{players = P1},
+    Reply = CbMod:handle_part(Session, CbData),
+    {reply, Reply, St1};
+handle_call(?TAG_I({action, Msg, Session}), _From, St0) ->
+    CbMod = St0#state.cb_mod,
+    CbData = St0#state.cb_data,
+    Reply = CbMod:handle_action(Msg, Session, CbData),
     {reply, Reply, St0};
-handle_call(_Call, _From, St0) ->
+handle_call(?TAG_I(who), _From, St0) ->
+    Players = St0#state.players,
+    Who = maps:keys(Players),
+    {reply, Who, St0};
+handle_call(Call, _From, St0) ->
+    io:format("Got a not-well-understood call: ~p~n", [Call]),
     {reply, ok, St0}.
 
 handle_cast(_Cast, St0) ->
@@ -193,3 +240,9 @@ tick(St0 = #state{cb_mod = CbMod, cb_data = CbData0}) ->
         {ok, CbData1} ->
             St0#state{cb_data = CbData1}
     end.
+
+player_info(Session) ->
+    ID = gremlin_session:get_id(Session),
+    PID = gremlin_session:get_pid(Session),
+    Type = gremlin_session:get_type(Session),
+    {ID, PID, Type}.
