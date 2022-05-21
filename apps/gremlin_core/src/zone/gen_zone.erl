@@ -12,9 +12,9 @@
 % gen_zone specific calls
 
 % must have corresponding callbacks
--export([join/3, part/2, action/3]).
-% handled internally
--export([who/1]).
+-export([join/3, part/2, action/3, who/1]).
+% does not require callbacks
+%-export([broadcast/2]).
 
 % gen_server callbacks
 -export([
@@ -37,7 +37,8 @@
     cb_data :: term(),
     players :: map(),
     tick_timer :: undefined | reference(),
-    tick_rate :: pos_integer()
+    tick_rate :: pos_integer(),
+    rpcs :: gremlin_rpcs:callbacks()
 }).
 
 -define(TICK_RATE, 30).
@@ -79,6 +80,15 @@
 -callback handle_state_xfer(State) -> Result when
     State :: term(),
     Result :: term().
+
+-callback handle_who(State) -> Result when
+    State :: term(),
+    Result :: term().
+-optional_callbacks([handle_who/1]).
+
+-callback rpc_info() -> Result when
+    Result :: gremlin_rpc:callbacks().
+-optional_callbacks([rpc_info/0]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% gen_server api
@@ -151,9 +161,8 @@ action(ServerRef, Msg, Session) ->
             {ok, Session}
     end.
 
-% Return list of players
 who(ServerRef) ->
-    gen_server:call(ServerRef, ?TAG_I(who)).
+    gen_server:call(ServerRef, ?TAG_I({who})).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% gen_server callback functions for internal state
@@ -163,13 +172,15 @@ who(ServerRef) ->
 init({CbMod, CbArgs}) ->
     case CbMod:init(CbArgs) of
         {ok, CbData} ->
+            % Ascertain the RPCs, should they exist.
+            RPCs = rpc_info(CbMod),
             Timer = erlang:send_after(1, self(), ?TAG_I(tick)),
             {ok, #state{
                 cb_mod = CbMod,
                 cb_data = CbData,
                 tick_timer = Timer,
                 tick_rate = ?TICK_RATE,
-                players = #{}
+                rpcs = RPCs
             }};
         ignore ->
             ignore;
@@ -180,39 +191,29 @@ init({CbMod, CbArgs}) ->
 handle_call(?TAG_I({join, Msg, Session}), _From, St0) ->
     CbMod = St0#state.cb_mod,
     CbData = St0#state.cb_data,
-    % This can fail, so check for success.
-    {Reply, St1} =
-        case CbMod:handle_join(Msg, Session, CbData) of
-            {ok, Resp} ->
-                % Create a new key for this player ID, containing the pid and
-                % type
-                Players0 = St0#state.players,
-                {ID, PID, Type} = player_info(Session),
-                Players1 = Players0#{ID => {PID, Type}},
-                St = St0#state{players = Players1},
-                {{ok, Resp}, St};
-            Other ->
-                {Other, St0}
-        end,
-    {reply, Reply, St1};
+    Reply = CbMod:handle_join(Msg, Session, CbData),
+    {reply, Reply, St0};
 handle_call(?TAG_I({part, Session}), _From, St0) ->
     CbMod = St0#state.cb_mod,
     CbData = St0#state.cb_data,
-    % Delete the key identified by the Session ID
-    ID = gremlin_session:get_id(Session),
-    P1 = maps:remove(ID, St0#state.players),
-    St1 = St0#state{players = P1},
     Reply = CbMod:handle_part(Session, CbData),
-    {reply, Reply, St1};
+    {reply, Reply, St0};
 handle_call(?TAG_I({action, Msg, Session}), _From, St0) ->
     CbMod = St0#state.cb_mod,
     CbData = St0#state.cb_data,
     Reply = CbMod:handle_action(Msg, Session, CbData),
     {reply, Reply, St0};
-handle_call(?TAG_I(who), _From, St0) ->
-    Players = St0#state.players,
-    Who = maps:keys(Players),
-    {reply, Who, St0};
+handle_call(?TAG_I({who}), _From, St0) ->
+    CbMod = St0#state.cb_mod,
+    CbData = St0#state.cb_data,
+    Reply =
+        case erlang:function_exported(CbMod, handle_who, 1) of
+            true ->
+                CbMod:who(CbData);
+            _ ->
+                function_not_exported
+        end,
+    {reply, Reply, St0};
 handle_call(Call, _From, St0) ->
     io:format("Got a not-well-understood call: ~p~n", [Call]),
     {reply, ok, St0}.
@@ -241,8 +242,10 @@ tick(St0 = #state{cb_mod = CbMod, cb_data = CbData0}) ->
             St0#state{cb_data = CbData1}
     end.
 
-player_info(Session) ->
-    ID = gremlin_session:get_id(Session),
-    PID = gremlin_session:get_pid(Session),
-    Type = gremlin_session:get_type(Session),
-    {ID, PID, Type}.
+rpc_info(CbMod) ->
+    case erlang:function_exported(CbMod, rpc_info, 0) of
+        true ->
+            CbMod:rpc_info();
+        _ ->
+            []
+    end.
