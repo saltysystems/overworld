@@ -20,8 +20,8 @@
     get_id/1,
     set_pid/2,
     get_pid/1,
-    set_type/2,
-    get_type/1,
+    set_serializer/2,
+    get_serializer/1,
     set_authenticated/2,
     get_authenticated/1,
     set_latency/2,
@@ -42,15 +42,14 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -type msg() :: nonempty_binary() | [binary(), ...].
--type player_type() :: 'pc' | 'npc'.
+-type serializer() :: 'none' | 'protobuf'.
 
 -record(session, {
     id :: integer() | undefined,
     pid :: pid() | undefined,
-    type :: player_type(),
+    serializer = none :: serializer(),
     authenticated = false :: boolean(),
-    % ms
-    latency = 0 :: non_neg_integer(),
+    latency = 0 :: non_neg_integer(), % ms 
     game_info :: term() | undefined,
     termination_callback :: mfa() | undefined
 }).
@@ -60,6 +59,7 @@
 
 -export_type([session/0]).
 -export_type([state_update/0]).
+-export_type([serializer/0]).
 
 -define(PROTOCOLVERSION, 1).
 
@@ -260,20 +260,21 @@ get_pid(Session) ->
     Session#session.pid.
 
 %%----------------------------------------------------------------------------
-%% @doc Set the type of session, e.g. player or non-player
+%% @doc Set the format for serializing data. If communication happens all
+%%      within Erlang node(s), then set the serializer to 'none'.
 %% @end
 %%----------------------------------------------------------------------------
--spec set_type(player_type(), session()) -> session().
-set_type(Type, Session) ->
-    Session#session{type = Type}.
+-spec set_serializer(serializer(), session()) -> session().
+set_serializer(Serializer, Session) ->
+    Session#session{serializer = Serializer}.
 
 %%----------------------------------------------------------------------------
-%% @doc Return the session type
+%% @doc Return the session serializer.
 %% @end
 %%----------------------------------------------------------------------------
--spec get_type(session()) -> player_type().
-get_type(Session) ->
-    Session#session.type.
+-spec get_serializer(session()) -> serializer().
+get_serializer(Session) ->
+    Session#session.serializer.
 
 %%----------------------------------------------------------------------------
 %% @doc Set the session latency
