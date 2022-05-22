@@ -434,12 +434,11 @@ generate_marshall([], St0) ->
 generate_marshall(
     [OpInfo | Rest], St0
 ) ->
-    ClientMsg = gremlin_rpc:c2s_call(OpInfo),
-    case ClientMsg of
+    case gremlin_rpc:c2s_handler(OpInfo) of
         undefined ->
             % No message to pack
             generate_marshall(Rest, St0);
-        _ ->
+        {_, ClientMsg, _} ->
             FunStr = opcode_name_string(OpInfo),
             Encoder = gremlin_rpc:encoder(OpInfo),
             Op =
