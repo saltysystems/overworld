@@ -9,7 +9,7 @@
 
 % Handlers for protobuf messages
 -export([
-    new/2,
+    new_account/2,
     login/2
 ]).
 
@@ -30,15 +30,13 @@ rpc_info() ->
     [
         #{
             opcode => ?ACCOUNT_NEW,
-            c2s_handler => {?MODULE, new, 2},
-            c2s_call => account_new,
+            c2s_handler => {?MODULE, new_account, 2},
             s2c_call => gen_response,
             encoder => gremlin_pb
         },
         #{
             opcode => ?ACCOUNT_LOGIN,
             c2s_handler => {?MODULE, login, 2},
-            c2s_call => account_login,
             s2c_call => gen_response,
             encoder => gremlin_pb
         }
@@ -48,10 +46,10 @@ rpc_info() ->
 %% @doc Registers a new account, storing it in the database
 %% @end
 %%----------------------------------------------------------------------------
--spec new(binary(), gremlin_session:session()) ->
+-spec new_account(binary(), gremlin_session:session()) ->
     gremlin_session:net_msg().
-new(Message, Session) ->
-    Decode = gremlin_pb:decode_msg(Message, account_new),
+new_account(Message, Session) ->
+    Decode = gremlin_pb:decode_msg(Message, new_account),
     Email = maps:get(email, Decode),
     Password = maps:get(password, Decode),
     IsValid =
@@ -64,9 +62,9 @@ new(Message, Session) ->
             ok -> true;
             Error -> Error
         end,
-    new(Email, Password, IsValid, Session).
+    new_account(Email, Password, IsValid, Session).
 
-new(Email, Password, true, Session) ->
+new_account(Email, Password, true, Session) ->
     {Msg, Session1} =
         case gremlin_db_account:create(Email, Password) of
             {error, Error} ->
@@ -85,7 +83,7 @@ new(Email, Password, true, Session) ->
     R = {[OpCode, Msg], Session1},
     io:format("Response: ~p~n", [R]),
     R;
-new(_Email, _Password, {error, ErrMsg}, Session) ->
+new_account(_Email, _Password, {error, ErrMsg}, Session) ->
     Msg = gremlin_protocol:response(error, atom_to_list(ErrMsg)),
     OpCode = <<?ACCOUNT_NEW:16>>,
     R = {[OpCode, Msg], Session},
@@ -102,7 +100,7 @@ new_test() ->
             email => Email,
             password => Password
         },
-        account_new
+        new_account
     ),
     {[RespOp, RespMsg], _State} = new(Msg, gremlin_session:new()),
     ?assertEqual(<<?ACCOUNT_NEW:16>>, RespOp),
@@ -117,7 +115,7 @@ new_already_exists_test() ->
             email => Email,
             password => Password
         },
-        account_new
+        new_account
     ),
     {[RespOp, RespMsg], _State} = new(Msg, gremlin_session:new()),
     ?assertEqual(<<?ACCOUNT_NEW:16>>, RespOp),

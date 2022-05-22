@@ -33,7 +33,7 @@
     set_termination_callback/2,
     get_termination_callback/1,
     session_id_req/2,
-    ping/2,
+    session_ping/2,
     pong/1,
     version/1
 ]).
@@ -102,7 +102,7 @@ rpc_info() ->
         },
         #{
             opcode => ?SESSION_PING,
-            c2s_handler => {?MODULE, ping, 2},
+            c2s_handler => {?MODULE, session_ping, 2},
             c2s_call => session_ping,
             encoder => gremlin_pb
         },
@@ -126,7 +126,7 @@ rpc_info() ->
 %% @doc Update the latency
 %% @end
 %%----------------------------------------------------------------------------
-ping(Msg, Session) ->
+session_ping(Msg, Session) ->
     D = gremlin_pb:decode_msg(Msg, session_ping),
     ID = maps:get(id, D),
     Last = gremlin_beacon:get_by_id(ID),
