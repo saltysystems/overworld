@@ -3,7 +3,6 @@
 % Functions for handling RPCs
 -export([
     opcode/1,
-    c2s_call/1,
     c2s_handler/1,
     s2c_call/1,
     encoder/1
@@ -11,7 +10,6 @@
 
 -type rpc() :: #{
     opcode := 16#0000..16#FFFF,
-    c2s_call := atom() | undefined,
     c2s_handler := mfa() | undefined,
     s2c_call := atom() | undefined,
     encoder := atom() | undefined
@@ -28,10 +26,6 @@
 -spec opcode(map()) -> 16#0000..16#FFFF.
 opcode(Map) ->
     maps:get(opcode, Map, undefined).
-
--spec c2s_call(map()) -> atom() | undefined.
-c2s_call(Map) ->
-    maps:get(c2s_call, Map, undefined).
 
 -spec c2s_handler(map()) -> mfa() | undefined.
 c2s_handler(Map) ->
