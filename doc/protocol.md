@@ -3,7 +3,7 @@ Gremlin Protocol Docs
 
 Gremlin Packet Structure
 -----------------
-A gremlin message is constructed as such:
+A saline message is constructed as such:
 
 ```
     Framing (2-14 bytes)       OpCode (2 bytes)     Payload (N bytes)
@@ -31,7 +31,7 @@ OpCodes `0x0` through `0x1000` are soft reserved for Gremlin Core messages, whil
 
 Defining a new RPC
 -----------------
-To define a new message, simply write a module using the behaviour `gremlin_rpc` and implementing the required callbacks, `rpc_info/0` which should return a list of maps with keys as above.
+To define a new message, simply write a module using the behaviour `saline_rpc` and implementing the required callbacks, `rpc_info/0` which should return a list of maps with keys as above.
 
 
 Messages in Gremlin can be synchronous or asynchronous. Synchronous messages initiated by the client are defined by 2 keys: 
@@ -49,10 +49,10 @@ This library should be dropped into your scripts folder, along with your protobu
 Once Erlang is running, you can invoke the following to write out a library:
 
 ```
-1> gremlin_binding:write().
+1> saline_binding:write().
 ```
 
-The library file will live in `apps/gremlin_core/static/libgremlin.gd`. It's up to you to distribute the file. 
+The library file will live in `apps/saline_core/static/libsaline.gd`. It's up to you to distribute the file. 
 
 
 
@@ -80,7 +80,7 @@ And then write a module that can generate the client call library, and handle th
 ```
 -module(my_module).
 
--behaviour(gremlin_rpc).
+-behaviour(saline_rpc).
 
 % Required callback for Gremlin
 -export([rpc_info/0]).
@@ -90,7 +90,7 @@ And then write a module that can generate the client call library, and handle th
 
 -define(HELLO, 16#2000). % This makes the rpc info a bit more readable
 
--spec rpc_info() -> gremlin_rpc:callbacks().
+-spec rpc_info() -> saline_rpc:callbacks().
 rpc_info() -> 
     [
         #{ 
@@ -102,7 +102,7 @@ rpc_info() ->
     ].
     
 
--spec client_hello(binary(), gremlin_session:session()) ->
+-spec client_hello(binary(), saline_session:session()) ->
 client_hello(Data, Session) ->
     Decoded = my_game_pb:decode_msg(Data, hello)
     Msg = maps:get(Decoded, msg),
@@ -111,7 +111,7 @@ client_hello(Data, Session) ->
   
 ```
 
-A client using `libgremlin.gd` will be able to simply call
+A client using `libsaline.gd` will be able to simply call
 
 ```
 NetworkClient.send_hello("Hello world!")
@@ -134,9 +134,9 @@ myfun(Msg, Session) ->
     Reply = 
     case blahblah(DecodedMsg, Session) of 
         foo -> 
-            gremlin_protocol:response(ok);
+            saline_protocol:response(ok);
         bar ->
-            gremlin_protocol:response(error, "Blahblah failed somehow")
+            saline_protocol:response(error, "Blahblah failed somehow")
     end,
     [<<?YOUR_OPCODE:16>>, Reply].
 ```
