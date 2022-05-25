@@ -9,10 +9,10 @@
 ]).
 
 -export([
-         mapfind/3,
-         mapstore/4,
-         maplistsort/2
-        ]).
+    mapfind/3,
+    mapstore/4,
+    maplistsort/2
+]).
 
 -spec run_bchecks(list()) -> ok | any().
 run_bchecks([]) ->
@@ -49,31 +49,31 @@ remove_dups([H | T]) -> [H | [X || X <- remove_dups(T), X /= H]].
 
 % some map* functions equivalent to the list functions that operate over tuples
 % shameless stolen from https://github.com/biokoda/bkdcore/blob/master/src/butil.erl
-mapfind(K,V,[H|L]) ->
-	case maps:get(K,H) of
-		V ->
-			H;
-		_ ->
-			mapfind(K,V,L)
-	end;
-mapfind(_,_,[]) ->
-	false.
+mapfind(K, V, [H | L]) ->
+    case maps:get(K, H) of
+        V ->
+            H;
+        _ ->
+            mapfind(K, V, L)
+    end;
+mapfind(_, _, []) ->
+    false.
 
-mapstore(Key,Val,[H|L],Map) ->
-	case maps:get(Key,H) of
-		Val ->
-			[Map|L];
-		_ ->
-			[H|mapstore(Key,Val,L,Map)]
-	end;
-mapstore(_,_,[],Map) ->
-	[Map].
+mapstore(Key, Val, [H | L], Map) ->
+    case maps:get(Key, H) of
+        Val ->
+            [Map | L];
+        _ ->
+            [H | mapstore(Key, Val, L, Map)]
+    end;
+mapstore(_, _, [], Map) ->
+    [Map].
 
-maplistsort(Key,L) ->
-	maplistsort(Key,L,asc).
-maplistsort(Key,L,asc) ->
-	Asc = fun(A,B) -> maps:get(Key,A) =< maps:get(Key,B) end,
-	lists:sort(Asc,L);
-maplistsort(Key,L,desc) ->
-	Desc = fun(A,B) -> maps:get(Key,A) >= maps:get(Key,B) end,
-	lists:sort(Desc,L).
+maplistsort(Key, L) ->
+    maplistsort(Key, L, asc).
+maplistsort(Key, L, asc) ->
+    Asc = fun(A, B) -> maps:get(Key, A) =< maps:get(Key, B) end,
+    lists:sort(Asc, L);
+maplistsort(Key, L, desc) ->
+    Desc = fun(A, B) -> maps:get(Key, A) >= maps:get(Key, B) end,
+    lists:sort(Desc, L).
