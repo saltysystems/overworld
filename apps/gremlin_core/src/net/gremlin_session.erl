@@ -49,7 +49,8 @@
     pid :: pid() | undefined,
     serializer = none :: serializer(),
     authenticated = false :: boolean(),
-    latency = 0 :: non_neg_integer(), % ms 
+    % ms
+    latency = 0 :: non_neg_integer(),
     game_info :: term() | undefined,
     termination_callback :: mfa() | undefined
 }).
