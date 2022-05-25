@@ -1,5 +1,5 @@
 _build/
-apps/gremlin/rebar.lock
+apps/saline/rebar.lock
 rebar.lock
 *_pb.erl
 *.crashdump
