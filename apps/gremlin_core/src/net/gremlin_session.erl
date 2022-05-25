@@ -93,7 +93,7 @@ rpc_info() ->
         #{
             opcode => ?SESSION_ID_REQ,
             c2s_handler => {?MODULE, session_id_req, 2},
-            c2s_call => session_id_req
+            encoder => gremlin_pb
         },
         #{
             opcode => ?SESSION_ID,
@@ -103,7 +103,6 @@ rpc_info() ->
         #{
             opcode => ?SESSION_PING,
             c2s_handler => {?MODULE, session_ping, 2},
-            c2s_call => session_ping,
             encoder => gremlin_pb
         },
         #{
@@ -143,7 +142,7 @@ session_ping(Msg, Session) ->
 %%      ensure proper API generation.
 %% @end
 %%----------------------------------------------------------------------------
-pong(_) ->
+session_pong(_) ->
     ok.
 
 %%----------------------------------------------------------------------------
