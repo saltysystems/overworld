@@ -41,11 +41,11 @@ encoder(Map) ->
     maps:get(encoder, Map, undefined).
 
 -spec find_call(atom(), [rpc(), ...]) -> rpc().
-find_call(V,[H|L]) ->
+find_call(V, [H | L]) ->
     K = s2c_call,
-    case maps:get(K,H) of
+    case maps:get(K, H) of
         V -> H;
-        _ -> find_call(V,L)
+        _ -> find_call(V, L)
     end;
-find_call(_,[]) ->
+find_call(_, []) ->
     false.
