@@ -36,7 +36,7 @@ different response options.
 |  Response       | Description | 
 | --------------- | ----------- |
 | `{'@zone', Msg}` | Send a zone-wide message *Msg* to all connected clients |
-| `{'@', PlayerID, Msg} | Send a message, *Msg*, to player *PlayerID*. Also accepts a list of Player IDs |
+| `{'@', PlayerID, Msg}` | Send a message, *Msg*, to player *PlayerID*. Also accepts a list of Player IDs |
 | `noreply` | Send no reply to any connected player |
 
 The `gen_zone` gen_server keeps an internal record of connected players and
