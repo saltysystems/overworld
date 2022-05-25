@@ -20,8 +20,8 @@ following callbacks:
 Implementation recommendations
 ------------------------------
 
-# `handle_join`
-## Check authentication
+### `handle_join`
+#### Check authentication
 For the handle join request, you may want to first check if the player is
 authenticated with a Saline session. For example, if you need to load some
 player information from a database you would probably want to first ensure that
