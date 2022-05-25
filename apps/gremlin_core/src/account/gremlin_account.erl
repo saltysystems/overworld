@@ -102,7 +102,7 @@ new_test() ->
         },
         new_account
     ),
-    {[RespOp, RespMsg], _State} = new(Msg, gremlin_session:new()),
+    {[RespOp, RespMsg], _State} = new_account(Msg, gremlin_session:new()),
     ?assertEqual(<<?ACCOUNT_NEW:16>>, RespOp),
     DecodedResp = gremlin_pb:decode_msg(RespMsg, gen_response),
     ?assertEqual('OK', maps:get(status, DecodedResp)).
@@ -117,7 +117,7 @@ new_already_exists_test() ->
         },
         new_account
     ),
-    {[RespOp, RespMsg], _State} = new(Msg, gremlin_session:new()),
+    {[RespOp, RespMsg], _State} = new_account(Msg, gremlin_session:new()),
     ?assertEqual(<<?ACCOUNT_NEW:16>>, RespOp),
     DecodedResp = gremlin_pb:decode_msg(RespMsg, gen_response),
     ?assertEqual('ERROR', maps:get(status, DecodedResp)),
