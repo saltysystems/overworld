@@ -34,7 +34,7 @@
     get_termination_callback/1,
     session_id_req/2,
     session_ping/2,
-    pong/1,
+    session_pong/1,
     version/1
 ]).
 
