@@ -12,7 +12,7 @@
 % gen_zone specific calls
 
 % must have corresponding callbacks
--export([join/3, part/2, action/3]).
+-export([join/3, part/2, action/3, who/1]).
 
 % gen_server callbacks
 -export([
@@ -29,9 +29,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -type server_ref() :: gen_server:server_ref().
 -type session() :: gremlin_session:session().
--type gen_zone_resp() ::  {ok, term()} | 
-          {{'@zone', term()}, term()} |
-          {{'@', list(), term()}, term()}.
+-type gen_zone_resp() ::
+    {ok, term()}
+    | {{'@zone', term()}, term()}
+    | {{'@', list(), term()}, term()}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% internal state
@@ -49,10 +50,10 @@
 }).
 
 -record(player, {
-          id :: integer(),
-          pid :: pid(),
-          serializer :: gremlin_session:serializer()
-         }).
+    id :: integer(),
+    pid :: pid(),
+    serializer :: gremlin_session:serializer()
+}).
 
 -define(TICK_RATE, 30).
 
@@ -172,10 +173,9 @@ action(ServerRef, Msg, Session) ->
             ok
     end.
 
-%-spec who(server_ref()) -> list().
-%who(ServerRef) ->
-%    gen_server:call(ServerRef, ?TAG_I({who})).
-%
+-spec who(server_ref()) -> list().
+who(ServerRef) ->
+    gen_server:call(ServerRef, ?TAG_I({who})).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% gen_server callback functions for internal state
@@ -202,13 +202,15 @@ init({CbMod, CbArgs}) ->
 handle_call(?TAG_I({join, Msg, Session}), _From, St0) ->
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
-    {Status, Notify, Session1, CbData1} = CbMod:handle_join(Msg, Session, CbData0),
-    St1 = 
+    {Status, Notify, Session1, CbData1} = CbMod:handle_join(
+        Msg, Session, CbData0
+    ),
+    St1 =
         case Status of
             ok ->
                 % Add the player to our list
                 add_player(Session, St0);
-            _ -> 
+            _ ->
                 St0
         end,
     % Send any messages as needed - called for side effects
@@ -219,12 +221,12 @@ handle_call(?TAG_I({part, Session}), _From, St0) ->
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
     {Status, Notify, Session1, CbData1} = CbMod:handle_part(Session, CbData0),
-    St1 = 
+    St1 =
         case Status of
             ok ->
                 % Add the player to our list
                 rm_player(Session, St0);
-            _ -> 
+            _ ->
                 St0
         end,
     % Send any messages as needed - called for side effects
@@ -239,19 +241,11 @@ handle_call(?TAG_I({action, Msg, Session}), _From, St0) ->
     St1 = St0#state{cb_data = CbData1},
     handle_notify(action, Notify, St1),
     {reply, {ok, Session1}, St1};
-%handle_call(?TAG_I({who}), _From, St0) ->
-%    CbMod = St0#state.cb_mod,
-%    CbData0 = St0#state.cb_data,
-%    {Reply, CbData1} =
-%        case erlang:function_exported(CbMod, handle_who, 1) of
-%            true ->
-%                CbMod:who(CbData0);
-%            _ ->
-%                {function_not_exported, CbData0}
-%        end,
-%    {reply, Reply, St0#state{cb_data = CbData1}};
-handle_call(Call, _From, St0) ->
-    io:format("Got a not-well-understood call: ~p~n", [Call]),
+handle_call(?TAG_I({who}), _From, St0) ->
+    Players = St0#state.players,
+    IDs = [X#player.id || X <- Players],
+    {reply, IDs, St0};
+handle_call(_Call, _From, St0) ->
     {reply, ok, St0}.
 
 handle_cast(_Cast, St0) ->
@@ -288,57 +282,63 @@ rpc_info(CbMod) ->
             []
     end.
 
-handle_notify(MsgType, {'@', IDs, Msg}, St0) ->
-    io:format("MsgType: ~p~n", [MsgType]),
-    io:format("IDs: ~p~n", [IDs]),
-    io:format("Msg: ~p~n", [Msg]),
-    io:format("St0: ~p~n", [St0]),
-    % Send a reply back to the player
-    Players = St0#state.players,
-    case Players of
-        [] -> 
-            ok;
-        _ -> 
-            % Filter just for the players we want to notify
-            io:format("Players are: ~p~n", [Players]),
-            io:format("Sending a (multi)cast ~p ~p to: ~p~n", [MsgType, Msg, Players])
-    end;
-handle_notify(MsgType, {'@zone', Msg}, St0) ->
-    Players = St0#state.players,
-    case Players of
-        [] -> 
-            ok;
-        _ -> 
-            io:format("Got a broadcast msg ~p ~p to all players ~p~n", [MsgType, Msg, Players])
-    end;
-handle_notify(_, _, _RPCs) -> % no-op for all other types
+handle_notify(MsgType, {'@', IDs, Msg}, #state{players = Players, rpcs = RPCs}) when
+    is_list(IDs) and Players =/= []
+->
+    % Filter just for the players we want to notify
+    P = [lists:keyfind(ID, #player.id, Players) || ID <- IDs],
+    notify_players(MsgType, Msg, RPCs, P);
+handle_notify(MsgType, {'@', ID, Msg}, #state{players = Players, rpcs = RPCs}) when
+    Players =/= []
+->
+    P = lists:keyfind(ID, #player.id, Players),
+    notify_players(MsgType, Msg, RPCs, [P]);
+handle_notify(_MT, {'@', _, _}, #state{players = Players}) when
+    Players =:= []
+->
+    % The last player has left, nobody left to notify but don't crash.
+    ok;
+handle_notify(MsgType, {'@zone', Msg}, #state{players = Players, rpcs = RPCs}) when
+    Players =/= []
+->
+    notify_players(MsgType, Msg, RPCs, Players);
+handle_notify(_MT, {'@zone', _Msg}, #state{players = Players}) when
+    Players =:= []
+->
+    % There are messages to send, but no one left to receive them, so do nothing
+    % rather than crash.
     ok.
 
 add_player(Session, St0) ->
-     % Add the player to the list of players.
-     % TODO: This may end up inefficient later, if we filter the list every
-     % time we want to send messages depending on the serializer. 
-     % Profile it and readjust gen_zone as needed.
-     ID = gremlin_session:get_id(Session),
-     PID = gremlin_session:get_pid(Session),
-     Serializer = gremlin_session:get_serializer(Session),
-     Players = St0#state.players,
-     Player = #player{id=ID, pid=PID, serializer=Serializer},
-     St0#state{players=lists:keystore(ID, #player.id, Players, Player)}.
+    % Add the player to the list of players.
+    % TODO: This may end up inefficient later, if we filter the list every
+    % time we want to send messages depending on the serializer.
+    % Profile it and readjust gen_zone as needed.
+    ID = gremlin_session:get_id(Session),
+    PID = gremlin_session:get_pid(Session),
+    Serializer = gremlin_session:get_serializer(Session),
+    Players = St0#state.players,
+    Player = #player{id = ID, pid = PID, serializer = Serializer},
+    St0#state{players = lists:keystore(ID, #player.id, Players, Player)}.
 
 rm_player(Session, St0) ->
     Players0 = St0#state.players,
     ID = gremlin_session:get_id(Session),
     Players1 = lists:keydelete(ID, #player.id, Players0),
-    St0#state{players=Players1}.
+    St0#state{players = Players1}.
 
-
-%send_msg(Msg, RPC, Player) ->
-%    PID = Player#player.pid,
-%    case Player#player.serializer of
-%        none ->
-%            Pid ! {self(), zone_msg, {MsgType, Msg}};
-%        protobuf ->
-%            ok;      
-%    end.
-         
+notify_players(MsgType, Msg, RPCs, Players) ->
+    Send = fun(Player) ->
+        Pid = Player#player.pid,
+        case Player#player.serializer of
+            none ->
+                Pid ! {self(), '@zone', {MsgType, Msg}};
+            protobuf ->
+                RPC = gremlin_rpc:find_call(MsgType, RPCs),
+                EMod = gremlin_rpc:encoder(RPC),
+                OpCode = gremlin_rpc:opcode(RPC),
+                EncodedMsg = EMod:encode_msg(Msg),
+                Pid ! {self, zone_msg, [OpCode, EncodedMsg]}
+        end
+    end,
+    lists:foreach(Send, Players).
