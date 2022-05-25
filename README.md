@@ -1,16 +1,15 @@
-Gremlin Game Server
+Saline Game Server
 =================================================
-Gremlin is a multiplayer game server powered by Erlang/OTP. The project is
+Saline is a multiplayer game server powered by Erlang/OTP. The project is
 focused on building tools for the creation of persistent multiplayer worlds,
 including account management, database persistence, instances/sharding, NPCs,
 server-side scripting and more.
 
 The project draws inspiration from classic large-scale multiplayer games like
-Ultima Online, EverQuest, Star Wars Galaxies, and the many colorful and
-creative user-generated worlds built with platforms like BYOND and Neverwinter
-Nights.
+Ultima Online, EverQuest, Star Wars Galaxies, and the many amazing
+user-generated worlds built with platforms like BYOND and Neverwinter Nights.
 
-Gremlin is Free Software, licensed under the Affero General Public License v3. 
+Saline is made available under the MIT license.
 
 
 Getting started

@@ -1,5 +1,5 @@
 %%=========================================================================
-%% Gremlin Protocol
+%% Saline Protocol
 %%
 %% This module handles:
 %%  - Registering/deregistering new opcodes for message types
@@ -66,8 +66,8 @@ stop() ->
     gen_server:stop(?SERVER).
 
 %%-------------------------------------------------------------------------
-%% @doc Register a new Erlang application with Gremlin. This is required
-%%      for Gremlin to generate a downloadable zips of protobuf, etc
+%% @doc Register a new Erlang application with Saline. This is required
+%%      for Saline to generate a downloadable zips of protobuf, etc
 %%      files.  Returns {ok, NewState} on success and {{error, Reason},
 %%      State}} if the registration fails.
 %% @end
@@ -141,7 +141,7 @@ registered_ops() ->
     gen_server:call(?MODULE, registered_ops).
 
 %%-------------------------------------------------------------------------
-%% @doc Get a list of Gremlin games registered with the server
+%% @doc Get a list of Saline games registered with the server
 %% @end
 %%-------------------------------------------------------------------------
 -spec registered_apps() -> [atom(), ...].

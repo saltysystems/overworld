@@ -1,5 +1,5 @@
 %%=========================================================================
-%% Gremlin Session
+%% Saline Session
 %%
 %% This module handles communication with game sessions.
 %%
@@ -69,7 +69,7 @@
 %%===========================================================================
 
 %%----------------------------------------------------------------------------
-%% @doc Required callback for Gremlin. Register the ?ACCOUNT_NEW and
+%% @doc Required callback for Saline. Register the ?ACCOUNT_NEW and
 %%      ?ACCOUNT_LOGIN opcodes and associated functions.
 %% @end
 %%----------------------------------------------------------------------------
