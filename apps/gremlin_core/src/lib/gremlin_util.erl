@@ -8,6 +8,12 @@
     remove_dups/1
 ]).
 
+-export([
+         mapfind/3,
+         mapstore/4,
+         maplistsort/2
+        ]).
+
 -spec run_bchecks(list()) -> ok | any().
 run_bchecks([]) ->
     ok;
