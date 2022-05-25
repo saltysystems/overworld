@@ -86,24 +86,12 @@ websocket_handle(_Frame, State) ->
 
 %%--------------------------------------------------------------------------
 %% @doc websocket_info is triggered when a message from another erlang
-%%      process comes into this handler process. At the moment we just shunt
-%%      that back to the client.
+%%      process comes into this handler process.
 %% @end
 %%--------------------------------------------------------------------------
-websocket_info({_Pid, broadcast, Msg}, Session) ->
-    logger:notice("Received broadcast message, forwarding to client"),
+websocket_info({_Pid, zone_msg, Msg}, Session) ->
+    logger:notice("Got a zone_msg, forwarding to client"),
     {reply, {binary, Msg}, Session};
-websocket_info({_Pid, multicast, Msg, Who}, Session) ->
-    ID = gremlin_session:get_id(Session),
-    case lists:member(ID, Who) of
-        true ->
-            logger:debug(
-                "Received message for this client, forwarding to client"
-            ),
-            {reply, {binary, Msg}, Session};
-        false ->
-            {ok, Session}
-    end;
 websocket_info(Info, State) ->
     logger:notice("Got a message from another process: ~p", [Info]),
     {ok, State}.
