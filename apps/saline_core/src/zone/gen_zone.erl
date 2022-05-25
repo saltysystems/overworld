@@ -146,32 +146,15 @@ stop(ServerRef, Reason, Timeout) ->
 
 -spec join(server_ref(), term(), session()) -> gen_zone_resp().
 join(ServerRef, Msg, Session) ->
-    % Check that the session is valid before doing anything
-    case saline_session:is_authenticated(Session) of
-        true ->
-            gen_server:call(ServerRef, ?TAG_I({join, Msg, Session}));
-        false ->
-            {ok, Session}
-    end.
+    gen_server:call(ServerRef, ?TAG_I({join, Msg, Session})).
 
 -spec part(server_ref(), session()) -> gen_zone_resp().
 part(ServerRef, Session) ->
-    % Check that the session is valid before doing anything
-    case saline_session:is_authenticated(Session) of
-        true ->
-            gen_server:call(ServerRef, ?TAG_I({part, Session}));
-        false ->
-            ok
-    end.
+    gen_server:call(ServerRef, ?TAG_I({part, Session})).
 
 -spec action(server_ref(), term(), session()) -> gen_zone_resp().
 action(ServerRef, Msg, Session) ->
-    case saline_session:is_authenticated(Session) of
-        true ->
-            gen_server:call(ServerRef, ?TAG_I({action, Msg, Session}));
-        false ->
-            ok
-    end.
+    gen_server:call(ServerRef, ?TAG_I({action, Msg, Session})).
 
 -spec who(server_ref()) -> list().
 who(ServerRef) ->
@@ -202,8 +185,10 @@ init({CbMod, CbArgs}) ->
 handle_call(?TAG_I({join, Msg, Session}), _From, St0) ->
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
+    RPCs = St0#state.rpcs,
+    Msg1 = decode_msg(join, Msg, Session, RPCs),
     {Status, Notify, Session1, CbData1} = CbMod:handle_join(
-        Msg, Session, CbData0
+        Msg1, Session, CbData0
     ),
     St1 =
         case Status of
@@ -236,7 +221,9 @@ handle_call(?TAG_I({part, Session}), _From, St0) ->
 handle_call(?TAG_I({action, Msg, Session}), _From, St0) ->
     CbMod = St0#state.cb_mod,
     CbData = St0#state.cb_data,
-    {_, Notify, Session1, CbData1} = CbMod:handle_action(Msg, Session, CbData),
+    RPCs = St0#state.rpcs,
+    Msg1 = decode_msg(action, Msg, Session, RPCs),
+    {_, Notify, Session1, CbData1} = CbMod:handle_action(Msg1, Session, CbData),
     % Send any messages as needed - called for side effects
     St1 = St0#state{cb_data = CbData1},
     handle_notify(action, Notify, St1),
@@ -337,8 +324,19 @@ notify_players(MsgType, Msg, RPCs, Players) ->
                 RPC = saline_rpc:find_call(MsgType, RPCs),
                 EMod = saline_rpc:encoder(RPC),
                 OpCode = saline_rpc:opcode(RPC),
-                EncodedMsg = EMod:encode_msg(Msg),
+                EncodedMsg = EMod:encode_msg(Msg, MsgType),
                 Pid ! {self, zone_msg, [OpCode, EncodedMsg]}
         end
     end,
     lists:foreach(Send, Players).
+
+decode_msg(MsgType, Msg, RPCs, Session) ->
+    Serializer = saline_session:get_serializer(Session),
+    case Serializer of
+        none ->
+            Msg;
+        protobuf -> 
+            RPC = saline_rpc:find_call(MsgType, RPCs),
+            EMod = saline_rpc:encoder(RPC),
+            EMod:decode_msg(Msg, MsgType)
+    end.
