@@ -5,7 +5,8 @@
     opcode/1,
     c2s_handler/1,
     s2c_call/1,
-    encoder/1
+    encoder/1,
+    find_call/2
 ]).
 
 -type rpc() :: #{
@@ -38,3 +39,13 @@ s2c_call(Map) ->
 -spec encoder(map()) -> atom() | undefined.
 encoder(Map) ->
     maps:get(encoder, Map, undefined).
+
+-spec find_call(atom(), [rpc(), ...]) -> rpc().
+find_call(V,[H|L]) ->
+    K = s2c_call,
+    case maps:get(K,H) of
+        V -> H;
+        _ -> find_call(V,L)
+    end;
+find_call(_,[]) ->
+    false.
