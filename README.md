@@ -9,7 +9,7 @@ The project draws inspiration from classic large-scale multiplayer games like
 Ultima Online, EverQuest, Star Wars Galaxies, and the many amazing
 user-generated worlds built with platforms like BYOND and Neverwinter Nights.
 
-Saline is made available under the MIT license.
+Saline is open source software, made available under the MIT license.
 
 
 Getting started
