@@ -1,6 +1,6 @@
 # Building Chi.Town
 
-## Setting up Saline
+## Getting started
 
 ### Get the latest Saline code
 
@@ -45,13 +45,11 @@ callback functions:
 
 % Required gen_zone callbacks
 -export([
-         rpc_info/0,
          init/1,
          handle_join/3,
          handle_part/3,
          handle_action/3,
-         handle_tick/1,
-         handle_state_xfer/1
+         handle_tick/2,
         ]).
 ```
 
@@ -69,7 +67,10 @@ In the same file, add:
 ```
 -export([
          start/0,
-         stop/0
+         stop/0,
+         join/2,
+         part/1,
+         action/2
         ]).
 
 -define(SERVER, {local, ?MODULE}).
@@ -88,7 +89,7 @@ part(Session) ->
     gen_zone:join(?SERVER, Session).
 
 action(?SERVER, Msg, Session) ->
-    gen_zone:action(?SERVER, Session).
+    gen_zone:action(?SERVER, Msg, Session).
 ```
 
 Now that we have defined the API boilerplate, we can start writing some game code!
@@ -118,15 +119,30 @@ PlayerIDs is a list of player IDs that should receive this message. Lastly, you
 can use `noreply` to silently accept the message with no updates sent out to
 connected players.
 
+### Implementing the callbacks
+
 Since we don't know exactly what the game state is going to look like just yet,
 let's stub these out with some simple logger notices.
 
 ```
+handle_join(_Msg, Session, State) ->
+    PID = saline_session:get_pid(Session),
+    logger:notice("Process ~p has joined the game!", [PID]),
+    {ok, noreply, State}.
+
+handle_part(Session, State) ->
+    PID = saline_session:get_pid(Session),
+    logger:notice("Process ~p has left the game!", [PID]),
+    {ok, noreply, State}.
 ```
 
 Likewise, actions will have no effect right now but we'll add a log message
 there, as well:
 ```
+handle_action(Msg, Session, State) ->
+    PID = saline_session:get_pid(Session),
+    logger:notice("Process ~p has sent an action: ~p", [PID, Msg]),
+    {ok, noreply, State}.
 ```
 
 There are a few more callbacks that we need to define to properly implement the
@@ -139,4 +155,58 @@ handle_tick(_Players, State) ->
     {ok, noreply, State}.
 ```
 
+### Testing it out so far 
+You can save up your work at this point and try things out.
+
+```
+$ rebar3 shell
+===> Verifying dependencies...
+===> Analyzing applications...
+===> Compiling saline
+===> Compiling chi
+Erlang/OTP 25 [erts-13.0] [source] [64-bit] [smp:4:4] [ds:4:4:10] [async-threads:1] [jit:ns] [dtrace] [sharing-preserving]
+
+Eshell V13.0  (abort with ^G)
+===> Booted gproc
+===> Booted mnesia
+===> Booted cowlib
+===> Booted ranch
+===> Booted cowboy
+===> Booted saline
+===> Booted ks
+===> Booted sasl
+1> 
+```
+
+From the shell you can start the world server and verify everything is working:
+```
+1> chi_worldserver:start().
+{ok,<0.482.0>}
+2>
+2> 2022-05-28T11:53:45.405605-05:00 : notice: Got a tick!
+2022-05-28T11:53:45.509662-05:00 : notice: Got a tick!
+2022-05-28T11:53:45.610799-05:00 : notice: Got a tick!
+2022-05-28T11:53:45.711791-05:00 : notice: Got a tick!
+...
+3> chi_worldserver:stop().
+ok
+```
+
+## Writing game logic
+
+*TODO*
+
+## Wiring up the client
+
+### Serializing messages
+If we ever want players to connect from the outside world, we'll need to define
+some messages that we can serialize and send across the wire. Saline supports
+[protobuf](https://developers.google.com/protocol-buffers) as a standard wire format
+to communicate between game server and client.
+
+### Saline and Godot
+If you plan to write your client in [Godot](https://godotengine.org/), you can
+add the Saline plugin to your Godot game and automatically generate a client
+library based on your protobuf schema.
+[https://github.com/saltysystems/saline_client](https://github.com/saltysystems/saline_client)
 
