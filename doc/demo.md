@@ -265,9 +265,53 @@ We can then join and part the server with this session information:
 ```
 
 
-## Writing game logic
+## Theorycrafting the game logic
 
+So let's muse a bit about how this game might work..
 
+Clicker games usually let the player start out by clicking on a bunch of stuff
+quickly, and then turn those manual actions into automated actions. I think a
+fun approach might be to gradually allow the player to automate more and more,
+driving a narrative of having the player start out as a low-level street
+dealer, working their way up to kingpin status, and eventually attempting to
+exit into very wealthy legitimacy! All the while, other players compete to keep
+anyone from becoming too powerful.
+
+So one way we might approach the state of the world server is by having a
+`#player{}` record that keeps track of various game data for the player. Let's
+spitball some fields. 
+
+I think a player should have two separate cash flows, clean money and dirty
+money.  Clean money can be used for anything, while dirty money can only be
+used for nefarious activities. Advancing in status should require the use of
+clean money, and dirty money should be converted to clean money via a
+laundering mechanism. We should also be able to hire and pay for goons that
+will push our product for us. Let's suppose that goons are paid at a rate of 1
+unit of money per tick, but return 1.1 units of money per tick in profit - so,
+barring any unusual circumstances, goons will generate passive dirty money
+income.
+
+In order to launder money in our game, we'll need to give the player both some
+manual actions they can do to launder, and some automated ones for later. We
+don't have to be as fancy as real money launderers, so some simple mechanisms
+for laundering money in the game should be alright here. I think a nice simple
+mechanism would be a gambling mechanic. Let's start with giving the player the
+ability to take on the one-armed bandit with a slot machine, and also give the
+player a longer term "investment" option - NFTs! I'll leave it as an exercise
+to the reader to add some multiplayer friendly additions. Blackjack is natural,
+and Liar's Dice would be very appropo. 
+
+To automate the laundering process, we can add the ability for the player to
+buy fronts with clean money. In the real world, fronts are businesses that deal
+with a lot of cashflow - like laundromats (hence the term), strip clubs,
+casinos, etc. We'll give the player the option to buy a couple of different
+fronts and those can live as their own Erlang processes, generating clean money
+(or not!) for the owner.
+
+Eventually, the player will want to buy the sorts of completely legitimate
+businesses that are totally disconnected from their dirty money flow. Other
+players will get some advantage from disrupting your legitimate activities, so
+ride the bull as long as you can and exit rich!
 
 ## Wiring up the client
 
