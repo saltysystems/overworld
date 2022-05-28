@@ -153,13 +153,13 @@ let's stub these out with some simple logger notices.
 
 ```erlang
 handle_join(_Msg, Session, State) ->
-    PID = saline_session:get_pid(Session),
-    logger:notice("Process ~p has joined the game!", [PID]),
+    ID = saline_session:get_id(Session),
+    logger:notice("Player ~p has joined the game!", [ID]),
     {ok, noreply, State}.
 
 handle_part(Session, State) ->
-    PID = saline_session:get_pid(Session),
-    logger:notice("Process ~p has left the game!", [PID]),
+    ID = saline_session:get_id(Session),
+    logger:notice("Player ~p has left the game!", [ID]),
     {ok, noreply, State}.
 ```
 
@@ -168,8 +168,8 @@ there, as well:
 
 ```erlang
 handle_action(Msg, Session, State) ->
-    PID = saline_session:get_pid(Session),
-    logger:notice("Process ~p has sent an action: ~p", [PID, Msg]),
+    ID = saline_session:get_id(Session),
+    logger:notice("Player ~p has sent an action: ~p", [ID, Msg]),
     {ok, noreply, State}.
 ```
 
