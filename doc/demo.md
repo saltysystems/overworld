@@ -6,7 +6,7 @@
 
 Clone the repository:
 
-```
+```bash
 $ git clone https://github.com/saltysystems/saline
 ```
 
@@ -15,7 +15,7 @@ $ git clone https://github.com/saltysystems/saline
 Saline is already set up to be a rebar3 umbrella application. You need only
 create a new app, we will call it `chi`: 
 
-```
+```bash
 $ cd saline/apps
 $ rebar3 new app chi
 ```
@@ -64,7 +64,7 @@ server and will handle message serialization/deserialization between the
 clients and the server.
 
 In the same file, add:
-```
+```erlang
 -export([
          start/0,
          stop/0,
@@ -100,7 +100,7 @@ sort of figuring things out, we can play fast and loose and just use a map to
 hold all of our game data. We'll set the game clock to tick once every 100
 miliseconds, giving us 10 game updates per second.
 
-```
+```erlang
 init([]) ->
     InitialState = #{},
     TickRate = 100, % a leisurely 10 ticks/sec
@@ -115,13 +115,13 @@ clients and the server. So all you need to write is the game logic!
 #### Aside: Saline messages
 When completing a callback function, you'll want to return a 3-tuple to
 `gen_zone` with the following rules:
-```
+```erlang
     {Status, Response, State} when
         Status :: ok | {ok, Session},
         Response :: noreply 
                     | {'@zone', term()}
                     | {'@', list(), term()},
-        State :: term()
+        State :: term().
 ```
 
 In plain language: for `Status` messages, you want to either respond `ok` or
@@ -151,7 +151,7 @@ Finally, you should return your internal state to `gen_zone` via `State`.
 Since we don't know exactly what the game state is going to look like just yet,
 let's stub these out with some simple logger notices.
 
-```
+```erlang
 handle_join(_Msg, Session, State) ->
     PID = saline_session:get_pid(Session),
     logger:notice("Process ~p has joined the game!", [PID]),
@@ -165,7 +165,8 @@ handle_part(Session, State) ->
 
 Likewise, actions will have no effect right now but we'll add a log message
 there, as well:
-```
+
+```erlang
 handle_action(Msg, Session, State) ->
     PID = saline_session:get_pid(Session),
     logger:notice("Process ~p has sent an action: ~p", [PID, Msg]),
@@ -176,7 +177,7 @@ There are a few more callbacks that we need to define to properly implement the
 `gen_zone` behavior. Since the game server is going to update every 100ms, we
 have to implement logic for that update. This is done via the `handle_tick` function:
 
-```
+```erlang
 handle_tick(_Players, State) ->
     logger:notice("Got a tick!"),
     {ok, noreply, State}.
@@ -221,11 +222,11 @@ ok
 
 Now that we know the world server is accepting ticks, we'll remove the notice
 since it's a bit of a nuisance. Change the following:
-```
+```erlang
     logger:notice("Got a tick!")
 ```
 to
-```
+```erlang
     logger:debug("Got a tick!")
 ```
 
