@@ -1,9 +1,9 @@
 Saline Game Server
 =================================================
 Saline is a multiplayer game server framework powered by Erlang/OTP. The
-project is focused on building tools for the creation of multiplayer worlds of
-all kinds, but with an special focus on account management, database
-persistence, instances/sharding, NPCs, server-side scripting and more.
+project is focused on building tools for the creation of player-driven worlds
+of all kinds, with a special focus on account management, database persistence,
+instances/sharding, NPCs, server-side scripting and more.
 
 The project draws inspiration from classic large-scale multiplayer games like
 Ultima Online, EverQuest, Star Wars Galaxies, and the many amazing
