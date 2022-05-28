@@ -49,7 +49,7 @@ callback functions:
          handle_join/3,
          handle_part/3,
          handle_action/3,
-         handle_tick/2,
+         handle_tick/2
         ]).
 ```
 
