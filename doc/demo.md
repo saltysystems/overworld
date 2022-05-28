@@ -86,7 +86,7 @@ join(Msg, Session) ->
     gen_zone:join(?SERVER, Msg, Session).
 
 part(Session) ->
-    gen_zone:join(?SERVER, Session).
+    gen_zone:part(?SERVER, Session).
 
 action(Msg, Session) ->
     gen_zone:action(?SERVER, Msg, Session).
@@ -113,18 +113,38 @@ server and will handle message serialization/deserialization between the
 clients and the server. So all you need to write is the game logic!
 
 #### Aside: Saline messages
-Saline has 3 different messages that it understands. You can use `'@zone'` to
-broadcast a message to everyone in the zone, in our case everyone connected to
-the World Server. You can also target individuals with `{'@', PlayerIDs}` where
-PlayerIDs is a list of player IDs that should receive this message. Lastly, you
-can use `noreply` to silently accept the message with no updates sent out to
-connected players. Here's a handy reference table:
+When completing a callback function, you'll want to return a 3-tuple to
+`gen_zone` with the following rules:
+```
+    {Status, Response, State} when
+        Status :: ok | {ok, Session},
+        Response :: noreply 
+                    | {'@zone', term()}
+                    | {'@', list(), term()},
+        State :: term()
+```
+
+In plain language: for `Status` messages, you want to either respond `ok` or
+respond `ok` with an updated copy of the player's session. You may update the
+player's session if there's something about it that your callback function
+changes. Perhaps you wanted to set some game specific information in via
+`saline_session:set_game_info/1`, for example.
+
+For responses, `gen_zone` understands 3 different response messages from a
+server implementing the behaviour. You can use `'@zone'` to broadcast a message
+to everyone in the zone, in our case everyone connected to the World Server.
+You can also target individuals with `{'@', PlayerIDs}` where PlayerIDs is a
+list of player IDs that should receive this message. Lastly, you can use
+`noreply` to silently accept the message with no updates sent out to connected
+players. Here's a handy reference table:
 
 |  Response       | Description |
 | --------------- | ----------- |
 | `{'@zone', Msg}` | Send a zone-wide message *Msg* to all connected clients |
 | `{'@', PlayerID, Msg}` | Send a message, *Msg*, to player *PlayerID*. Also accepts a list of Player IDs |
 | `noreply` | Send no reply to any connected player |
+
+Finally, you should return your internal state to `gen_zone` via `State`.
 
 ### Implementing the callbacks
 
@@ -198,6 +218,52 @@ From the shell you can start the world server and verify everything is working:
 3> chi_worldserver:stop().
 ok
 ```
+
+Now that we know the world server is accepting ticks, we'll remove the notice
+since it's a bit of a nuisance. Change the following:
+```
+    logger:notice("Got a tick!")
+```
+to
+```
+    logger:debug("Got a tick!")
+```
+
+That way we'll still have the message should we need to turn up the logger
+verbosity later.
+
+If you still have your Erlang shell open, you can simply run
+```
+5> c(chi_worldserver).
+```
+To recompile the world server with the latest version of the code. Now when you
+start the server, the shell will be mercifully terse:
+```
+7> chi_worldserver:start().
+{ok,<0.492.0>}
+8>
+```
+
+Let's also try to join the server as a player from the shell. First we need to create a Saline session:
+```
+8> S = saline_session:new().
+{session,-576460752303423295,undefined,none,false,0,
+         undefined,undefined}
+```
+
+We can then join and part the server with this session information:
+
+```
+9> chi_worldserver:join("hello world!", S).
+2022-05-28T14:23:52.409962-05:00 : notice: Player -576460752303423295 has joined the game!
+{ok,{session,,-576460752303423295,undefined,undefined,false,
+             0,undefined,undefined}}
+10> chi_worldserver:part(S).
+2022-05-28T14:25:09.754252-05:00 : notice: Player -576460752303423295 has left the game!
+{ok,{session,-576460752303423295,undefined,undefined,false,
+             0,undefined,undefined}}
+```
+
 
 ## Writing game logic
 
