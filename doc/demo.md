@@ -117,7 +117,13 @@ broadcast a message to everyone in the zone, in our case everyone connected to
 the World Server. You can also target individuals with `{'@', PlayerIDs}` where
 PlayerIDs is a list of player IDs that should receive this message. Lastly, you
 can use `noreply` to silently accept the message with no updates sent out to
-connected players.
+connected players. Here's a handy reference table:
+
+|  Response       | Description |
+| --------------- | ----------- |
+| `{'@zone', Msg}` | Send a zone-wide message *Msg* to all connected clients |
+| `{'@', PlayerID, Msg}` | Send a message, *Msg*, to player *PlayerID*. Also accepts a list of Player IDs |
+| `noreply` | Send no reply to any connected player |
 
 ### Implementing the callbacks
 
