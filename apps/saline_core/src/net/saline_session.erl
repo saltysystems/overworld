@@ -42,12 +42,12 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -type msg() :: nonempty_binary() | [binary(), ...].
--type serializer() :: 'none' | 'protobuf'.
+-type serializer() :: 'undefined' | 'protobuf'.
 
 -record(session, {
-    id :: integer() | undefined,
+    id :: integer(),
     pid :: pid() | undefined,
-    serializer = none :: serializer(),
+    serializer :: serializer(),
     authenticated = false :: boolean(),
     % ms
     latency = 0 :: non_neg_integer(),
@@ -225,7 +225,7 @@ multicast(EncodedMsg, SessionIDs) ->
 %%----------------------------------------------------------------------------
 -spec new() -> session().
 new() ->
-    #session{}.
+    #session{id=erlang:unique_integer()}.
 
 %%----------------------------------------------------------------------------
 %% @doc Set the session ID
@@ -261,7 +261,7 @@ get_pid(Session) ->
 
 %%----------------------------------------------------------------------------
 %% @doc Set the format for serializing data. If communication happens all
-%%      within Erlang node(s), then set the serializer to 'none'.
+%%      within Erlang node(s), then there is no need to set a serializer.
 %% @end
 %%----------------------------------------------------------------------------
 -spec set_serializer(serializer(), session()) -> session().
