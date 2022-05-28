@@ -31,12 +31,16 @@ OpCodes `0x0` through `0x1000` are soft reserved for Saline Core messages, while
 
 Defining a new RPC
 -----------------
-To define a new message, simply write a module using the behaviour `saline_rpc` and implementing the required callbacks, `rpc_info/0` which should return a list of maps with keys as above.
+To define a new message, simply write a module using the behaviour `saline_rpc`
+and implementing the required callbacks, `rpc_info/0` which should return a
+list of maps with keys as above.
 
-
-Messages in Saline can be synchronous or asynchronous. Synchronous messages initiated by the client are defined by 2 keys: 
- - `c2s_call`, which will generate an function in the client library with appropriate arguments
- - `c2s_handler`, which corresponds to some module and function to process the message. Note that your handler's function must be either arity 1 (to process messages without an established session, see `account_new` for an example)  or arity 2.
+Messages in Saline can be synchronous or asynchronous. Synchronous messages
+initiated by the client are defined by one key:
+ - `c2s_handler`, which corresponds to some module and function to process the
+   message. Note that your handler's function must be either arity 1 (to
+   process messages without an established session, see `account_new` for an
+   example)  or arity 2.
 
 
 Generating the client library
@@ -44,7 +48,11 @@ Generating the client library
 
 Saline can automatically generate a client library in GDScript usable by Godot v3.x.
 
-This library should be dropped into your scripts folder, along with your protobuf file. You will need to install the [Godobuf](https://github.com/oniksan/godobuf) plugin in order to generate code to marshall/unmarshall data from Protobuf from/to your Godot client. You'll want to autoload it with some name, I suggest `NetworkClient`. 
+This library should be dropped into your scripts folder, along with your
+protobuf file. You will need to install the
+[Godobuf](https://github.com/oniksan/godobuf) plugin in order to generate code
+to marshall/unmarshall data from Protobuf from/to your Godot client. You'll
+want to autoload it with some name, I suggest `NetworkClient`. 
 
 Once Erlang is running, you can invoke the following to write out a library:
 
@@ -52,7 +60,8 @@ Once Erlang is running, you can invoke the following to write out a library:
 1> saline_binding:write().
 ```
 
-The library file will live in `apps/saline_core/static/libsaline.gd`. It's up to you to distribute the file. 
+The library file will live in `apps/saline_core/static/libsaline.gd`. It's up
+to you to distribute the file. 
 
 
 
