@@ -12,7 +12,7 @@ git clone https://github.com/saltysystems/saline
 
 ### Creating a new app
 
-Saline is already set up to be rebar3 umbrella application. You need only
+Saline is already set up to be a rebar3 umbrella application. You need only
 create a new app, we will call it `chi`: 
 
 ```
