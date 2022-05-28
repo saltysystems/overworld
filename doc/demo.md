@@ -1,4 +1,4 @@
-# Building Chi.Town
+# Building your first game
 
 ## Getting started
 
