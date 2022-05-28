@@ -30,9 +30,9 @@
 -type server_ref() :: gen_server:server_ref().
 -type session() :: saline_session:session().
 -type gen_zone_resp() ::
-    {ok, term()}
-    | {{'@zone', term()}, term()}
-    | {{'@', list(), term()}, term()}.
+    noreply
+    | {'@zone', term()}
+    | {'@', list(), term()}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% internal state
@@ -74,23 +74,31 @@
     Msg :: term(),
     Session :: session(),
     State :: term(),
-    Result :: {ok, Session}.
+    Result :: {Status, Reply, State},
+    Status :: ok | {ok, Session},
+    Reply :: gen_zone_resp().
 
 -callback handle_part(Session, State) -> Result when
     Session :: session(),
     State :: term(),
-    Result :: {ok, Session}.
+    Result :: {Status, Response, State},
+    Status :: ok | {ok, Session},
+    Response :: gen_zone_resp().
 
 -callback handle_action(Msg, Session, State) -> Result when
     Msg :: term(),
     Session :: session(),
     State :: term(),
-    Result :: {ok, Session}.
+    Result :: {Status, Response, State},
+    Status :: ok | {ok, Session},
+    Response :: gen_zone_resp().
 
 -callback handle_tick(Players, State) -> Result when
     Players :: list(),
     State :: term(),
-    Result :: term().
+    Result :: {Status, Response, State},
+    Status :: ok, 
+    Response :: gen_zone_resp().
 
 % not sure we need this guy.
 -callback handle_state_xfer(State) -> Result when
@@ -147,15 +155,15 @@ stop(ServerRef, Reason, Timeout) ->
 %%% public behavior API
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
--spec join(server_ref(), term(), session()) -> gen_zone_resp().
+-spec join(server_ref(), term(), session()) -> {ok, session()}.
 join(ServerRef, Msg, Session) ->
     gen_server:call(ServerRef, ?TAG_I({join, Msg, Session})).
 
--spec part(server_ref(), session()) -> gen_zone_resp().
+-spec part(server_ref(), session()) -> {ok, session()}.
 part(ServerRef, Session) ->
     gen_server:call(ServerRef, ?TAG_I({part, Session})).
 
--spec action(server_ref(), term(), session()) -> gen_zone_resp().
+-spec action(server_ref(), term(), session()) -> {ok, session()}.
 action(ServerRef, Msg, Session) ->
     gen_server:call(ServerRef, ?TAG_I({action, Msg, Session})).
 
@@ -198,18 +206,17 @@ handle_call(?TAG_I({join, Msg, Session}), _From, St0) ->
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
     RPCs = St0#state.rpcs,
-    Msg1 = decode_msg(join, Msg, Session, RPCs),
-    {Status, Notify, Session1, CbData1} = CbMod:handle_join(
-        Msg1, Session, CbData0
-    ),
-    St1 =
+    Msg1 = decode_msg(join, Msg, RPCs, Session),
+    {Status, Notify, CbData1} = CbMod:handle_join(Msg1, Session, CbData0),
+    {Session1, St1} = 
         case Status of
             ok ->
-                % Add the player to our list
-                add_player(Session, St0);
-                % TODO: try to automatically set the termination callback
+                % Server didn't update the session, just send along the one we have
+                {Session, player_add(Session, St0)};
+            {ok, S1} -> 
+                {S1, player_add(S1, St0)};
             _ ->
-                St0
+                {Session, St0}
         end,
     % Send any messages as needed - called for side effects
     St2 = St1#state{cb_data = CbData1},
@@ -218,14 +225,14 @@ handle_call(?TAG_I({join, Msg, Session}), _From, St0) ->
 handle_call(?TAG_I({part, Session}), _From, St0) ->
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
-    {Status, Notify, Session1, CbData1} = CbMod:handle_part(Session, CbData0),
-    St1 =
+    {Status, Notify, CbData1} = CbMod:handle_part(Session, CbData0),
+    {Session1, St1} =
         case Status of
             ok ->
-                % Add the player to our list
-                rm_player(Session, St0);
-            _ ->
-                St0
+                % Remove the player from our list
+                {Session, player_rm(Session, St0)};
+            {ok, S1} ->
+                {S1, player_rm(S1, St0)}
         end,
     % Send any messages as needed - called for side effects
     St2 = St1#state{cb_data = CbData1},
@@ -236,7 +243,15 @@ handle_call(?TAG_I({action, Msg, Session}), _From, St0) ->
     CbData = St0#state.cb_data,
     RPCs = St0#state.rpcs,
     Msg1 = decode_msg(action, Msg, Session, RPCs),
-    {_, Notify, Session1, CbData1} = CbMod:handle_action(Msg1, Session, CbData),
+    % We don't take any actions after an action because it won't update any
+    % internal state of gen_zone. Just accept the new state data and any
+    % updates to the player's session from the callback module.
+    {Status, Notify, CbData1} = CbMod:handle_action(Msg1, Session, CbData),
+    Session1 = 
+      case Status of
+        ok -> Session;
+        {ok, S1} -> S1
+      end,
     % Send any messages as needed - called for side effects
     St1 = St0#state{cb_data = CbData1},
     handle_notify(action, Notify, St1),
@@ -313,7 +328,7 @@ handle_notify(_MT, noreply, _State) ->
     % No reply 
     ok.
 
-add_player(Session, St0) ->
+player_add(Session, St0) ->
     % Add the player to the list of players.
     % TODO: This may end up inefficient later, if we filter the list every
     % time we want to send messages depending on the serializer.
@@ -325,7 +340,7 @@ add_player(Session, St0) ->
     Player = #player{id = ID, pid = PID, serializer = Serializer},
     St0#state{players = lists:keystore(ID, #player.id, Players, Player)}.
 
-rm_player(Session, St0) ->
+player_rm(Session, St0) ->
     Players0 = St0#state.players,
     ID = saline_session:get_id(Session),
     Players1 = lists:keydelete(ID, #player.id, Players0),
@@ -350,7 +365,7 @@ notify_players(MsgType, Msg, RPCs, Players) ->
 decode_msg(MsgType, Msg, RPCs, Session) ->
     Serializer = saline_session:get_serializer(Session),
     case Serializer of
-        none ->
+        undefined ->
             Msg;
         protobuf -> 
             RPC = saline_rpc:find_call(MsgType, RPCs),
