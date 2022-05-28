@@ -87,13 +87,16 @@
     State :: term(),
     Result :: {ok, Session}.
 
--callback handle_tick(State) -> Result when
+-callback handle_tick(Players, State) -> Result when
+    Players :: list(),
     State :: term(),
     Result :: term().
 
+% not sure we need this guy.
 -callback handle_state_xfer(State) -> Result when
     State :: term(),
     Result :: term().
+-optional_callbacks([handle_state_xfer/1]).
 
 -callback rpc_info() -> Result when
     Result :: saline_rpc:callbacks().
@@ -167,6 +170,15 @@ who(ServerRef) ->
 % @doc Initialize the internal state of the zone, with timer
 init({CbMod, CbArgs}) ->
     case CbMod:init(CbArgs) of
+        {ok, CbData, TickRate} ->
+            Timer = erlang:send_after(1, self(), ?TAG_I(tick)),
+            {ok, #state{
+                cb_mod = CbMod,
+                cb_data = CbData,
+                tick_timer = Timer,
+                tick_rate = TickRate,
+                rpcs = rpc_info(CbMod)
+            }};
         {ok, CbData} ->
             Timer = erlang:send_after(1, self(), ?TAG_I(tick)),
             {ok, #state{
@@ -195,6 +207,7 @@ handle_call(?TAG_I({join, Msg, Session}), _From, St0) ->
             ok ->
                 % Add the player to our list
                 add_player(Session, St0);
+                % TODO: try to automatically set the termination callback
             _ ->
                 St0
         end,
@@ -253,8 +266,9 @@ code_change(_OldVsn, St0, _Extra) -> {ok, St0}.
 %%% internal functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-tick(St0 = #state{cb_mod = CbMod, cb_data = CbData0}) ->
-    case CbMod:handle_tick(CbData0) of
+tick(St0 = #state{cb_mod = CbMod, cb_data = CbData0, players = Players}) ->
+    PlayerIDs = [ X#player.id || X <- Players ],
+    case CbMod:handle_tick(PlayerIDs, CbData0) of
         {ok, Notify, CbData1} ->
             St1 = St0#state{cb_data = CbData1},
             handle_notify(tick, Notify, St1),
@@ -294,6 +308,9 @@ handle_notify(_MT, {'@zone', _Msg}, #state{players = Players}) when
 ->
     % There are messages to send, but no one left to receive them, so do nothing
     % rather than crash.
+    ok;
+handle_notify(_MT, noreply, _State) ->
+    % No reply 
     ok.
 
 add_player(Session, St0) ->
