@@ -7,7 +7,7 @@
 Clone the repository:
 
 ```
-git clone https://github.com/saltysystems/saline
+$ git clone https://github.com/saltysystems/saline
 ```
 
 ### Creating a new app
@@ -16,8 +16,8 @@ Saline is already set up to be a rebar3 umbrella application. You need only
 create a new app, we will call it `chi`: 
 
 ```
-cd apps
-rebar3 new app chi
+$ cd saline/apps
+$ rebar3 new app chi
 ```
 
 ### Making some decisions
@@ -39,7 +39,7 @@ Make a new Erlang source file called `chi_worldserver.erl` in `apps/chi/src`.
 
 You'll want to specify that this is a `gen_zone` server and export the required
 callback functions:
-```
+```erlang
 -module(chi_worldserver).
 -behaviour(gen_zone).
 
