@@ -73,11 +73,11 @@ In the same file, add:
          action/2
         ]).
 
--define(SERVER, {local, ?MODULE}).
+-define(SERVER, ?MODULE).
 
 % API
 start() ->
-    gen_zone:start_link(?SERVER, ?MODULE, [], []).
+    gen_zone:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 stop() ->
     gen_zone:stop(?SERVER).
@@ -88,8 +88,9 @@ join(Msg, Session) ->
 part(Session) ->
     gen_zone:join(?SERVER, Session).
 
-action(?SERVER, Msg, Session) ->
+action(Msg, Session) ->
     gen_zone:action(?SERVER, Msg, Session).
+
 ```
 
 Now that we have defined the API boilerplate, we can start writing some game code!
