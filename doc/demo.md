@@ -26,9 +26,9 @@ want to make a game based on rounds or turns, we'll need to use `gen_match`. If
 we want to make a game based on a constant tick timer, we'll use `gen_zone`.
 
 For this project, we'll be putting together a "clicker" style game that let's
-players compete for control over the territories of CHI TOWN. We want everyone
-to be competing on the same field as the clock ticks by, so let's use
-`gen_zone`. 
+players sling narcotics and compete for control over the territories of the
+cyberpunk, near-future city of CHI TOWN. We want everyone to be competing on
+the same field as the clock ticks by, so let's use `gen_zone`. 
 
 We'll start simply and call our first area the "world", which will have a
 single timer that governs the tick rate for our players and keeps track of
@@ -201,7 +201,6 @@ Eshell V13.0  (abort with ^G)
 ===> Booted ranch
 ===> Booted cowboy
 ===> Booted saline
-===> Booted ks
 ===> Booted sasl
 1> 
 ```
