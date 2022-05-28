@@ -267,7 +267,7 @@ We can then join and part the server with this session information:
 
 ## Writing game logic
 
-*TODO*
+
 
 ## Wiring up the client
 

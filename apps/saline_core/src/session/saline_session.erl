@@ -225,7 +225,7 @@ multicast(EncodedMsg, SessionIDs) ->
 %%----------------------------------------------------------------------------
 -spec new() -> session().
 new() ->
-    #session{id=erlang:unique_integer()}.
+    #session{id = erlang:unique_integer()}.
 
 %%----------------------------------------------------------------------------
 %% @doc Set the session ID
@@ -336,7 +336,7 @@ get_game_info(Session) ->
 %% @doc Set the termination callback
 %% @end
 %%----------------------------------------------------------------------------
--spec set_termination_callback(mfa(), session()) -> map().
+-spec set_termination_callback(mfa(), session()) -> session().
 set_termination_callback(Callback, Session) ->
     Session#session{termination_callback = Callback}.
 
@@ -344,7 +344,7 @@ set_termination_callback(Callback, Session) ->
 %% @doc Get the termination callback
 %% @end
 %%----------------------------------------------------------------------------
--spec get_termination_callback(session()) -> map().
+-spec get_termination_callback(session()) -> undefined | mfa().
 get_termination_callback(Session) ->
     Session#session.termination_callback.
 

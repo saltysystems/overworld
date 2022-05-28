@@ -11,7 +11,8 @@
 -export([
     mapfind/3,
     mapstore/4,
-    maplistsort/2
+    maplistsort/2,
+    maplistsort/3
 ]).
 
 -spec run_bchecks(list()) -> ok | any().

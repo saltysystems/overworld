@@ -49,7 +49,7 @@ rpc_info() ->
 -spec new_account(binary(), saline_session:session()) ->
     saline_session:net_msg().
 new_account(Message, Session) ->
-    Decode = saline_pb:decode_msg(Message, new_account),
+    Decode = saline_pb:decode_msg(Message, account_new),
     Email = maps:get(email, Decode),
     Password = maps:get(password, Decode),
     IsValid =
@@ -76,8 +76,7 @@ new_account(Email, Password, true, Session) ->
             _ ->
                 Reply = saline_protocol:response(ok),
                 S1 = saline_session:set_authenticated(true, Session),
-                S2 = saline_session:set_email(Email, S1),
-                {Reply, S2}
+                {Reply, S1}
         end,
     OpCode = <<?ACCOUNT_NEW:16>>,
     R = {[OpCode, Msg], Session1},
@@ -100,7 +99,7 @@ new_test() ->
             email => Email,
             password => Password
         },
-        new_account
+        account_new
     ),
     {[RespOp, RespMsg], _State} = new_account(Msg, saline_session:new()),
     ?assertEqual(<<?ACCOUNT_NEW:16>>, RespOp),
@@ -115,7 +114,7 @@ new_already_exists_test() ->
             email => Email,
             password => Password
         },
-        new_account
+        account_new
     ),
     {[RespOp, RespMsg], _State} = new_account(Msg, saline_session:new()),
     ?assertEqual(<<?ACCOUNT_NEW:16>>, RespOp),
@@ -137,9 +136,8 @@ login(Message, Session) ->
         case saline_db_account:login(Email, Password) of
             true ->
                 Reply = saline_protocol:response(ok),
-                S1 = saline_session:set_email(Email, Session),
-                S2 = saline_session:set_authenticated(true, S1),
-                {Reply, S2};
+                S1 = saline_session:set_authenticated(true, Session),
+                {Reply, S1};
             false ->
                 logger:warning("Invalid password attempt for ~p", [Email]),
                 Reply = saline_protocol:response(

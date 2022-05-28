@@ -23,7 +23,7 @@ init(Req1, State) ->
     ),
     {ok, Req2, State}.
 
--spec protofiles(list()) -> [{string(), string()}, ...].
+-spec protofiles(list()) -> [{string(), binary()}, ...].
 protofiles(FileList) ->
     protofiles(FileList, []).
 
@@ -34,7 +34,7 @@ protofiles([H | T], Acc) ->
     protofiles(T, [Files | Acc]).
 
 % return the path of the proto file for the given application
--spec protofile(atom()) -> list().
+-spec protofile(atom()) -> binary().
 protofile(App) ->
     D = code:priv_dir(App),
     % Very hard-coded and rudimentary.

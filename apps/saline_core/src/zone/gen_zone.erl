@@ -65,8 +65,10 @@
     Args :: term(),
     Result ::
         {ok, InitialData}
+        | {ok, InitialData, TickRate}
         | ignore
         | {stop, Reason},
+    TickRate :: pos_integer(),
     InitialData :: term(),
     Reason :: term().
 
@@ -97,7 +99,7 @@
     Players :: list(),
     State :: term(),
     Result :: {Status, Response, State},
-    Status :: ok, 
+    Status :: ok,
     Response :: gen_zone_resp().
 
 % not sure we need this guy.
@@ -208,12 +210,12 @@ handle_call(?TAG_I({join, Msg, Session}), _From, St0) ->
     RPCs = St0#state.rpcs,
     Msg1 = decode_msg(join, Msg, RPCs, Session),
     {Status, Notify, CbData1} = CbMod:handle_join(Msg1, Session, CbData0),
-    {Session1, St1} = 
+    {Session1, St1} =
         case Status of
             ok ->
                 % Server didn't update the session, just send along the one we have
                 {Session, player_add(Session, St0)};
-            {ok, S1} -> 
+            {ok, S1} ->
                 {S1, player_add(S1, St0)};
             _ ->
                 {Session, St0}
@@ -247,11 +249,11 @@ handle_call(?TAG_I({action, Msg, Session}), _From, St0) ->
     % internal state of gen_zone. Just accept the new state data and any
     % updates to the player's session from the callback module.
     {Status, Notify, CbData1} = CbMod:handle_action(Msg1, Session, CbData),
-    Session1 = 
-      case Status of
-        ok -> Session;
-        {ok, S1} -> S1
-      end,
+    Session1 =
+        case Status of
+            ok -> Session;
+            {ok, S1} -> S1
+        end,
     % Send any messages as needed - called for side effects
     St1 = St0#state{cb_data = CbData1},
     handle_notify(action, Notify, St1),
@@ -282,7 +284,7 @@ code_change(_OldVsn, St0, _Extra) -> {ok, St0}.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 tick(St0 = #state{cb_mod = CbMod, cb_data = CbData0, players = Players}) ->
-    PlayerIDs = [ X#player.id || X <- Players ],
+    PlayerIDs = [X#player.id || X <- Players],
     case CbMod:handle_tick(PlayerIDs, CbData0) of
         {ok, Notify, CbData1} ->
             St1 = St0#state{cb_data = CbData1},
@@ -298,34 +300,20 @@ rpc_info(CbMod) ->
             []
     end.
 
-handle_notify(MsgType, {'@', IDs, Msg}, #state{players = Players, rpcs = RPCs}) when
-    is_list(IDs) and Players =/= []
-->
+handle_notify(_MT, {'@', _, _}, #state{players = []}) ->
+    % The last player has left, nobody left to notify but don't crash.
+    ok;
+handle_notify(MsgType, {'@', IDs, Msg}, #state{players = Players, rpcs = RPCs}) ->
     % Filter just for the players we want to notify
     P = [lists:keyfind(ID, #player.id, Players) || ID <- IDs],
     notify_players(MsgType, Msg, RPCs, P);
-handle_notify(MsgType, {'@', ID, Msg}, #state{players = Players, rpcs = RPCs}) when
-    Players =/= []
-->
-    P = lists:keyfind(ID, #player.id, Players),
-    notify_players(MsgType, Msg, RPCs, [P]);
-handle_notify(_MT, {'@', _, _}, #state{players = Players}) when
-    Players =:= []
-->
-    % The last player has left, nobody left to notify but don't crash.
+handle_notify(_MT, {'@zone', _Msg}, #state{players = []}) ->
+    % There are messages to send, but no one left to receive them, so do nothing.
     ok;
-handle_notify(MsgType, {'@zone', Msg}, #state{players = Players, rpcs = RPCs}) when
-    Players =/= []
-->
+handle_notify(MsgType, {'@zone', Msg}, #state{players = Players, rpcs = RPCs}) ->
     notify_players(MsgType, Msg, RPCs, Players);
-handle_notify(_MT, {'@zone', _Msg}, #state{players = Players}) when
-    Players =:= []
-->
-    % There are messages to send, but no one left to receive them, so do nothing
-    % rather than crash.
-    ok;
 handle_notify(_MT, noreply, _State) ->
-    % No reply 
+    % No reply
     ok.
 
 player_add(Session, St0) ->
@@ -350,7 +338,7 @@ notify_players(MsgType, Msg, RPCs, Players) ->
     Send = fun(Player) ->
         Pid = Player#player.pid,
         case Player#player.serializer of
-            none ->
+            undefined ->
                 Pid ! {self(), '@zone', {MsgType, Msg}};
             protobuf ->
                 RPC = saline_rpc:find_call(MsgType, RPCs),
@@ -367,7 +355,7 @@ decode_msg(MsgType, Msg, RPCs, Session) ->
     case Serializer of
         undefined ->
             Msg;
-        protobuf -> 
+        protobuf ->
             RPC = saline_rpc:find_call(MsgType, RPCs),
             EMod = saline_rpc:encoder(RPC),
             EMod:decode_msg(Msg, MsgType)

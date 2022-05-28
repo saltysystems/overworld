@@ -11,8 +11,8 @@
 
 -type rpc() :: #{
     opcode := 16#0000..16#FFFF,
-    c2s_handler := mfa() | undefined,
-    s2c_call := atom() | undefined,
+    c2s_handler => mfa() | undefined,
+    s2c_call => atom() | undefined,
     encoder := atom() | undefined
 }.
 -export_type([rpc/0]).
