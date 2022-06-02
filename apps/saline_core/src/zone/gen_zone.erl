@@ -12,7 +12,7 @@
 % gen_zone specific calls
 
 % must have corresponding callbacks
--export([join/3, part/2, action/3, who/1]).
+-export([join/3, part/2, rpc/4, who/1]).
 
 % gen_server callbacks
 -export([
@@ -87,7 +87,8 @@
     Status :: ok | {ok, Session},
     Response :: gen_zone_resp().
 
--callback handle_action(Msg, Session, State) -> Result when
+-callback handle_rpc(Type, Msg, Session, State) -> Result when
+    Type :: atom(),
     Msg :: term(),
     Session :: session(),
     State :: term(),
@@ -165,9 +166,9 @@ join(ServerRef, Msg, Session) ->
 part(ServerRef, Session) ->
     gen_server:call(ServerRef, ?TAG_I({part, Session})).
 
--spec action(server_ref(), term(), session()) -> {ok, session()}.
-action(ServerRef, Msg, Session) ->
-    gen_server:call(ServerRef, ?TAG_I({action, Msg, Session})).
+-spec rpc(server_ref(), atom(), term(), session()) -> {ok, session()}.
+rpc(ServerRef, Type, Msg, Session) ->
+    gen_server:call(ServerRef, ?TAG_I({rpc, Type, Msg, Session})).
 
 -spec who(server_ref()) -> list().
 who(ServerRef) ->
@@ -180,13 +181,13 @@ who(ServerRef) ->
 % @doc Initialize the internal state of the zone, with timer
 init({CbMod, CbArgs}) ->
     case CbMod:init(CbArgs) of
-        {ok, CbData, TickRate} ->
+        {ok, CbData, ConfigMap} ->
             Timer = erlang:send_after(1, self(), ?TAG_I(tick)),
             {ok, #state{
                 cb_mod = CbMod,
                 cb_data = CbData,
                 tick_timer = Timer,
-                tick_rate = TickRate,
+                tick_rate = maps:get(tick_rate, ConfigMap, ?TICK_RATE),
                 rpcs = rpc_info(CbMod)
             }};
         {ok, CbData} ->
@@ -240,15 +241,16 @@ handle_call(?TAG_I({part, Session}), _From, St0) ->
     St2 = St1#state{cb_data = CbData1},
     handle_notify(part, Notify, St2),
     {reply, {ok, Session1}, St2};
-handle_call(?TAG_I({action, Msg, Session}), _From, St0) ->
+handle_call(?TAG_I({who}), _From, St0) ->
+    Players = St0#state.players,
+    IDs = [X#player.id || X <- Players],
+    {reply, IDs, St0};
+handle_call(?TAG_I({rpc, Type, Msg, Session}), _From, St0) ->
     CbMod = St0#state.cb_mod,
     CbData = St0#state.cb_data,
     RPCs = St0#state.rpcs,
-    Msg1 = decode_msg(action, Msg, Session, RPCs),
-    % We don't take any actions after an action because it won't update any
-    % internal state of gen_zone. Just accept the new state data and any
-    % updates to the player's session from the callback module.
-    {Status, Notify, CbData1} = CbMod:handle_action(Msg1, Session, CbData),
+    Msg1 = decode_msg(Type, Msg, RPCs, Session),
+    {Status, Notify, CbData1} = CbMod:handle_rpc(Type, Msg1, Session, CbData),
     Session1 =
         case Status of
             ok -> Session;
@@ -256,12 +258,8 @@ handle_call(?TAG_I({action, Msg, Session}), _From, St0) ->
         end,
     % Send any messages as needed - called for side effects
     St1 = St0#state{cb_data = CbData1},
-    handle_notify(action, Notify, St1),
+    handle_notify(Type, Notify, St1),
     {reply, {ok, Session1}, St1};
-handle_call(?TAG_I({who}), _From, St0) ->
-    Players = St0#state.players,
-    IDs = [X#player.id || X <- Players],
-    {reply, IDs, St0};
 handle_call(_Call, _From, St0) ->
     {reply, ok, St0}.
 
