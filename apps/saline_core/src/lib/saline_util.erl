@@ -15,6 +15,12 @@
     maplistsort/3
 ]).
 
+-export([
+         take_random/1,
+         take_random/2,
+         weighted_random/1
+        ]).
+
 -spec run_bchecks(list()) -> ok | any().
 run_bchecks([]) ->
     ok;
@@ -78,3 +84,36 @@ maplistsort(Key, L, asc) ->
 maplistsort(Key, L, desc) ->
     Desc = fun(A, B) -> maps:get(Key, A) >= maps:get(Key, B) end,
     lists:sort(Desc, L).
+
+%%-----------------------------------------------------------------------------
+%% @doc This function will take a list of items and return a random element
+%%      Alternatively an integer number of items may be specified
+%% @end
+%%-----------------------------------------------------------------------------
+-spec take_random(list()) -> list().
+take_random(List) ->
+    take_random(List, 1).
+
+-spec take_random(list(), pos_integer()) -> list().
+take_random(List, N) when N > length(List) ->
+    take_random(List, length(List));
+take_random(List, N) ->
+    take_random(List, N, []).
+
+take_random(_List, N, Acc) when length(Acc) == N ->
+    Acc;
+take_random(List, N, Acc) when length(Acc) < N ->
+    Index = rand:uniform(length(List)),
+    Item = lists:nth(Index, List),
+    NewList = lists:delete(Item, List),
+    take_random(NewList, N, [Item | Acc]).
+
+
+weighted_random([]) ->
+    [];
+weighted_random([Head | Tail]) ->
+    [expand_list(Head) | weighted_random(Tail)].
+
+expand_list({Item, Number}) ->
+    [Item || _ <- lists:seq(1, Number)].
+
