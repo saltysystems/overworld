@@ -93,7 +93,7 @@ rpc_info() ->
         },
         #{
             opcode => ?SESSION_ID_REQ,
-            c2s_handler => {?MODULE, session_id_req, 2},
+            c2s_handler => {?MODULE, session_id_req, 2}
         },
         #{
             opcode => ?SESSION_ID,
