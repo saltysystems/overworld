@@ -9,13 +9,14 @@
 
 -export([start/2, stop/1]).
 
--record(session, {email = none, authenticated = false, match = false}).
+%-record(session, {email = none, authenticated = false, match = false}).
 
 start(_StartType, _StartArgs) ->
     Dispatch = cowboy_router:compile([
         {'_', [
-            {"/ws", saline_websocket, #session{}},
+            {"/ws", saline_websocket, []},
             {"/client/download", saline_dl_handler, []},
+            {"/stats", saline_stats, []},
             {"/libsaline.gd", cowboy_static,
                 {file, "apps/saline_core/static/libsaline.gd"}}
         ]}
