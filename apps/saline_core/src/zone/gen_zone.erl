@@ -46,6 +46,7 @@
     players = [] :: list(),
     tick_timer :: undefined | reference(),
     tick_rate :: pos_integer(),
+    require_auth :: boolean(),
     rpcs :: saline_rpcs:callbacks()
 }).
 
@@ -55,7 +56,11 @@
     serializer :: saline_session:serializer()
 }).
 
--define(TICK_RATE, 30).
+-define(DEFAULT_CONFIG, #{
+                          tick_rate => 30,
+                          require_auth => false
+                         }
+       ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% gen_zone callbacks
@@ -191,19 +196,21 @@ status(ServerRef) ->
 init({CbMod, CbArgs}) ->
     init(CbMod, CbMod:init(CbArgs)).
 init(CbMod, {ok, CbData, ConfigMap}) ->
-    TickRate = maps:get(tick_rate, ConfigMap, ?TICK_RATE),
-    State = initialize_state(CbMod, CbData, TickRate),
+    Config = maps:merge(?DEFAULT_CONFIG, ConfigMap),
+    State = initialize_state(CbMod, CbData, Config),
     {ok, State};
 init(CbMod, {ok, CbData}) ->
-    TickRate = ?TICK_RATE,
-    State = initialize_state(CbMod, CbData, TickRate),
+    Config = ?DEFAULT_CONFIG,
+    State = initialize_state(CbMod, CbData, Config),
     {ok, State};
 init(_CbMod, ignore) ->
     ignore;
 init(_CbMod, Stop) ->
     Stop.
 
-initialize_state(CbMod, CbData, TickRate) ->
+initialize_state(CbMod, CbData, Config) ->
+    TickRate = maps:get(tick_rate, Config),
+    RequireAuth = maps:get(require_auth, Config),
     Timer = erlang:send_after(1, self(), ?TAG_I(tick)),
     RPCInfo =
         case rpc_info(CbMod) of
@@ -219,45 +226,16 @@ initialize_state(CbMod, CbData, TickRate) ->
         cb_data = CbData,
         tick_timer = Timer,
         tick_rate = TickRate,
+        require_auth = RequireAuth,
         rpcs = RPCInfo
     }.
 
 handle_call(?TAG_I({join, Msg, Session}), _From, St0) ->
-    CbMod = St0#state.cb_mod,
-    CbData0 = St0#state.cb_data,
-    RPCs = St0#state.rpcs,
-    Msg1 = decode_msg(join, Msg, RPCs, Session),
-    {Status, Notify, CbData1} = CbMod:handle_join(Msg1, Session, CbData0),
-    {Session1, St1} =
-        case Status of
-            ok ->
-                % Server didn't update the session, just send along the one we have
-                {Session, player_add(Session, St0)};
-            {ok, S1} ->
-                {S1, player_add(S1, St0)};
-            _ ->
-                {Session, St0}
-        end,
-    % Send any messages as needed - called for side effects
-    St2 = St1#state{cb_data = CbData1},
-    handle_notify(join, Notify, St2),
-    {reply, {ok, Session1}, St2};
+    {Session1, St1} = maybe_auth_join(Msg, Session, St0),
+    {reply, {ok, Session1}, St1};
 handle_call(?TAG_I({part, Session}), _From, St0) ->
-    CbMod = St0#state.cb_mod,
-    CbData0 = St0#state.cb_data,
-    {Status, Notify, CbData1} = CbMod:handle_part(Session, CbData0),
-    {Session1, St1} =
-        case Status of
-            ok ->
-                % Remove the player from our list
-                {Session, player_rm(Session, St0)};
-            {ok, S1} ->
-                {S1, player_rm(S1, St0)}
-        end,
-    % Send any messages as needed - called for side effects
-    St2 = St1#state{cb_data = CbData1},
-    handle_notify(part, Notify, St2),
-    {reply, {ok, Session1}, St2};
+    {Session1, St1} = maybe_auth_part(Session, St0),
+    {reply, {ok, Session1}, St1};
 handle_call(?TAG_I({who}), _From, St0) ->
     Players = St0#state.players,
     IDs = [X#player.id || X <- Players],
@@ -275,19 +253,7 @@ handle_call(?TAG_I({status}), _From, St0) ->
     St1 = St0#state{cb_data = CbData1},
     {reply, StatusMsg, St1};
 handle_call(?TAG_I({rpc, Type, Msg, Session}), _From, St0) ->
-    CbMod = St0#state.cb_mod,
-    CbData = St0#state.cb_data,
-    RPCs = St0#state.rpcs,
-    Msg1 = decode_msg(Type, Msg, RPCs, Session),
-    {Status, Notify, CbData1} = CbMod:handle_rpc(Type, Msg1, Session, CbData),
-    Session1 =
-        case Status of
-            ok -> Session;
-            {ok, S1} -> S1
-        end,
-    % Send any messages as needed - called for side effects
-    St1 = St0#state{cb_data = CbData1},
-    handle_notify(Type, Notify, St1),
+    {Session1, St1} = maybe_auth_rpc(Type, Msg, Session, St0),
     {reply, {ok, Session1}, St1};
 handle_call(_Call, _From, St0) ->
     {reply, ok, St0}.
@@ -387,3 +353,89 @@ decode_msg(MsgType, Msg, RPCs, Session) ->
             EMod = saline_rpc:encoder(RPC),
             EMod:decode_msg(Msg, MsgType)
     end.
+
+maybe_auth_join(Msg, Session, St0 = #state{require_auth = RA}) when RA =:= true ->
+    case saline_session:is_authenticated(Session) of
+        true ->
+            actually_join(Msg, Session, St0);
+        false -> 
+            % Do not update session, do not update state.
+            {Session, St0}
+    end;
+maybe_auth_join(Msg, Session, St0) ->
+    actually_join(Msg, Session, St0).
+
+actually_join(Msg, Session, St0) ->
+    RPCs = St0#state.rpcs,
+    DecodedMsg = decode_msg(join, Msg, RPCs, Session),
+    CbMod = St0#state.cb_mod,
+    CbData0 = St0#state.cb_data,
+    {Status, Notify, CbData1} = CbMod:handle_join(DecodedMsg, Session, CbData0),
+    {Session1, St1} = 
+        case Status of
+            ok ->
+                % No session update by this server, continue with existing one
+                {Session, player_add(Session, St0)};
+            {ok, S1} ->
+                {S1, player_add(S1, St0)};
+            _ ->
+                {Session, St0}
+        end,
+    St2 = St1#state{cb_data = CbData1},
+    handle_notify(join, Notify, St2),
+    {Session1, St2}.
+
+maybe_auth_part(Session, St0 = #state{require_auth = RA}) when RA =:= true ->
+    case saline_session:is_authenticated(Session) of
+        true ->
+            actually_part(Session, St0);
+        _ -> 
+            {Session, St0}
+    end;
+maybe_auth_part(Session, St0) ->
+    actually_part(Session, St0).
+
+actually_part(Session, St0) ->
+    CbMod = St0#state.cb_mod,
+    CbData0 = St0#state.cb_data,
+    {Status, Notify, CbData1} = CbMod:handle_part(Session, CbData0),
+    {Session1, St1} =
+        case Status of
+            ok ->
+                % Remove the player from our list
+                {Session, player_rm(Session, St0)};
+            {ok, S1} ->
+                {S1, player_rm(S1, St0)};
+            _ -> 
+                {Session, St0}
+        end,
+    % Send any messages as needed - called for side effects
+    St2 = St1#state{cb_data = CbData1},
+    handle_notify(part, Notify, St2),
+    {Session1, St2}.
+
+maybe_auth_rpc(Type, Msg, Session, St0 = #state{require_auth = RA}) when RA =:= true ->
+    case saline_session:is_authenticated(Session) of
+        true ->
+            actually_rpc(Type, Msg, Session, St0);
+        false ->
+            {Session, St0}
+    end;
+maybe_auth_rpc(Type, Msg, Session, St0) ->
+    actually_rpc(Type, Msg, Session, St0).
+
+actually_rpc(Type, Msg, Session, St0) ->
+    CbMod = St0#state.cb_mod,
+    CbData = St0#state.cb_data,
+    RPCs = St0#state.rpcs,
+    DecodedMsg = decode_msg(Type, Msg, RPCs, Session),
+    {Status, Notify, CbData1} = CbMod:handle_rpc(Type, DecodedMsg, Session, CbData),
+    Session1 =
+        case Status of
+            ok -> Session;
+            {ok, S1} -> S1
+        end,
+    % Send any messages as needed - called for side effects
+    St1 = St0#state{cb_data = CbData1},
+    handle_notify(Type, Notify, St1),
+    {Session1, St1}.
