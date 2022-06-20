@@ -16,10 +16,10 @@
 ]).
 
 -export([
-         take_random/1,
-         take_random/2,
-         weighted_random/1
-        ]).
+    take_random/1,
+    take_random/2,
+    weighted_random/1
+]).
 
 -spec run_bchecks(list()) -> ok | any().
 run_bchecks([]) ->
@@ -108,7 +108,6 @@ take_random(List, N, Acc) when length(Acc) < N ->
     NewList = lists:delete(Item, List),
     take_random(NewList, N, [Item | Acc]).
 
-
 weighted_random([]) ->
     [];
 weighted_random([Head | Tail]) ->
@@ -116,4 +115,3 @@ weighted_random([Head | Tail]) ->
 
 expand_list({Item, Number}) ->
     [Item || _ <- lists:seq(1, Number)].
-
