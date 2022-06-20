@@ -12,7 +12,7 @@
 % gen_zone specific calls
 
 % must have corresponding callbacks
--export([join/3, part/2, rpc/4, who/1]).
+-export([join/3, part/2, rpc/4, who/1, status/1]).
 
 % gen_server callbacks
 -export([
@@ -113,6 +113,11 @@
     Result :: saline_rpc:callbacks().
 -optional_callbacks([rpc_info/0]).
 
+-callback handle_status(State) -> Result when
+    State :: term(),
+    Result :: term().
+-optional_callbacks([handle_status/1]).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% gen_server api
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -174,36 +179,48 @@ rpc(ServerRef, Type, Msg, Session) ->
 who(ServerRef) ->
     gen_server:call(ServerRef, ?TAG_I({who})).
 
+-spec status(server_ref()) -> undefined | term().
+status(ServerRef) -> 
+    gen_server:call(ServerRef, ?TAG_I({status})).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% gen_server callback functions for internal state
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % @doc Initialize the internal state of the zone, with timer
 init({CbMod, CbArgs}) ->
-    case CbMod:init(CbArgs) of
-        {ok, CbData, ConfigMap} ->
-            Timer = erlang:send_after(1, self(), ?TAG_I(tick)),
-            {ok, #state{
-                cb_mod = CbMod,
-                cb_data = CbData,
-                tick_timer = Timer,
-                tick_rate = maps:get(tick_rate, ConfigMap, ?TICK_RATE),
-                rpcs = rpc_info(CbMod)
-            }};
-        {ok, CbData} ->
-            Timer = erlang:send_after(1, self(), ?TAG_I(tick)),
-            {ok, #state{
-                cb_mod = CbMod,
-                cb_data = CbData,
-                tick_timer = Timer,
-                tick_rate = ?TICK_RATE,
-                rpcs = rpc_info(CbMod)
-            }};
-        ignore ->
-            ignore;
-        Stop = {stop, _Reason} ->
-            Stop
-    end.
+    init(CbMod, CbMod:init(CbArgs)).
+init(CbMod, {ok, CbData, ConfigMap}) ->
+    TickRate = maps:get(tick_rate, ConfigMap, ?TICK_RATE),
+    State = initialize_state(CbMod, CbData, TickRate),
+    {ok, State};
+init(CbMod, {ok, CbData}) ->
+    TickRate = ?TICK_RATE,
+    State = initialize_state(CbMod, CbData, TickRate),
+    {ok, State};
+init(_CbMod, ignore) ->
+    ignore;
+init(_CbMod, Stop) ->
+    Stop.
+
+initialize_state(CbMod, CbData, TickRate) ->
+    Timer = erlang:send_after(1, self(), ?TAG_I(tick)),
+    RPCInfo =
+        case rpc_info(CbMod) of
+            [] ->
+                [];
+            RPCs ->
+                logger:debug("Registering ~p", [CbMod]),
+                saline_protocol:register(CbMod),
+                RPCs
+        end,
+    #state{
+        cb_mod = CbMod,
+        cb_data = CbData,
+        tick_timer = Timer,
+        tick_rate = TickRate,
+        rpcs = RPCInfo
+    }.
 
 handle_call(?TAG_I({join, Msg, Session}), _From, St0) ->
     CbMod = St0#state.cb_mod,
@@ -245,6 +262,18 @@ handle_call(?TAG_I({who}), _From, St0) ->
     Players = St0#state.players,
     IDs = [X#player.id || X <- Players],
     {reply, IDs, St0};
+handle_call(?TAG_I({status}), _From, St0) ->
+    CbMod = St0#state.cb_mod,
+    CbData = St0#state.cb_data,
+    {StatusMsg, CbData1} = 
+        case erlang:function_exported(CbMod, handle_status, 1) of
+            true ->
+                CbMod:handle_status(CbData);
+            _ ->
+                {undefined, CbData}
+        end,
+    St1 = St0#state{cb_data = CbData1},
+    {reply, StatusMsg, St1};
 handle_call(?TAG_I({rpc, Type, Msg, Session}), _From, St0) ->
     CbMod = St0#state.cb_mod,
     CbData = St0#state.cb_data,
