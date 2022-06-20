@@ -9,6 +9,9 @@
 
 -export([start/2, stop/1]).
 
+% status information via JSON API
+-export([status/0]).
+
 %-record(session, {email = none, authenticated = false, match = false}).
 
 start(_StartType, _StartArgs) ->
@@ -33,3 +36,11 @@ start(_StartType, _StartArgs) ->
 
 stop(_State) ->
     ok.
+
+status() ->
+    {ok, Version} = application:get_key(saline, vsn),
+    {ok, Description} = application:get_key(saline, description),
+    #{ <<"name">> => << "saline" >>,
+       <<"version">> => erlang:list_to_binary(Version),
+       <<"Description">> => erlang:list_to_binary(Description)
+     }.
