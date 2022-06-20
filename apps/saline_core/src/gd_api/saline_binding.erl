@@ -50,7 +50,6 @@ print() ->
     T = bbmustache:parse_file(
         "apps/saline_core/templates/libsaline.mustache"
     ),
-    logger:info("Generating network client library..."),
     bbmustache:compile(T, Map).
 
 pb_to_godot_type(Type) ->

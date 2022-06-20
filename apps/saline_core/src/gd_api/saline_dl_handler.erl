@@ -3,7 +3,9 @@
 
 -export([init/2]).
 
-init(Req1, State) ->
+init(Req, State) ->
+    #{peer := {IP, _Port}} = Req,
+    logger:info("Got a request for API package from ~p", [IP]),
     % Compile the latest code
     ClientAPI = saline_binding:print(),
     Apps = saline_protocol:registered_apps(),
@@ -11,6 +13,7 @@ init(Req1, State) ->
     {ok, {"file", Zip}} = zip:create(
         "file", [{"libsaline.gd", ClientAPI} | ProtoFiles], [memory]
     ),
+    logger:info("Successfully generated libsaline.zip!"),
     Req2 = cowboy_req:reply(
         200,
         #{
@@ -19,7 +22,7 @@ init(Req1, State) ->
                 <<"attachment; filename=libsaline.zip">>
         },
         Zip,
-        Req1
+        Req
     ),
     {ok, Req2, State}.
 
