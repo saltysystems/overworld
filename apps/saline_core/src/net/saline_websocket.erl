@@ -90,8 +90,8 @@ websocket_handle(_Frame, State) ->
 %% @end
 %%--------------------------------------------------------------------------
 websocket_info({_Pid, zone_msg, Msg}, Session) ->
-    logger:notice("Got a zone_msg, forwarding to client"),
+    logger:debug("Got a zone_msg, forwarding to client"),
     {reply, {binary, Msg}, Session};
 websocket_info(Info, State) ->
-    logger:notice("Got a message from another process: ~p", [Info]),
+    logger:debug("Got a message from another process: ~p", [Info]),
     {ok, State}.
