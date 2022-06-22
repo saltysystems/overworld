@@ -40,7 +40,8 @@ stop(_State) ->
 status() ->
     {ok, Version} = application:get_key(saline, vsn),
     {ok, Description} = application:get_key(saline, description),
-    #{ <<"name">> => << "saline" >>,
-       <<"version">> => erlang:list_to_binary(Version),
-       <<"Description">> => erlang:list_to_binary(Description)
-     }.
+    #{
+        <<"name">> => <<"saline">>,
+        <<"version">> => erlang:list_to_binary(Version),
+        <<"Description">> => erlang:list_to_binary(Description)
+    }.

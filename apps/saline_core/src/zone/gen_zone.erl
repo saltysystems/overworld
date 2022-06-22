@@ -57,10 +57,9 @@
 }).
 
 -define(DEFAULT_CONFIG, #{
-                          tick_rate => 30,
-                          require_auth => false
-                         }
-       ).
+    tick_rate => 30,
+    require_auth => false
+}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% gen_zone callbacks
@@ -185,7 +184,7 @@ who(ServerRef) ->
     gen_server:call(ServerRef, ?TAG_I({who})).
 
 -spec status(server_ref()) -> undefined | term().
-status(ServerRef) -> 
+status(ServerRef) ->
     gen_server:call(ServerRef, ?TAG_I({status})).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -243,7 +242,7 @@ handle_call(?TAG_I({who}), _From, St0) ->
 handle_call(?TAG_I({status}), _From, St0) ->
     CbMod = St0#state.cb_mod,
     CbData = St0#state.cb_data,
-    {StatusMsg, CbData1} = 
+    {StatusMsg, CbData1} =
         case erlang:function_exported(CbMod, handle_status, 1) of
             true ->
                 CbMod:handle_status(CbData);
@@ -354,11 +353,13 @@ decode_msg(MsgType, Msg, RPCs, Session) ->
             EMod:decode_msg(Msg, MsgType)
     end.
 
-maybe_auth_join(Msg, Session, St0 = #state{require_auth = RA}) when RA =:= true ->
+maybe_auth_join(Msg, Session, St0 = #state{require_auth = RA}) when
+    RA =:= true
+->
     case saline_session:is_authenticated(Session) of
         true ->
             actually_join(Msg, Session, St0);
-        false -> 
+        false ->
             % Do not update session, do not update state.
             {Session, St0}
     end;
@@ -370,8 +371,10 @@ actually_join(Msg, Session, St0) ->
     DecodedMsg = decode_msg(join, Msg, RPCs, Session),
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
-    {Status, Notify, CbData1} = CbMod:handle_join(DecodedMsg, Session, CbData0),
-    {Session1, St1} = 
+    {Status, Notify, CbData1} = CbMod:handle_join(
+        DecodedMsg, Session, CbData0
+    ),
+    {Session1, St1} =
         case Status of
             ok ->
                 % No session update by this server, continue with existing one
@@ -389,7 +392,7 @@ maybe_auth_part(Session, St0 = #state{require_auth = RA}) when RA =:= true ->
     case saline_session:is_authenticated(Session) of
         true ->
             actually_part(Session, St0);
-        _ -> 
+        _ ->
             {Session, St0}
     end;
 maybe_auth_part(Session, St0) ->
@@ -406,7 +409,7 @@ actually_part(Session, St0) ->
                 {Session, player_rm(Session, St0)};
             {ok, S1} ->
                 {S1, player_rm(S1, St0)};
-            _ -> 
+            _ ->
                 {Session, St0}
         end,
     % Send any messages as needed - called for side effects
@@ -414,7 +417,9 @@ actually_part(Session, St0) ->
     handle_notify(part, Notify, St2),
     {Session1, St2}.
 
-maybe_auth_rpc(Type, Msg, Session, St0 = #state{require_auth = RA}) when RA =:= true ->
+maybe_auth_rpc(Type, Msg, Session, St0 = #state{require_auth = RA}) when
+    RA =:= true
+->
     case saline_session:is_authenticated(Session) of
         true ->
             actually_rpc(Type, Msg, Session, St0);
@@ -429,7 +434,9 @@ actually_rpc(Type, Msg, Session, St0) ->
     CbData = St0#state.cb_data,
     RPCs = St0#state.rpcs,
     DecodedMsg = decode_msg(Type, Msg, RPCs, Session),
-    {Status, Notify, CbData1} = CbMod:handle_rpc(Type, DecodedMsg, Session, CbData),
+    {Status, Notify, CbData1} = CbMod:handle_rpc(
+        Type, DecodedMsg, Session, CbData
+    ),
     Session1 =
         case Status of
             ok -> Session;
