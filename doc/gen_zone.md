@@ -25,7 +25,8 @@ to configure various aspects of gen_zone. gen_zone understands the following key
 #{ 
     require_auth :: boolean(),
     tick_rate :: pos_integer()
-},
+}
+```
 
 where:
 |    Callback     | Description | 
