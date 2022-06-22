@@ -31,8 +31,8 @@ to configure various aspects of gen_zone. gen_zone understands the following key
 where:
 |    Callback     | Description | 
 | --------------- | ----------- |
-| require_auth    | Check whether or not a client session has authenticated with Saline (defualt false) |
-| tick_rate       | Set the rate at which the server processes a tick, in milliseconds (default 30) |
+| `require_auth`    | Check whether or not a client session has authenticated with Saline (defualt false) |
+| `tick_rate`       | Set the rate at which the server processes a tick, in milliseconds (default 30) |
 
 
 Callbacks
