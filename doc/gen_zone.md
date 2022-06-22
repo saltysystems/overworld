@@ -15,6 +15,24 @@ behaviour:
    locally attached clients (Erlang processes such as NPCs) and network clients
  * Convenient reply format - send messages to single players, multiple players,
    or broadcast zone-wide.
+   
+Initial ConfigMap
+---------
+
+When creating a server with the gen_zone behaviour, you can specify a ConfigMap
+to configure various aspects of gen_zone. gen_zone understands the following keys:
+```
+#{ 
+    require_auth :: boolean(),
+    tick_rate :: pos_integer()
+},
+
+where:
+|    Callback     | Description | 
+| --------------- | ----------- |
+| require_auth    | Check whether or not a client session has authenticated with Saline (defualt false) |
+| tick_rate       | Set the rate at which the server processes a tick, in milliseconds (default 30) |
+
 
 Callbacks
 ---------
@@ -25,8 +43,22 @@ following callbacks:
 | --------------- | ----------- |
 | `handle_join`   | A user session connects to this zone | 
 | `handle_part`   | A user session disconnects from this zone |
-| `handle_action` | A user sends an action message |
+| `handle_rpc` | A user sends an action message |
 | `handle_tick`   | The server has updated the global state for the next tick |
+
+Optional callbacks:
+|    Callback     | Description | 
+| --------------- | ----------- |
+| `handle_status` | Arbitrary term containing stat information | 
+| `rpc_info`      | A list of 
+
+
+Optional Callbacks
+---------
+
+You can provide arbitrary stats about your gen_zone via the status/0 callback. 
+
+
 
 `gen_zone` response types
 --------------------------
@@ -40,29 +72,5 @@ different response options.
 | `noreply` | Send no reply to any connected player |
 
 The `gen_zone` gen_server keeps an internal record of connected players and
-will add/remove players accordingly.
-
-Callback implementation recommendations
-------------------------------
-
-### `handle_join`
-#### Check authentication
-For the handle join request, you may want to first check if the player is
-authenticated with a Saline session. For example, if you need to load some
-player information from a database you would probably want to first ensure that
-the player has actually authenticated with the server. On the other hand, you
-may want players to be able to join right away, and save authentication steps
-for later - either is possible.
-
-To check for authentication:
-```
-handle_join(Msg, Session, State) ->
-    Authenticated = saline_session:get_authenticated(Session)
-    case Authenticated of
-        true ->
-            % proceed to some next step
-        false ->
-            % dont reply
-    end,
-    {ok, noreply, Session, State}.
+will add/remove players accordingly. noreply, Session, State}.
 ```
