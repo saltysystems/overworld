@@ -14,6 +14,9 @@
 % must have corresponding callbacks
 -export([join/3, part/2, rpc/4, who/1, status/1]).
 
+% helper functions
+-export([is_player/2]).
+
 % gen_server callbacks
 -export([
     init/1,
@@ -76,25 +79,28 @@
     InitialData :: term(),
     Reason :: term().
 
--callback handle_join(Msg, Session, State) -> Result when
+-callback handle_join(Msg, Session, Players, State) -> Result when
     Msg :: term(),
     Session :: session(),
+    Players :: list(),
     State :: term(),
     Result :: {Status, Reply, State},
     Status :: ok | {ok, Session},
     Reply :: gen_zone_resp().
 
--callback handle_part(Session, State) -> Result when
+-callback handle_part(Session, Players, State) -> Result when
     Session :: session(),
+    Players :: list(),
     State :: term(),
     Result :: {Status, Response, State},
     Status :: ok | {ok, Session},
     Response :: gen_zone_resp().
 
--callback handle_rpc(Type, Msg, Session, State) -> Result when
+-callback handle_rpc(Type, Msg, Session, Players, State) -> Result when
     Type :: atom(),
     Msg :: term(),
     Session :: session(),
+    Players :: list(),
     State :: term(),
     Result :: {Status, Response, State},
     Status :: ok | {ok, Session},
@@ -106,12 +112,6 @@
     Result :: {Status, Response, State},
     Status :: ok,
     Response :: gen_zone_resp().
-
-% not sure we need this guy.
--callback handle_state_xfer(State) -> Result when
-    State :: term(),
-    Result :: term().
--optional_callbacks([handle_state_xfer/1]).
 
 -callback rpc_info() -> Result when
     Result :: saline_rpc:callbacks().
@@ -162,6 +162,12 @@ stop(ServerRef) ->
 
 stop(ServerRef, Reason, Timeout) ->
     gen_server:stop(ServerRef, Reason, Timeout).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% public helper functions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+is_player(ID, PlayerList) ->
+    lists:keymember(ID, #player.id, PlayerList).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% public behavior API
@@ -371,8 +377,9 @@ actually_join(Msg, Session, St0) ->
     DecodedMsg = decode_msg(join, Msg, RPCs, Session),
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
+    Players = St0#state.players,
     {Status, Notify, CbData1} = CbMod:handle_join(
-        DecodedMsg, Session, CbData0
+        DecodedMsg, Session, Players, CbData0
     ),
     {Session1, St1} =
         case Status of
@@ -401,7 +408,8 @@ maybe_auth_part(Session, St0) ->
 actually_part(Session, St0) ->
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
-    {Status, Notify, CbData1} = CbMod:handle_part(Session, CbData0),
+    Players = St0#state.players,
+    {Status, Notify, CbData1} = CbMod:handle_part(Session, Players, CbData0),
     {Session1, St1} =
         case Status of
             ok ->
@@ -433,9 +441,10 @@ actually_rpc(Type, Msg, Session, St0) ->
     CbMod = St0#state.cb_mod,
     CbData = St0#state.cb_data,
     RPCs = St0#state.rpcs,
+    Players = St0#state.players,
     DecodedMsg = decode_msg(Type, Msg, RPCs, Session),
     {Status, Notify, CbData1} = CbMod:handle_rpc(
-        Type, DecodedMsg, Session, CbData
+        Type, DecodedMsg, Session, Players, CbData
     ),
     Session1 =
         case Status of
