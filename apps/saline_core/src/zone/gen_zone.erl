@@ -55,7 +55,7 @@
 
 -record(player, {
     id :: integer(),
-    pid :: pid(),
+    pid :: pid() | undefined,
     serializer :: saline_session:serializer()
 }).
 
