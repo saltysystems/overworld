@@ -284,9 +284,9 @@ code_change(_OldVsn, St0, _Extra) -> {ok, St0}.
 tick(St0 = #state{cb_mod = CbMod, cb_data = CbData0, players = Players}) ->
     PlayerIDs = [X#player.id || X <- Players],
     case CbMod:handle_tick(PlayerIDs, CbData0) of
-        {ok, Notify, CbData1} ->
+        {Type, Notify, CbData1} ->
             St1 = St0#state{cb_data = CbData1},
-            handle_notify(tick, Notify, St1),
+            handle_notify(Type, Notify, St1),
             St1
     end.
 
@@ -334,16 +334,19 @@ player_rm(Session, St0) ->
 
 notify_players(MsgType, Msg, RPCs, Players) ->
     Send = fun(Player) ->
-        Pid = Player#player.pid,
-        case Player#player.serializer of
-            undefined ->
-                Pid ! {self(), '@zone', {MsgType, Msg}};
-            protobuf ->
-                RPC = saline_rpc:find_call(MsgType, RPCs),
-                EMod = saline_rpc:encoder(RPC),
-                OpCode = saline_rpc:opcode(RPC),
-                EncodedMsg = EMod:encode_msg(Msg, MsgType),
-                Pid ! {self, zone_msg, [OpCode, EncodedMsg]}
+        case Player#player.pid of % causes a crash if the pid doesn't exist
+            undefined -> ok;
+            Pid -> 
+                case Player#player.serializer of
+                    undefined ->
+                        Pid ! {self(), zone_msg, {MsgType, Msg}};
+                    protobuf ->
+                        RPC = saline_rpc:find_call(MsgType, RPCs),
+                        EMod = saline_rpc:encoder(RPC),
+                        OpCode = saline_rpc:opcode(RPC),
+                        EncodedMsg = EMod:encode_msg(Msg, MsgType),
+                        Pid ! {self, zone_msg, [OpCode, EncodedMsg]}
+                end
         end
     end,
     lists:foreach(Send, Players).
