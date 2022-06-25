@@ -408,6 +408,7 @@ rpc_info() ->
         #{
             opcode => ?CHAT_SEND,
             c2s_handler => {?MODULE, send, 2},
+            c2s_proto => chat_msg,
             encode => chat_pb
         },
         #{
@@ -428,6 +429,14 @@ module, function, and arity (MFA) that Saline will call whenever it receives a
 message prefixed by the appropriate opcode. Since `join`, `part,` and `send`
 are messages that come from the client, we inform Saline that they will have
 corresponding `c2s_handler` functions when messages come in.
+
+One thing that Saline will do to determine how to associate your protobuf
+messages with callbacks is inspect the name of your handler and assume that the
+protobuf message has the same name. For the `send/2` function, it doesn't seem
+all that great to call our messages "send", I'd much rather have a name like
+`chat_msg` - where "send" is the verb and "chat_msg" is the object being sent.
+So here I add the `c2s_proto` option to instruct Saline to use the "chat_msg"
+definition in our Protobuf file instead of looking for "send".
 
 For the remaining message, we don't expect clients to send `state_transfer`
 messages to our server since it represents a bundle of messages to be
