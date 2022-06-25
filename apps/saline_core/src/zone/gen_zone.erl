@@ -295,6 +295,7 @@ rpc_info(CbMod) ->
         true ->
             CbMod:rpc_info();
         _ ->
+            logger:debug("~p:rpc_info/0 not exported ignoring", [CbMod]),
             []
     end.
 
@@ -334,9 +335,11 @@ player_rm(Session, St0) ->
 
 notify_players(MsgType, Msg, RPCs, Players) ->
     Send = fun(Player) ->
-        case Player#player.pid of % causes a crash if the pid doesn't exist
-            undefined -> ok;
-            Pid -> 
+        % causes a crash if the pid doesn't exist
+        case Player#player.pid of
+            undefined ->
+                ok;
+            Pid ->
                 case Player#player.serializer of
                     undefined ->
                         Pid ! {self(), zone_msg, {MsgType, Msg}};
