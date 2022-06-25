@@ -4,6 +4,7 @@
 -export([
     opcode/1,
     c2s_handler/1,
+    c2s_proto/1,
     s2c_call/1,
     encoder/1,
     find_call/2
@@ -12,6 +13,7 @@
 -type rpc() :: #{
     opcode := 16#0000..16#FFFF,
     c2s_handler => mfa() | undefined,
+    c2s_proto => atom() | undefined,
     s2c_call => atom() | undefined,
     encoder := atom() | undefined
 }.
@@ -31,6 +33,10 @@ opcode(Map) ->
 -spec c2s_handler(map()) -> mfa() | undefined.
 c2s_handler(Map) ->
     maps:get(c2s_handler, Map, undefined).
+
+-spec c2s_proto(map()) -> atom() | undefined.
+c2s_proto(Map) ->
+    maps:get(c2s_proto, Map, undefined).
 
 -spec s2c_call(map()) -> atom() | undefined.
 s2c_call(Map) ->

@@ -452,14 +452,23 @@ generate_marshall(
                             FunStr ++
                             " packet')\n\n";
                     _ ->
-                        Fields = field_info({Encoder, ClientMsg}),
+                        % Allow the client message name to be overriden, optionally
+                        ProtoMsg =
+                            case saline_rpc:c2s_proto(OpInfo) of
+                                % If there's no override specified, just
+                                % go with the name of the handler as the
+                                % name of the message
+                                undefined -> ClientMsg;
+                                Proto -> Proto
+                            end,
+                        Fields = field_info({Encoder, ProtoMsg}),
                         FieldStr = fields_to_str(Fields),
                         EncStr = string:titlecase(atom_to_list(Encoder)),
                         "func " ++ FunStr ++ "(" ++ FieldStr ++ "):\n" ++
                             ?TAB ++ "var m = " ++ EncStr ++ "." ++
-                            atom_to_list(ClientMsg) ++
+                            atom_to_list(ProtoMsg) ++
                             ".new()\n" ++
-                            set_new_parameters(ClientMsg, Encoder) ++
+                            set_new_parameters(ProtoMsg, Encoder) ++
                             %set_parameters(Fields, Encoder) ++
                             ?TAB ++ "var payload = m.to_bytes()\n" ++
                             ?TAB ++ "send_message(payload, OpCode." ++
