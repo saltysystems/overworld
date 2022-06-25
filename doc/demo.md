@@ -10,7 +10,7 @@
   * [Implementing the callbacks](#implementing-the-callbacks)
   * [Testing it out so far](#testing-it-out-so-far)
   * [Saving state and sending messages](#saving-state-and-sending-messages)
-    + [Aside - Maps](#aside---maps)
+    + [Aside: Maps](#aside-maps)
   * [Serializing messages](#serializing-messages)
   * [Some finishing touches](#some-finishing-touches)
 - [Writing the Client](#writing-the-client)
@@ -134,38 +134,38 @@ server and will handle message serialization/deserialization between the
 clients and the server. So all you need to write is the game logic!
 
 #### Aside: Saline messages
-At the end of any required callback function, you'll want to return a 3-tuple
-to `gen_zone` with the following rules:
-```erlang
-    {Status, Response, State} when
-        Status :: ok | {ok, Session},
-        Response :: noreply 
-                    | {'@zone', term()}
-                    | {'@', list(), term()},
-        State :: term().
-```
-
-In plain language: for `Status` messages, you want to either respond `ok` or
-respond `ok` with an updated copy of the player's session. You may update the
-player's session if there's something about it that your callback function
-changes. Perhaps you wanted to set some game specific information in via
-`saline_session:set_game_info/1`, for example.
-
-For responses, `gen_zone` understands 3 different response messages from a
-server implementing the behaviour. You can use `'@zone'` to broadcast a message
-to everyone in the zone, in our case everyone connected to the World Server.
-You can also target individuals with `{'@', PlayerIDs}` where PlayerIDs is a
-list of player IDs that should receive this message. Lastly, you can use
-`noreply` to silently accept the message with no updates sent out to connected
-players. Here's a handy reference table:
-
-|  Response       | Description |
-| --------------- | ----------- |
-| `{'@zone', Msg}` | Send a zone-wide message *Msg* to all connected clients |
-| `{'@', PlayerID, Msg}` | Send a message, *Msg*, to player *PlayerID*. Also accepts a list of Player IDs |
-| `noreply` | Send no reply to any connected player |
-
-Finally, you should return your internal state to `gen_zone` via `State`.
+>At the end of any required callback function, you'll want to return a 3-tuple
+>to `gen_zone` with the following rules:
+>```erlang
+>    {Status, Response, State} when
+>        Status :: ok | {ok, Session},
+>        Response :: noreply 
+>                    | {'@zone', term()}
+>                    | {'@', list(), term()},
+>        State :: term().
+>```
+>
+>In plain language: for `Status` messages, you want to either respond `ok` or
+>respond `ok` with an updated copy of the player's session. You may update the
+>player's session if there's something about it that your callback function
+>changes. Perhaps you wanted to set some game specific information in via
+>`saline_session:set_game_info/1`, for example.
+>
+>For responses, `gen_zone` understands 3 different response messages from a
+>server implementing the behaviour. You can use `'@zone'` to broadcast a message
+>to everyone in the zone, in our case everyone connected to the World Server.
+>You can also target individuals with `{'@', PlayerIDs}` where PlayerIDs is a
+>list of player IDs that should receive this message. Lastly, you can use
+>`noreply` to silently accept the message with no updates sent out to connected
+>players. Here's a handy reference table:
+>
+>|  Response       | Description |
+>| --------------- | ----------- |
+>| `{'@zone', Msg}` | Send a zone-wide message *Msg* to all connected clients |
+>| `{'@', PlayerID, Msg}` | Send a message, *Msg*, to player *PlayerID*. Also accepts a list of Player IDs |
+>| `noreply` | Send no reply to any connected player |
+>
+>Finally, you should return your internal state to `gen_zone` via `State`.
 
 ### Implementing the callbacks
 Now we should implement the handler functions for our chat server. We'll add
@@ -294,11 +294,10 @@ A few things going on here. One, we check if the player sending the message is
 actually in the zone. If so, we append the sender's ID and the message to the
 zone state. 
 
-#### Aside - Maps
-
-You may be wondering why we're using maps to store all the data. The reason is
-pretty simple - if we ever want send data over the wire via Protobuf, using a
-map is the most flexible way to serialize it.
+#### Aside: Maps
+>You may be wondering why we're using maps to store all the data. The reason is
+>pretty simple - if we ever want send data over the wire via Protobuf, using a
+>map is the most flexible way to serialize it.
 
 Now we'll need to have the zone send all of the messages it has buffered up in
 each tick. To do so, we'll change the `handle_tick` function. First, we might
