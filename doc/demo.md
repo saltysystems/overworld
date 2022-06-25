@@ -1,6 +1,22 @@
 # Building your first Saline application: Chat
 **NOTE**: This documentation is unfinished! Use at your own risk.
 
+- [Getting started](#getting-started)
+  * [Get the latest Saline code](#get-the-latest-saline-code)
+  * [Creating a new app](#creating-a-new-app)
+  * [Building our chat app](#building-our-chat-app)
+  * [Hello, World](#hello-world)
+    + [Aside: Saline messages](#aside-saline-messages)
+  * [Implementing the callbacks](#implementing-the-callbacks)
+  * [Testing it out so far](#testing-it-out-so-far)
+  * [Saving state and sending messages](#saving-state-and-sending-messages)
+    + [Aside - Maps](#aside---maps)
+  * [Serializing messages](#serializing-messages)
+  * [Some finishing touches](#some-finishing-touches)
+- [Writing the Client](#writing-the-client)
+  * [Saline and Godot](#saline-and-godot)
+- [Exercises left to the reader](#exercises-left-to-the-reader)
+
 ## Getting started
 
 ### Get the latest Saline code
