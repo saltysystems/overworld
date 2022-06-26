@@ -7,7 +7,8 @@
     c2s_proto/1,
     s2c_call/1,
     encoder/1,
-    find_call/2
+    find_call/2,
+    find_handler/2
 ]).
 
 -type rpc() :: #{
@@ -46,12 +47,26 @@ s2c_call(Map) ->
 encoder(Map) ->
     maps:get(encoder, Map, undefined).
 
--spec find_call(atom(), [rpc(), ...]) -> rpc().
-find_call(V, [H | L]) ->
-    K = s2c_call,
-    case maps:get(K, H) of
-        V -> H;
-        _ -> find_call(V, L)
+-spec find_call(atom(), [rpc(), ...]) -> rpc() | #{}.
+find_call(Msg, [H | L]) ->
+    case maps:get(s2c_call, H, undefined) of
+        Msg -> H;
+        _ -> find_call(Msg, L)
     end;
 find_call(_, []) ->
-    false.
+    #{}.
+
+-spec find_handler(atom(), [rpc(), ...]) -> rpc() | #{}.
+find_handler(Msg, [H | L]) ->
+    % Check first to see if the Fun has been overriden by c2s_proto
+    case maps:get(c2s_proto, H, undefined) of
+        Msg ->
+            H;
+        _ -> 
+            case maps:get(c2s_handler, H, undefined) of
+                {_, Msg, _} -> H;
+                _ -> find_handler(Msg, L)
+            end
+    end;
+find_handler(_, []) ->
+    #{}.
