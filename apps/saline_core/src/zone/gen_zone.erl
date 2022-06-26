@@ -402,7 +402,9 @@ actually_join(Msg, Session, St0) ->
     St2 = St1#state{cb_data = CbData1},
     handle_notify(join, Notify, St2),
     % Set the player's termination callback
-    Session2 = saline_session:set_termination_callback({CbMod,part,[]}, Session1),
+    Session2 = saline_session:set_termination_callback(
+        {CbMod, part, []}, Session1
+    ),
     {Session2, St2}.
 
 maybe_auth_part(Session, St0 = #state{require_auth = RA}) when RA =:= true ->

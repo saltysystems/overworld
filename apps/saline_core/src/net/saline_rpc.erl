@@ -62,7 +62,7 @@ find_handler(Msg, [H | L]) ->
     case maps:get(c2s_proto, H, undefined) of
         Msg ->
             H;
-        _ -> 
+        _ ->
             case maps:get(c2s_handler, H, undefined) of
                 {_, Msg, _} -> H;
                 _ -> find_handler(Msg, L)
