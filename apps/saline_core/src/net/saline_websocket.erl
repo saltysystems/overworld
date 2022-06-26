@@ -26,7 +26,8 @@ init(Req, _St0) ->
     SessionID = erlang:unique_integer(),
     St1 = saline_session:set_id(SessionID, saline_session:new()),
     St2 = saline_session:set_pid(self(), St1),
-    {cowboy_websocket, Req, St2}.
+    St3 = saline_session:set_serializer(protobuf, St2),
+    {cowboy_websocket, Req, St3}.
 
 %%---------------------------------------------------------------------------
 %% @doc Terminate callback for cleanup processes
@@ -38,7 +39,7 @@ terminate(_Reason, Req, State) ->
     logger:debug("Client state at disconnect: ~p", [State]),
     % Check for a termination callback in the client state
     case saline_session:get_termination_callback(State) of
-        {M, F, 1} ->
+        {M, F, []} ->
             erlang:apply(M, F, [State]);
         _ ->
             ok
@@ -81,7 +82,8 @@ websocket_handle({binary, Msg}, Session) ->
         {Msg1, Session1} ->
             {reply, {binary, Msg1}, Session1}
     end;
-websocket_handle(_Frame, State) ->
+websocket_handle(Frame, State) ->
+    logger:debug("Received some other kind of frame: ~p", [Frame]),
     {ok, State}.
 
 %%--------------------------------------------------------------------------
@@ -90,7 +92,8 @@ websocket_handle(_Frame, State) ->
 %% @end
 %%--------------------------------------------------------------------------
 websocket_info({_Pid, zone_msg, Msg}, Session) ->
-    logger:debug("Got a zone_msg, forwarding to client"),
+    {reply, {binary, Msg}, Session};
+websocket_info({_Pid, broadcast, Msg}, Session) ->
     {reply, {binary, Msg}, Session};
 websocket_info(Info, State) ->
     logger:debug("Got a message from another process: ~p", [Info]),
