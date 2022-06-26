@@ -344,11 +344,12 @@ notify_players(MsgType, Msg, RPCs, Players) ->
                     undefined ->
                         Pid ! {self(), zone_msg, {MsgType, Msg}};
                     protobuf ->
+                        logger:debug("Trying to find call for: ~p", [MsgType]),
                         RPC = saline_rpc:find_call(MsgType, RPCs),
                         EMod = saline_rpc:encoder(RPC),
                         OpCode = saline_rpc:opcode(RPC),
                         EncodedMsg = EMod:encode_msg(Msg, MsgType),
-                        Pid ! {self, zone_msg, [OpCode, EncodedMsg]}
+                        Pid ! {self, zone_msg, [<<OpCode:16>>, EncodedMsg]}
                 end
         end
     end,
@@ -360,7 +361,8 @@ decode_msg(MsgType, Msg, RPCs, Session) ->
         undefined ->
             Msg;
         protobuf ->
-            RPC = saline_rpc:find_call(MsgType, RPCs),
+            logger:debug("Trying to find handler for: ~p", [MsgType]),
+            RPC = saline_rpc:find_handler(MsgType, RPCs),
             EMod = saline_rpc:encoder(RPC),
             EMod:decode_msg(Msg, MsgType)
     end.
@@ -399,7 +401,9 @@ actually_join(Msg, Session, St0) ->
         end,
     St2 = St1#state{cb_data = CbData1},
     handle_notify(join, Notify, St2),
-    {Session1, St2}.
+    % Set the player's termination callback
+    Session2 = saline_session:set_termination_callback({CbMod,part,[]}, Session1),
+    {Session2, St2}.
 
 maybe_auth_part(Session, St0 = #state{require_auth = RA}) when RA =:= true ->
     case saline_session:is_authenticated(Session) of
