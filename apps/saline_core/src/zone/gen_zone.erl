@@ -403,7 +403,7 @@ actually_join(Msg, Session, St0) ->
     handle_notify(join, Notify, St2),
     % Set the player's termination callback
     Session2 = saline_session:set_termination_callback(
-        {CbMod, part, []}, Session1
+        {CbMod, part, 1}, Session1
     ),
     {Session2, St2}.
 

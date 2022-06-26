@@ -39,7 +39,7 @@ terminate(_Reason, Req, State) ->
     logger:debug("Client state at disconnect: ~p", [State]),
     % Check for a termination callback in the client state
     case saline_session:get_termination_callback(State) of
-        {M, F, []} ->
+        {M, F, 1} ->
             erlang:apply(M, F, [State]);
         _ ->
             ok
