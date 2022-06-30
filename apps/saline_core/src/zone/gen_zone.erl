@@ -30,8 +30,19 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% types
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-type server_name() :: gen_server:server_name().
 -type server_ref() :: gen_server:server_ref().
+-type start_opt() :: gen_server:start_opt().
+-type start_ret() :: {ok, pid()}
+                   | ignore
+                   | {error, term()}.
+-type start_mon_ret() :: {ok, {pid(), reference()}}
+		       | ignore
+		       | {error, term()}.
+-type from() :: gen_server:from().
 -type session() :: saline_session:session().
+-type session_id() :: integer().
+-type player_list() :: [] | [ player(), ... ].
 -type gen_zone_resp() ::
     noreply
     | {'@zone', term()}
@@ -46,7 +57,7 @@
 -record(state, {
     cb_mod :: module(),
     cb_data :: term(),
-    players = [] :: list(),
+    players = [] :: player_list(),
     tick_timer :: undefined | reference(),
     tick_rate :: pos_integer(),
     require_auth :: boolean(),
@@ -58,6 +69,7 @@
     pid :: pid() | undefined,
     serializer :: saline_session:serializer()
 }).
+-type player() :: #player{}.
 
 -define(DEFAULT_CONFIG, #{
     tick_rate => 30,
@@ -82,7 +94,7 @@
 -callback handle_join(Msg, Session, Players, State) -> Result when
     Msg :: term(),
     Session :: session(),
-    Players :: list(),
+    Players :: player_list(),
     State :: term(),
     Result :: {Status, Reply, State},
     Status :: ok | {ok, Session},
@@ -90,7 +102,7 @@
 
 -callback handle_part(Session, Players, State) -> Result when
     Session :: session(),
-    Players :: list(),
+    Players :: player_list(),
     State :: term(),
     Result :: {Status, Response, State},
     Status :: ok | {ok, Session},
@@ -100,14 +112,14 @@
     Type :: atom(),
     Msg :: term(),
     Session :: session(),
-    Players :: list(),
+    Players :: player_list(),
     State :: term(),
     Result :: {Status, Response, State},
     Status :: ok | {ok, Session},
     Response :: gen_zone_resp().
 
 -callback handle_tick(Players, State) -> Result when
-    Players :: list(),
+    Players :: player_list(),
     State :: term(),
     Result :: {Status, Response, State},
     Status :: ok,
@@ -126,46 +138,101 @@
 %%% gen_server api
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+-spec start(Module, Args, Opts) -> Result when
+    Module :: module(),
+    Args :: term(),
+    Opts :: [start_opt()],
+    Result :: start_ret().
 start(Module, Args, Opts) ->
     gen_server:start(?MODULE, {Module, Args}, Opts).
 
+-spec start(ServerName, Module, Args, Opts) -> Result when
+    ServerName :: server_name(),
+    Module :: module(),
+    Args :: term(),
+    Opts :: [start_opt()],
+    Result :: start_ret().
 start(ServerName, Module, Args, Opts) ->
     gen_server:start(ServerName, ?MODULE, {Module, Args}, Opts).
 
+-spec start_link(Module, Args, Opts) -> Result when
+    Module :: module(),
+    Args :: term(),
+    Opts :: [start_opt()],
+    Result :: start_ret().
 start_link(Module, Args, Opts) ->
     gen_server:start_link(?MODULE, {Module, Args}, Opts).
 
+-spec start_link(ServerName, Module, Args, Opts) -> Result when
+    ServerName :: server_name(),
+    Module :: module(),
+    Args :: term(),
+    Opts :: [start_opt()],
+    Result :: start_ret().
 start_link(ServerName, Module, Args, Opts) ->
     % TODO: Check for configuration options in Opts
     gen_server:start_link(ServerName, ?MODULE, {Module, Args}, Opts).
 
+-spec start_monitor(Module, Args, Opts) -> Result when
+    Module :: module(),
+    Args :: term(),
+    Opts :: [start_opt()],
+    Result :: start_mon_ret().
 start_monitor(Module, Args, Opts) ->
     gen_server:start_monitor(?MODULE, {Module, Args}, Opts).
 
+-spec start_monitor(ServerName, Module, Args, Opts) -> Result when
+    ServerName :: server_name(),
+    Module :: module(),
+    Args :: term(),
+    Opts :: [start_opt()],
+    Result :: start_mon_ret().
 start_monitor(ServerName, Module, Args, Opts) ->
     gen_server:start_monitor(ServerName, ?MODULE, {Module, Args}, Opts).
 
+-spec call(ServerRef, Message) -> Reply when
+	ServerRef :: server_ref(),
+	Message :: term(),
+	Reply :: term().
 call(ServerRef, Msg) ->
     gen_server:call(ServerRef, Msg).
 
+-spec call(ServerRef, Message, Timeout) -> Reply when
+	ServerRef :: server_ref(),
+	Message :: term(),
+	Timeout :: timeout(),
+	Reply :: term().
 call(ServerRef, Msg, Timeout) ->
     gen_server:call(ServerRef, Msg, Timeout).
 
+-spec cast(ServerRef, Message) -> ok when
+	ServerRef :: server_ref(),
+	Message :: term().
 cast(ServerRef, Msg) ->
     gen_server:cast(ServerRef, Msg).
 
+-spec reply(From, Message) -> ok when
+	From :: from(),
+	Message :: term().
 reply(From, Reply) ->
     gen_server:reply(From, Reply).
 
+-spec stop(ServerRef) -> ok when
+	ServerRef :: server_ref().
 stop(ServerRef) ->
     gen_server:stop(ServerRef).
 
+-spec stop(ServerRef, Reason, Timeout) -> ok when
+	ServerRef :: server_ref(),
+	Reason :: term(),
+	Timeout :: timeout(). 
 stop(ServerRef, Reason, Timeout) ->
     gen_server:stop(ServerRef, Reason, Timeout).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% public helper functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec is_player(session_id(), player_list()) -> boolean().
 is_player(ID, PlayerList) ->
     lists:keymember(ID, #player.id, PlayerList).
 
