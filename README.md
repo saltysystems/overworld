@@ -1,7 +1,7 @@
 Saline Game Server
 =================================================
 
-<< Join us on Discord: https://discord.gg/Sc9SHCFz >>
+<< [Join us on Discord](https://discord.gg/aTQdf8eeZj) >>
 
 Saline is a multiplayer game server framework powered by Erlang/OTP. The
 project is focused on building tools for the creation of player-driven worlds
