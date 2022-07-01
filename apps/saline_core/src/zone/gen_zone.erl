@@ -13,14 +13,14 @@
 
 % must have corresponding callbacks
 -export([
-         join/3, 
-         join/2, 
-         part/3, 
-         part/2, 
-         rpc/4, 
-         who/1, 
-         status/1
-        ]).
+    join/3,
+    join/2,
+    part/3,
+    part/2,
+    rpc/4,
+    who/1,
+    status/1
+]).
 
 % helper functions
 -export([is_player/2]).
@@ -41,16 +41,18 @@
 -type server_name() :: gen_server:server_name().
 -type server_ref() :: gen_server:server_ref().
 -type start_opt() :: gen_server:start_opt().
--type start_ret() :: {ok, pid()}
-                   | ignore
-                   | {error, term()}.
--type start_mon_ret() :: {ok, {pid(), reference()}}
-		       | ignore
-		       | {error, term()}.
+-type start_ret() ::
+    {ok, pid()}
+    | ignore
+    | {error, term()}.
+-type start_mon_ret() ::
+    {ok, {pid(), reference()}}
+    | ignore
+    | {error, term()}.
 -type from() :: gen_server:from().
 -type session() :: saline_session:session().
 -type session_id() :: integer().
--type player_list() :: [] | [ player(), ... ].
+-type player_list() :: [] | [player(), ...].
 -type gen_zone_resp() ::
     noreply
     | {'@zone', term()}
@@ -199,41 +201,41 @@ start_monitor(ServerName, Module, Args, Opts) ->
     gen_server:start_monitor(ServerName, ?MODULE, {Module, Args}, Opts).
 
 -spec call(ServerRef, Message) -> Reply when
-	ServerRef :: server_ref(),
-	Message :: term(),
-	Reply :: term().
+    ServerRef :: server_ref(),
+    Message :: term(),
+    Reply :: term().
 call(ServerRef, Msg) ->
     gen_server:call(ServerRef, Msg).
 
 -spec call(ServerRef, Message, Timeout) -> Reply when
-	ServerRef :: server_ref(),
-	Message :: term(),
-	Timeout :: timeout(),
-	Reply :: term().
+    ServerRef :: server_ref(),
+    Message :: term(),
+    Timeout :: timeout(),
+    Reply :: term().
 call(ServerRef, Msg, Timeout) ->
     gen_server:call(ServerRef, Msg, Timeout).
 
 -spec cast(ServerRef, Message) -> ok when
-	ServerRef :: server_ref(),
-	Message :: term().
+    ServerRef :: server_ref(),
+    Message :: term().
 cast(ServerRef, Msg) ->
     gen_server:cast(ServerRef, Msg).
 
 -spec reply(From, Message) -> ok when
-	From :: from(),
-	Message :: term().
+    From :: from(),
+    Message :: term().
 reply(From, Reply) ->
     gen_server:reply(From, Reply).
 
 -spec stop(ServerRef) -> ok when
-	ServerRef :: server_ref().
+    ServerRef :: server_ref().
 stop(ServerRef) ->
     gen_server:stop(ServerRef).
 
 -spec stop(ServerRef, Reason, Timeout) -> ok when
-	ServerRef :: server_ref(),
-	Reason :: term(),
-	Timeout :: timeout(). 
+    ServerRef :: server_ref(),
+    Reason :: term(),
+    Timeout :: timeout().
 stop(ServerRef, Reason, Timeout) ->
     gen_server:stop(ServerRef, Reason, Timeout).
 
@@ -528,7 +530,7 @@ add_and_notify(Session0, St0, Status, CbMod, CbData1, Notify) ->
     {Session2, St2}.
 
 rm_and_notify(Session0, St0, Status, CbData1, Notify) ->
-    {Session1, St1} = 
+    {Session1, St1} =
         case Status of
             ok ->
                 % Remove the player from our list
