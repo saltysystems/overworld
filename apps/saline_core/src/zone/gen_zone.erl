@@ -94,12 +94,21 @@
     Args :: term(),
     Result ::
         {ok, InitialData}
-        | {ok, InitialData, TickRate}
+        | {ok, InitialData, ConfigMap}
         | ignore
         | {stop, Reason},
-    TickRate :: pos_integer(),
+    ConfigMap :: map(),
     InitialData :: term(),
     Reason :: term().
+
+-callback handle_join(Session, Players, State) -> Result when
+    Session :: session(),
+    Players :: player_list(),
+    State :: term(),
+    Result :: {Status, Reply, State},
+    Status :: ok | {ok, Session},
+    Reply :: gen_zone_resp().
+-optional_callbacks([handle_join/3]).
 
 -callback handle_join(Msg, Session, Players, State) -> Result when
     Msg :: term(),
@@ -109,6 +118,7 @@
     Result :: {Status, Reply, State},
     Status :: ok | {ok, Session},
     Reply :: gen_zone_resp().
+-optional_callbacks([handle_join/4]).
 
 -callback handle_part(Session, Players, State) -> Result when
     Session :: session(),
@@ -117,6 +127,17 @@
     Result :: {Status, Response, State},
     Status :: ok | {ok, Session},
     Response :: gen_zone_resp().
+-optional_callbacks([handle_part/3]).
+
+-callback handle_part(Msg, Session, Players, State) -> Result when
+    Msg :: term(),
+    Session :: session(),
+    Players :: player_list(),
+    State :: term(),
+    Result :: {Status, Response, State},
+    Status :: ok | {ok, Session},
+    Response :: gen_zone_resp().
+-optional_callbacks([handle_part/4]).
 
 -callback handle_rpc(Type, Msg, Session, Players, State) -> Result when
     Type :: atom(),
