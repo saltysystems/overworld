@@ -153,7 +153,7 @@
     Players :: player_list(),
     State :: term(),
     Result :: {Status, Response, State},
-    Status :: ok,
+    Status :: atom(),
     Response :: gen_zone_resp().
 
 -callback rpc_info() -> Result when
