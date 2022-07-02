@@ -493,10 +493,16 @@ parameter_body([#{name := Name, type := {msg, SubMsg}} | T], Acc) ->
         ?TAB ++ "pack_" ++ atom_to_list(SubMsg) ++ "(" ++ NameStr ++ ", m.new_" ++
             NameStr ++ "())\n",
     parameter_body(T, B ++ Acc);
-parameter_body([#{name := Name} | T], Acc) ->
+parameter_body([#{name := Name, occurrence := Occurrence} | T], Acc) ->
     B =
-        ?TAB ++ "m.set_" ++ atom_to_list(Name) ++ "(" ++ atom_to_list(Name) ++
-            ")\n",
+        % If it's null, don't set it because the encoder can't handle nulls
+        case Occurrence of
+            optional ->
+                ?TAB ++ "if " ++ atom_to_list(Name) ++ ":\n" ++ ?TAB ++
+                ?TAB ++ "m.set_" ++ atom_to_list(Name) ++ "(" ++ atom_to_list(Name) ++ ")\n";
+            _ -> 
+                ?TAB ++ "m.set_" ++ atom_to_list(Name) ++ "(" ++ atom_to_list(Name) ++ ")\n"
+        end,
     parameter_body(T, B ++ Acc).
 
 %
