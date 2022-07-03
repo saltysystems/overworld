@@ -53,10 +53,11 @@
 -type session() :: saline_session:session().
 -type session_id() :: integer().
 -type player_list() :: [] | [player(), ...].
+-type zone_msg() :: { atom(), map() }.
 -type gen_zone_resp() ::
     noreply
-    | {'@zone', term()}
-    | {'@', list(), term()}.
+    | {'@zone', zone_msg()}
+    | {{'@', list()}, zone_msg()}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% internal state
@@ -391,12 +392,10 @@ code_change(_OldVsn, St0, _Extra) -> {ok, St0}.
 
 tick(St0 = #state{cb_mod = CbMod, cb_data = CbData0, players = Players}) ->
     PlayerIDs = [X#player.id || X <- Players],
-    case CbMod:handle_tick(PlayerIDs, CbData0) of
-        {Type, Notify, CbData1} ->
-            St1 = St0#state{cb_data = CbData1},
-            handle_notify(Type, Notify, St1),
-            St1
-    end.
+    {_Status, Notify, CbData1} = CbMod:handle_tick(PlayerIDs, CbData0),
+    St1 = St0#state{cb_data = CbData1},
+    handle_notify(Notify, St1),
+    St1.
 
 rpc_info(CbMod) ->
     case erlang:function_exported(CbMod, rpc_info, 0) of
@@ -407,20 +406,23 @@ rpc_info(CbMod) ->
             []
     end.
 
-handle_notify(_MT, {'@', _, _}, #state{players = []}) ->
-    % The last player has left, nobody left to notify but don't crash.
+handle_notify({{'@', _}, _}, #state{players = []}) ->
+    % NO MESSAGE: The last player has left, nobody left to notify but don't
+    %             crash.
     ok;
-handle_notify(MsgType, {'@', IDs, Msg}, #state{players = Players, rpcs = RPCs}) ->
-    % Filter just for the players we want to notify
+handle_notify({{'@', IDs}, {MsgType, Msg}}, #state{players = Players, rpcs = RPCs}) ->
+    % SEND MESSAGE: Filter just for the players we want to notify
     P = [lists:keyfind(ID, #player.id, Players) || ID <- IDs],
     notify_players(MsgType, Msg, RPCs, P);
-handle_notify(_MT, {'@zone', _Msg}, #state{players = []}) ->
-    % There are messages to send, but no one left to receive them, so do nothing.
+handle_notify({'@zone', _}, #state{players = []}) ->
+    % NO MESSAGE: There are messages to send, but no one left to receive them,
+    %             so do nothing.
     ok;
-handle_notify(MsgType, {'@zone', Msg}, #state{players = Players, rpcs = RPCs}) ->
+handle_notify({'@zone', {MsgType, Msg}}, #state{players = Players, rpcs = RPCs}) ->
+    % SEND MESSAGE: Send everyone the message
     notify_players(MsgType, Msg, RPCs, Players);
-handle_notify(_MT, noreply, _State) ->
-    % No reply
+handle_notify(noreply, _State) ->
+    % NO MESSAGE
     ok.
 
 player_add(Session, St0) ->
@@ -452,7 +454,6 @@ notify_players(MsgType, Msg, RPCs, Players) ->
                     undefined ->
                         Pid ! {self(), zone_msg, {MsgType, Msg}};
                     protobuf ->
-                        logger:debug("Trying to find call for: ~p", [MsgType]),
                         RPC = saline_rpc:find_call(MsgType, RPCs),
                         EMod = saline_rpc:encoder(RPC),
                         OpCode = saline_rpc:opcode(RPC),
@@ -469,7 +470,6 @@ decode_msg(MsgType, Msg, RPCs, Session) ->
         undefined ->
             Msg;
         protobuf ->
-            logger:debug("Trying to find handler for: ~p", [MsgType]),
             RPC = saline_rpc:find_handler(MsgType, RPCs),
             EMod = saline_rpc:encoder(RPC),
             EMod:decode_msg(Msg, MsgType)
@@ -516,7 +516,7 @@ actually_do(Action, Session, St0) ->
     end.
 actually_do(Action, Msg, Session, St0) ->
     RPCs = St0#state.rpcs,
-    DecodedMsg = decode_msg(join, Msg, RPCs, Session),
+    DecodedMsg = decode_msg(Action, Msg, RPCs, Session),
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
     Players = St0#state.players,
@@ -543,7 +543,7 @@ add_and_notify(Session0, St0, Status, CbMod, CbData1, Notify) ->
                 {Session0, St0}
         end,
     St2 = St1#state{cb_data = CbData1},
-    handle_notify(join, Notify, St2),
+    handle_notify(Notify, St2),
     % Set the player's termination callback
     Session2 = saline_session:set_termination_callback(
         {CbMod, part, 1}, Session1
@@ -563,7 +563,7 @@ rm_and_notify(Session0, St0, Status, CbData1, Notify) ->
         end,
     % Send any messages as needed - called for side effects
     St2 = St1#state{cb_data = CbData1},
-    handle_notify(part, Notify, St2),
+    handle_notify(Notify, St2),
     {Session1, St2}.
 
 maybe_auth_rpc(Type, Msg, Session, St0 = #state{require_auth = RA}) when
@@ -594,5 +594,5 @@ actually_rpc(Type, Msg, Session, St0) ->
         end,
     % Send any messages as needed - called for side effects
     St1 = St0#state{cb_data = CbData1},
-    handle_notify(Type, Notify, St1),
+    handle_notify(Notify, St1),
     {Session1, St1}.
