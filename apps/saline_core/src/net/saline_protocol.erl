@@ -223,7 +223,7 @@ route(<<OpCode:16, Message/binary>>, Session, St0) ->
                 {Module, Fun, 2} ->
                     % Apply the callback with the rest of the message plus
                     % current session information (authentication status, etc).
-                    logger:debug("Calling ~p:~p(...)", [Module, Fun]),
+                    %logger:debug("Calling ~p:~p(...)", [Module, Fun]),
                     erlang:apply(Module, Fun, [Message, Session]);
                 {Module, Fun, 1} ->
                     % The callback is called "sessionless" - e.g. heartbeats,
