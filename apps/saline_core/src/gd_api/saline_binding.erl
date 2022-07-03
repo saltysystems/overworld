@@ -499,9 +499,11 @@ parameter_body([#{name := Name, occurrence := Occurrence} | T], Acc) ->
         case Occurrence of
             optional ->
                 ?TAB ++ "if " ++ atom_to_list(Name) ++ ":\n" ++ ?TAB ++
-                ?TAB ++ "m.set_" ++ atom_to_list(Name) ++ "(" ++ atom_to_list(Name) ++ ")\n";
-            _ -> 
-                ?TAB ++ "m.set_" ++ atom_to_list(Name) ++ "(" ++ atom_to_list(Name) ++ ")\n"
+                    ?TAB ++ "m.set_" ++ atom_to_list(Name) ++ "(" ++
+                    atom_to_list(Name) ++ ")\n";
+            _ ->
+                ?TAB ++ "m.set_" ++ atom_to_list(Name) ++ "(" ++
+                    atom_to_list(Name) ++ ")\n"
         end,
     parameter_body(T, B ++ Acc).
 
