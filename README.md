@@ -13,7 +13,7 @@ Ultima Online, EverQuest, Star Wars Galaxies, and the many amazing
 user-generated worlds built with platforms like BYOND, Neverwinter Nights, and
 Roblox.
 
-Saline is open source software, made available under the MIT license.
+Saline is Free Software, available under the GPL.
 
 Getting started
 -------------------------------------------------
