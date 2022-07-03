@@ -53,7 +53,7 @@
 -type session() :: saline_session:session().
 -type session_id() :: integer().
 -type player_list() :: [] | [player(), ...].
--type zone_msg() :: { atom(), map() }.
+-type zone_msg() :: {atom(), map()}.
 -type gen_zone_resp() ::
     noreply
     | {'@zone', zone_msg()}
@@ -410,7 +410,9 @@ handle_notify({{'@', _}, _}, #state{players = []}) ->
     % NO MESSAGE: The last player has left, nobody left to notify but don't
     %             crash.
     ok;
-handle_notify({{'@', IDs}, {MsgType, Msg}}, #state{players = Players, rpcs = RPCs}) ->
+handle_notify({{'@', IDs}, {MsgType, Msg}}, #state{
+    players = Players, rpcs = RPCs
+}) ->
     % SEND MESSAGE: Filter just for the players we want to notify
     P = [lists:keyfind(ID, #player.id, Players) || ID <- IDs],
     notify_players(MsgType, Msg, RPCs, P);
