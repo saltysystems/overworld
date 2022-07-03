@@ -2,7 +2,6 @@
 % @doc Vector math and other goodies
 %      Particularly from:
 %       https://github.com/JuantAldea/Separating-Axis-Theorem/blob/master/python/separation_axis_theorem.py
-%      and licensed under the AGPL as a derivative work
 
 -export([
     length_squared/1,
