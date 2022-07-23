@@ -4,6 +4,8 @@
 %       https://github.com/JuantAldea/Separating-Axis-Theorem/blob/master/python/separation_axis_theorem.py
 
 -export([
+    add/2,
+    rotate/2,
     length_squared/1,
     dot/2,
     normalize/1,
@@ -22,6 +24,16 @@
 -type scalar() :: number().
 
 -export_type([vector/0, scalar/0]).
+
+-spec add(vector(), vector()) -> vector().
+add({X1, Y1}, {X2, Y2}) ->
+    {X1 + X2, Y1 + Y2}.
+
+-spec rotate(vector(), scalar()) -> vector().
+rotate({X, Y}, RotRad) ->
+    CR = math:cos(RotRad),
+    SR = math:sin(RotRad),
+    {CR * X - SR * Y, SR * X + CR * Y}.
 
 -spec length_squared(vector()) -> float().
 length_squared({X, Y}) ->
