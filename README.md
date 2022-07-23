@@ -1,9 +1,9 @@
-Saline Game Server
+Overworld Game Server
 =================================================
 
 << [Join us on Discord](https://discord.gg/aTQdf8eeZj) >>
 
-Saline is a multiplayer game server framework powered by Erlang/OTP. The
+Overworld is a multiplayer game server framework powered by Erlang/OTP. The
 project is focused on building tools for the creation of player-driven worlds
 of all kinds, with a special focus on account management, database persistence,
 instances/sharding, NPCs, server-side scripting and more.
@@ -13,7 +13,7 @@ Ultima Online, EverQuest, Star Wars Galaxies, and the many amazing
 user-generated worlds built with platforms like BYOND, Neverwinter Nights, and
 Roblox.
 
-Saline is Free Software, available under the GPL.
+Overworld is Free Software, available under the GPL.
 
 Getting started
 -------------------------------------------------
