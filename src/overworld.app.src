@@ -8,8 +8,7 @@
     stdlib,
 	gproc,
 	mnesia,
-	cowboy,
-    enet
+	cowboy
    ]},
   {env,[]},
   {modules, []},
