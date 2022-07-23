@@ -27,6 +27,7 @@ var debug = false
 #  Signals
 ###########################################################################
 
+signal connection(status)
 {{#signals}} 
 {{.}}
 {{/signals}}
@@ -133,11 +134,13 @@ func _on_data():
 
 func _connection_established(_protocol):
 	print("[INFO] Connection established")
-	emit_signal("connection_established")
+	emit_signal("connection", "established")
 
 func _connection_closed(msg):
 	print("[INFO] Connection closed: ", msg)
+	emit_signal("connection", "closed")
 
 func _connection_error():
 	print("[INFO] Connection error")
+	emit_signal("connection", "error")
 	print(ws.get_peer(1))
