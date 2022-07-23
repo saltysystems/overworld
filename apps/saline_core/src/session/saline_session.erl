@@ -51,7 +51,8 @@
     authenticated = false :: boolean(),
     % ms
     latency = 0 :: non_neg_integer(),
-    game_info :: term() | undefined,
+    % it can be anything but we default to map
+    game_info = #{} :: term(),
     termination_callback :: mfa() | undefined
 }).
 
