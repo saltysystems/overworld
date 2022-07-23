@@ -1,12 +1,12 @@
-# Building your first Saline application: Chat
+# Building your first Overworld application: Chat
 **NOTE**: This documentation is unfinished! Use at your own risk.
 
 - [Getting started](#getting-started)
-  * [Get the latest Saline code](#get-the-latest-saline-code)
+  * [Get the latest Overworld code](#get-the-latest-overworld-code)
   * [Creating a new app](#creating-a-new-app)
   * [Building our chat app](#building-our-chat-app)
   * [Hello, World](#hello-world)
-    + [Aside: Saline messages](#aside-saline-messages)
+    + [Aside: Overworld messages](#aside-overworld-messages)
   * [Implementing the callbacks](#implementing-the-callbacks)
   * [Testing it out so far](#testing-it-out-so-far)
   * [Saving state and sending messages](#saving-state-and-sending-messages)
@@ -14,45 +14,45 @@
   * [Serializing messages](#serializing-messages)
   * [Some finishing touches](#some-finishing-touches)
 - [Writing the Client](#writing-the-client)
-  * [Saline and Godot](#saline-and-godot)
+  * [Overworld and Godot](#overworld-and-godot)
 - [Exercises left to the reader](#exercises-left-to-the-reader)
 
 ## Getting started
 
-### Get the latest Saline code
+### Get the latest Overworld code
 
 Clone the repository:
 
 ```bash
-$ git clone https://github.com/saltysystems/saline
+$ git clone https://github.com/saltysystems/overworld
 ```
 
 ### Creating a new app
 
-Saline is already set up to be a rebar3 umbrella application. You need only
+Overworld is already set up to be a rebar3 umbrella application. You need only
 create a new app, we will call it `chat`: 
 
 ```bash
-$ cd saline/apps
+$ cd ow/apps
 $ rebar3 new app chat
 ```
 
 ### Building our chat app
 While chat isn't particularly exciting, it lets us dive directly into
-building a Saline application and highlights some of the features of the
+building a Overworld application and highlights some of the features of the
 framework.
 
 
 ### Hello, World!
 Make a new Erlang source file called `chat_global.erl` in `apps/chat/src`.
 
-You'll want to specify that this is a `gen_zone` server and export the minimum
+You'll want to specify that this is a `ow_zone` server and export the minimum
 required callback functions:
 ```erlang
 -module(chat_global).
--behaviour(gen_zone).
+-behaviour(ow_zone).
 
-% Required gen_zone callbacks
+% Required ow_zone callbacks
 -export([
          init/1,
          handle_join/3,
@@ -67,13 +67,13 @@ Next let's start to define the API.
 We'll need some way to start and stop the server (start/0, stop/0), a way for
 players to join the session (join/2), a way for players to leave (part/1), and
 a way for players to send some input to the server (send/2). For each
-function here, `gen_zone` will call back to our handler functions defined
+function here, `ow_zone` will call back to our handler functions defined
 above. This will allow us to expose a standard API to our clients and hide the
-implementation details. Saline will seamlessly handle messages sent over the
+implementation details. Overworld will seamlessly handle messages sent over the
 network to remote clients (via Protobuf) or to other Erlang processes
 (including distributed Erlang!).
 
-Saline will automatically keep track of any sessions connected to our world
+Overworld will automatically keep track of any sessions connected to our world
 server and will handle message serialization/deserialization between the
 clients and the server.
 
@@ -90,19 +90,19 @@ clients and the server.
 
 % API
 start() ->
-    gen_zone:start_link({local, ?SERVER}, ?MODULE, [], []).
+    ow_zone:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 stop() ->
-    gen_zone:stop(?SERVER).
+    ow_zone:stop(?SERVER).
 
 join(Msg, Session) ->
-    gen_zone:join(?SERVER, Msg, Session).
+    ow_zone:join(?SERVER, Msg, Session).
 
 part(Session) ->
-    gen_zone:part(?SERVER, Session).
+    ow_zone:part(?SERVER, Session).
 
 send(Msg, Session) ->
-    gen_zone:rpc(?SERVER, chat_msg, Msg, Session).
+    ow_zone:rpc(?SERVER, chat_msg, Msg, Session).
 
 ```
 
@@ -111,8 +111,8 @@ You may have noticed that for the send/2 function, we send along the atom
 we'll define in our wire protocol. 
 
 Now that we have defined the API boilerplate, we can start writing some
-application code! The first thing we need to do is setup the initial gen_zone
-server state. By default, gen_zone will let anyone connect without
+application code! The first thing we need to do is setup the initial ow_zone
+server state. By default, ow_zone will let anyone connect without
 authentication and will update the game world at 30 ticks per second. This
 should be totally OK for our purposes. 
 
@@ -129,13 +129,13 @@ init([]) ->
 ```
 
 Next we'll need to define what happens when players join or leave the game.
-Saline will automatically keep track of any sessions connected to our world
+Overworld will automatically keep track of any sessions connected to our world
 server and will handle message serialization/deserialization between the
 clients and the server. So all you need to write is the game logic!
 
-#### Aside: Saline messages
+#### Aside: Overworld messages
 >At the end of any required callback function, you'll want to return a 3-tuple
->to `gen_zone` with the following rules:
+>to `ow_zone` with the following rules:
 >```erlang
 >    {Status, Response, State} when
 >        Status :: ok | {ok, Session},
@@ -149,9 +149,9 @@ clients and the server. So all you need to write is the game logic!
 >respond `ok` with an updated copy of the player's session. You may update the
 >player's session if there's something about it that your callback function
 >changes. Perhaps you wanted to set some game specific information in via
->`saline_session:set_game_info/1`, for example.
+>`ow_session:set_game_info/1`, for example.
 >
->For responses, `gen_zone` understands 3 different response messages from a
+>For responses, `ow_zone` understands 3 different response messages from a
 >server implementing the behaviour. You can use `'@zone'` to broadcast a message
 >to everyone in the zone, in our case everyone connected to the World Server.
 >You can also target individuals with `{'@', PlayerIDs}` where PlayerIDs is a
@@ -165,7 +165,7 @@ clients and the server. So all you need to write is the game logic!
 >| `{'@', PlayerID, Msg}` | Send a message, *Msg*, to player *PlayerID*. Also accepts a list of Player IDs |
 >| `noreply` | Send no reply to any connected player |
 >
->Finally, you should return your internal state to `gen_zone` via `State`.
+>Finally, you should return your internal state to `ow_zone` via `State`.
 
 ### Implementing the callbacks
 Now we should implement the handler functions for our chat server. We'll add
@@ -174,12 +174,12 @@ nothing very exciting.
 
 ```erlang
 handle_join(_Msg, Session, _Players, State) ->
-    ID = saline_session:get_id(Session),
+    ID = ow_session:get_id(Session),
     logger:notice("Player ~p has joined the server!", [ID]),
     {ok, noreply, State}.
 
 handle_part(Session, _Players, State) ->
-    ID = saline_session:get_id(Session),
+    ID = ow_session:get_id(Session),
     logger:notice("Player ~p has left the server!", [ID]),
     {ok, noreply, State}.
 ```
@@ -192,7 +192,7 @@ code for our chat message.
 Notice that the function signature is a bit different for `handle_rpc` - we
 must additionally include the message type. This will be especially important
 when we start serializing the data over a WebSocket, because we'll need to
-instruct Saline what Protobuf message to use.
+instruct Overworld what Protobuf message to use.
 
 We'll take the message verbatim and stuff it into the zone state. You may want
 to modify the message before buffering it, see the extra exercises at the end
@@ -200,13 +200,13 @@ of the doc.
 
 ```erlang
 handle_rpc(chat_msg, Msg, Session, _Players, State) ->
-    ID = saline_session:get_id(Session),
+    ID = ow_session:get_id(Session),
     logger:notice("Player ~p has sent a chat message: ~p", [ID, Msg]),
     {ok, noreply, State}.
 ```
 
 There are a few more callbacks that we need to define to properly implement the
-`gen_zone` behavior. Since the game server is going to update every 30ms, we
+`ow_zone` behavior. Since the game server is going to update every 30ms, we
 have to implement logic for that update. For now we'll do the minimum necessary
 to get the server to compile:
 
@@ -222,7 +222,7 @@ You can save up your work at this point and try things out.
 $ rebar3 shell
 ===> Verifying dependencies...
 ===> Analyzing applications...
-===> Compiling saline
+===> Compiling ow
 ===> Compiling chi
 Erlang/OTP 25 [erts-13.0] [source] [64-bit] [smp:4:4] [ds:4:4:10] [async-threads:1] [jit:ns] [dtrace] [sharing-preserving]
 
@@ -232,7 +232,7 @@ Eshell V13.0  (abort with ^G)
 ===> Booted cowlib
 ===> Booted ranch
 ===> Booted cowboy
-===> Booted saline
+===> Booted ow
 ===> Booted sasl
 1> 
 ```
@@ -246,9 +246,9 @@ From the shell you can start the world server and verify everything is working:
 ok
 ```
 
-Let's also try to join the server as a player from the shell. First we need to create a Saline session:
+Let's also try to join the server as a player from the shell. First we need to create a Overworld session:
 ```
-8> S = saline_session:new().
+8> S = ow_session:new().
 {session,-576460752303423295,undefined,none,false,0,
          undefined,undefined}
 ```
@@ -278,10 +278,10 @@ and send them to connected players. The first thing that we'll need to do is
 add messages to the state. Let's modify the `handle_rpc` function to do that:
 ```
 handle_rpc(chat_msg, Msg, Session, Players, State) ->
-    ID = saline_session:get_id(Session),
+    ID = ow_session:get_id(Session),
     % Make sure the player has actually joined the zone
     State1 = 
-        case gen_zone:is_player(ID, Players) of 
+        case ow_zone:is_player(ID, Players) of 
             false ->
                 State;
             true ->
@@ -325,8 +325,8 @@ Let's try it out in the shell. We've got a number of things to do here if we hav
 
 So we'll proceed exactly along those lines:
 ```
-1> S = saline_session:new().
-2> S1 = saline_session:set_pid(self(), S).
+1> S = ow_session:new().
+2> S1 = ow_session:set_pid(self(), S).
 {session,-576460752303423390,<0.538.0>,undefined,false,0,
          undefined,undefine}
 3> chat_global:start().
@@ -348,14 +348,14 @@ ok
 
 ### Serializing messages
 If we ever want players to connect from the outside world, we'll need to define
-some messages that we can serialize and send across the wire. Saline supports
+some messages that we can serialize and send across the wire. Overworld supports
 [protobuf](https://developers.google.com/protocol-buffers) as a standard wire
 format to communicate between game server and client.
 
 Go ahead and make a `priv/proto` directory in the root of your chat
 application, e.g., 
 ```bash
-mkdir -p saline/apps/chat/priv/proto
+mkdir -p ow/apps/chat/priv/proto
 ```
 
 Fire up your favorite editor and we'll start defining the protobuf file. I'll call it `chat.proto`.
@@ -368,7 +368,7 @@ package chat;
 
 It's important that the package name matches the name of the application, for
 our purposes. We can start defining some messages - we know for sure we need a
-"join" message because that's a required callback for Saline. Probably all we
+"join" message because that's a required callback for Overworld. Probably all we
 care about in the join message is the player's handle:
 
 ```
@@ -397,12 +397,12 @@ message state_transfer {
 
 That's it for the Protobuf file!
 
-We have one last thing to do before Saline will automatically encode/decode
+We have one last thing to do before Overworld will automatically encode/decode
 messages for us. We need to define a callback in our server, `rpc_info/0` that
-will tell Saline some important information about our messages. Let's define that now:
+will tell Overworld some important information about our messages. Let's define that now:
 
 ```
-% Saline RPCs
+% Overworld RPCs
 -define(CHAT_JOIN, 16#1001).
 -define(CHAT_PART, 16#1002).
 -define(CHAT_SEND, 16#1003).
@@ -436,21 +436,21 @@ rpc_info() ->
 
 So there's a few things going on here. First, we define some opcodes which are
 a couple of bytes at the beginning of the message that let's the client and
-saline determine which function to use to decode or encode the message. 
+ow determine which function to use to decode or encode the message. 
 
 For messages that are received by the server, we need to define a
 client-to-server handler, or `c2s_handler`. This should be a 3-tuple with the
-module, function, and arity (MFA) that Saline will call whenever it receives a
+module, function, and arity (MFA) that Overworld will call whenever it receives a
 message prefixed by the appropriate opcode. Since `join`, `part,` and `send`
-are messages that come from the client, we inform Saline that they will have
+are messages that come from the client, we inform Overworld that they will have
 corresponding `c2s_handler` functions when messages come in.
 
-One thing that Saline will do to determine how to associate your protobuf
+One thing that Overworld will do to determine how to associate your protobuf
 messages with callbacks is inspect the name of your handler and assume that the
 protobuf message has the same name. For the `send/2` function, it doesn't seem
 all that great to call our messages "send", I'd much rather have a name like
 `chat_msg` - where "send" is the verb and "chat_msg" is the object being sent.
-So here I add the `c2s_proto` option to instruct Saline to use the "chat_msg"
+So here I add the `c2s_proto` option to instruct Overworld to use the "chat_msg"
 definition in our Protobuf file instead of looking for "send".
 
 For the remaining message, we don't expect clients to send `state_transfer`
@@ -477,7 +477,7 @@ right after `handle_tick/2`:
 Our chat server is in pretty good shape, but let's add a few finishing touches
 to make it easier once we get to wiring up the client. The chat server really
 ought to start automatically whenever you fire up the BEAM, and it will also
-need to call into Saline to register its opcodes and associated callback
+need to call into Overworld to register its opcodes and associated callback
 functions.
 
 Open up `chat_app.erl` and make it look something like this:
@@ -490,7 +490,7 @@ Open up `chat_app.erl` and make it look something like this:
 -export([start/2, stop/1]).
 
 start(_StartType, _StartArgs) ->
-    saline_protocol:register_app(chat),
+    ow_protocol:register_app(chat),
     chat_sup:start_link().
 
 stop(_State) ->
@@ -517,8 +517,8 @@ init([]) ->
 We'll also want to edit the `rebar.conf` in the top-level directory, modifying
 the `relx` tuple to include `chat` in the application startup list, e.g.:
 ```
-{relx, [{release, {saline, "1.0.0"},
-         [saline,
+{relx, [{release, {ow, "1.0.0"},
+         [ow,
           sasl,
           mnesia,
           chat]},
@@ -526,7 +526,7 @@ the `relx` tuple to include `chat` in the application startup list, e.g.:
 ```
 
 You will also want to make sure to edit the `rebar.config` for your application
-(i.e., `saline/apps/chat/rebar.config`) to set up GPB to encode/decode messages
+(i.e., `ow/apps/chat/rebar.config`) to set up GPB to encode/decode messages
 properly:
 
 ```
@@ -559,30 +559,30 @@ Now when you start up the BEAM, it should compile the protobuf files and start t
 
 ## Writing the Client
 
-One of the first things we can do before starting in on the client is to try downloading the generated library for Godot via your favorite HTTP tool. I'll use curl here, but you can just as easily use a web browser. With saline running, try grabbing the client library:
+One of the first things we can do before starting in on the client is to try downloading the generated library for Godot via your favorite HTTP tool. I'll use curl here, but you can just as easily use a web browser. With ow running, try grabbing the client library:
 
 ```bash
-mkdir libsaline
-cd libsaline
-curl http://lcoalhost:4433/client/download > libsaline.zip 
-unzip libsaline.zip
+mkdir libow
+cd libow
+curl http://lcoalhost:4433/client/download > libow.zip 
+unzip libow.zip
 ```
 
 You should see 3 files created:
 | name | description |
 | ---- | ----------- |
-| libsaline.gd | Auto-generated Saline client library |
-| saline.proto | Wire format for Saline core functions |
+| libow.gd | Auto-generated Overworld client library |
+| ow.proto | Wire format for Overworld core functions |
 | chat.proto | Wire format for the chat application |
 
 
 
 
-### Saline and Godot
+### Overworld and Godot
 If you plan to write your client in [Godot](https://godotengine.org/), you can
-add the Saline plugin to your Godot game and automatically generate a client
+add the Overworld plugin to your Godot game and automatically generate a client
 library based on your protobuf schema.
-[https://github.com/saltysystems/saline_client](https://github.com/saltysystems/saline_client)
+[https://github.com/saltysystems/overworld_client](https://github.com/saltysystems/overworld_client)
 
 
 # Exercises left to the reader

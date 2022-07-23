@@ -1,0 +1,19 @@
+{application, overworld,
+ [{description, "Multiplayer game server framework"},
+  {vsn, "1.0.0"},
+  {registered, []},
+  {mod, {ow_app, []}},
+  {applications,
+   [kernel,
+    stdlib,
+	gproc,
+	mnesia,
+	cowboy,
+    enet
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {licenses, ["MIT"]},
+  {links, []}
+ ]}.
