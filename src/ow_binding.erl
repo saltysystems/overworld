@@ -146,7 +146,8 @@ generate_pure_submsgs(Encoder, [vector2 | Rest], Acc) ->
     generate_pure_submsgs(Encoder, Rest, [Signature ++ Body | Acc]);
 generate_pure_submsgs(Encoder, [MessageName | Rest], Acc) ->
     Defn = erlang:apply(Encoder, fetch_msg_def, [MessageName]),
-    Signature = "func unpack_" ++ atom_to_list(MessageName) ++ "(object):\n",
+    Signature =
+        "func unpack_" ++ atom_to_list(MessageName) ++ "(object):\n",
     Body =
         ?TAB ++ "if typeof(object) == TYPE_ARRAY and object != []:\n" ++
             ?TAB(2) ++ "var array = []\n" ++
@@ -182,7 +183,8 @@ generate_submsg_body([H | T], Prefix, TabLevel, Acc) ->
     % Godobuf should automagically generate arrays as appropriate for
     % well-knowns, so no need to special case these.
     Body =
-        ?TAB(TabLevel) ++ "var " ++ Name ++ " = " ++ Prefix ++ ".get_" ++ Name ++
+        ?TAB(TabLevel) ++ "var " ++ Name ++ " = " ++ Prefix ++ ".get_" ++
+            Name ++
             "()\n",
     generate_submsg_body(T, Prefix, TabLevel, Body ++ Acc).
 
@@ -490,7 +492,8 @@ parameter_body([], Acc) ->
 parameter_body([#{name := Name, type := {msg, SubMsg}} | T], Acc) ->
     NameStr = atom_to_list(Name),
     B =
-        ?TAB ++ "pack_" ++ atom_to_list(SubMsg) ++ "(" ++ NameStr ++ ", m.new_" ++
+        ?TAB ++ "pack_" ++ atom_to_list(SubMsg) ++ "(" ++ NameStr ++
+            ", m.new_" ++
             NameStr ++ "())\n",
     parameter_body(T, B ++ Acc);
 parameter_body([#{name := Name, occurrence := Occurrence} | T], Acc) ->
@@ -623,7 +626,9 @@ field_info([H | T], Acc) ->
     field_info(T, Acc1).
 
 unmarshall_var({ProtoLib, ProtoMsg}) ->
-    unmarshall_var(field_info({ProtoLib, ProtoMsg}), ProtoMsg, ProtoLib, []).
+    unmarshall_var(
+        field_info({ProtoLib, ProtoMsg}), ProtoMsg, ProtoLib, []
+    ).
 unmarshall_var([], _ProtoMsg, _ProtoLib, Acc) ->
     Acc;
 unmarshall_var([{_F, _T, _O} | _Rest], ProtoMsg, ProtoLib, Acc) ->

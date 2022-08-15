@@ -10,22 +10,22 @@ prepare_db() ->
 prepare_db(Path) ->
     E = mnesia:system_info(tables),
     T = tables(),
-    F = fun(Table, SoFar) -> 
-                Member = lists:member(Table, E),
-                Member and SoFar
-        end,
+    F = fun(Table, SoFar) ->
+        Member = lists:member(Table, E),
+        Member and SoFar
+    end,
     case lists:foldl(F, true, T) of
-        true -> 
+        true ->
             % All of the tables are present, so no op
             ok;
-        false -> 
+        false ->
             % At least one table doesn't exist, setup the tables
             % Try to get the table path from system config if not defined
             % Then start mnesia up
             case Path of
-                [] -> 
+                [] ->
                     {ok, MDir} = application:get_env(mnesia, dir);
-                MDir -> 
+                MDir ->
                     MDir
             end,
             setup(MDir),
@@ -33,7 +33,7 @@ prepare_db(Path) ->
     end.
 
 tables() ->
-    % Update this list 
+    % Update this list
     [ow_table_ids, ow_account].
 
 setup(Path) ->
@@ -63,25 +63,29 @@ install(Nodes) ->
 
 setup_counters([]) ->
     ok;
-setup_counters([H|T]) ->
+setup_counters([H | T]) ->
     Fun = fun() ->
-                mnesia:write(ow_table_ids,
-                  #ow_table_ids{table_name=H, last_id=0},
-                  write
-                )
-          end,
+        mnesia:write(
+            ow_table_ids,
+            #ow_table_ids{table_name = H, last_id = 0},
+            write
+        )
+    end,
     {atomic, ok} = mnesia:transaction(Fun),
     setup_counters(T).
 
 counter_create_table(Nodes) ->
     {_, ok} = mnesia:create_table(ow_table_ids, [
-               {record_name, ow_table_ids},
-               {attributes, record_info(fields, ow_table_ids)},
-                 {disc_copies, Nodes}
-                ]).
+        {record_name, ow_table_ids},
+        {attributes, record_info(fields, ow_table_ids)},
+        {disc_copies, Nodes}
+    ]).
 
 account_create_table(Nodes) ->
-    {_, ok} = mnesia:create_table(ow_account,
-                [{attributes, record_info(fields, ow_account)},
-                 {disc_copies, Nodes}
-                 ]).
+    {_, ok} = mnesia:create_table(
+        ow_account,
+        [
+            {attributes, record_info(fields, ow_account)},
+            {disc_copies, Nodes}
+        ]
+    ).

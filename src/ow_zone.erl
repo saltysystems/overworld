@@ -420,7 +420,9 @@ handle_notify({'@zone', _}, #state{players = []}) ->
     % NO MESSAGE: There are messages to send, but no one left to receive them,
     %             so do nothing.
     ok;
-handle_notify({'@zone', {MsgType, Msg}}, #state{players = Players, rpcs = RPCs}) ->
+handle_notify({'@zone', {MsgType, Msg}}, #state{
+    players = Players, rpcs = RPCs
+}) ->
     % SEND MESSAGE: Send everyone the message
     notify_players(MsgType, Msg, RPCs, Players);
 handle_notify(noreply, _State) ->

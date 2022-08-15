@@ -44,7 +44,9 @@ handle_info({enet, _Channel, {unreliable, Seq, Packet}}, State) ->
     logger:debug("Got an unreliable packet: ~p:~p", [Seq, Packet]),
     {noreply, State};
 handle_info({enet, _Channel, {unsequenced, Group, Packet}}, State) ->
-    logger:debug("Got a message from another process: ~p:~p", [Group, Packet]),
+    logger:debug("Got a message from another process: ~p:~p", [
+        Group, Packet
+    ]),
     {noreply, State}.
 
 terminate(_Reason, _State) -> ok.
