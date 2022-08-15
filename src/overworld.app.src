@@ -5,14 +5,14 @@
   {mod, {ow_app, []}},
   {applications,
    [kernel,
-    stdlib,
-	gproc,
+	stdlib,
 	mnesia,
+	gproc,
 	cowboy
    ]},
   {env,[]},
   {modules, []},
 
-  {licenses, ["MIT"]},
+  {licenses, ["GPL"]},
   {links, []}
  ]}.
