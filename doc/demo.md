@@ -19,32 +19,50 @@
 
 ## Getting started
 
-### Get the latest Overworld code
+### Building a chat app
 
-Clone the repository:
-
-```bash
-$ git clone https://github.com/saltysystems/overworld
-```
+Chat applications are a familiar way to let us dive directly into building a
+useful program that can be published to the world and have people and machines
+connect and interact with it, while highlighting some of the features and
+workflows of Overworld.
 
 ### Creating a new app
 
-Overworld is already set up to be a rebar3 umbrella application. You need only
-create a new app, we will call it `chat`: 
+Overworld should be usable as an Erlang app in your own project. Let's start a
+new `rebar3` application called "chat":
 
 ```bash
-$ cd ow/apps
 $ rebar3 new app chat
 ```
 
-### Building our chat app
-While chat isn't particularly exciting, it lets us dive directly into
-building a Overworld application and highlights some of the features of the
-framework.
+This should create some basic directory structure and a few files to get
+started. You'll want to edit `rebar.config` and include Overworld as a
+dependency. Here we add Overworld pulling from the GitHub master branch, in
+`chat/rebar.config`, you'll want to change the `deps` option to look like this:
 
+```erlang
+{deps, [
+  {overworld, {git, "https://github.com/saltysystems/overworld.git", {branch, "master"}}}
+  ]
+}.
+```
+
+You should be able to successfully `rebar3 compile` and see the library pulled
+down and built. 
+
+While you're in this config file, you'll also want to change the `apps` section under `shell` to boot Overworld and its dependencies. It should look a bit like this:
+```
+{shell, [
+  % {config, "config/sys.config"},
+    {apps, [
+           chat,
+           overworld
+           ]}
+]}.
+```
 
 ### Hello, World!
-Make a new Erlang source file called `chat_global.erl` in `apps/chat/src`.
+Make a new Erlang source file called `chat_global.erl` in the directory `src`.
 
 You'll want to specify that this is a `ow_zone` server and export the minimum
 required callback functions:
@@ -55,20 +73,29 @@ required callback functions:
 % Required ow_zone callbacks
 -export([
          init/1,
-         handle_join/3,
-         handle_part/2,
-         handle_rpc/4,
+         handle_join/4,
+         handle_part/3,
+         handle_rpc/5,
          handle_tick/2
         ]).
 ```
 
-Next let's start to define the API.
+The callbacks are standard functions that the Overworld application will expect
+your applictaion to provide, in order to fit the behaviour of an "overworld
+zone". Generally, Overowrld will call your application to handle the fine
+details of joining and leaving zones, handling remote procedure calls (RPCs)
+from clients, and advancing the world state (ticks).
+
+The init function and handlers form the private API of our app, to be used by
+Overworld internally. Next let's start to define the public API for our Chat
+server, which can be used by other parts of our program or an operator in the
+shell.
 
 We'll need some way to start and stop the server (start/0, stop/0), a way for
 players to join the session (join/2), a way for players to leave (part/1), and
-a way for players to send some input to the server (send/2). For each
-function here, `ow_zone` will call back to our handler functions defined
-above. This will allow us to expose a standard API to our clients and hide the
+a way for players to send some input to the server (send/2). For each function
+here, `ow_zone` will call back to our required handler functions defined above.
+This will allow us to expose a standard API to our clients and hide the
 implementation details. Overworld will seamlessly handle messages sent over the
 network to remote clients (via Protobuf) or to other Erlang processes
 (including distributed Erlang!).
@@ -123,6 +150,7 @@ received every tick, and then dump the contents of the buffer to all connected
 players every tick. Let's just make the initial state an empty list for now.
 
 ```erlang
+% Required callbacks 
 init([]) ->
     InitialState = [],
     {ok, InitialState}.
@@ -215,8 +243,12 @@ handle_tick(_Players, State) ->
     {ok, noreply, State}.
 ```
 
+At this point, everything required by Overworld is implemented. We also defined
+a public API to nicely wrap joining/leaving, sending messages, and
+starting/stopping the server.
+
 ### Testing it out so far 
-You can save up your work at this point and try things out.
+You can save up your work at this point and try things out. Make sure you run `rebar3 shell` from the root of your application directory.
 
 ```
 $ rebar3 shell
@@ -246,7 +278,11 @@ From the shell you can start the world server and verify everything is working:
 ok
 ```
 
-Let's also try to join the server as a player from the shell. First we need to create a Overworld session:
+Let's also try to join the server as a player from the shell. First we need to
+create a Overworld session. Whenever a connection is first established to an
+Overworld server, the client handler will create a session that looks much like
+the below for a user. We'll mimick it by calling the new session function
+directly:
 ```
 8> S = ow_session:new().
 {session,-576460752303423295,undefined,none,false,0,
@@ -260,16 +296,30 @@ messages in terms of maps. So let's sketch out what that message might look
 like:
 
 ```
-8> Name = #{ name => "rambo" },
+8> Name = #{ name => "rambo" }.
 9> chat_global:join(Name, S).
 2022-06-22T21:21:11.872998-05:00 : notice: Player -576460752303423295 has joined the server!
 {ok,{session,-576460752303423295,undefined,undefined,false,
              0,undefined,undefined}}
-10> chat_global:part(S).
+```
+
+It works! Try sending a chat message:
+```
+10> 
+6> chat_global:send("Hello, world!", S).
+P2022-06-22T21:21:15.229092-05:00 : notice: Player -576460752303423295 has sent a chat message: "Hello, world!"
+{ok,{session,-576460752303423295,undefined,undefined,false,
+             0,#{},undefined}}
+```
+
+Finally, let's try leaving:
+```
+11> chat_global:part(S).
 2022-06-22T21:21:21.243792-05:00 : notice: Player -576460752303423295 has left the server!
 {ok,{session,-576460752303423295,undefined,undefined,false,
              0,undefined,undefined}}
 ```
+
 
 ### Saving state and sending messages
 Now that we've confirmed that the server is up and running, and we're logging
@@ -290,9 +340,12 @@ handle_rpc(chat_msg, Msg, Session, Players, State) ->
     {ok, noreply, State1}.
 ```
 
-A few things going on here. One, we check if the player sending the message is
-actually in the zone. If so, we append the sender's ID and the message to the
-zone state. 
+A few things going on here. First, we change `_Players` to `Players` in the
+function signature, so the variable is actually bound. Then, we use that
+variable to check if the player sending the message is actually in the zone. If
+so, we append the sender's ID and the message to the zone state and buffer it.
+We don't actually send any data here, just store it for the tick function to
+handle it later.
 
 #### Aside: Maps
 >You may be wondering why we're using maps to store all the data. The reason is
@@ -308,16 +361,18 @@ something to send.
 
 
 ```
-handle_tick(_Players, []) ->
-    {ok, noreply, []};
+handle_tick(_Players, State = []) ->
+    {ok, noreply, State};
 handle_tick(_Players, State) ->
     % Replace the current state with an empty list and send out the state.
-    {state_transfer, {'@zone', State}, []}.
+    State1 = []
+    Reply = {'@zone', {state_transfer, State}},
+    {ok, Reply, State1}.
 ```
 
 Let's try it out in the shell. We've got a number of things to do here if we have a fresh shell:
   1. Start a new session
-  2. Set the PID of the session
+  2. Set the PID of the session to match our shell
   3. Start the chat server
   4. Join the server with our shell
   5. Send a message
@@ -331,17 +386,19 @@ So we'll proceed exactly along those lines:
          undefined,undefine}
 3> chat_global:start().
 {ok, <0.541.0>}
-4> chat_global:join("soandso", S1).
+3> Name = #{ name => "rambo" }.
+5> chat_global:join(Name, S1).
 2022-06-25T09:42:03.467787-05:00 : notice: Player -576460752303423390 has joined the server!
 {ok,{session,-576460752303423390,<0.538.0>,undefined,false,
              0,undefined,undefined}}
-5> chat_global:send(#{text => "hello world!", color => "red"}, S1).
-2022-06-25T09:43:43.451675-05:00 : notice: Player -576460752303423390 has sent a chat message: #{color => "red",text => "hello world!"}
+6> Msg = #{text => "hello world!"}.
+6> chat_global:send(Msg, S1).
+2022-06-25T09:43:43.451675-05:00 : notice: Player -576460752303423390 has sent a chat message: #{text => "hello world!"}
 {ok,{session,-576460752303423390,<0.538.0>,undefined,false,
              0,undefined,undefined}}
-6> flush().
+7> flush().
 Shell got {<0.541.0>,zone_msg,
-           {state_transfer,[#{msg => #{color => "red",text => "hello world!"},
+           {state_transfer,[#{msg => #{text => "hello world!"},
                               who => -576460752303423390}]}}
 ok
 ```
@@ -399,9 +456,28 @@ That's it for the Protobuf file!
 
 We have one last thing to do before Overworld will automatically encode/decode
 messages for us. We need to define a callback in our server, `rpc_info/0` that
-will tell Overworld some important information about our messages. Let's define that now:
+will tell Overworld some important information about our messages. First, let's add it to our exports list with the other callbacks:
 
 ```
+-export([
+         init/1,
+         handle_join/4,
+         handle_part/3,
+         handle_rpc/5,
+         handle_tick/2
+         rpc_info/0
+        ]).
+```
+
+Now we can work on defining the RPCs. First, we define some opcodes which are
+actually just a couple of bytes at the beginning of the message that let's the
+client and Overworld determine which function to use to decode or encode the
+message. Overworld reserves 0x0 through 0xFFF for itself, by convention, but
+you can use anything from 0x1000 through 0xFFFF for your own opcodes. Let's
+take a look at what the final product looks like, and then try to break down
+each section:
+
+```erlang
 % Overworld RPCs
 -define(CHAT_JOIN, 16#1001).
 -define(CHAT_PART, 16#1002).
@@ -434,9 +510,8 @@ rpc_info() ->
     ].
 ```
 
-So there's a few things going on here. First, we define some opcodes which are
-a couple of bytes at the beginning of the message that let's the client and
-ow determine which function to use to decode or encode the message. 
+I prefer to stick the `rpc_info/0` function near the top of the source file,
+just before `start/0`. 
 
 For messages that are received by the server, we need to define a
 client-to-server handler, or `c2s_handler`. This should be a 3-tuple with the
@@ -459,20 +534,6 @@ dispatched all at once. So here we don't have a `c2s_handler`, but instead
 define a server-to-client call, or `s2c_call`. The corresponding function for
 our client will be created automatically by the Godot plugin.
 
-Last but not least, make sure to add `rpc_info/0` to your exports! I added it
-right after `handle_tick/2`:
-
-```
--export([
-         init/1,
-         handle_join/4,
-         handle_part/3,
-         handle_rpc/5,
-         handle_tick/2,
-         rpc_info/0
-        ]).
-```
-
 ### Some finishing touches
 Our chat server is in pretty good shape, but let's add a few finishing touches
 to make it easier once we get to wiring up the client. The chat server really
@@ -480,9 +541,13 @@ ought to start automatically whenever you fire up the BEAM, and it will also
 need to call into Overworld to register its opcodes and associated callback
 functions.
 
-Open up `chat_app.erl` and make it look something like this:
-
+To register our app with Overworld, open up `chat_app.erl` and add 
+```erlang
+  ow_protocol:register_app(chat)
 ```
+to the `start/2` function, like so:
+
+```erlang
 -module(chat_app).
 
 -behaviour(application).
@@ -498,9 +563,10 @@ stop(_State) ->
 ```
 
 We also need to make sure that the supervisor starts up our Chat server. You'll
-need to edit `chat_sup.erl` and add a child spec for the chat server as such:
-```
+need to edit `chat_sup.erl` and add a child spec for the chat server in the
+`init/1` function:
 
+```erlang
 init([]) ->
     SupFlags = #{strategy => one_for_all,
                  intensity => 0,
@@ -514,22 +580,14 @@ init([]) ->
     {ok, {SupFlags, ChildSpecs}}.
 ```
 
-We'll also want to edit the `rebar.conf` in the top-level directory, modifying
-the `relx` tuple to include `chat` in the application startup list, e.g.:
-```
-{relx, [{release, {ow, "1.0.0"},
-         [ow,
-          sasl,
-          mnesia,
-          chat]},
-...
-```
-
 You will also want to make sure to edit the `rebar.config` for your application
-(i.e., `ow/apps/chat/rebar.config`) to set up GPB to encode/decode messages
-properly:
+to set up proper encoding and decoding of Protobuf messages:
 
-```
+```erlang
+{plugins, [
+  {rebar3_gpb_plugin, "2.13.2"},
+]}.
+
 {erl_opts, [
         debug_info,
         {i, "./_build/default/plugins/gpb/include"}
@@ -556,6 +614,42 @@ properly:
 ```
 
 Now when you start up the BEAM, it should compile the protobuf files and start the `chat` app automatically!
+
+Lastly, we need to fix up the `chat.app.src` file to be a bit more descriptive, and to ensure that `overworld` gets started before `chat`, so the Chat app only attempts to register itself _after_ Overworld starts up. Mine looks like this:
+
+```erlang
+{application, chat,
+ [{description, "An Overworld application"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {mod, {chat_app, []}},
+  {applications,
+   [kernel,
+    overworld,
+    stdlib
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {licenses, ["MIT"]},
+  {links, []}
+ ]}.
+```
+
+Once you've added all of the necessary bits and bobs, you can try starting up a shell again and ensure that the Chat app is registered and running:
+
+```erlang
+1> ow_protocol:registered_apps().
+[chat,ow]
+2>  regs().
+
+** Registered procs on node nonode@nohost **
+Name                  Pid          Initial Call                      Reds Msgs
+application_controlle <0.44.0>     erlang:apply/2                  253501    0
+chat_global           <0.389.0>    ow_zone:init/1                   79643    0
+chat_sup              <0.388.0>    supervisor:chat_sup/1              185    0
+...
+```
 
 ## Writing the Client
 
