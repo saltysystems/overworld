@@ -210,8 +210,6 @@ handle_part(Session, _Players, State) ->
 
 For RPCs, we know we have one type function that a client might call:
 `chat_msg`. Let's say that `chat_msg` will include, obviously, the message.
-Let's also spice it up a bit and say that we'll include a hexadecimal color
-code for our chat message. 
 
 Notice that the function signature is a bit different for `handle_rpc` - we
 must additionally include the message type. This will be especially important
