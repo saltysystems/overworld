@@ -1,11 +1,9 @@
 # Building your first Overworld application: Chat
-**NOTE**: This documentation is unfinished! Use at your own risk.
 
-- [Getting started](#getting-started)
-  * [Get the latest Overworld code](#get-the-latest-overworld-code)
+- [Building a chat server](#building-a-chat-server)
+  * [Intro](#intro)
   * [Creating a new app](#creating-a-new-app)
-  * [Building our chat app](#building-our-chat-app)
-  * [Hello, World](#hello-world)
+  * [Hello, World!](#hello-world)
     + [Aside: Overworld messages](#aside-overworld-messages)
   * [Implementing the callbacks](#implementing-the-callbacks)
   * [Testing it out so far](#testing-it-out-so-far)
@@ -13,9 +11,8 @@
     + [Aside: Maps](#aside-maps)
   * [Serializing messages](#serializing-messages)
   * [Some finishing touches](#some-finishing-touches)
-- [Writing the Client](#writing-the-client)
+- [Building a chat client](#building-a-chat-client)
   * [Overworld and Godot](#overworld-and-godot)
-- [Exercises left to the reader](#exercises-left-to-the-reader)
 
 ## Building a chat server
 
