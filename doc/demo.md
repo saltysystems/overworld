@@ -17,9 +17,9 @@
   * [Overworld and Godot](#overworld-and-godot)
 - [Exercises left to the reader](#exercises-left-to-the-reader)
 
-## Getting started
+## Building a chat server
 
-### Building a chat app
+### Intro
 
 Chat applications are a familiar way to let us dive directly into building a
 useful program that can be published to the world and have people and machines
@@ -651,14 +651,14 @@ chat_sup              <0.388.0>    supervisor:chat_sup/1              185    0
 ...
 ```
 
-## Writing the Client
+## Building a chat client
 
 One of the first things we can do before starting in on the client is to try downloading the generated library for Godot via your favorite HTTP tool. I'll use curl here, but you can just as easily use a web browser. With ow running, try grabbing the client library:
 
 ```bash
 mkdir libow
 cd libow
-curl http://lcoalhost:4433/client/download > libow.zip 
+curl http://localhost:4433/client/download > libow.zip 
 unzip libow.zip
 ```
 
@@ -670,20 +670,8 @@ You should see 3 files created:
 | chat.proto | Wire format for the chat application |
 
 
-
-
 ### Overworld and Godot
 If you plan to write your client in [Godot](https://godotengine.org/), you can
 add the Overworld plugin to your Godot game and automatically generate a client
 library based on your protobuf schema.
 [https://github.com/saltysystems/overworld_client](https://github.com/saltysystems/overworld_client)
-
-
-# Exercises left to the reader
-Consider changing the chat buffer to be a circular buffer. Hold a certain
-volume of messages and trim either based on timestamp (e.g., all messages in
-the last 5 minutes) or volume (e.g., the last 100 messages). What are the
-tradeoffs?
-
-Try changing the `handle_rpc` function to modify a chat message on the fly.
-Maybe you want to implement a bad word filter?
