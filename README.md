@@ -24,6 +24,10 @@ with older versions.
 You will also need the `rebar3` build tool in order to build, test and deploy
 the server.
 
+You can consult the [documentation](doc) directory for some examples on using
+Overworld. The [Chat application demo](doc/demo.md) is a good place to get
+started.
+
 
 Style
 -------------------------------------------------
