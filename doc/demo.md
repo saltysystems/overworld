@@ -48,7 +48,7 @@ You should be able to successfully `rebar3 compile` and see the library pulled
 down and built. 
 
 While you're in this config file, you'll also want to change the `apps` section under `shell` to boot Overworld and its dependencies. It should look a bit like this:
-```
+```erlang
 {shell, [
   % {config, "config/sys.config"},
     {apps, [
@@ -127,7 +127,6 @@ part(Session) ->
 
 send(Msg, Session) ->
     ow_zone:rpc(?SERVER, chat_msg, Msg, Session).
-
 ```
 
 You may have noticed that for the send/2 function, we send along the atom
@@ -247,7 +246,7 @@ starting/stopping the server.
 ### Testing it out so far 
 You can save up your work at this point and try things out. Make sure you run `rebar3 shell` from the root of your application directory.
 
-```
+```erlang
 $ rebar3 shell
 ===> Verifying dependencies...
 ===> Analyzing applications...
@@ -267,7 +266,7 @@ Eshell V13.0  (abort with ^G)
 ```
 
 From the shell you can start the world server and verify everything is working:
-```
+```erlang
 1> chat_global:start().
 {ok,<0.482.0>}
 2>
@@ -280,7 +279,7 @@ create a Overworld session. Whenever a connection is first established to an
 Overworld server, the client handler will create a session that looks much like
 the below for a user. We'll mimick it by calling the new session function
 directly:
-```
+```erlang
 8> S = ow_session:new().
 {session,-576460752303423295,undefined,none,false,0,
          undefined,undefined}
@@ -292,7 +291,7 @@ joining. When we work with protobuf later, we'll see that we mostly deal with
 messages in terms of maps. So let's sketch out what that message might look
 like:
 
-```
+```erlang
 8> Name = #{ name => "rambo" }.
 9> chat_global:join(Name, S).
 2022-06-22T21:21:11.872998-05:00 : notice: Player -576460752303423295 has joined the server!
@@ -301,7 +300,7 @@ like:
 ```
 
 It works! Try sending a chat message:
-```
+```erlang
 10> 
 6> chat_global:send("Hello, world!", S).
 P2022-06-22T21:21:15.229092-05:00 : notice: Player -576460752303423295 has sent a chat message: "Hello, world!"
@@ -310,7 +309,7 @@ P2022-06-22T21:21:15.229092-05:00 : notice: Player -576460752303423295 has sent 
 ```
 
 Finally, let's try leaving:
-```
+```erlang
 11> chat_global:part(S).
 2022-06-22T21:21:21.243792-05:00 : notice: Player -576460752303423295 has left the server!
 {ok,{session,-576460752303423295,undefined,undefined,false,
@@ -323,7 +322,7 @@ Now that we've confirmed that the server is up and running, and we're logging
 some semi-useful messages, we actually need to save and buffer those messages
 and send them to connected players. The first thing that we'll need to do is
 add messages to the state. Let's modify the `handle_rpc` function to do that:
-```
+```erlang
 handle_rpc(chat_msg, Msg, Session, Players, State) ->
     ID = ow_session:get_id(Session),
     % Make sure the player has actually joined the zone
@@ -357,7 +356,7 @@ reply anything, then follow it up with a zone-wide broadcast when we have
 something to send.
 
 
-```
+```erlang
 handle_tick(_Players, State = []) ->
     {ok, noreply, State};
 handle_tick(_Players, State) ->
@@ -376,7 +375,7 @@ Let's try it out in the shell. We've got a number of things to do here if we hav
   6. Finally, see if we get a response back.
 
 So we'll proceed exactly along those lines:
-```
+```erlang
 1> S = ow_session:new().
 2> S1 = ow_session:set_pid(self(), S).
 {session,-576460752303423390,<0.538.0>,undefined,false,0,
@@ -414,7 +413,7 @@ mkdir -p ow/apps/chat/priv/proto
 
 Fire up your favorite editor and we'll start defining the protobuf file. I'll call it `chat.proto`.
 
-```
+```protobuf
 syntax = "proto2"; 
 
 package chat;
@@ -425,7 +424,7 @@ our purposes. We can start defining some messages - we know for sure we need a
 "join" message because that's a required callback for Overworld. Probably all we
 care about in the join message is the player's handle:
 
-```
+```protobuf
 message join {
     required string handle = 1;
 }
@@ -438,7 +437,7 @@ if they choose. The `state_transfer` message will simply tell the client to
 expect a series of `chat_messages` as a list, since our `handle_tick/2`
 function sends them out in batches.
 
-```
+```protobuf
 message chat_msg {
   required string text = 1;
   optional bytes color = 2;
@@ -455,7 +454,7 @@ We have one last thing to do before Overworld will automatically encode/decode
 messages for us. We need to define a callback in our server, `rpc_info/0` that
 will tell Overworld some important information about our messages. First, let's add it to our exports list with the other callbacks:
 
-```
+```erlang
 -export([
          init/1,
          handle_join/4,
