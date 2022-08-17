@@ -428,11 +428,13 @@ syntax = "proto2";
 package chat;
 ```
 
-It's important that the package name matches the name of the application, for
-our purposes. We can start defining some messages - we know for sure we need a
-"join" message because that's a required callback for Overworld. Probably all we
-care about in the join message is the player's handle:
+It's important that the Protobuf package name matches the name of the 
+application for the Protobuf plugin to auto-generate the 
+serializer/deserializer code. 
 
+Now we can start defining some messages! We know for sure we need a
+"join" message because that's a required callback for Overworld. For now we
+only care about the player's handle:
 ```protobuf
 message join {
     required string handle = 1;
@@ -441,10 +443,9 @@ message join {
 
 The next two messages have to do with receiving chats and sending them out to
 clients in batches. The first one should be pretty self-explanatory: we want to
-send along the player's chat message along with any color they'd like to send,
-if they choose. The `state_transfer` message will simply tell the client to
-expect a series of `chat_messages` as a list, since our `handle_tick/2`
-function sends them out in batches.
+send along the player's chat message. The `state_transfer` message will simply
+tell the client to expect a series of `chat_messages` as a list, since our 
+`handle_tick/2` function sends them out in batches.
 
 ```protobuf
 message chat_msg {
@@ -478,9 +479,10 @@ let's add it to our exports list with the other callbacks:
 Now we can work on defining the RPCs. First, we define some opcodes which are
 actually just a couple of bytes at the beginning of the message that let's the
 client and Overworld determine which function to use to decode or encode the
-message. Overworld reserves 0x0 through 0xFFF for itself, by convention, but
-you can use anything from 0x1000 through 0xFFFF for your own opcodes. Let's
-take a look at what the final product looks like, and then try to break down
+message. Overworld reserves 0x0 through 0xFFF for itself by convention, but
+you can use anything from 0x1000 through 0xFFFF for your own opcodes. 
+
+Let's take a look at what the final product looks like, and then break down 
 each section:
 
 ```erlang
