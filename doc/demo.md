@@ -216,9 +216,10 @@ must additionally include the message type. This will be especially important
 when we start serializing the data over a WebSocket, because we'll need to
 instruct Overworld what Protobuf message to use.
 
-We'll take the message verbatim and stuff it into the zone state. You may want
-to modify the message before buffering it, see the extra exercises at the end
-of the doc.
+We'll take the message verbatim and stuff it into the zone state. In a real
+application, you may want to modify the message before buffering it! For 
+example, you may want to parse it for slash commands, filter it for bad 
+words, or add/remove keys from the message map.
 
 ```erlang
 handle_rpc(chat_msg, Msg, Session, _Players, State) ->
@@ -242,7 +243,8 @@ a public API to nicely wrap joining/leaving, sending messages, and
 starting/stopping the server.
 
 ### Testing it out so far 
-You can save up your work at this point and try things out. Make sure you run `rebar3 shell` from the root of your application directory.
+You can save up your work at this point and try things out. Make sure you run 
+`rebar3 shell` from the root of your application directory.
 
 ```erlang
 $ rebar3 shell
@@ -364,7 +366,8 @@ handle_tick(_Players, State) ->
     {ok, Reply, State1}.
 ```
 
-Let's try it out in the shell. We've got a number of things to do here if we have a fresh shell:
+Let's try it out in the shell. We've got a number of things to do here if 
+we have a fresh shell:
   1. Start a new session
   2. Set the PID of the session to match our shell
   3. Start the chat server
@@ -409,7 +412,8 @@ application, e.g.,
 mkdir -p ow/apps/chat/priv/proto
 ```
 
-Fire up your favorite editor and we'll start defining the protobuf file. I'll call it `chat.proto`.
+Fire up your favorite editor and we'll start defining the protobuf file. I'll 
+call it `chat.proto`.
 
 ```protobuf
 syntax = "proto2"; 
@@ -450,7 +454,8 @@ That's it for the Protobuf file!
 
 We have one last thing to do before Overworld will automatically encode/decode
 messages for us. We need to define a callback in our server, `rpc_info/0` that
-will tell Overworld some important information about our messages. First, let's add it to our exports list with the other callbacks:
+will tell Overworld some important information about our messages. First, 
+let's add it to our exports list with the other callbacks:
 
 ```erlang
 -export([
@@ -607,9 +612,13 @@ to set up proper encoding and decoding of Protobuf messages:
 ]}.
 ```
 
-Now when you start up the BEAM, it should compile the protobuf files and start the `chat` app automatically!
+Now when you start up the BEAM, it should compile the protobuf files
+and start the `chat` app automatically!
 
-Lastly, we need to fix up the `chat.app.src` file to be a bit more descriptive, and to ensure that `overworld` gets started before `chat`, so the Chat app only attempts to register itself _after_ Overworld starts up. Mine looks like this:
+Lastly, we need to fix up the `chat.app.src` file to be a bit more 
+descriptive, and to ensure that `overworld` gets started before `chat`, 
+so the Chat app only attempts to register itself _after_ Overworld 
+starts up. Mine looks like this:
 
 ```erlang
 {application, chat,
@@ -630,7 +639,8 @@ Lastly, we need to fix up the `chat.app.src` file to be a bit more descriptive, 
  ]}.
 ```
 
-Once you've added all of the necessary bits and bobs, you can try starting up a shell again and ensure that the Chat app is registered and running:
+Once you've added all of the necessary bits and bobs, you can try starting
+up a shell again and ensure that the Chat app is registered and running:
 
 ```erlang
 1> ow_protocol:registered_apps().
@@ -647,7 +657,10 @@ chat_sup              <0.388.0>    supervisor:chat_sup/1              185    0
 
 ## Building a chat client
 
-One of the first things we can do before starting in on the client is to try downloading the generated library for Godot via your favorite HTTP tool. I'll use curl here, but you can just as easily use a web browser. With ow running, try grabbing the client library:
+One of the first things we can do before starting in on the client is 
+to try downloading the generated library for Godot via your favorite
+HTTP tool. I'll use curl here, but you can just as easily use a web
+browser. With ow running, try grabbing the client library:
 
 ```bash
 mkdir libow
