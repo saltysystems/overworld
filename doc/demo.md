@@ -79,7 +79,7 @@ required callback functions:
 
 The callbacks are standard functions that the Overworld application will expect
 your applictaion to provide, in order to fit the behaviour of an "overworld
-zone". Generally, Overowrld will call your application to handle the fine
+zone". Generally, Overworld will call your application to handle the fine
 details of joining and leaving zones, handling remote procedure calls (RPCs)
 from clients, and advancing the world state (ticks).
 
