@@ -26,7 +26,7 @@ workflows of Overworld.
 ### Additional resources
 
 Here are some links to additional resources:
-  - [Overworld Chat demo application server sources](https://github.com/saltysystems/chat)
+  - [Overworld Chat server sources](https://github.com/saltysystems/chat) (sources for this tutorial) 
   - [Overworld Client plugin for Godot](https://github.com/saltysystems/overworld_client)
 
 ### Creating a new app
