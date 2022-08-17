@@ -672,28 +672,41 @@ chat_sup              <0.388.0>    supervisor:chat_sup/1              185    0
 
 ## Building a chat client
 
-One of the first things we can do before starting in on the client is 
-to try downloading the generated library for Godot via your favorite
-HTTP tool. I'll use curl here, but you can just as easily use a web
-browser. With ow running, try grabbing the client library:
+The [Overworld Client plugin](https://github.com/saltysystems/overworld_client) 
+is able to connect to a running Overworld server from within Godot and generate 
+a GDScript-based library for marshalling game data from Protobuf objects into 
+Godot dictionaries and back again.
 
-```bash
-mkdir libow
-cd libow
-curl http://localhost:4433/client/download > libow.zip 
-unzip libow.zip
-```
+#### Aside: Inspecting the client zip file
+>With Overworld running, try downloading the client library and extracting it 
+>to some local directory:
+>
+>```bash
+>mkdir libow
+>cd libow
+>curl http://localhost:4433/client/download > libow.zip 
+>unzip libow.zip
+>```
+>
+>If you have Overworld running on some other computer on your network, just 
+>change _localhost_ to your server's IP.
+>
+>After you unzip the library, you should see 3 files created:
+>| name | description |
+>| ---- | ----------- |
+>| libow.gd | Auto-generated Overworld client library |
+>| ow.proto | Wire format for Overworld core functions |
+>| chat.proto | Wire format for the chat application |
+>
+>The `ow.proto` file will contain various objects needed for Overworld itself,
+>while `chat.proto` should be identical to the one you wrote earlier. 
+>`libow.gd` will contain all of the high-level code needed to facilitate 
+>communication between your game or application and Overworld. 
 
-You should see 3 files created:
-| name | description |
-| ---- | ----------- |
-| libow.gd | Auto-generated Overworld client library |
-| ow.proto | Wire format for Overworld core functions |
-| chat.proto | Wire format for the chat application |
+Once you have the Client plugin installed, you'll want to point it at your 
+Overworld server (localhost, if on the same computer, otherwise the server's 
+IP or hostname). Click the "Download & Compile" button for the plugin to 
+download the client zip file from your server, extract it and compile the 
+Protobuf files from sources. 
 
-
-### Overworld and Godot
-If you plan to write your client in [Godot](https://godotengine.org/), you can
-add the Overworld plugin to your Godot game and automatically generate a client
-library based on your protobuf schema.
-[https://github.com/saltysystems/overworld_client](https://github.com/saltysystems/overworld_client)
+## Autoloading the client
