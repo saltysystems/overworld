@@ -675,7 +675,7 @@ chat_sup              <0.388.0>    supervisor:chat_sup/1              185    0
 The [Overworld Client plugin](https://github.com/saltysystems/overworld_client) 
 is able to connect to a running Overworld server from within Godot and generate 
 a GDScript-based library for marshalling game data from Protobuf objects into 
-Godot dictionaries and back again.
+GDScript types and back again.
 
 #### Aside: Inspecting the client zip file
 >With Overworld running, try downloading the client library and extracting it 
