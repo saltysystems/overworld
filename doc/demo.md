@@ -23,6 +23,12 @@ useful program that can be published to the world and have people and machines
 connect and interact with it, while highlighting some of the features and
 workflows of Overworld.
 
+### Additional resources
+
+Here are some links to additional resources:
+  - [Overworld Chat demo application server sources](https://github.com/saltysystems/chat)
+  - [Overworld Client plugin for Godot](https://github.com/saltysystems/overworld_client)
+
 ### Creating a new app
 
 Overworld should be usable as an Erlang app in your own project. Let's start a
