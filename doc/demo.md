@@ -375,6 +375,13 @@ we have a fresh shell:
   5. Send a message
   6. Finally, see if we get a response back.
 
+#### Note: The value of self() can change if you make a mistake!
+> If you flub one of the commands in the next session, be aware that
+> the Erlang shell may crash and be restarted automagically. This will 
+> change the value of `self()`! 
+> You may need to re-update your session via `f(S1)` to unbind S1, and
+> then re-run step #2 before proceeding. 
+
 So we'll proceed exactly along those lines:
 ```erlang
 1> S = ow_session:new().
