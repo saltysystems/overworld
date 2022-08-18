@@ -73,5 +73,7 @@ different response options.
 | `noreply` | Send no reply to any connected player |
 
 The `ow_zone` gen_server keeps an internal record of connected players and
-will add/remove players accordingly. noreply, Session, State}.
-```
+will add/remove players accordingly. Each callback handler for `ow_zone` will
+take "Players" as an argument, where the Overworld will pass the best 
+knowledge of connected players at that time to the handler. 
+
