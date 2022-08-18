@@ -717,7 +717,8 @@ git clone https://github.com/saltysystems/overworld_client
 cp -a overworld_client/addons chat_client/addons
 ```
 
-You'll want to enable the plugin by going to `Project -> Project Settings... -> Plugins` and clicking the checkbox next to `Enable`. 
+You'll want to enable the plugin by going to `Project -> Project Settings... ->
+Plugins` and clicking the checkbox next to `Enable`. 
 
 You should see a new tab in your Godot editor, labeled "Overworld". 
 
@@ -728,6 +729,10 @@ Overworld server (localhost, if on the same computer, otherwise the server's
 IP or hostname). Click the "Download & Compile" button for the plugin to 
 download the client zip file from your server, extract it and compile the 
 Protobuf files from sources. 
+
+You will want to ensure that the output directory has been created prior to
+trying to compile the Overworld library, otherwise you will receive an error
+message.
 
 ### Autoloading the client
 
