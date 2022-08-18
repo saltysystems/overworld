@@ -671,6 +671,7 @@ chat_sup              <0.388.0>    supervisor:chat_sup/1              185    0
 ```
 
 ## Building a chat client
+### Intro
 
 The [Overworld Client plugin](https://github.com/saltysystems/overworld_client) 
 is able to connect to a running Overworld server from within Godot and generate 
@@ -703,10 +704,36 @@ GDScript types and back again.
 >`libow.gd` will contain all of the high-level code needed to facilitate 
 >communication between your game or application and Overworld. 
 
+### Creating a new Godot project
+
+This isn't meant to be a comprehensive tutorial on building applications with
+Godot. However, you can start by making a new project called "chat_client".
+
+### Installing the Overworld client
+Either clone the Overworld client plugin repo, or download a compressed release from GitHub, and then copy the `addons` directory into your Chat application directory.
+
+```bash
+git clone https://github.com/saltysystems/overworld_client
+cp -a overworld_client/addons chat_client/addons
+```
+
+You'll want to enable the plugin by going to `Project -> Project Settings... -> Plugins` and clicking the checkbox next to `Enable`. 
+
+You should see a new tab in your Godot editor, labeled "Overworld". 
+
+### Downloading and compiling your custom Overworld library
+
 Once you have the Client plugin installed, you'll want to point it at your 
 Overworld server (localhost, if on the same computer, otherwise the server's 
 IP or hostname). Click the "Download & Compile" button for the plugin to 
 download the client zip file from your server, extract it and compile the 
 Protobuf files from sources. 
 
-## Autoloading the client
+### Autoloading the client
+
+## Troubleshooting
+
+### Server Server
+
+### Client Setup
+
