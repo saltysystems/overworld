@@ -438,11 +438,15 @@ It's important that the Protobuf package name matches the name of the
 application for the Protobuf plugin to auto-generate the 
 serializer/deserializer code. 
 
-Now we can start defining some messages! We know for sure we need a
-"join" message because that's a required callback for Overworld. For now we
-only care about the player's handle:
+Now we can start defining some messages! We know for sure we need a "join"
+message as well as a corresponding "part" message, as those are required
+callbacks for Overworld:
 ```protobuf
 message join {
+    required string handle = 1;
+}
+
+message part {
     required string handle = 1;
 }
 ```
@@ -456,7 +460,6 @@ tell the client to expect a series of `chat_messages` as a list, since our
 ```protobuf
 message chat_msg {
   required string text = 1;
-  optional bytes color = 2;
 }
 
 message state_transfer {
@@ -503,23 +506,23 @@ rpc_info() ->
         #{
             opcode => ?CHAT_JOIN,
             c2s_handler => {?MODULE, join, 2},
-            encode => chat_pb
+            encoder => chat_pb
         },
         #{
             opcode => ?CHAT_PART,
             c2s_handler => {?MODULE, part, 1},
-            encode => chat_pb
+            encoder => chat_pb
         },
         #{
             opcode => ?CHAT_SEND,
             c2s_handler => {?MODULE, send, 2},
             c2s_proto => chat_msg,
-            encode => chat_pb
+            encoder => chat_pb
         },
         #{
             opcode => ?CHAT_XFER,
             s2c_call => state_transfer,
-            encode => chat_pb
+            encoder => chat_pb
         }
     ].
 ```
