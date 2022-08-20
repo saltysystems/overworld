@@ -32,13 +32,13 @@ rpc_info() ->
             opcode => ?ACCOUNT_NEW,
             c2s_handler => {?MODULE, account_new, 2},
             s2c_call => gen_response,
-            encoder => ow_pb
+            encoder => overworld_pb
         },
         #{
             opcode => ?ACCOUNT_LOGIN,
             c2s_handler => {?MODULE, account_login, 2},
             s2c_call => gen_response,
-            encoder => ow_pb
+            encoder => overworld_pb
         }
     ].
 
@@ -49,7 +49,7 @@ rpc_info() ->
 -spec new_account(binary(), ow_session:session()) ->
     ow_session:net_msg().
 new_account(Message, Session) ->
-    Decode = ow_pb:decode_msg(Message, account_new),
+    Decode = overworld_pb:decode_msg(Message, account_new),
     Email = maps:get(email, Decode),
     Password = maps:get(password, Decode),
     IsValid =
@@ -94,7 +94,7 @@ new_test() ->
     Email = "TestUser@doesntexist.notadomain",
     Password = "TestPassword1234",
     ow_db_account:delete(Email),
-    Msg = ow_pb:encode_msg(
+    Msg = overworld_pb:encode_msg(
         #{
             email => Email,
             password => Password
@@ -103,13 +103,13 @@ new_test() ->
     ),
     {[RespOp, RespMsg], _State} = new_account(Msg, ow_session:new()),
     ?assertEqual(<<?ACCOUNT_NEW:16>>, RespOp),
-    DecodedResp = ow_pb:decode_msg(RespMsg, gen_response),
+    DecodedResp = overworld_pb:decode_msg(RespMsg, gen_response),
     ?assertEqual('OK', maps:get(status, DecodedResp)).
 
 new_already_exists_test() ->
     Email = "TestUser@doesntexist.notadomain",
     Password = "TestPassword1234",
-    Msg = ow_pb:encode_msg(
+    Msg = overworld_pb:encode_msg(
         #{
             email => Email,
             password => Password
@@ -118,7 +118,7 @@ new_already_exists_test() ->
     ),
     {[RespOp, RespMsg], _State} = new_account(Msg, ow_session:new()),
     ?assertEqual(<<?ACCOUNT_NEW:16>>, RespOp),
-    DecodedResp = ow_pb:decode_msg(RespMsg, gen_response),
+    DecodedResp = overworld_pb:decode_msg(RespMsg, gen_response),
     ?assertEqual('ERROR', maps:get(status, DecodedResp)),
     ?assertEqual("email_already_registered", maps:get(msg, DecodedResp)).
 
@@ -129,7 +129,7 @@ new_already_exists_test() ->
 -spec login(binary(), ow_session:session()) ->
     ow_session:net_msg().
 login(Message, Session) ->
-    Decode = ow_pb:decode_msg(Message, account_login),
+    Decode = overworld_pb:decode_msg(Message, account_login),
     Email = maps:get(email, Decode),
     Password = maps:get(password, Decode),
     {Msg, NewState} =
@@ -158,7 +158,7 @@ login(Message, Session) ->
 login_bad_password_test() ->
     Email = "TestUser@doesntexist.notadomain",
     Password = "Password",
-    Msg = ow_pb:encode_msg(
+    Msg = overworld_pb:encode_msg(
         #{
             email => Email,
             password => Password
@@ -167,13 +167,13 @@ login_bad_password_test() ->
     ),
     {[RespOp, RespMsg], _State} = login(Msg, ow_session:new()),
     ?assertEqual(<<?ACCOUNT_LOGIN:16>>, RespOp),
-    DecodedResp = ow_pb:decode_msg(RespMsg, gen_response),
+    DecodedResp = overworld_pb:decode_msg(RespMsg, gen_response),
     ?assertEqual('ERROR', maps:get(status, DecodedResp)).
 
 login_test() ->
     Email = "TestUser@doesntexist.notadomain",
     Password = "TestPassword1234",
-    Msg = ow_pb:encode_msg(
+    Msg = overworld_pb:encode_msg(
         #{
             email => Email,
             password => Password
@@ -182,7 +182,7 @@ login_test() ->
     ),
     {[RespOp, RespMsg], _State} = login(Msg, ow_session:new()),
     ?assertEqual(<<?ACCOUNT_LOGIN:16>>, RespOp),
-    DecodedResp = ow_pb:decode_msg(RespMsg, gen_response),
+    DecodedResp = overworld_pb:decode_msg(RespMsg, gen_response),
     ?assertEqual('OK', maps:get(status, DecodedResp)).
 
 %%----------------------------------------------------------------------------

@@ -106,9 +106,9 @@ decode(Message, Session) ->
 %%-------------------------------------------------------------------------
 -spec response(ok | error) -> binary().
 response(ok) ->
-    ow_pb:encode_msg(#{status => 'OK'}, gen_response);
+    overworld_pb:encode_msg(#{status => 'OK'}, gen_response);
 response(error) ->
-    ow_pb:encode_msg(#{status => 'ERROR'}, gen_response).
+    overworld_pb:encode_msg(#{status => 'ERROR'}, gen_response).
 
 %%-------------------------------------------------------------------------
 %% @doc Encode a general response with reasoning
@@ -116,7 +116,7 @@ response(error) ->
 %%-------------------------------------------------------------------------
 -spec response(ok | error, string()) -> binary().
 response(ok, Msg) ->
-    ow_pb:encode_msg(
+    overworld_pb:encode_msg(
         #{
             status => 'OK',
             msg => Msg
@@ -124,7 +124,7 @@ response(ok, Msg) ->
         gen_response
     );
 response(error, Msg) ->
-    ow_pb:encode_msg(
+    overworld_pb:encode_msg(
         #{
             status => 'ERROR',
             msg => Msg
@@ -167,7 +167,7 @@ init([Modules]) ->
         #{},
         Modules
     ),
-    InitialApps = [ow],
+    InitialApps = [overworld],
     InitialState = #{ops => InitialOps, apps => InitialApps},
     {ok, InitialState}.
 

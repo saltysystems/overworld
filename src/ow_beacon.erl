@@ -32,7 +32,7 @@ rpc_info() ->
         #{
             opcode => ?BEACON,
             s2c_call => session_beacon,
-            encoder => ow_pb
+            encoder => overworld_pb
         }
     ].
 
@@ -123,5 +123,5 @@ push(Beacon, List) ->
 
 encode_beacon(ID) ->
     OpCode = <<?BEACON:16>>,
-    Msg = ow_pb:encode_msg(#{id => ID}, session_beacon),
+    Msg = overworld_pb:encode_msg(#{id => ID}, session_beacon),
     [OpCode, Msg].

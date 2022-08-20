@@ -75,9 +75,6 @@
 %% @end
 %%----------------------------------------------------------------------------
 
--define(RPC(OpCode, Callback, Arity, ProtoMessage),
-    {OpCode, {{?MODULE, Callback, Arity}, {ow_pb, ProtoMessage}}}
-).
 -define(VERSION, 16#0010).
 -define(SESSION_ID_REQ, 16#0015).
 -define(SESSION_ID, 16#0016).
@@ -99,22 +96,22 @@ rpc_info() ->
         #{
             opcode => ?SESSION_ID,
             s2c_call => session_id,
-            encoder => ow_pb
+            encoder => overworld_pb
         },
         #{
             opcode => ?SESSION_PING,
             c2s_handler => {?MODULE, session_ping, 2},
-            encoder => ow_pb
+            encoder => overworld_pb
         },
         #{
             opcode => ?SESSION_PONG,
             s2c_call => session_pong,
-            encoder => ow_pb
+            encoder => overworld_pb
         },
         #{
             opcode => ?SESSION_LOG,
             s2c_call => session_log,
-            encoder => ow_pb
+            encoder => overworld_pb
         }
     ].
 
@@ -127,7 +124,7 @@ rpc_info() ->
 %% @end
 %%----------------------------------------------------------------------------
 session_ping(Msg, Session) ->
-    D = ow_pb:decode_msg(Msg, session_ping),
+    D = overworld_pb:decode_msg(Msg, session_ping),
     ID = maps:get(id, D),
     Last = ow_beacon:get_by_id(ID),
     Now = erlang:monotonic_time(),
@@ -135,7 +132,7 @@ session_ping(Msg, Session) ->
         round((Now - Last) / 2), native, millisecond
     ),
     Session1 = set_latency(Latency, Session),
-    Resp = ow_pb:encode_msg(#{latency => Latency}, session_pong),
+    Resp = overworld_pb:encode_msg(#{latency => Latency}, session_pong),
     {[<<?SESSION_PONG:16>>, Resp], Session1}.
 
 %%----------------------------------------------------------------------------
@@ -159,7 +156,7 @@ version(_) ->
 %%----------------------------------------------------------------------------
 session_id_req(_Msg, Session) ->
     ID = ow_session:get_id(Session),
-    Resp = ow_pb:encode_msg(#{id => ID}, session_id),
+    Resp = overworld_pb:encode_msg(#{id => ID}, session_id),
     {[<<?SESSION_ID:16>>, Resp], Session}.
 
 %%----------------------------------------------------------------------------
@@ -172,7 +169,7 @@ encode_log(Message) ->
     Sanitized = sanitize_message(Message),
     % Send a 1-byte color message in hex - default black
     Color = <<000000:8>>,
-    Msg = ow_pb:encode_msg(
+    Msg = overworld_pb:encode_msg(
         #{color => Color, msg => Sanitized}, session_log
     ),
     [OpCode, Msg].
@@ -184,7 +181,7 @@ encode_log_test() ->
     % Check that the expected OpCode comes back
     ?assertEqual(OpCode, <<?SESSION_LOG:16>>),
     % Check that the message decodes correctly
-    Decoded = ow_pb:decode_msg(Message, session_log),
+    Decoded = overworld_pb:decode_msg(Message, session_log),
     ToList = maps:get(msg, Decoded),
     ?assertEqual(OriginalMessage, ToList),
     ok.

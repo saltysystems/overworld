@@ -11,9 +11,9 @@ init(Req, State) ->
     Apps = ow_protocol:registered_apps(),
     ProtoFiles = protofiles(Apps),
     {ok, {"file", Zip}} = zip:create(
-        "file", [{"lib_ow.gd", ClientAPI} | ProtoFiles], [memory]
+        "file", [{"libow.gd", ClientAPI} | ProtoFiles], [memory]
     ),
-    logger:info("Successfully generated lib_ow.zip!"),
+    logger:info("Successfully generated libow.zip!"),
     Req2 = cowboy_req:reply(
         200,
         #{

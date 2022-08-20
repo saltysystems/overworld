@@ -14,7 +14,8 @@
 -define(TAB(N),
     lists:foldl(fun(_N, Acc0) -> [9] ++ Acc0 end, [], lists:seq(0, N - 1))
 ).
--define(DEFAULT_ENCODER, ow_pb).
+-define(DEFAULT_ENCODER, overworld_pb).
+-define(DEFAULT_TEMPLATE, "templates/libow.mustache").
 
 write() ->
     file:write_file(
@@ -47,10 +48,14 @@ print() ->
         "marshall_submsgs" => MarshallSubmsgs,
         "marshall" => Marshall
     },
-    T = bbmustache:parse_file(
-        "templates/libow.mustache"
-    ),
+    T = get_template(),
     bbmustache:compile(T, Map).
+
+get_template() -> 
+    PrivDir = code:priv_dir(overworld),
+    bbmustache:parse_file(
+        PrivDir ++ "/" ++ ?DEFAULT_TEMPLATE
+    ).
 
 pb_to_godot_type(Type) ->
     case Type of
@@ -80,7 +85,7 @@ get_encoders([], Acc) ->
 get_encoders([H | T], Acc) ->
     E =
         case maps:get(encoder, H, undefined) of
-            undefined -> ow_pb;
+            undefined -> overworld_pb;
             Encoder -> Encoder
         end,
     Acc1 =

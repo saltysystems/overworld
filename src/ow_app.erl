@@ -12,16 +12,15 @@
 % status information via JSON API
 -export([status/0]).
 
-%-record(session, {email = none, authenticated = false, match = false}).
-
 start(_StartType, _StartArgs) ->
     Dispatch = cowboy_router:compile([
         {'_', [
             {"/ws", ow_websocket, []},
             {"/client/download", ow_dl_handler, []},
-            {"/stats", ow_stats, []},
-            {"/lib_ow.gd", cowboy_static,
-                {file, "apps/ow_core/static/lib_ow.gd"}}
+            {"/stats", ow_stats, []}
+            % TODO - See if this is needed, I think it's old.
+            %{"/libow.gd", cowboy_static,
+            %    {file, "apps/ow_core/static/libow.gd"}}
         ]}
     ]),
     {ok, _} = cowboy:start_clear(
@@ -38,10 +37,10 @@ stop(_State) ->
     ok.
 
 status() ->
-    {ok, Version} = application:get_key(ow, vsn),
-    {ok, Description} = application:get_key(ow, description),
+    {ok, Version} = application:get_key(overworld, vsn),
+    {ok, Description} = application:get_key(overworld, description),
     #{
-        <<"name">> => <<"ow">>,
+        <<"name">> => <<"overworld">>,
         <<"version">> => erlang:list_to_binary(Version),
         <<"Description">> => erlang:list_to_binary(Description)
     }.
