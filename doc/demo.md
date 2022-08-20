@@ -713,7 +713,9 @@ This isn't meant to be a comprehensive tutorial on building applications with
 Godot. However, you can start by making a new project called "chat_client".
 
 ### Installing the Overworld client
-Either clone the Overworld client plugin repo, or download a compressed release from GitHub, and then copy the `addons` directory into your Chat application directory.
+Either clone the Overworld client plugin repo, or download a compressed release
+from GitHub, and then copy the `addons` directory into your Chat application
+directory.
 
 ```bash
 git clone https://github.com/saltysystems/overworld_client
@@ -738,6 +740,16 @@ trying to compile the Overworld library, otherwise you will receive an error
 message.
 
 ### Autoloading the client
+
+You will probably want to autoload the Overworld client in your scenes to
+facilitate network communication. Go to `Project -> Project Settings... ->
+AutoLoad`. Under `Path:`, you'll need to type in the path to libow.gd or click
+the folder icon to locate it. On the right, you'll need to give the Network library a node name. I typically call it `NetworkClient`. 
+
+Once that's done, make sure to click the `Enable` checkbox under Global
+Variable and close the project settings.
+
+
 
 ## Troubleshooting
 
