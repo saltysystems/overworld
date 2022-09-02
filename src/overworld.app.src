@@ -8,11 +8,12 @@
 	stdlib,
 	mnesia,
 	gproc,
-	cowboy
+	cowboy,
+	enet
    ]},
   {env,[]},
   {modules, []},
 
   {licenses, ["GPL"]},
-  {links, []}
+  {links, [{"GitHub", "https://github.com/saltysystems/overworld"}]}
  ]}.
