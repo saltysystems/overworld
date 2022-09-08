@@ -35,10 +35,9 @@ handle_call({call, Msg}, _From, State) ->
 handle_cast(_Msg, State) ->
     {noreply, State}.
 handle_info({enet, disconnected, remote, Pid, _When}, State) ->
-    logger:debug("Got a disconnect message: ~p", [Pid]),
-    {noreply, State};
-handle_info({enet, _Channel, {reliable, Packet}}, State) ->
-    logger:debug("Got a reliable packet: ~p", [Packet]),
+    logger:debug("Got disconnect from: ~p. Stopping peer.", [Pid]),
+    {stop, normal, State};
+handle_info({enet, _Channel, {reliable, _Packet}}, State) ->
     {noreply, State};
 handle_info({enet, _Channel, {unreliable, Seq, Packet}}, State) ->
     logger:debug("Got an unreliable packet: ~p:~p", [Seq, Packet]),
