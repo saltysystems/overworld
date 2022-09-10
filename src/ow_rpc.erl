@@ -7,6 +7,7 @@
     c2s_proto/1,
     s2c_call/1,
     encoder/1,
+    dispatch/1,
     find_call/2,
     find_handler/2
 ]).
@@ -16,7 +17,8 @@
     c2s_handler => mfa() | undefined,
     c2s_proto => atom() | undefined,
     s2c_call => atom() | undefined,
-    encoder := atom() | undefined
+    encoder := atom() | undefined,
+    dispatch => reliable | unreliable | unsequenced | undefined
 }.
 -export_type([rpc/0]).
 
@@ -46,6 +48,10 @@ s2c_call(Map) ->
 -spec encoder(map()) -> atom() | undefined.
 encoder(Map) ->
     maps:get(encoder, Map, undefined).
+
+-spec dispatch(map()) -> atom() | undefined.
+dispatch(Map) ->
+    maps:get(dispatch, Map, undefined).
 
 -spec find_call(atom(), [rpc(), ...]) -> rpc() | #{}.
 find_call(Msg, [H | L]) ->
