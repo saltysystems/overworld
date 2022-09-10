@@ -28,6 +28,8 @@
     get_latency/1,
     % alias for get_authenticated
     is_authenticated/1,
+    set_peer_info/2,
+    get_peer_info/1,
     set_game_info/2,
     get_game_info/1,
     set_termination_callback/2,
@@ -312,6 +314,22 @@ get_authenticated(Session) ->
 -spec is_authenticated(session()) -> boolean().
 is_authenticated(Session) ->
     get_authenticated(Session).
+
+%%----------------------------------------------------------------------------
+%% @doc Set the peer info map
+%% @end
+%%----------------------------------------------------------------------------
+-spec set_peer_info(map(), session()) -> session().
+set_peer_info(Map, Session) ->
+    Session#session{game_info = Map}.
+
+%%----------------------------------------------------------------------------
+%% @doc Return the peer info map
+%% @end
+%%----------------------------------------------------------------------------
+-spec get_peer_info(session()) -> map().
+get_peer_info(Session) ->
+    Session#session.game_info.
 
 %%----------------------------------------------------------------------------
 %% @doc Set the game info map
