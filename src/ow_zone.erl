@@ -449,24 +449,29 @@ player_rm(Session, St0) ->
 
 notify_players(MsgType, Msg, RPCs, Players) ->
     Send = fun(Player) ->
-        % causes a crash if the pid doesn't exist
+        % Don't crash if the pid doesn't exist
         case Player#player.pid of
             undefined ->
                 ok;
             Pid ->
-                case Player#player.serializer of
-                    undefined ->
-                        Pid ! {self(), zone_msg, {MsgType, Msg}};
-                    protobuf ->
-                        RPC = ow_rpc:find_call(MsgType, RPCs),
-                        EMod = ow_rpc:encoder(RPC),
-                        OpCode = ow_rpc:opcode(RPC),
-                        EncodedMsg = EMod:encode_msg(Msg, MsgType),
-                        Pid ! {self, zone_msg, [<<OpCode:16>>, EncodedMsg]}
-                end
+                RPC = ow_rpc:find_call(MsgType, RPCs),
+                M = encode_msg(MsgType, Msg, RPCs, Player),
+                Pid ! {self(), zone_msg, RPC, M}
         end
     end,
     lists:foreach(Send, Players).
+
+encode_msg(MsgType, Msg, RPCs, Player) ->
+    case Player#player.serializer of
+        undefined ->
+            {MsgType, Msg};
+        protobuf ->
+            RPC = ow_rpc:find_call(MsgType, RPCs),
+            EMod = ow_rpc:encoder(RPC),
+            OpCode = ow_rpc:opcode(RPC),
+            EncodedMsg = EMod:encode_msg(Msg, MsgType),
+            [<<OpCode:16>>, EncodedMsg]
+    end.
 
 decode_msg(MsgType, Msg, RPCs, Session) ->
     Serializer = ow_session:get_serializer(Session),
