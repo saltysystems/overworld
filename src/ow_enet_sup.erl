@@ -3,7 +3,7 @@
 
 -export([start/0, stop/0]).
 
--define(PEER_LIMIT, 64).
+-define(PEER_LIMIT, 255).
 -define(CHANNEL_LIMIT, 4).
 
 start() ->
