@@ -51,7 +51,7 @@ print() ->
     T = get_template(),
     bbmustache:compile(T, Map).
 
-get_template() -> 
+get_template() ->
     PrivDir = code:priv_dir(overworld),
     bbmustache:parse_file(
         PrivDir ++ "/" ++ ?DEFAULT_TEMPLATE
@@ -151,8 +151,7 @@ generate_pure_submsgs(Encoder, [vector2 | Rest], Acc) ->
     generate_pure_submsgs(Encoder, Rest, [Signature ++ Body | Acc]);
 generate_pure_submsgs(Encoder, [MessageName | Rest], Acc) ->
     Defn = erlang:apply(Encoder, fetch_msg_def, [MessageName]),
-    Signature =
-        "func unpack_" ++ atom_to_list(MessageName) ++ "(object):\n",
+    Signature = "func unpack_" ++ fix_delim(atom_to_list(MessageName)) ++ "(object):\n",
     Body =
         ?TAB ++ "if typeof(object) == TYPE_ARRAY and object != []:\n" ++
             ?TAB(2) ++ "var array = []\n" ++
@@ -212,7 +211,7 @@ generate_impure_submsgs(_Encoder, [], Acc) ->
     Acc;
 generate_impure_submsgs(Encoder, [H | T], Acc) ->
     Defn = erlang:apply(Encoder, fetch_msg_def, [H]),
-    Signature = "func unpack_" ++ atom_to_list(H) ++ "(object):\n",
+    Signature = "func unpack_" ++ fix_delim(atom_to_list(H)) ++ "(object):\n",
     Body =
         ?TAB ++ "if typeof(object) == TYPE_ARRAY and object != []:\n" ++
             ?TAB(2) ++ "var array = []\n" ++
@@ -688,3 +687,6 @@ maybe_submsg({msg, _Type}) ->
     atom_to_list('Dictionary');
 maybe_submsg(Type) ->
     atom_to_list(Type).
+
+fix_delim(Message) ->
+    lists:flatten(string:replace(Message, ".", "_")).
