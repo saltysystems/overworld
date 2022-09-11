@@ -51,7 +51,7 @@ print() ->
     T = get_template(),
     bbmustache:compile(T, Map).
 
-get_template() -> 
+get_template() ->
     PrivDir = code:priv_dir(overworld),
     bbmustache:parse_file(
         PrivDir ++ "/" ++ ?DEFAULT_TEMPLATE
@@ -152,7 +152,8 @@ generate_pure_submsgs(Encoder, [vector2 | Rest], Acc) ->
 generate_pure_submsgs(Encoder, [MessageName | Rest], Acc) ->
     Defn = erlang:apply(Encoder, fetch_msg_def, [MessageName]),
     Signature =
-        "func unpack_" ++ atom_to_list(MessageName) ++ "(object):\n",
+        "func unpack_" ++ fix_delim(atom_to_list(MessageName)) ++
+            "(object):\n",
     Body =
         ?TAB ++ "if typeof(object) == TYPE_ARRAY and object != []:\n" ++
             ?TAB(2) ++ "var array = []\n" ++
@@ -177,7 +178,7 @@ generate_submsg_body(
     % Impure submsg does not have well known types and we need to call one of
     % the lower-level functions to deal with it
     Name = atom_to_list(maps:get(name, Defn)),
-    Type = atom_to_list(Submsg),
+    Type = fix_delim(atom_to_list(Submsg)),
     Body =
         ?TAB(TabLevel) ++ "var " ++ Name ++ " = unpack_" ++ Type ++ "(" ++
             Prefix ++ ".get_" ++ Name ++ "())\n",
@@ -212,7 +213,8 @@ generate_impure_submsgs(_Encoder, [], Acc) ->
     Acc;
 generate_impure_submsgs(Encoder, [H | T], Acc) ->
     Defn = erlang:apply(Encoder, fetch_msg_def, [H]),
-    Signature = "func unpack_" ++ atom_to_list(H) ++ "(object):\n",
+    Signature =
+        "func unpack_" ++ fix_delim(atom_to_list(H)) ++ "(object):\n",
     Body =
         ?TAB ++ "if typeof(object) == TYPE_ARRAY and object != []:\n" ++
             ?TAB(2) ++ "var array = []\n" ++
@@ -415,7 +417,7 @@ generate_marshall_submsgs([vector2 | T], Encoder, Acc) ->
     generate_marshall_submsgs(T, Encoder, Signature ++ Body ++ Acc);
 generate_marshall_submsgs([MsgName | T], Encoder, Acc) ->
     Defn = erlang:apply(Encoder, fetch_msg_def, [MsgName]),
-    NameStr = atom_to_list(MsgName),
+    NameStr = fix_delim(atom_to_list(MsgName)),
     Signature = "func pack_" ++ NameStr ++ "(obj, ref):\n",
     Body = marshall_submsg_body(Defn, []),
     generate_marshall_submsgs(T, Encoder, Signature ++ Body ++ Acc).
@@ -427,7 +429,8 @@ marshall_submsg_body([#{name := Name, type := {msg, SubMsg}} | T], Acc) ->
     SubMsgStr = atom_to_list(SubMsg),
     Body =
         ?TAB ++ "var " ++ NameStr ++ " = ref.new_" ++ NameStr ++ "()\n" ++
-            ?TAB ++ "pack_" ++ SubMsgStr ++ "(obj['" ++ NameStr ++ "'], " ++
+            ?TAB ++ "pack_" ++ fix_delim(SubMsgStr) ++ "(obj['" ++ NameStr ++
+            "'], " ++
             NameStr ++ ")\n",
     marshall_submsg_body(T, Body ++ Acc);
 marshall_submsg_body([#{name := Name} | T], Acc) ->
@@ -688,3 +691,6 @@ maybe_submsg({msg, _Type}) ->
     atom_to_list('Dictionary');
 maybe_submsg(Type) ->
     atom_to_list(Type).
+
+fix_delim(Message) ->
+    lists:flatten(string:replace(Message, ".", "_")).
