@@ -429,7 +429,7 @@ marshall_submsg_body([#{name := Name, type := {msg, SubMsg}} | T], Acc) ->
     SubMsgStr = atom_to_list(SubMsg),
     Body =
         ?TAB ++ "var " ++ NameStr ++ " = ref.new_" ++ NameStr ++ "()\n" ++
-            ?TAB ++ "pack_" ++ SubMsgStr ++ "(obj['" ++ NameStr ++ "'], " ++
+            ?TAB ++ "pack_" ++ fix_delim(SubMsgStr) ++ "(obj['" ++ NameStr ++ "'], " ++
             NameStr ++ ")\n",
     marshall_submsg_body(T, Body ++ Acc);
 marshall_submsg_body([#{name := Name} | T], Acc) ->
