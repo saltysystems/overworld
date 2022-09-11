@@ -151,7 +151,9 @@ generate_pure_submsgs(Encoder, [vector2 | Rest], Acc) ->
     generate_pure_submsgs(Encoder, Rest, [Signature ++ Body | Acc]);
 generate_pure_submsgs(Encoder, [MessageName | Rest], Acc) ->
     Defn = erlang:apply(Encoder, fetch_msg_def, [MessageName]),
-    Signature = "func unpack_" ++ fix_delim(atom_to_list(MessageName)) ++ "(object):\n",
+    Signature =
+        "func unpack_" ++ fix_delim(atom_to_list(MessageName)) ++
+            "(object):\n",
     Body =
         ?TAB ++ "if typeof(object) == TYPE_ARRAY and object != []:\n" ++
             ?TAB(2) ++ "var array = []\n" ++
@@ -176,7 +178,7 @@ generate_submsg_body(
     % Impure submsg does not have well known types and we need to call one of
     % the lower-level functions to deal with it
     Name = atom_to_list(maps:get(name, Defn)),
-    Type = atom_to_list(Submsg),
+    Type = fix_delim(atom_to_list(Submsg)),
     Body =
         ?TAB(TabLevel) ++ "var " ++ Name ++ " = unpack_" ++ Type ++ "(" ++
             Prefix ++ ".get_" ++ Name ++ "())\n",
@@ -211,7 +213,8 @@ generate_impure_submsgs(_Encoder, [], Acc) ->
     Acc;
 generate_impure_submsgs(Encoder, [H | T], Acc) ->
     Defn = erlang:apply(Encoder, fetch_msg_def, [H]),
-    Signature = "func unpack_" ++ fix_delim(atom_to_list(H)) ++ "(object):\n",
+    Signature =
+        "func unpack_" ++ fix_delim(atom_to_list(H)) ++ "(object):\n",
     Body =
         ?TAB ++ "if typeof(object) == TYPE_ARRAY and object != []:\n" ++
             ?TAB(2) ++ "var array = []\n" ++
@@ -414,7 +417,7 @@ generate_marshall_submsgs([vector2 | T], Encoder, Acc) ->
     generate_marshall_submsgs(T, Encoder, Signature ++ Body ++ Acc);
 generate_marshall_submsgs([MsgName | T], Encoder, Acc) ->
     Defn = erlang:apply(Encoder, fetch_msg_def, [MsgName]),
-    NameStr = atom_to_list(MsgName),
+    NameStr = fix_delim(atom_to_list(MsgName)),
     Signature = "func pack_" ++ NameStr ++ "(obj, ref):\n",
     Body = marshall_submsg_body(Defn, []),
     generate_marshall_submsgs(T, Encoder, Signature ++ Body ++ Acc).
