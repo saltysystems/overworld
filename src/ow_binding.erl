@@ -340,10 +340,12 @@ next_opcode([], ok, St0) ->
 next_opcode([OpInfo | Rest], ok, St0) ->
     OpCode = ow_rpc:opcode(OpInfo),
     OpName = opcode_name_string(OpInfo),
-    OpString = io_lib:format("~p", [OpCode]),
-    Op =
-        string:to_upper(OpName) ++ " = " ++
-            "bytepack(" ++ OpString ++ "),",
+    %Op =
+    %    string:to_upper(OpName) ++ " = " ++
+    %        "bytepack(" ++ OpString ++ "),",
+    OpPacked = erl_bin_to_godot(OpCode),
+    Comment = "0x" ++ integer_to_list(OpCode, 16),
+    Op = string:to_upper(OpName) ++ " = " ++ OpPacked ++ ", # " ++ Comment,
     next_opcode(Rest, ok, [Op | St0]).
 
 generate_router(Operation, St0) ->
@@ -694,3 +696,12 @@ maybe_submsg(Type) ->
 
 fix_delim(Message) ->
     lists:flatten(string:replace(Message, ".", "_")).
+
+erl_bin_to_godot(Bin) ->
+    B = binary_to_list(binary:encode_unsigned(Bin, big)),
+    if
+        length(B) < 2 ->
+            io_lib:format("~p", [[0 | B]]);
+        true ->
+            io_lib:format("~p", [B])
+    end.
