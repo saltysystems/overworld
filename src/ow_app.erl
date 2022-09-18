@@ -17,6 +17,7 @@ start(_StartType, _StartArgs) ->
         {'_', [
             {"/ws", ow_websocket, []},
             {"/client/download", ow_dl_handler, []},
+            {"/client/manifest", ow_dl_manifest, []},
             {"/stats", ow_stats, []}
             % TODO - See if this is needed, I think it's old.
             %{"/libow.gd", cowboy_static,
