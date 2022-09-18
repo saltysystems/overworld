@@ -4,14 +4,18 @@
 -export([init/2]).
 
 init(Req, State) ->
-    #{peer := {IP, _Port}} = Req,
-    logger:info("Client manifest requested by ~p", [IP]),
+    #{peer := {RawIP, _Port}} = Req,
+    IP = inet:ntoa(RawIP),
     Reply =
         case cowboy_req:parse_qs(Req) of
             [] ->
                 % No arguments, just return the manifest
+                logger:info("Client ~p GET manifest.json", [IP]),
                 manifest(Req);
             F ->
+                [{<<"file">>, FBin}] = F,
+                File = binary_to_list(FBin),
+                logger:info("Client ~p GET ~p", [IP, File]),
                 send_file(F, Req)
         end,
     {ok, Reply, State}.
@@ -20,8 +24,14 @@ manifest(Req) ->
     % List all registered apps
     Apps = ow_protocol:registered_apps(),
     % Get the list of files
-    ProtoFiles = protofiles(Apps),
-    logger:info("Protofiles: ~p", [ProtoFiles]),
+    ClientLib =
+        case godot_client_lib_version(Req) of
+            3 ->
+                <<"libow3.gd">>;
+            4 ->
+                <<"libow4.gd">>
+        end,
+    ProtoFiles = [ClientLib | protofiles(Apps)],
     % Encode the list via jsone
     Manifest = jsone:encode(ProtoFiles),
     cowboy_req:reply(
@@ -35,14 +45,26 @@ manifest(Req) ->
         Req
     ).
 
-send_file([{<<"file">>, F = <<"libow.gd">>}], Req) ->
-    ClientAPI = ow_binding:print(),
+send_file([{<<"file">>, <<"libow3.gd">>}], Req) ->
+    ClientAPI = ow_binding:print(3),
     cowboy_req:reply(
         200,
         #{
             <<"content-type">> => <<"text/plain">>,
             <<"content-disposition">> =>
-                <<"attachment; filename=", F>>
+                <<"attachment; filename=libow3.gd">>
+        },
+        ClientAPI,
+        Req
+    );
+send_file([{<<"file">>, <<"libow4.gd">>}], Req) ->
+    ClientAPI = ow_binding:print(4),
+    cowboy_req:reply(
+        200,
+        #{
+            <<"content-type">> => <<"text/plain">>,
+            <<"content-disposition">> =>
+                <<"attachment; filename=libow4.gd">>
         },
         ClientAPI,
         Req
@@ -58,14 +80,17 @@ send_file([{<<"file">>, BinFile}], Req) ->
             cowboy_req:reply(
                 200,
                 #{
-                    <<"content-type">> => <<"text/plain">>
+                    <<"content-type">> => <<"text/plain">>,
+                    <<"content-disposition">> =>
+                        <<<<"attachment; filename=">>/binary,
+                            BinFile/binary>>
                 },
                 F,
                 Req
             )
     end.
 
--spec protofiles(list()) -> [{string(), binary()}, ...].
+-spec protofiles(list()) -> [binary(), ...].
 protofiles(FileList) ->
     protofiles(FileList, []).
 protofiles([], Acc) ->
@@ -75,7 +100,7 @@ protofiles([H | T], Acc) ->
     protofiles(T, [Files | Acc]).
 
 % return the path of the proto file for the given application
--spec protofile(atom()) -> binary().
+-spec protofile(string()) -> binary() | error.
 protofile(App) ->
     D = code:priv_dir(list_to_existing_atom(App)),
     % Very hard-coded and rudimentary.
@@ -83,4 +108,15 @@ protofile(App) ->
     case file:read_file(F) of
         {ok, Proto} -> Proto;
         _ -> error
+    end.
+
+-spec godot_client_lib_version(map()) -> 3 | 4.
+godot_client_lib_version(#{headers := #{<<"user-agent">> := UserAgent}}) ->
+    % TODO: Improve me
+    case string:find(UserAgent, <<"GodotEngine/4">>) of
+        nomatch ->
+            % Assume Godot 3.x
+            3;
+        _ ->
+            4
     end.
