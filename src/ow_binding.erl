@@ -7,6 +7,7 @@
 -export([
     write/0,
     pb_to_godot_type/1,
+    print/1,
     print/0
 ]).
 
@@ -15,7 +16,8 @@
     lists:foldl(fun(_N, Acc0) -> [9] ++ Acc0 end, [], lists:seq(0, N - 1))
 ).
 -define(DEFAULT_ENCODER, overworld_pb).
--define(DEFAULT_TEMPLATE, "templates/libow.mustache").
+-define(DEFAULT_TEMPLATE_3, "templates/libow3.mustache").
+-define(DEFAULT_TEMPLATE_4, "templates/libow4.mustache").
 
 write() ->
     file:write_file(
@@ -23,6 +25,8 @@ write() ->
     ).
 
 print() ->
+    print(3).
+print(Version) ->
     Ops = [
         ow_protocol:op_info(X)
      || X <- ow_protocol:registered_ops()
@@ -48,13 +52,18 @@ print() ->
         "marshall_submsgs" => MarshallSubmsgs,
         "marshall" => Marshall
     },
-    T = get_template(),
+    T = get_template(Version),
     bbmustache:compile(T, Map).
 
-get_template() ->
+get_template(Version) ->
     PrivDir = code:priv_dir(overworld),
+    Template =
+        case Version of
+            3 -> ?DEFAULT_TEMPLATE_3;
+            4 -> ?DEFAULT_TEMPLATE_4
+        end,
     bbmustache:parse_file(
-        PrivDir ++ "/" ++ ?DEFAULT_TEMPLATE
+        PrivDir ++ "/" ++ Template
     ).
 
 pb_to_godot_type(Type) ->
