@@ -1,0 +1,140 @@
+extends Node
+
+class_name OverworldClient
+
+{{#preloads}} 
+{{.}}
+{{/preloads}} 
+
+var ws = WebSocketClient.new()
+
+@export var session: Dictionary
+
+var debug = false
+
+###########################################################################
+#  Constants
+###########################################################################
+
+# These are merely aliases for convenience. We should not leak Protobuf
+# details to the consumer of the library
+
+{{#constants}}
+{{.}}
+{{/constants}}
+
+###########################################################################
+#  Signals
+###########################################################################
+
+signal connection(status)
+{{#signals}} 
+{{.}}
+{{/signals}}
+
+
+###########################################################################
+#  OpCodes
+###########################################################################
+
+const OpCode = {
+	{{#opcodes}}
+	{{.}}
+	{{/opcodes}}
+}
+
+
+###########################################################################
+#  Router 
+###########################################################################
+
+func route(packet):
+	var opcode = packet.subarray(0,1)
+	var hex_opcode = str(opcode.hex_encode())
+	var payload = []
+	if packet.size() > 2:
+		payload = packet.subarray(2,-1)
+	match opcode:
+		{{#router}}
+		{{.}}
+		{{/router}}
+		_:
+			print("[WARNING] Unknown opcode from the server:" + hex_opcode)
+
+
+###########################################################################
+#  Payload unmarshalling (server packets)
+###########################################################################
+
+{{#submsgs}}
+{{.}}
+{{/submsgs}}
+
+{{#unmarshall}}
+{{.}}
+{{/unmarshall}}
+
+###########################################################################
+#  Payload marshalling (client packets)
+###########################################################################
+
+{{#marshall_submsgs}}
+{{.}}
+{{/marshall_submsgs}}
+
+{{#marshall}}
+{{.}}
+{{/marshall}}
+
+############################################################################
+# Various other utility and initialization functions
+############################################################################
+
+func send_message(payload, opcode):
+	# Create a new packet starting with opcode, append the message if it exists,
+	# then send it across the websocket.
+	var packet = opcode
+	if payload.empty() == true:
+		# Message is empty, just send the bare opcode
+		ws.get_peer(1).put_packet(packet)
+	else:
+		packet.append_array(payload)
+		ws.get_peer(1).put_packet(packet)
+
+############################################################################
+#  Signal Handlers
+############################################################################
+
+func _ready():
+	ws.connect("data_received", self, "_on_data")
+
+# Take the host and whether or not its a TLS conncetion
+func ws_connect(url: String, tls: bool):
+	ws.set_verify_ssl_enabled(tls)
+	print("[INFO] Attempting to connect to ", url)
+	ws.connect_to_url(url+"/ws")
+
+func ws_disconnect():
+	ws.disconnect_from_host(1000,"Goodbye")
+
+func _process(_delta):
+	# Poll the socket for new data
+	if ws.get_connection_status() == ws.CONNECTION_CONNECTING || ws.get_connection_status() == ws.CONNECTION_CONNECTED:
+		ws.poll()
+
+func _on_data():
+	var packet = ws.get_peer(1).get_packet()
+	route(packet)
+
+func _connection_established(_protocol):
+	print("[INFO] Connection established")
+	emit_signal("connection", "established")
+
+func _connection_closed(msg):
+	print("[INFO] Connection closed: ", msg)
+	emit_signal("connection", "closed")
+
+func _connection_error():
+	print("[INFO] Connection error")
+	emit_signal("connection", "error")
+	print(ws.get_peer(1))
