@@ -118,7 +118,7 @@ func send_message(payload, opcode):
 		_ws_client.get_peer(1).put_packet(packet)
 
 func _process(_delta):
-	if ws.get_connection_status() == ws.CONNECTION_CONNECTING || ws.get_connection_status() == ws.CONNECTION_CONNECTED:
+	if _ws_client.get_connection_status() == _ws_client.CONNECTION_CONNECTING || _ws_client.get_connection_status() == _ws_client.CONNECTION_CONNECTED:
 		_ws_client.poll()
 
 ############################################################################
