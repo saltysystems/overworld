@@ -651,7 +651,9 @@ unmarshall_var({ProtoLib, ProtoMsg}) ->
 unmarshall_var([], _ProtoMsg, _ProtoLib, Acc) ->
     Acc;
 unmarshall_var([{_F, _T, _O} | _Rest], ProtoMsg, ProtoLib, Acc) ->
-    V = ?TAB ++ "var d = unpack_" ++ atom_to_list(ProtoMsg) ++ "(m)\n",
+    V =
+        ?TAB ++ "var d = {}\n" ++ ?TAB ++ "d = unpack_" ++
+            atom_to_list(ProtoMsg) ++ "(m)\n",
     unmarshall_var([], ProtoMsg, ProtoLib, Acc ++ V).
 
 opcode_name_string(OpInfo) ->
