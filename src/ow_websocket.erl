@@ -21,7 +21,8 @@
 %% @end
 %%---------------------------------------------------------------------------
 init(Req, _St0) ->
-    #{peer := {IP, _Port}} = Req,
+    #{peer := {RawIP, _Port}} = Req,
+    IP = inet:ntoa(RawIP),
     logger:notice("~p: client connected.", [IP]),
     SessionID = erlang:unique_integer(),
     St1 = ow_session:set_id(SessionID, ow_session:new()),
