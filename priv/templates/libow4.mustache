@@ -49,17 +49,16 @@ const OpCode = {
 ###########################################################################
 
 func route(packet):
-	var opcode = packet.subarray(0,1)
-	var hex_opcode = str(opcode.hex_encode())
+	var opcode = Array(packet.slice(0,2)) # Is this costly?
 	var payload = []
 	if packet.size() > 2:
-		payload = packet.subarray(2,-1)
+		payload = packet.slice(2)
 	match opcode:
 		{{#router}}
 		{{.}}
 		{{/router}}
 		_:
-			print("[WARNING] Unknown opcode from the server:" + hex_opcode)
+			print("[WARNING] Unknown opcode from the server:" + str(opcode))
 
 
 ###########################################################################
