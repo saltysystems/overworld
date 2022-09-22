@@ -106,9 +106,9 @@
     Session :: session(),
     Players :: player_list(),
     State :: term(),
-    Result :: {Status, Reply, State},
+    Result :: {Response, Status, State},
     Status :: ok | {ok, Session},
-    Reply :: ow_zone_resp().
+    Response :: ow_zone_resp().
 -optional_callbacks([handle_join/3]).
 
 -callback handle_join(Msg, Session, Players, State) -> Result when
@@ -116,16 +116,16 @@
     Session :: session(),
     Players :: player_list(),
     State :: term(),
-    Result :: {Status, Reply, State},
+    Result :: {Response, Status, State},
     Status :: ok | {ok, Session},
-    Reply :: ow_zone_resp().
+    Response :: ow_zone_resp().
 -optional_callbacks([handle_join/4]).
 
 -callback handle_part(Session, Players, State) -> Result when
     Session :: session(),
     Players :: player_list(),
     State :: term(),
-    Result :: {Status, Response, State},
+    Result :: {Response, Status, State},
     Status :: ok | {ok, Session},
     Response :: ow_zone_resp().
 -optional_callbacks([handle_part/3]).
@@ -135,7 +135,7 @@
     Session :: session(),
     Players :: player_list(),
     State :: term(),
-    Result :: {Status, Response, State},
+    Result :: {Response, Status, State},
     Status :: ok | {ok, Session},
     Response :: ow_zone_resp().
 -optional_callbacks([handle_part/4]).
@@ -146,15 +146,14 @@
     Session :: session(),
     Players :: player_list(),
     State :: term(),
-    Result :: {Status, Response, State},
+    Result :: {Response, Status, State},
     Status :: ok | {ok, Session},
     Response :: ow_zone_resp().
 
 -callback handle_tick(Players, State) -> Result when
     Players :: player_list(),
     State :: term(),
-    Result :: {Status, Response, State},
-    Status :: atom(),
+    Result :: {Response, State},
     Response :: ow_zone_resp().
 
 -callback rpc_info() -> Result when
@@ -392,7 +391,7 @@ code_change(_OldVsn, St0, _Extra) -> {ok, St0}.
 
 tick(St0 = #state{cb_mod = CbMod, cb_data = CbData0, players = Players}) ->
     PlayerIDs = [X#player.id || X <- Players],
-    {_Status, Notify, CbData1} = CbMod:handle_tick(PlayerIDs, CbData0),
+    {Notify, CbData1} = CbMod:handle_tick(PlayerIDs, CbData0),
     St1 = St0#state{cb_data = CbData1},
     handle_notify(Notify, St1),
     St1.
@@ -509,7 +508,7 @@ actually_do(Action, Session, St0) ->
     CbData0 = St0#state.cb_data,
     Players = St0#state.players,
     CbFun = list_to_existing_atom("handle_" ++ atom_to_list(Action)),
-    {Status, Notify, CbData1} = CbMod:CbFun(
+    {Notify, Status, CbData1} = CbMod:CbFun(
         Session, Players, CbData0
     ),
     case Action of
@@ -525,7 +524,7 @@ actually_do(Action, Msg, Session, St0) ->
     CbData0 = St0#state.cb_data,
     Players = St0#state.players,
     CbFun = list_to_existing_atom("handle_" ++ atom_to_list(Action)),
-    {Status, Notify, CbData1} = CbMod:CbFun(
+    {Notify, Status, CbData1} = CbMod:CbFun(
         DecodedMsg, Session, Players, CbData0
     ),
     case Action of
@@ -591,7 +590,7 @@ actually_rpc(Type, Msg, Session, St0) ->
     SessionID = ow_session:get_id(Session),
     % Overworld will confirm that the player is actually part of the zone to
     % which they are sending RPCs
-    {Status, Notify, CbData1} =
+    {Notify, Status, CbData1} =
         case is_player(SessionID, Players) of
             true ->
                 CbMod:handle_rpc(
