@@ -588,9 +588,18 @@ actually_rpc(Type, Msg, Session, St0) ->
     RPCs = St0#state.rpcs,
     Players = St0#state.players,
     DecodedMsg = decode_msg(Type, Msg, RPCs, Session),
-    {Status, Notify, CbData1} = CbMod:handle_rpc(
-        Type, DecodedMsg, Session, Players, CbData
-    ),
+    SessionID = ow_session:get_id(Session),
+    % Overworld will confirm that the player is actually part of the zone to
+    % which they are sending RPCs
+    {Status, Notify, CbData1} =
+        case is_player(SessionID, Players) of
+            true ->
+                CbMod:handle_rpc(
+                    Type, DecodedMsg, Session, Players, CbData
+                );
+            false ->
+                {ok, [], CbData}
+        end,
     Session1 =
         case Status of
             ok -> Session;
