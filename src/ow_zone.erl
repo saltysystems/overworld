@@ -150,8 +150,9 @@
     Status :: ok | {ok, Session},
     Response :: ow_zone_resp().
 
--callback handle_tick(Players, State) -> Result when
+-callback handle_tick(Players, TickRate, State) -> Result when
     Players :: player_list(),
+    TickRate :: pos_integer(),
     State :: term(),
     Result :: {Response, State},
     Response :: ow_zone_resp().
@@ -389,9 +390,16 @@ code_change(_OldVsn, St0, _Extra) -> {ok, St0}.
 %%% internal functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-tick(St0 = #state{cb_mod = CbMod, cb_data = CbData0, players = Players}) ->
+tick(
+    St0 = #state{
+        cb_mod = CbMod,
+        cb_data = CbData0,
+        players = Players,
+        tick_rate = TickRate
+    }
+) ->
     PlayerIDs = [X#player.id || X <- Players],
-    {Notify, CbData1} = CbMod:handle_tick(PlayerIDs, CbData0),
+    {Notify, CbData1} = CbMod:handle_tick(PlayerIDs, TickRate, CbData0),
     St1 = St0#state{cb_data = CbData1},
     handle_notify(Notify, St1),
     St1.
