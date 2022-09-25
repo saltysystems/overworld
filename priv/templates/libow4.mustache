@@ -121,22 +121,23 @@ func enet_connect(ip: String, port: int):
 func send_message(payload, opcode):
 	# Create a new packet starting with opcode, append the message if it exists,
 	# then send it across the websocket.
-	var packet = opcode
 	# Set the peer mode
 	var peer
 	if mode == transport_mode.WEBSOCKET:
+		var packet = opcode
 		peer = _ws_client
 		# Construct the packet
-		if payload.empty() == true:
-			# Message is empty, just send the bare opcode
-			peer.get_peer(1).put_packet(packet)
-		else:
+		if payload.is_empty() != true:
+			# Append the payload to the packet if it's nonempty
 			packet.append_array(payload)
-			peer.get_peer(1).put_packet(packet)
+		peer.get_peer(1).put_packet(packet)
 	elif mode == transport_mode.ENET:
+		var packet = [] + opcode # TODO: Workaround
 		peer = _enet_peer
 		for p in peer.host.get_peers():
 			# TODO: Thread channel and packet type through
+			if payload.is_empty() != true:
+				packet.append_array(payload)
 			p.send(0, packet, ENetPacketPeer.FLAG_RELIABLE)
 
 func _process(_delta):
