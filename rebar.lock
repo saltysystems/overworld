@@ -4,7 +4,7 @@
  {<<"cowlib">>,{pkg,<<"cowlib">>,<<"2.11.0">>},1},
  {<<"enet">>,
   {git,"https://github.com/saltysystems/enet.git",
-       {ref,"931192a7335a392c5d0ce3fe89d557037e177719"}},
+       {ref,"7bb67f36d5a6fe4dad7445684139ae3b0454c7c2"}},
   0},
  {<<"gdminus">>,{pkg,<<"gdminus">>,<<"1.2.0">>},0},
  {<<"gproc">>,{pkg,<<"gproc">>,<<"0.9.0">>},0},
