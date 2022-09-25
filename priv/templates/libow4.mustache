@@ -12,9 +12,16 @@ var _ws_client = WebSocketClient.new()
 
 var debug = false
 
+var mode
+
 ###########################################################################
 #  Constants
 ###########################################################################
+
+enum transport_mode {
+	WEBSOCKET,
+	ENET
+}
 
 # These are merely aliases for convenience. We should not leak Protobuf
 # details to the consumer of the library
@@ -104,21 +111,43 @@ func ws_connect(url: String, tls: bool):
 	_ws_client.verify_tls = tls
 	print("[INFO] Attempting to connect to ", url)
 	_ws_client.connect_to_url(url+"/ws")
+	mode = transport_mode.WEBSOCKET
+
+func enet_connect(ip: String, port: int):
+	print("[INFO] Connecting via ENet to ", ip)
+	var err = _enet_peer.create_client(ip, port, 1)
+	mode = transport_mode.ENET
 
 func send_message(payload, opcode):
 	# Create a new packet starting with opcode, append the message if it exists,
 	# then send it across the websocket.
 	var packet = opcode
-	if payload.empty() == true:
-		# Message is empty, just send the bare opcode
-		_ws_client.get_peer(1).put_packet(packet)
-	else:
-		packet.append_array(payload)
-		_ws_client.get_peer(1).put_packet(packet)
+	# Set the peer mode
+	var peer
+	if mode == transport_mode.WEBSOCKET:
+		peer = _ws_client
+		# Construct the packet
+		if payload.empty() == true:
+			# Message is empty, just send the bare opcode
+			peer.get_peer(1).put_packet(packet)
+		else:
+			packet.append_array(payload)
+			peer.get_peer(1).put_packet(packet)
+	elif mode == transport_mode.ENET:
+		peer = _enet_peer
+		for p in peer.host.get_peers():
+			# TODO: Thread channel and packet type through
+			p.send(0, packet, ENetPacketPeer.FLAG_RELIABLE)
 
 func _process(_delta):
-	if _ws_client.get_connection_status() == _ws_client.CONNECTION_CONNECTING || _ws_client.get_connection_status() == _ws_client.CONNECTION_CONNECTED:
-		_ws_client.poll()
+	if mode == transport_mode.WEBSOCKET:
+		if _ws_client.get_connection_status() == _ws_client.CONNECTION_CONNECTING || _ws_client.get_connection_status() == _ws_client.CONNECTION_CONNECTED:
+			_ws_client.poll()
+	if mode == transport_mode.ENET:
+		var p = _enet_peer.host.service() # Check for packets
+		if p[0] == ENetConnection.EVENT_RECEIVE:
+			var packet = p[1].get_packet()
+			route(packet)
 
 ############################################################################
 #  Signal Handlers
