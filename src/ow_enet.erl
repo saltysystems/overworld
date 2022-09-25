@@ -37,7 +37,13 @@ handle_cast(_Msg, State) ->
 handle_info({enet, disconnected, remote, Pid, _When}, State) ->
     logger:debug("Got disconnect from: ~p. Stopping peer.", [Pid]),
     {stop, normal, State};
-handle_info({enet, _Channel, {reliable, _Packet}}, State) ->
+handle_info(
+    {enet, Channel, {reliable, Packet}}, State = #{channels := Channels}
+) ->
+    io:format("State: ~p", [State]),
+    ChannelPid = maps:get(Channel, Channels),
+    logger:debug("Got reliable"),
+    enet:send_reliable(ChannelPid, Packet),
     {noreply, State};
 handle_info({enet, _Channel, {unreliable, Seq, Packet}}, State) ->
     logger:debug("Got an unreliable packet: ~p:~p", [Seq, Packet]),
