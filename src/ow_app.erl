@@ -12,6 +12,13 @@
 % status information via JSON API
 -export([status/0]).
 
+-define(PEER_LIMIT, 64).
+-define(CHANNEL_LIMIT, 4).
+-define(ENET_PORT, 4484).
+-define(ENET_DTLS_PORT, 4485).
+-define(WS_PORT, 4434).
+-define(WS_TLS_PORT, 4435).
+
 start(_StartType, _StartArgs) ->
     Dispatch = cowboy_router:compile([
         {'_', [
@@ -24,14 +31,20 @@ start(_StartType, _StartArgs) ->
             %    {file, "apps/ow_core/static/libow.gd"}}
         ]}
     ]),
+    % Start WebSocket/CowBoy
     {ok, _} = cowboy:start_clear(
         http,
         [
-            {port, 4433},
+            {port, ?WS_PORT},
             {nodelay, true}
         ],
         #{env => #{dispatch => Dispatch}}
     ),
+    % Start ENet
+    Options = [{peer_limit, ?PEER_LIMIT}, {channel_limit, ?CHANNEL_LIMIT}],
+    Handler = {ow_enet, start, []},
+    enet:start_host(?ENET_PORT, Handler, Options),
+    % Start the OW supervisor
     ow_sup:start_link().
 
 stop(_State) ->
