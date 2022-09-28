@@ -115,7 +115,7 @@ func ws_connect(url: String, tls: bool):
 
 func enet_connect(ip: String, port: int):
 	print("[INFO] Connecting via ENet to ", ip)
-	var err = _enet_peer.create_client(ip, port, 1)
+	var _err = _enet_peer.create_client(ip, port, 1)
 	mode = transport_mode.ENET
 
 func send_message(payload, opcode):
