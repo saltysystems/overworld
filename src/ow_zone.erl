@@ -469,7 +469,9 @@ notify_players(MsgType, Msg, RPCs, Players) ->
                         EMod = ow_rpc:encoder(RPC),
                         OpCode = ow_rpc:opcode(RPC),
                         EncodedMsg = EMod:encode_msg(Msg, MsgType),
-                        Pid ! {self, zone_msg, [<<OpCode:16>>, EncodedMsg]}
+                        % TODO: to which process is self() referring?
+                        Pid !
+                            {self(), zone_msg, [<<OpCode:16>>, EncodedMsg]}
                 end
         end
     end,

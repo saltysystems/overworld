@@ -92,9 +92,9 @@ websocket_handle(Frame, State) ->
 %%      process comes into this handler process.
 %% @end
 %%--------------------------------------------------------------------------
-websocket_info({_Pid, zone_msg, Msg}, Session) ->
-    {reply, {binary, Msg}, Session};
-websocket_info({_Pid, broadcast, Msg}, Session) ->
+websocket_info({_Pid, Type, Msg}, Session) when
+    Type =:= 'broadcast'; Type =:= 'zone_msg'
+->
     {reply, {binary, Msg}, Session};
 websocket_info(Info, State) ->
     logger:debug("Got a message from another process: ~p", [Info]),

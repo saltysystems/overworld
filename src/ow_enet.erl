@@ -85,9 +85,10 @@ handle_info({enet, _Channel, {unsequenced, Group, Packet}}, State) ->
         Group, Packet
     ]),
     {noreply, State};
-handle_info({_From, broadcast, Msg}, State = #{channels := Channels}) ->
-    % Broadcast message from another process within Overworld
-
+handle_info({_From, Type, Msg}, State = #{channels := Channels}) when
+    Type =:= 'broadcast'; Type =:= 'zone_msg'
+->
+    % Handle a message from another overworld process
     % TODO: Thread through channel
     ChannelPID = maps:get(0, Channels),
     %       selection
