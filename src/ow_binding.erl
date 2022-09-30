@@ -528,7 +528,8 @@ parameter_body([#{name := Name, occurrence := Occurrence} | T], Acc) ->
             repeated ->
                 % If it's repeated type, we need to add instead of set
                 ?TAB ++ "for item in " ++ atom_to_list(Name) ++ ":\n" ++
-                ?TAB ++ ?TAB ++ "m.add_" ++ atom_to_list(Name) ++ "(item)\n";
+                    ?TAB ++ ?TAB ++ "m.add_" ++ atom_to_list(Name) ++
+                    "(item)\n";
             _ ->
                 ?TAB ++ "m.set_" ++ atom_to_list(Name) ++ "(" ++
                     atom_to_list(Name) ++ ")\n"
@@ -576,7 +577,7 @@ fields_to_str([{N, T, O} | Tail], "") ->
                 % If the parameter is optional, set the parameter to =Null and use no typing
                 case T of
                     string ->
-                        Name ++ "= ''";
+                        Name ++ " = ''";
                     _ ->
                         Name ++ " = null"
                 end
