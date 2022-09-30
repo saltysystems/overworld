@@ -22,9 +22,6 @@
     status/1
 ]).
 
-% helper functions
--export([is_player/2]).
-
 % gen_server callbacks
 -export([
     init/1,
@@ -78,7 +75,8 @@
 -record(player, {
     id :: integer(),
     pid :: pid() | undefined,
-    serializer :: ow_session:serializer()
+    serializer :: ow_session:serializer(),
+    info :: term()
 }).
 -type player() :: #player{}.
 
@@ -264,9 +262,21 @@ stop(ServerRef, Reason, Timeout) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% public helper functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--spec is_player(session_id(), player_list()) -> boolean().
-is_player(ID, PlayerList) ->
-    lists:keymember(ID, #player.id, PlayerList).
+%%%
+
+% TBD if this is useful
+%-spec get_player_info(session_id(), player_list()) -> term().
+%get_player_info(ID, PlayerList) ->
+%    % We assume it will work because ow_zone is supplying the source of truth
+%    % player list
+%    Player = lists:keyfind(ID, #player.id, PlayerList),
+%    Player#player.info.
+%
+%-spec set_player_info(term(), session_id(), player_list()) -> player_list().
+%set_player_info(Info, ID, PlayerList) ->
+%    Player = lists:keyfind(ID, #player.id, PlayerList),
+%    PlayerNew = Player#player{info=Info},
+%    lists:keyreplace(ID, #player.id, PlayerList, PlayerNew).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% public behavior API
@@ -477,6 +487,11 @@ notify_players(MsgType, Msg, RPCs, Players) ->
     end,
     lists:foreach(Send, Players).
 
+decode_msg(_MsgType, <<>>, _RPCs, _Session) ->
+    % Suppose you have a message that is just a repeated type.
+    % If the number of entries is 0, you just get a <<>> back after stripping
+    % off the opcode. So we return an empty list here.
+    [];
 decode_msg(MsgType, Msg, RPCs, Session) ->
     Serializer = ow_session:get_serializer(Session),
     case Serializer of
@@ -618,3 +633,7 @@ actually_rpc(Type, Msg, Session, St0) ->
     St1 = St0#state{cb_data = CbData1},
     handle_notify(Notify, St1),
     {Session1, St1}.
+
+-spec is_player(session_id(), player_list()) -> boolean().
+is_player(ID, PlayerList) ->
+    lists:keymember(ID, #player.id, PlayerList).
