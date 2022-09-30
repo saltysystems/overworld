@@ -82,7 +82,7 @@ pb_to_godot_type(Type) ->
         sfixed64 -> int;
         bool -> bool;
         string -> 'String';
-        bytes -> 'PoolByteArray';
+        bytes -> 'PackedByteArray';
         % Do the best you can.
         _Other -> void
     end.
