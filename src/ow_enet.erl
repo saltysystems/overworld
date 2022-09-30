@@ -15,15 +15,11 @@
 
 % api
 -export([
-    start/1,
-    stop/0
+    start/1
 ]).
 
 start(PeerInfo) ->
-    gen_server:start_link({local, ?SERVER}, ?MODULE, [PeerInfo], []).
-
-stop() ->
-    gen_server:stop(?SERVER).
+    gen_server:start_link(?MODULE, [PeerInfo], []).
 
 % callbacks
 
