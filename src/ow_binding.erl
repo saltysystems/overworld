@@ -568,7 +568,12 @@ fields_to_str([{N, T, O} | Tail], "") ->
                 Name ++ ": Array";
             optional ->
                 % If the parameter is optional, set the parameter to =Null and use no typing
-                Name ++ " = null"
+                case T of
+                    string ->
+                        Name ++ "= ''";
+                    _ ->
+                        Name ++ " = null"
+                end
         end,
     fields_to_str(Tail, Acc1);
 fields_to_str([{N, T, O} | Tail], Acc) ->
