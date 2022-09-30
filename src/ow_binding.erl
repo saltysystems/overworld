@@ -67,9 +67,11 @@ get_template(Version) ->
     ).
 
 pb_to_godot_type(Type) ->
+    % https://docs.godotengine.org/en/latest/tutorials/scripting/gdscript/gdscript_basics.html
+    % All ints are internally handled as int64_t in GDScript (2.0)
     case Type of
-        double -> real;
-        float -> real;
+        double -> float;
+        float -> float;
         int32 -> int;
         int64 -> int;
         uint32 -> int;
@@ -517,12 +519,16 @@ parameter_body([#{name := Name, type := {msg, SubMsg}} | T], Acc) ->
     parameter_body(T, B ++ Acc);
 parameter_body([#{name := Name, occurrence := Occurrence} | T], Acc) ->
     B =
-        % If it's null, don't set it because the encoder can't handle nulls
         case Occurrence of
             optional ->
+                % If it's null, don't set it because the encoder can't handle nulls
                 ?TAB ++ "if " ++ atom_to_list(Name) ++ ":\n" ++ ?TAB ++
                     ?TAB ++ "m.set_" ++ atom_to_list(Name) ++ "(" ++
                     atom_to_list(Name) ++ ")\n";
+            repeated ->
+                % If it's repeated type, we need to add instead of set
+                ?TAB ++ "for item in " ++ atom_to_list(Name) ++ ":\n" ++
+                ?TAB ++ ?TAB ++ "m.add_" ++ atom_to_list(Name) ++ "(item)\n";
             _ ->
                 ?TAB ++ "m.set_" ++ atom_to_list(Name) ++ "(" ++
                     atom_to_list(Name) ++ ")\n"
