@@ -1,13 +1,11 @@
 extends Node
 
-class_name OverworldClient
-
 {{#preloads}} 
 {{.}}
 {{/preloads}} 
 
 var _ws_client = WebSocketClient.new()
-var _enet_peer = EnetMultiplayerPeer.new()
+var _enet_peer = ENetMultiplayerPeer.new()
 
 @export var session: Dictionary
 

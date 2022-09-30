@@ -338,7 +338,7 @@ next_signal(MsgFromServer, Encoder, St0) ->
     F =
         "(" ++ untyped_fields_to_str(field_info({Encoder, MsgFromServer})) ++
             ")",
-    Signal = "signal " ++ atom_to_list(MsgFromServer) ++ F,
+    Signal = "signal server_" ++ atom_to_list(MsgFromServer) ++ F,
     [Signal | St0].
 
 generate_opcodes(Ops, St0) ->
@@ -366,7 +366,7 @@ generate_router([OpInfo | Rest], Routes, St0) ->
     OpName = opcode_name_string(OpInfo),
     Op =
         "OpCode." ++ string:to_upper(OpName) ++ ":\n" ++
-            ?TAB(3) ++ "server_" ++ OpName ++
+            ?TAB(3) ++ "_server_" ++ OpName ++
             "(payload)",
     generate_router(Rest, Routes, [Op | St0]).
 
@@ -386,7 +386,7 @@ write_function(undefined, ClientCall, _Encoder, St0) ->
     % the message router expects one.
     ClientCallStr = atom_to_list(ClientCall),
     Op =
-        "func " ++ "server_" ++ ClientCallStr ++ "(_packet):\n" ++
+        "func " ++ "_server_" ++ ClientCallStr ++ "(_packet):\n" ++
             ?TAB ++ "print('[WARN] Received a " ++
             ClientCallStr ++ " packet')\n" ++
             ?TAB ++ "return\n",
@@ -396,7 +396,7 @@ write_function(ProtoMsg, ClientCall, Encoder, St0) ->
     ClientCallStr = atom_to_list(ClientCall),
     ProtoMsgStr = atom_to_list(ProtoMsg),
     Op =
-        "func " ++ "server_" ++ ClientCallStr ++ "(packet):\n" ++
+        "func " ++ "_server_" ++ ClientCallStr ++ "(packet):\n" ++
             ?TAB ++ "if debug:\n" ++
             ?TAB(2) ++ "print('[DEBUG] Processing a " ++ ClientCallStr ++
             " packet')\n" ++
@@ -410,7 +410,7 @@ write_function(ProtoMsg, ClientCall, Encoder, St0) ->
             ?TAB(2) ++ "return\n",
     Vars = unmarshall_var({Encoder, ProtoMsg}),
     Signal =
-        ?TAB ++ "emit_signal('" ++ ProtoMsgStr ++ "'," ++
+        ?TAB ++ "emit_signal('server_" ++ ProtoMsgStr ++ "'," ++
             dict_fields_to_str(field_info({Encoder, ProtoMsg})) ++
             "\)\n\n",
     [Op ++ Vars ++ Signal | St0].
@@ -466,7 +466,7 @@ generate_marshall(
                     undefined ->
                         % define an empty message for ping
                         "func " ++ FunStr ++ "():\n" ++
-                            ?TAB ++ "send_message([], OpCode." ++
+                            ?TAB ++ "_send_message([], OpCode." ++
                             string:to_upper(FunStr) ++ ")\n" ++
                             ?TAB ++ "if debug:\n" ++
                             ?TAB(2) ++ "print('[INFO] Sent a " ++
@@ -492,7 +492,7 @@ generate_marshall(
                             set_new_parameters(ProtoMsg, Encoder) ++
                             %set_parameters(Fields, Encoder) ++
                             ?TAB ++ "var payload = m.to_bytes()\n" ++
-                            ?TAB ++ "send_message(payload, OpCode." ++
+                            ?TAB ++ "_send_message(payload, OpCode." ++
                             string:to_upper(FunStr) ++
                             ")\n" ++
                             ?TAB ++ "if debug:\n" ++
