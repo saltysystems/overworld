@@ -533,7 +533,7 @@ add_and_notify(Session0, St0, Status, CbMod, CbData1, Notify) ->
 rm_and_notify(Session0, St0, Status, CbData1, Notify) ->
     % TODO: This needs some significant thought. In a single zone case - it
     % makes sense to just delete the user from the player registry. In the
-    % multi-zone case this may not make sense. 
+    % multi-zone case this may not make sense.
     % I think this code needs to be a bit more flexible.
     Session1 =
         case Status of
@@ -585,9 +585,9 @@ actually_rpc(Type, Msg, Session, St0) ->
                 ID = ow_session:get_id(S1),
                 update_player(PlayerInfo, ID),
                 S1;
-            {ok, S1} -> 
+            {ok, S1} ->
                 S1;
-            _ -> 
+            _ ->
                 Session
         end,
     % Send any messages as needed - called for side effects
