@@ -566,7 +566,7 @@ actually_rpc(Type, Msg, Session, St0) ->
             true ->
                 CbMod:handle_rpc(Type, DecodedMsg, Session, CbData);
             false ->
-                {[], ok, CbData}
+                {noreply, ok, CbData}
         end,
     Session1 =
         case Status of
