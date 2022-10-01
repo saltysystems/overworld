@@ -94,7 +94,7 @@
     Session :: session(),
     State :: term(),
     Result :: {Response, Status, State},
-    Status :: ok | {ok, Session},
+    Status :: atom() | {ok, Session},
     Response :: ow_zone_resp().
 -optional_callbacks([handle_join/2]).
 
@@ -103,7 +103,7 @@
     Session :: session(),
     State :: term(),
     Result :: {Response, Status, State},
-    Status :: ok | {ok, Session},
+    Status :: atom() | {ok, Session},
     Response :: ow_zone_resp().
 -optional_callbacks([handle_join/3]).
 
@@ -111,7 +111,7 @@
     Session :: session(),
     State :: term(),
     Result :: {Response, Status, State},
-    Status :: ok | {ok, Session},
+    Status :: atom() | {ok, Session},
     Response :: ow_zone_resp().
 -optional_callbacks([handle_part/2]).
 
@@ -120,7 +120,7 @@
     Session :: session(),
     State :: term(),
     Result :: {Response, Status, State},
-    Status :: ok | {ok, Session},
+    Status :: atom() | {ok, Session},
     Response :: ow_zone_resp().
 -optional_callbacks([handle_part/3]).
 
@@ -130,7 +130,7 @@
     Session :: session(),
     State :: term(),
     Result :: {Response, Status, State},
-    Status :: ok | {ok, Session},
+    Status :: atom() | {ok, Session},
     Response :: ow_zone_resp().
 
 -callback handle_tick(TickRate, State) -> Result when
@@ -566,7 +566,7 @@ actually_rpc(Type, Msg, Session, St0) ->
             true ->
                 CbMod:handle_rpc(Type, DecodedMsg, Session, CbData);
             false ->
-                {ok, [], CbData}
+                {[], ok, CbData}
         end,
     Session1 =
         case Status of
