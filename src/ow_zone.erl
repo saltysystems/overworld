@@ -343,7 +343,7 @@ handle_call(?TAG_I({Action, Session}), _From, St0) ->
     {reply, {ok, Session1}, St1};
 handle_call(?TAG_I({who}), _From, St0) ->
     Players = ow_player_reg:list(self()),
-    IDs = [ ow_player_reg:get_id(P) || P <- Players ],
+    IDs = [ow_player_reg:get_id(P) || P <- Players],
     {reply, IDs, St0};
 handle_call(?TAG_I({status}), _From, St0) ->
     CbMod = St0#state.cb_mod,
@@ -382,7 +382,7 @@ code_change(_OldVsn, St0, _Extra) -> {ok, St0}.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 tick(St0 = #state{cb_mod = CbMod, cb_data = CbData0}) ->
-    Config = #{ tick_rate => St0#state.tick_rate },
+    Config = #{tick_rate => St0#state.tick_rate},
     {Notify, CbData1} = CbMod:handle_tick(Config, CbData0),
     St1 = St0#state{cb_data = CbData1},
     handle_notify(Notify, St1),
@@ -397,11 +397,11 @@ rpc_info(CbMod) ->
             []
     end.
 
-handle_notify({{'@', IDs}, {MsgType, Msg}}, #state{ rpcs = RPCs }) ->
+handle_notify({{'@', IDs}, {MsgType, Msg}}, #state{rpcs = RPCs}) ->
     % SEND MESSAGE: Filter just for the players we want to notify
-    Players = [ ow_player_reg:get(ID) || ID <- IDs ],
+    Players = [ow_player_reg:get(ID) || ID <- IDs],
     case Players of
-        [] -> 
+        [] ->
             % Nothing to send
             ok;
         Players ->
@@ -411,7 +411,7 @@ handle_notify({'@zone', {MsgType, Msg}}, #state{rpcs = RPCs}) ->
     % SEND MESSAGE: Send everyone the message
     Players = ow_player_reg:list(self()),
     case Players of
-        [] -> 
+        [] ->
             % Nothing to send
             ok;
         Players ->
