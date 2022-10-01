@@ -581,4 +581,5 @@ actually_rpc(Type, Msg, Session, St0) ->
 -spec is_player(session_id()) -> boolean().
 is_player(ID) ->
     PlayerList = ow_player_reg:list(self()),
-    lists:member(ID, PlayerList).
+    PIDs = [ow_player_reg:get_id(P) || P <- PlayerList],
+    lists:member(ID, PIDs).
