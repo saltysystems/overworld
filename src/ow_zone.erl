@@ -49,7 +49,6 @@
 -type from() :: gen_server:from().
 -type session() :: ow_session:session().
 -type session_id() :: integer().
--type player_list() :: [] | [player(), ...].
 -type zone_msg() :: {atom(), map()}.
 -type ow_zone_resp() ::
     noreply
@@ -65,20 +64,11 @@
 -record(state, {
     cb_mod :: module(),
     cb_data :: term(),
-    players = [] :: player_list(),
     tick_timer :: undefined | reference(),
     tick_rate :: pos_integer(),
     require_auth :: boolean(),
     rpcs :: ow_rpcs:callbacks()
 }).
-
--record(player, {
-    id :: integer(),
-    pid :: pid() | undefined,
-    serializer :: ow_session:serializer(),
-    info :: term()
-}).
--type player() :: #player{}.
 
 -define(DEFAULT_CONFIG, #{
     tick_rate => 30,
@@ -100,56 +90,50 @@
     InitialData :: term(),
     Reason :: term().
 
--callback handle_join(Session, Players, State) -> Result when
+-callback handle_join(Session, State) -> Result when
     Session :: session(),
-    Players :: player_list(),
     State :: term(),
     Result :: {Response, Status, State},
-    Status :: ok | {ok, Session},
+    Status :: atom() | {ok, Session},
+    Response :: ow_zone_resp().
+-optional_callbacks([handle_join/2]).
+
+-callback handle_join(Msg, Session, State) -> Result when
+    Msg :: term(),
+    Session :: session(),
+    State :: term(),
+    Result :: {Response, Status, State},
+    Status :: atom() | {ok, Session},
     Response :: ow_zone_resp().
 -optional_callbacks([handle_join/3]).
 
--callback handle_join(Msg, Session, Players, State) -> Result when
+-callback handle_part(Session, State) -> Result when
+    Session :: session(),
+    State :: term(),
+    Result :: {Response, Status, State},
+    Status :: atom() | {ok, Session},
+    Response :: ow_zone_resp().
+-optional_callbacks([handle_part/2]).
+
+-callback handle_part(Msg, Session, State) -> Result when
     Msg :: term(),
     Session :: session(),
-    Players :: player_list(),
     State :: term(),
     Result :: {Response, Status, State},
-    Status :: ok | {ok, Session},
-    Response :: ow_zone_resp().
--optional_callbacks([handle_join/4]).
-
--callback handle_part(Session, Players, State) -> Result when
-    Session :: session(),
-    Players :: player_list(),
-    State :: term(),
-    Result :: {Response, Status, State},
-    Status :: ok | {ok, Session},
+    Status :: atom() | {ok, Session},
     Response :: ow_zone_resp().
 -optional_callbacks([handle_part/3]).
 
--callback handle_part(Msg, Session, Players, State) -> Result when
-    Msg :: term(),
-    Session :: session(),
-    Players :: player_list(),
-    State :: term(),
-    Result :: {Response, Status, State},
-    Status :: ok | {ok, Session},
-    Response :: ow_zone_resp().
--optional_callbacks([handle_part/4]).
-
--callback handle_rpc(Type, Msg, Session, Players, State) -> Result when
+-callback handle_rpc(Type, Msg, Session, State) -> Result when
     Type :: atom(),
     Msg :: term(),
     Session :: session(),
-    Players :: player_list(),
     State :: term(),
     Result :: {Response, Status, State},
-    Status :: ok | {ok, Session},
+    Status :: atom() | {ok, Session},
     Response :: ow_zone_resp().
 
--callback handle_tick(Players, TickRate, State) -> Result when
-    Players :: player_list(),
+-callback handle_tick(TickRate, State) -> Result when
     TickRate :: pos_integer(),
     State :: term(),
     Result :: {Response, State},
@@ -260,25 +244,6 @@ stop(ServerRef, Reason, Timeout) ->
     gen_server:stop(ServerRef, Reason, Timeout).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% public helper functions
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%
-
-% TBD if this is useful
-%-spec get_player_info(session_id(), player_list()) -> term().
-%get_player_info(ID, PlayerList) ->
-%    % We assume it will work because ow_zone is supplying the source of truth
-%    % player list
-%    Player = lists:keyfind(ID, #player.id, PlayerList),
-%    Player#player.info.
-%
-%-spec set_player_info(term(), session_id(), player_list()) -> player_list().
-%set_player_info(Info, ID, PlayerList) ->
-%    Player = lists:keyfind(ID, #player.id, PlayerList),
-%    PlayerNew = Player#player{info=Info},
-%    lists:keyreplace(ID, #player.id, PlayerList, PlayerNew).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% public behavior API
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -361,8 +326,8 @@ handle_call(?TAG_I({Action, Session}), _From, St0) ->
     {Session1, St1} = maybe_auth_do(Action, Session, St0),
     {reply, {ok, Session1}, St1};
 handle_call(?TAG_I({who}), _From, St0) ->
-    Players = St0#state.players,
-    IDs = [X#player.id || X <- Players],
+    Players = ow_player_reg:list(self()),
+    IDs = [ow_player_reg:get_id(P) || P <- Players],
     {reply, IDs, St0};
 handle_call(?TAG_I({status}), _From, St0) ->
     CbMod = St0#state.cb_mod,
@@ -400,16 +365,9 @@ code_change(_OldVsn, St0, _Extra) -> {ok, St0}.
 %%% internal functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-tick(
-    St0 = #state{
-        cb_mod = CbMod,
-        cb_data = CbData0,
-        players = Players,
-        tick_rate = TickRate
-    }
-) ->
-    PlayerIDs = [X#player.id || X <- Players],
-    {Notify, CbData1} = CbMod:handle_tick(PlayerIDs, TickRate, CbData0),
+tick(St0 = #state{cb_mod = CbMod, cb_data = CbData0}) ->
+    Config = #{tick_rate => St0#state.tick_rate},
+    {Notify, CbData1} = CbMod:handle_tick(Config, CbData0),
     St1 = St0#state{cb_data = CbData1},
     handle_notify(Notify, St1),
     St1.
@@ -423,55 +381,54 @@ rpc_info(CbMod) ->
             []
     end.
 
-handle_notify({{'@', _}, _}, #state{players = []}) ->
-    % NO MESSAGE: The last player has left, nobody left to notify but don't
-    %             crash.
-    ok;
-handle_notify({{'@', IDs}, {MsgType, Msg}}, #state{
-    players = Players, rpcs = RPCs
-}) ->
+handle_notify({{'@', IDs}, {MsgType, Msg}}, #state{rpcs = RPCs}) ->
     % SEND MESSAGE: Filter just for the players we want to notify
-    P = [lists:keyfind(ID, #player.id, Players) || ID <- IDs],
-    notify_players(MsgType, Msg, RPCs, P);
-handle_notify({'@zone', _}, #state{players = []}) ->
-    % NO MESSAGE: There are messages to send, but no one left to receive them,
-    %             so do nothing.
-    ok;
-handle_notify({'@zone', {MsgType, Msg}}, #state{
-    players = Players, rpcs = RPCs
-}) ->
+    Players = [ow_player_reg:get(ID) || ID <- IDs],
+    case Players of
+        [] ->
+            % Nothing to send
+            ok;
+        Players ->
+            notify_players(MsgType, Msg, RPCs, Players)
+    end;
+handle_notify({'@zone', {MsgType, Msg}}, #state{rpcs = RPCs}) ->
     % SEND MESSAGE: Send everyone the message
-    notify_players(MsgType, Msg, RPCs, Players);
+    Players = ow_player_reg:list(self()),
+    case Players of
+        [] ->
+            % Nothing to send
+            ok;
+        Players ->
+            notify_players(MsgType, Msg, RPCs, Players)
+    end;
 handle_notify(noreply, _State) ->
     % NO MESSAGE
     ok.
 
-player_add(Session, St0) ->
+player_add(Session) ->
     % Add the player to the list of players.
-    % TODO: This may end up inefficient later, if we filter the list every
-    % time we want to send messages depending on the serializer.
-    % Profile it and readjust ow_zone as needed.
     ID = ow_session:get_id(Session),
     PID = ow_session:get_pid(Session),
     Serializer = ow_session:get_serializer(Session),
-    Players = St0#state.players,
-    Player = #player{id = ID, pid = PID, serializer = Serializer},
-    St0#state{players = lists:keystore(ID, #player.id, Players, Player)}.
+    % Force a crash via failed match if player registration doesn't go well
+    case ow_player_reg:new(ID, PID, Serializer, self()) of
+        ok -> ok
+    end.
 
-player_rm(Session, St0) ->
-    Players0 = St0#state.players,
+player_rm(Session) ->
     ID = ow_session:get_id(Session),
-    Players1 = lists:keydelete(ID, #player.id, Players0),
-    St0#state{players = Players1}.
+    ow_player_reg:delete(ID).
 
 notify_players(MsgType, Msg, RPCs, Players) ->
     Send = fun(Player) ->
         % causes a crash if the pid doesn't exist
-        case Player#player.pid of
+        PID = ow_player_reg:get_pid(Player),
+        Serializer = ow_player_reg:get_serializer(Player),
+        case PID of
             undefined ->
                 ok;
             Pid ->
-                case Player#player.serializer of
+                case Serializer of
                     undefined ->
                         Pid ! {self(), zone_msg, {MsgType, Msg}};
                     protobuf ->
@@ -531,11 +488,8 @@ maybe_auth_do(Action, Session, St0) ->
 actually_do(Action, Session, St0) ->
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
-    Players = St0#state.players,
     CbFun = list_to_existing_atom("handle_" ++ atom_to_list(Action)),
-    {Notify, Status, CbData1} = CbMod:CbFun(
-        Session, Players, CbData0
-    ),
+    {Notify, Status, CbData1} = CbMod:CbFun(Session, CbData0),
     case Action of
         join ->
             add_and_notify(Session, St0, Status, CbMod, CbData1, Notify);
@@ -547,11 +501,8 @@ actually_do(Action, Msg, Session, St0) ->
     DecodedMsg = decode_msg(Action, Msg, RPCs, Session),
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
-    Players = St0#state.players,
     CbFun = list_to_existing_atom("handle_" ++ atom_to_list(Action)),
-    {Notify, Status, CbData1} = CbMod:CbFun(
-        DecodedMsg, Session, Players, CbData0
-    ),
+    {Notify, Status, CbData1} = CbMod:CbFun(DecodedMsg, Session, CbData0),
     case Action of
         join ->
             add_and_notify(Session, St0, Status, CbMod, CbData1, Notify);
@@ -560,39 +511,35 @@ actually_do(Action, Msg, Session, St0) ->
     end.
 
 add_and_notify(Session0, St0, Status, CbMod, CbData1, Notify) ->
-    {Session1, St1} =
+    Session1 =
         case Status of
-            ok ->
-                % No session update by this server, continue with existing one
-                {Session0, player_add(Session0, St0)};
             {ok, S1} ->
-                {S1, player_add(S1, St0)};
+                player_add(S1),
+                S1;
             _ ->
-                {Session0, St0}
+                Session0
         end,
-    St2 = St1#state{cb_data = CbData1},
-    handle_notify(Notify, St2),
+    St1 = St0#state{cb_data = CbData1},
+    handle_notify(Notify, St1),
     % Set the player's termination callback
     Session2 = ow_session:set_termination_callback(
         {CbMod, part, 1}, Session1
     ),
-    {Session2, St2}.
+    {Session2, St1}.
 
 rm_and_notify(Session0, St0, Status, CbData1, Notify) ->
-    {Session1, St1} =
+    Session1 =
         case Status of
-            ok ->
-                % Remove the player from our list
-                {Session0, player_rm(Session0, St0)};
             {ok, S1} ->
-                {S1, player_rm(S1, St0)};
+                player_rm(S1),
+                S1;
             _ ->
-                {Session0, St0}
+                Session0
         end,
     % Send any messages as needed - called for side effects
-    St2 = St1#state{cb_data = CbData1},
-    handle_notify(Notify, St2),
-    {Session1, St2}.
+    St1 = St0#state{cb_data = CbData1},
+    handle_notify(Notify, St1),
+    {Session1, St1}.
 
 maybe_auth_rpc(Type, Msg, Session, St0 = #state{require_auth = RA}) when
     RA =:= true
@@ -610,30 +557,29 @@ actually_rpc(Type, Msg, Session, St0) ->
     CbMod = St0#state.cb_mod,
     CbData = St0#state.cb_data,
     RPCs = St0#state.rpcs,
-    Players = St0#state.players,
     DecodedMsg = decode_msg(Type, Msg, RPCs, Session),
     SessionID = ow_session:get_id(Session),
     % Overworld will confirm that the player is actually part of the zone to
     % which they are sending RPCs
     {Notify, Status, CbData1} =
-        case is_player(SessionID, Players) of
+        case is_player(SessionID) of
             true ->
-                CbMod:handle_rpc(
-                    Type, DecodedMsg, Session, Players, CbData
-                );
+                CbMod:handle_rpc(Type, DecodedMsg, Session, CbData);
             false ->
-                {ok, [], CbData}
+                {noreply, ok, CbData}
         end,
     Session1 =
         case Status of
-            ok -> Session;
-            {ok, S1} -> S1
+            {ok, S1} -> S1;
+            _ -> Session
         end,
     % Send any messages as needed - called for side effects
     St1 = St0#state{cb_data = CbData1},
     handle_notify(Notify, St1),
     {Session1, St1}.
 
--spec is_player(session_id(), player_list()) -> boolean().
-is_player(ID, PlayerList) ->
-    lists:keymember(ID, #player.id, PlayerList).
+-spec is_player(session_id()) -> boolean().
+is_player(ID) ->
+    PlayerList = ow_player_reg:list(self()),
+    PIDs = [ow_player_reg:get_id(P) || P <- PlayerList],
+    lists:member(ID, PIDs).
