@@ -97,7 +97,7 @@
     Result :: {Response, Status, State},
     Status :: ok | {ok, Session},
     Response :: ow_zone_resp().
--optional_callbacks([handle_join/3]).
+-optional_callbacks([handle_join/2]).
 
 -callback handle_join(Msg, Session, State) -> Result when
     Msg :: term(),
@@ -106,7 +106,7 @@
     Result :: {Response, Status, State},
     Status :: ok | {ok, Session},
     Response :: ow_zone_resp().
--optional_callbacks([handle_join/4]).
+-optional_callbacks([handle_join/3]).
 
 -callback handle_part(Session, State) -> Result when
     Session :: session(),
@@ -114,7 +114,7 @@
     Result :: {Response, Status, State},
     Status :: ok | {ok, Session},
     Response :: ow_zone_resp().
--optional_callbacks([handle_part/3]).
+-optional_callbacks([handle_part/2]).
 
 -callback handle_part(Msg, Session, State) -> Result when
     Msg :: term(),
@@ -123,7 +123,7 @@
     Result :: {Response, Status, State},
     Status :: ok | {ok, Session},
     Response :: ow_zone_resp().
--optional_callbacks([handle_part/4]).
+-optional_callbacks([handle_part/3]).
 
 -callback handle_rpc(Type, Msg, Session, State) -> Result when
     Type :: atom(),
