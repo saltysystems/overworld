@@ -49,7 +49,6 @@
 -type from() :: gen_server:from().
 -type session() :: ow_session:session().
 -type session_id() :: integer().
--type player_list() :: [] | [ow_player_reg:player(), ...].
 -type zone_msg() :: {atom(), map()}.
 -type ow_zone_resp() ::
     noreply
