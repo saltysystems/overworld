@@ -586,8 +586,8 @@ actually_rpc(Type, Msg, Session, St0) ->
         end,
     Session1 =
         case Status of
-            ok -> Session;
-            {ok, S1} -> S1
+            {ok, S1} -> S1;
+            _ -> Session
         end,
     % Send any messages as needed - called for side effects
     St1 = St0#state{cb_data = CbData1},
