@@ -94,7 +94,7 @@ list(ZonePID) ->
 -spec get_id(player()) -> integer().
 get_id(Player) -> Player#player.id.
 
--spec get_pid(player()) -> integer().
+-spec get_pid(player()) -> pid().
 get_pid(Player) -> Player#player.pid.
 
 -spec set_pid(pid(), player()) -> player().
