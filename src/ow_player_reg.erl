@@ -16,6 +16,7 @@
 ]).
 % Helpers for the player() type
 -export([
+    get_id/1,
     get_pid/1,
     set_pid/2,
     get_serializer/1,
@@ -89,6 +90,9 @@ list(ZonePID) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Helper Functions                                                    %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+   
+-spec get_id(player()) -> integer().
+get_id(Player) -> Player#player.id.
 
 -spec get_pid(player()) -> integer().
 get_pid(Player) -> Player#player.pid.
