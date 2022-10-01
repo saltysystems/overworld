@@ -517,7 +517,7 @@ add_and_notify(Session0, St0, Status, CbMod, CbData1, Notify) ->
                 player_add(PlayerInfo, S1),
                 S1;
             {ok, S1} ->
-                player_add(undefined,S1),
+                player_add(undefined, S1),
                 S1;
             _ ->
                 Session0
@@ -531,14 +531,22 @@ add_and_notify(Session0, St0, Status, CbMod, CbData1, Notify) ->
     {Session2, St1}.
 
 rm_and_notify(Session0, St0, Status, CbData1, Notify) ->
+    % TODO: This needs some significant thought. In a single zone case - it
+    % makes sense to just delete the user from the player registry. In the
+    % multi-zone case this may not make sense. 
+    % I think this code needs to be a bit more flexible.
     Session1 =
         case Status of
+            {ok, S1, PlayerInfo} ->
+                ID = ow_session:get_id(S1),
+                update_player(PlayerInfo, ID),
+                S1;
             {ok, S1} ->
-                player_rm(S1),
                 S1;
             _ ->
                 Session0
         end,
+    player_rm(Session1),
     % Send any messages as needed - called for side effects
     St1 = St0#state{cb_data = CbData1},
     handle_notify(Notify, St1),
@@ -573,8 +581,14 @@ actually_rpc(Type, Msg, Session, St0) ->
         end,
     Session1 =
         case Status of
-            {ok, S1} -> S1;
-            _ -> Session
+            {ok, S1, PlayerInfo} ->
+                ID = ow_session:get_id(S1),
+                update_player(PlayerInfo, ID),
+                S1;
+            {ok, S1} -> 
+                S1;
+            _ -> 
+                Session
         end,
     % Send any messages as needed - called for side effects
     St1 = St0#state{cb_data = CbData1},
@@ -586,3 +600,9 @@ is_player(ID) ->
     PlayerList = ow_player_reg:list(self()),
     PIDs = [ow_player_reg:get_id(P) || P <- PlayerList],
     lists:member(ID, PIDs).
+
+-spec update_player(term(), session_id()) -> ok.
+update_player(PlayerInfo, ID) ->
+    P = ow_player_reg:get(ID),
+    P1 = ow_player_reg:set_info(PlayerInfo, P),
+    ow_player_reg:update(P1).
