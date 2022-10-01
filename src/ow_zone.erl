@@ -49,7 +49,7 @@
 -type from() :: gen_server:from().
 -type session() :: ow_session:session().
 -type session_id() :: integer().
--type player_list() :: [] | [player(), ...].
+-type player_list() :: [] | [ow_player_reg:player(), ...].
 -type zone_msg() :: {atom(), map()}.
 -type ow_zone_resp() ::
     noreply
@@ -65,20 +65,11 @@
 -record(state, {
     cb_mod :: module(),
     cb_data :: term(),
-    players = [] :: player_list(),
     tick_timer :: undefined | reference(),
     tick_rate :: pos_integer(),
     require_auth :: boolean(),
     rpcs :: ow_rpcs:callbacks()
 }).
-
--record(player, {
-    id :: integer(),
-    pid :: pid() | undefined,
-    serializer :: ow_session:serializer(),
-    info :: term()
-}).
--type player() :: #player{}.
 
 -define(DEFAULT_CONFIG, #{
     tick_rate => 30,
@@ -100,56 +91,50 @@
     InitialData :: term(),
     Reason :: term().
 
--callback handle_join(Session, Players, State) -> Result when
+-callback handle_join(Session, State) -> Result when
     Session :: session(),
-    Players :: player_list(),
     State :: term(),
     Result :: {Response, Status, State},
     Status :: ok | {ok, Session},
     Response :: ow_zone_resp().
 -optional_callbacks([handle_join/3]).
 
--callback handle_join(Msg, Session, Players, State) -> Result when
+-callback handle_join(Msg, Session, State) -> Result when
     Msg :: term(),
     Session :: session(),
-    Players :: player_list(),
     State :: term(),
     Result :: {Response, Status, State},
     Status :: ok | {ok, Session},
     Response :: ow_zone_resp().
 -optional_callbacks([handle_join/4]).
 
--callback handle_part(Session, Players, State) -> Result when
+-callback handle_part(Session, State) -> Result when
     Session :: session(),
-    Players :: player_list(),
     State :: term(),
     Result :: {Response, Status, State},
     Status :: ok | {ok, Session},
     Response :: ow_zone_resp().
 -optional_callbacks([handle_part/3]).
 
--callback handle_part(Msg, Session, Players, State) -> Result when
+-callback handle_part(Msg, Session, State) -> Result when
     Msg :: term(),
     Session :: session(),
-    Players :: player_list(),
     State :: term(),
     Result :: {Response, Status, State},
     Status :: ok | {ok, Session},
     Response :: ow_zone_resp().
 -optional_callbacks([handle_part/4]).
 
--callback handle_rpc(Type, Msg, Session, Players, State) -> Result when
+-callback handle_rpc(Type, Msg, Session, State) -> Result when
     Type :: atom(),
     Msg :: term(),
     Session :: session(),
-    Players :: player_list(),
     State :: term(),
     Result :: {Response, Status, State},
     Status :: ok | {ok, Session},
     Response :: ow_zone_resp().
 
--callback handle_tick(Players, TickRate, State) -> Result when
-    Players :: player_list(),
+-callback handle_tick(TickRate, State) -> Result when
     TickRate :: pos_integer(),
     State :: term(),
     Result :: {Response, State},
