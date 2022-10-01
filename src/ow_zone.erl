@@ -405,13 +405,13 @@ handle_notify(noreply, _State) ->
     % NO MESSAGE
     ok.
 
-player_add(Session) ->
+player_add(PlayerInfo, Session) ->
     % Add the player to the list of players.
     ID = ow_session:get_id(Session),
     PID = ow_session:get_pid(Session),
     Serializer = ow_session:get_serializer(Session),
     % Force a crash via failed match if player registration doesn't go well
-    case ow_player_reg:new(ID, PID, Serializer, self()) of
+    case ow_player_reg:new(ID, PID, Serializer, self(), PlayerInfo) of
         ok -> ok
     end.
 
@@ -513,8 +513,11 @@ actually_do(Action, Msg, Session, St0) ->
 add_and_notify(Session0, St0, Status, CbMod, CbData1, Notify) ->
     Session1 =
         case Status of
+            {ok, S1, PlayerInfo} ->
+                player_add(PlayerInfo, S1),
+                S1;
             {ok, S1} ->
-                player_add(S1),
+                player_add(undefined,S1),
                 S1;
             _ ->
                 Session0
