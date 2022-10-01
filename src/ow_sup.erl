@@ -46,6 +46,10 @@ init([]) ->
             start => {ow_script_sup, start_link, []}
         },
         #{
+            id => ow_player_reg,
+            start => {ow_player_reg, start_link, []}
+        },
+        #{
             id => ow_beacon,
             start => {ow_beacon, start, []}
         }
