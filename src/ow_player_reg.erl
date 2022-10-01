@@ -3,7 +3,9 @@
 
 -define(SERVER, ?MODULE).
 
-% Public interface
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Public interface                                                    %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -export([
     start_link/0,
     stop/0,
@@ -36,13 +38,17 @@
     code_change/3
 ]).
 
-% internal state
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Internal state                                                      %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% http://erlang.org/pipermail/erlang-questions/2009-February/041445.html
 -record(player, {
-    id :: integer(),
-    pid :: pid() | undefined,
-    serializer :: ow_session:serializer(),
-    zone :: pid() | atom(),
-    info :: term()
+    id :: integer() | '_',
+    pid :: pid() | undefined | '_',
+    serializer :: ow_session:serializer() | '_',
+    zone :: pid() | undefined | '_',
+    info :: term() | '_'
 }).
 -type player() :: #player{}.
 -export_type([player/0]).
@@ -83,7 +89,7 @@ update(Player) ->
 delete(SID) ->
     gen_server:call(?SERVER, {delete, SID}).
 
--spec list(pid()) -> [integer(), ...].
+-spec list(pid()) -> [player()].
 list(ZonePID) ->
     gen_server:call(?SERVER, {list, ZonePID}).
 
@@ -94,7 +100,7 @@ list(ZonePID) ->
 -spec get_id(player()) -> integer().
 get_id(Player) -> Player#player.id.
 
--spec get_pid(player()) -> pid().
+-spec get_pid(player()) -> pid() | undefined.
 get_pid(Player) -> Player#player.pid.
 
 -spec set_pid(pid(), player()) -> player().
