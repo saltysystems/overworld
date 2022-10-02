@@ -107,7 +107,7 @@ func _ready():
 	# Alternatively, you could check get_peer(1).get_available_packets() in a loop.
 	_ws_client.data_received.connect(_on_data)
 	# Automatically reply to beacons
-    server_session_beacon.connect(self._on_session_beacon)
+	server_session_beacon.connect(self._on_session_beacon)
 
 # Take the host and whether or not its a TLS conncetion
 func ws_connect(url: String, tls: bool):
