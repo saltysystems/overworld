@@ -17,7 +17,10 @@
     translate/2,
     is_collision/2,
     aabb/1,
-    test/0
+    test/0,
+    vector_map/1,
+    rect_to_maps/1,
+    rect_to_tuples/1
 ]).
 
 -type vector() :: {scalar(), scalar()}.
@@ -123,3 +126,20 @@ test() ->
         is_collision(A, C),
         is_collision(B, C)
     ].
+
+%----------------------------------------------------------------------
+% Network Encoding/Decoding Functions
+%----------------------------------------------------------------------
+
+-spec rect_to_maps([vector()]) -> [map()].
+rect_to_maps(Vertices) ->
+    [ vector_map(Vector) || Vector <- Vertices].
+
+-spec rect_to_tuples([map()]) -> [vector()].
+rect_to_tuples(Vertices) ->
+    [ {X,Y} || #{ x := X, y := Y} <- Vertices ].
+
+-spec vector_map(vector()) -> map().
+vector_map({X, Y}) ->
+    #{x => X, y => Y}.
+
