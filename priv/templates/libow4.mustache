@@ -33,7 +33,8 @@ enum transport_mode {
 #  Signals
 ###########################################################################
 
-signal connection(status)
+signal server_connected()
+signal server_disconnected()
 {{#signals}} 
 {{.}}
 {{/signals}}
@@ -145,7 +146,11 @@ func _process(_delta):
 			_ws_client.poll()
 	if mode == transport_mode.ENET:
 		var p = _enet_peer.host.service() # Check for packets
-		if p[0] == ENetConnection.EVENT_RECEIVE:
+		if p[0] == ENetConnection.EVENT_CONNECT:
+			emit_signal("server_connected")
+		elif p[0] == ENetConnection.EVENT_DISCONNECT:
+			emit_signal("server_disconnected")
+		elif p[0] == ENetConnection.EVENT_RECEIVE:
 			var packet = p[1].get_packet()
 			route(packet)
 
