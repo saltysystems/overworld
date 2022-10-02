@@ -522,7 +522,11 @@ parameter_body([#{name := Name, occurrence := Occurrence} | T], Acc) ->
         case Occurrence of
             optional ->
                 % If it's null, don't set it because the encoder can't handle nulls
-                ?TAB ++ "if " ++ atom_to_list(Name) ++ ":\n" ++ ?TAB ++
+                % TODO: Nulls throw an error per
+                %       https://github.com/godotengine/godot/issues/56217
+                ?TAB ++ atom_to_list(Name) ++ "=" ++ atom_to_list(Name) ++
+                    "\n" ++
+                    ?TAB ++ "if " ++ atom_to_list(Name) ++ ":\n" ++ ?TAB ++
                     ?TAB ++ "m.set_" ++ atom_to_list(Name) ++ "(" ++
                     atom_to_list(Name) ++ ")\n";
             repeated ->
