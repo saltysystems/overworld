@@ -44,8 +44,8 @@ length_squared({X, Y}) ->
     math:pow(X, 2) + math:pow(Y, 2).
 
 -spec scale(vector(), scalar()) -> vector().
-scale({X,Y}, Scalar) ->
-    {X*Scalar, Y*Scalar}.
+scale({X, Y}, Scalar) ->
+    {X * Scalar, Y * Scalar}.
 
 -spec dot(vector(), vector()) -> scalar().
 dot({X1, Y1}, {X2, Y2}) ->
