@@ -7,6 +7,7 @@
     add/2,
     rotate/2,
     length_squared/1,
+    scale/2,
     dot/2,
     normalize/1,
     orthogonal/1,
@@ -41,6 +42,10 @@ rotate({X, Y}, RotRad) ->
 -spec length_squared(vector()) -> float().
 length_squared({X, Y}) ->
     math:pow(X, 2) + math:pow(Y, 2).
+
+-spec scale(vector(), scalar()) -> vector().
+scale({X,Y}, Scalar) ->
+    {X*Scalar, Y*Scalar}.
 
 -spec dot(vector(), vector()) -> scalar().
 dot({X1, Y1}, {X2, Y2}) ->
@@ -133,13 +138,12 @@ test() ->
 
 -spec rect_to_maps([vector()]) -> [map()].
 rect_to_maps(Vertices) ->
-    [ vector_map(Vector) || Vector <- Vertices].
+    [vector_map(Vector) || Vector <- Vertices].
 
 -spec rect_to_tuples([map()]) -> [vector()].
 rect_to_tuples(Vertices) ->
-    [ {X,Y} || #{ x := X, y := Y} <- Vertices ].
+    [{X, Y} || #{x := X, y := Y} <- Vertices].
 
 -spec vector_map(vector()) -> map().
 vector_map({X, Y}) ->
     #{x => X, y => Y}.
-
