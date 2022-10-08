@@ -72,7 +72,7 @@
 
 -define(DEFAULT_CONFIG, #{
     % ticks/sec
-    tick_rate => 40,
+    tick_rate => 20,
     require_auth => false
 }).
 
