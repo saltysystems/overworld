@@ -32,6 +32,8 @@ init([PeerInfo]) ->
     S3 = ow_session:set_serializer(protobuf, S2),
     % Register this proces with gproc
     gproc:reg({p, l, client_session}),
+    % Trap exits from the enet child processes
+    process_flag(trap_exit, true),
     % Add a new key to the peerInfo map containing Overworld session
     % information
     {ok, PeerInfo#{session => S3}}.
@@ -44,12 +46,7 @@ handle_info({enet, disconnected, remote, _Pid, _When}, State) ->
     #{session := Session, ip := RawIP} = State,
     IP = inet:ntoa(RawIP),
     logger:info("ENet session ~p disconnected", [IP]),
-    case ow_session:get_termination_callback(Session) of
-        {M, F, 1} ->
-            erlang:apply(M, F, [Session]);
-        _ ->
-            ok
-    end,
+    cleanup_session(Session),
     {stop, normal, State};
 handle_info(
     {enet, Channel, {reliable, Msg}},
@@ -92,5 +89,17 @@ handle_info({_From, Type, Msg}, State = #{channels := Channels}) when
     enet:send_reliable(ChannelPID, FlatMsg),
     {noreply, State}.
 
-terminate(_Reason, _State) -> ok.
+terminate(_Reason, _State = #{session := Session}) ->
+    % We caught an error, call the cleanup trigger
+    cleanup_session(Session),
+    ok.
+
 code_change(_OldVsn, State, _Extra) -> {ok, State}.
+
+cleanup_session(Session) ->
+    case ow_session:get_termination_callback(Session) of
+        {M, F, 1} ->
+            erlang:apply(M, F, [Session]);
+        _ ->
+            ok
+    end.
