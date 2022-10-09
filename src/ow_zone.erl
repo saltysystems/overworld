@@ -65,14 +65,14 @@
 -record(state, {
     cb_mod :: module(),
     cb_data :: term(),
-    tick_timer :: undefined | reference(),
-    tick_rate :: pos_integer(),
+    tick_ms :: pos_integer(),
     require_auth :: boolean(),
     rpcs :: ow_rpcs:callbacks()
 }).
 
 -define(DEFAULT_CONFIG, #{
-    tick_rate => 30,
+    % milliseconds between ticks
+    tick_ms => 20,
     require_auth => false
 }).
 
@@ -134,8 +134,8 @@
     Status :: atom() | {ok, Session},
     Response :: ow_zone_resp().
 
--callback handle_tick(TickRate, State) -> Result when
-    TickRate :: pos_integer(),
+-callback handle_tick(TickMs, State) -> Result when
+    TickMs :: pos_integer(),
     State :: term(),
     Result :: {Response, State},
     Response :: ow_zone_resp().
@@ -300,10 +300,11 @@ init(_CbMod, ignore) ->
 init(_CbMod, Stop) ->
     Stop.
 
-initialize_state(CbMod, CbData, Config) ->
-    TickRate = maps:get(tick_rate, Config),
+initialize_state(CbMod, CbData, Config = #{tick_ms := TickMs}) ->
+    % setup the timer
+    timer:send_interval(TickMs, self(), ?TAG_I(tick)),
+    % configure auth
     RequireAuth = maps:get(require_auth, Config),
-    Timer = erlang:send_after(1, self(), ?TAG_I(tick)),
     RPCInfo =
         case rpc_info(CbMod) of
             [] ->
@@ -316,8 +317,7 @@ initialize_state(CbMod, CbData, Config) ->
     #state{
         cb_mod = CbMod,
         cb_data = CbData,
-        tick_timer = Timer,
-        tick_rate = TickRate,
+        tick_ms = TickMs,
         require_auth = RequireAuth,
         rpcs = RPCInfo
     }.
@@ -360,12 +360,8 @@ handle_cast(_Cast, St0) ->
     {noreply, St0}.
 
 handle_info(?TAG_I(tick), St0) ->
-    TimerRef = St0#state.tick_timer,
-    erlang:cancel_timer(TimerRef),
-    TickRate = St0#state.tick_rate,
-    T1 = erlang:send_after(TickRate, self(), ?TAG_I(tick)),
     St1 = tick(St0),
-    {noreply, St1#state{tick_timer = T1}}.
+    {noreply, St1}.
 
 terminate(_Reason, _St0) -> ok.
 code_change(_OldVsn, St0, _Extra) -> {ok, St0}.
@@ -374,9 +370,8 @@ code_change(_OldVsn, St0, _Extra) -> {ok, St0}.
 %%% internal functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-tick(St0 = #state{cb_mod = CbMod, cb_data = CbData0}) ->
-    Config = #{tick_rate => St0#state.tick_rate},
-    {Notify, CbData1} = CbMod:handle_tick(Config, CbData0),
+tick(St0 = #state{cb_mod = CbMod, cb_data = CbData0, tick_ms = TickMs}) ->
+    {Notify, CbData1} = CbMod:handle_tick(TickMs, CbData0),
     St1 = St0#state{cb_data = CbData1},
     handle_notify(Notify, St1),
     St1.
@@ -386,7 +381,6 @@ rpc_info(CbMod) ->
         true ->
             CbMod:rpc_info();
         _ ->
-            logger:debug("~p:rpc_info/0 not exported ignoring", [CbMod]),
             []
     end.
 
