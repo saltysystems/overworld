@@ -95,7 +95,8 @@
     Session :: session(),
     State :: term(),
     Result :: {Response, Status, State},
-    Status :: atom() | {ok, Session},
+    PlayerInfo :: any(),
+    Status :: atom() | {ok, Session} | {ok, Session, PlayerInfo},
     Response :: ow_zone_resp().
 -optional_callbacks([handle_join/2]).
 
@@ -104,7 +105,8 @@
     Session :: session(),
     State :: term(),
     Result :: {Response, Status, State},
-    Status :: atom() | {ok, Session},
+    PlayerInfo :: any(),
+    Status :: atom() | {ok, Session} | {ok, Session, PlayerInfo},
     Response :: ow_zone_resp().
 -optional_callbacks([handle_join/3]).
 

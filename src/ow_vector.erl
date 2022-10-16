@@ -25,9 +25,10 @@
 ]).
 
 -type vector() :: {scalar(), scalar()}.
+-type vector_map() :: #{ x => scalar(), y => scalar()}.
 -type scalar() :: number().
 
--export_type([vector/0, scalar/0]).
+-export_type([vector/0, vector_map/0, scalar/0]).
 
 -spec add(vector(), vector()) -> vector().
 add({X1, Y1}, {X2, Y2}) ->
