@@ -20,12 +20,13 @@
     aabb/1,
     test/0,
     vector_map/1,
+    vector_tuple/1,
     rect_to_maps/1,
     rect_to_tuples/1
 ]).
 
 -type vector() :: {scalar(), scalar()}.
--type vector_map() :: #{ x => scalar(), y => scalar()}.
+-type vector_map() :: #{x => scalar(), y => scalar()}.
 -type scalar() :: number().
 
 -export_type([vector/0, vector_map/0, scalar/0]).
@@ -119,8 +120,18 @@ aabb(Vertices) ->
         {lists:max(XList), lists:max(YList)}
     ].
 
-translate(Object, {Xnew, Ynew}) ->
-    [{X + Xnew, Y + Ynew} || {X, Y} <- Object].
+% If Pos is a tuple, assume tuple mode
+% If Pos is a map, assume map mode
+translate(Object, Pos) when is_tuple(Pos) ->
+    {XNew, YNew} = Pos,
+    [{X + XNew, Y + YNew} || {X, Y} <- Object];
+translate(Object, Pos) when is_map(Pos) ->
+    #{x := XNew, y := YNew} = Pos,
+    Fun = fun(Elem, AccIn) ->
+        #{x := X, y := Y} = Elem,
+        [#{x => X + XNew, y => Y + YNew} | AccIn]
+    end,
+    lists:foldl(Fun, [], Object).
 
 test() ->
     A = [{0, 0}, {70, 0}, {0, 70}],
@@ -148,3 +159,7 @@ rect_to_tuples(Vertices) ->
 -spec vector_map(vector()) -> map().
 vector_map({X, Y}) ->
     #{x => X, y => Y}.
+
+-spec vector_tuple(map()) -> vector().
+vector_tuple(#{x := X, y := Y}) ->
+    {X, Y}.
