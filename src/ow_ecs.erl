@@ -51,7 +51,9 @@ try_component(Name, ID, Table) ->
     end.
 
 match_component(Name, Table) ->
-    ets:match(Table, {{'$1', Name}, '$2'}).
+    Matches = ets:match(Table, {{'$1', Name}, '$2'}),
+    % Convert to tuple format
+    [{ID, Data} || [ID, Data] <- Matches].
 
 % Functions that call out to the gen_server and somehow mutate state
 add_component(Name, Data, ID, World) ->
