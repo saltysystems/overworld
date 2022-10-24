@@ -7,31 +7,34 @@
 -define(SERVER(Name), {via, gproc, {n, l, {?MODULE, Name}}}).
 
 %% API
--export([add_component/4, 
-         rm_component/3, 
-         try_component/3,
-         match_component/2,
-         add_system/3, 
-         add_system/2, 
-         rm_system/2,
-         proc/1
-        ]).
+-export([
+    add_component/4,
+    rm_component/3,
+    try_component/3,
+    match_component/2,
+    add_system/3,
+    add_system/2,
+    rm_system/2,
+    proc/1
+]).
 
 %% gen_server callbacks
--export([init/1,
-         handle_call/3,
-         handle_cast/2,
-         handle_info/2,
-         terminate/2,
-         code_change/3]).
+-export([
+    init/1,
+    handle_call/3,
+    handle_cast/2,
+    handle_info/2,
+    terminate/2,
+    code_change/3
+]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Types and Records
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--record(world, { 
-          systems = [] :: [{integer(), mfa()|fun()}],
-          ec :: ets:tid()
-         }).
+-record(world, {
+    systems = [] :: [{integer(), mfa() | fun()}],
+    ec :: ets:tid()
+}).
 %-type world() :: #world{}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -39,9 +42,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Functions that interact directly with the table
-try_component(Name, ID, Table) -> 
-    case ets:lookup(Table, {ID,Name}) of
-        [] -> 
+try_component(Name, ID, Table) ->
+    case ets:lookup(Table, {ID, Name}) of
+        [] ->
             false;
         [{{ID, Name}, _Data}] ->
             true
@@ -77,35 +80,35 @@ start_link(Name) ->
     gen_server:start_link(?SERVER(Name), ?MODULE, [], []).
 
 init([]) ->
-    World = #world{ 
-               systems = [],
-               ec = ets:new(ec, [set])
-              },
+    World = #world{
+        systems = [],
+        ec = ets:new(ec, [set])
+    },
     {ok, World}.
 
 handle_call(proc, _From, State = #world{systems = S, ec = ECTable}) ->
     % Process all systems in order
-    Fun = fun({_Prio, Sys}) -> 
-                  case Sys of
-                      {M,F,_A} ->
-                          erlang:apply(M,F,[ECTable]);
-                      Fun -> 
-                          Fun(ECTable)
-                  end
-          end,
+    Fun = fun({_Prio, Sys}) ->
+        case Sys of
+            {M, F, _A} ->
+                erlang:apply(M, F, [ECTable]);
+            Fun ->
+                Fun(ECTable)
+        end
+    end,
     lists:foreach(Fun, S),
     {reply, ok, State}.
 
-handle_cast({add_component, Name, Data, ID}, State = #world{ec=ECTable}) ->
+handle_cast({add_component, Name, Data, ID}, State = #world{ec = ECTable}) ->
     ets:insert(ECTable, {{ID, Name}, Data}),
     {noreply, State};
 handle_cast({rm_component, Name, ID}, State = #world{ec = ECTable}) ->
     ets:delete(ECTable, {ID, Name}),
     {noreply, State};
 handle_cast({add_system, Callback, Prio}, State = #world{systems = S}) ->
-    S0 = 
-        case lists:keytake(Callback, 2, S) of 
-            false -> 
+    S0 =
+        case lists:keytake(Callback, 2, S) of
+            false ->
                 S;
             {value, _Tuple, SRest} ->
                 % Replace the current value instead
