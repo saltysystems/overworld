@@ -4,14 +4,14 @@
 
 -export([start_link/1]).
 
--define(SERVER(Name), {via, gproc, {n, l, {?MODULE, Name}}}).
+-define(SERVER(ComponentName), {via, gproc, {n, l, {?MODULE, ComponentName}}}).
 
 %% API
 -export([
     add_component/4,
     rm_component/3,
     try_component/3,
-    match_component/2,
+    %match_component/2,
     add_system/3,
     add_system/2,
     rm_system/2,
@@ -33,34 +33,42 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -record(world, {
     systems = [] :: [{integer(), mfa() | fun()}],
-    ec :: ets:tid()
+    entities :: ets:tid(),
+    components :: ets:tid()
 }).
 %-type world() :: #world{}.
+
+-opaque query() :: {ets:tid(), ets:tid()}.
+-export_type([query/0]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % API
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Functions that interact directly with the table
-try_component(Name, ID, Table) ->
-    case ets:lookup(Table, {ID, Name}) of
+% Query, update, etc functions that operate against the ETS tables
+try_component(ComponentName, EntityID, Query) ->
+    {ETable, CTable} = Query,
+    case ets:match_object(CTable, {ComponentName, EntityID}) of
         [] ->
             false;
-        [{{ID, Name}, _Data}] ->
-            true
+        _Match ->
+            % It exists in the component table, so return the Entity data back
+            % to the caller 
+            [{EntityID, Data}] = ets:lookup(ETable, EntityID),
+            Data
     end.
 
-match_component(Name, Table) ->
-    Matches = ets:match(Table, {{'$1', Name}, '$2'}),
-    % Convert to tuple format
-    [{ID, Data} || [ID, Data] <- Matches].
+%match_component(ComponentName, Query) ->
+%    Matches = ets:match(Table, {{'$1', ComponentName}, '$2'}),
+%    % Convert to tuple format
+%    [{EntityID, ComponentData} || [EntityID, ComponentData] <- Matches].
 
 % Functions that call out to the gen_server and somehow mutate state
-add_component(Name, Data, ID, World) ->
-    gen_server:cast(?SERVER(World), {add_component, Name, Data, ID}).
+add_component(ComponentName, ComponentData, EntityID, World) ->
+    gen_server:cast(?SERVER(World), {add_component, ComponentName, ComponentData, EntityID}).
 
-rm_component(Name, ID, World) ->
-    gen_server:cast(?SERVER(World), {rm_component, Name, ID}).
+rm_component(ComponentName, EntityID, World) ->
+    gen_server:cast(?SERVER(World), {rm_component, ComponentName, EntityID}).
 
 add_system(System, World) ->
     add_system(System, 100, World).
@@ -78,36 +86,75 @@ proc(World) ->
 % gen_server callbacks
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-start_link(Name) ->
-    gen_server:start_link(?SERVER(Name), ?MODULE, [], []).
+start_link(World) ->
+    gen_server:start_link(?SERVER(World), ?MODULE, [World], []).
 
-init([]) ->
+init([WorldName]) ->
     World = #world{
         systems = [],
-        ec = ets:new(ec, [set])
+        entities = ets:new(entities, [set]),
+        components = ets:new(components, [bag])
     },
+    logger:notice("Started ECS server: ~p", [WorldName]),
+    logger:debug("Entity table ref: ~p", [ World#world.entities ]),
+    logger:debug("Component table ref: ~p", [ World#world.components ]),
     {ok, World}.
 
-handle_call(proc, _From, State = #world{systems = S, ec = ECTable}) ->
+handle_call(proc, _From, State) ->
+    #world{systems = S, entities = E, components = C} = State,
     % Process all systems in order
     Fun = fun({_Prio, Sys}) ->
+        Query = {E,C},
         case Sys of
             {M, F, _A} ->
-                erlang:apply(M, F, [ECTable]);
+                erlang:apply(M, F, [Query]);
             Fun ->
-                Fun(ECTable)
+                Fun(Query)
         end
     end,
     lists:foreach(Fun, S),
     {reply, ok, State}.
 
-handle_cast({add_component, Name, Data, ID}, State = #world{ec = ECTable}) ->
-    ets:insert(ECTable, {{ID, Name}, Data}),
+handle_cast({add_component, ComponentName, ComponentData, EntityID}, State) ->
+    #world{entities = E, components = C} = State,
+    % On the entity table, we want to get the entity by key and insert a new
+    % version with the data
+    Components =
+        case ets:lookup(E, EntityID) of
+            [] ->
+                % No components
+                [ {ComponentName, ComponentData} ];
+            [{EntityID, ComponentList}] ->
+                % Check if the component already exists
+                case lists:keytake(ComponentName, 1, ComponentList) of
+                    {value, _Tuple, ComponentList2} ->
+                        % Throw away the old data and add the new data
+                        [ {ComponentName, ComponentData} | ComponentList2 ];
+                    false -> 
+                        [ {ComponentName, ComponentData} | ComponentList ]
+                end
+        end,
+    % Insert the new entity and component list
+    ets:insert(E, {EntityID, Components}),
+    % Insert the entity EntityID into the component table
+    ets:insert(C, {ComponentName, EntityID}),
     {noreply, State};
-handle_cast({rm_component, Name, ID}, State = #world{ec = ECTable}) ->
-    ets:delete(ECTable, {ID, Name}),
+handle_cast({rm_component, ComponentName, EntityID}, State) ->
+    #world{entities = E, components = C} = State,
+    % Remove the data from the entity
+    case ets:lookup_element(E, EntityID, 2) of
+        [] -> ok;
+        ComponentList ->
+            % Delete the key-value identified by ComponentName
+            ComponentList1 = lists:keydelete(ComponentName, 1, ComponentList),
+            % Update the entity table
+            ets:insert(E, {EntityID, ComponentList1})
+    end,
+    % Remove the data from the component bag
+    ets:delete_object(C, {ComponentName, EntityID}),
     {noreply, State};
-handle_cast({add_system, Callback, Prio}, State = #world{systems = S}) ->
+handle_cast({add_system, Callback, Prio}, State) ->
+    #world{systems = S} = State,
     S0 =
         case lists:keytake(Callback, 2, S) of
             false ->
