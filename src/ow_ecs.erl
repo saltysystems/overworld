@@ -13,7 +13,7 @@
     add_component/4,
     rm_component/3,
     try_component/3,
-    %match_component/2,
+    match_component/2,
     add_system/3,
     add_system/2,
     rm_system/2,
@@ -34,6 +34,7 @@
 % Types and Records
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -record(world, {
+    name :: term(),
     systems = [] :: [{integer(), mfa() | fun()}],
     entities :: ets:tid(),
     components :: ets:tid()
@@ -48,6 +49,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Query, update, etc functions that operate against the ETS tables
+-spec try_component(term(), integer(), query()) -> [term()].
 try_component(ComponentName, EntityID, Query) ->
     {ETable, CTable} = Query,
     case ets:match_object(CTable, {ComponentName, EntityID}) of
@@ -60,10 +62,27 @@ try_component(ComponentName, EntityID, Query) ->
             Data
     end.
 
-%match_component(ComponentName, Query) ->
-%    Matches = ets:match(Table, {{'$1', ComponentName}, '$2'}),
-%    % Convert to tuple format
-%    [{EntityID, ComponentData} || [EntityID, ComponentData] <- Matches].
+-spec match_component(term(), query()) -> [{integer(), term()}].
+match_component(ComponentName, Query) ->
+    % From the component bag table, get all matches
+    {ETable, CTable} = Query,
+    Matches = ets:lookup(CTable, ComponentName),
+    % Use the entity IDs from the lookup in the component table to generate a
+    % list of IDs for which to return data to the caller
+    [ ets:lookup(ETable, EntityID) || {_, EntityID} <- Matches ].
+
+% Multi-match ... TODO ?
+%match_component(CList, Query) when is_list(CList) ->
+%    {ETable, CTable} = Query,
+%    % http://erlang.org/pipermail/erlang-questions/2012-February/064214.html
+%    % Return the subset of the bag that contains the entity IDs that match
+%    PartialMatches = ets:select(CTable, [{{C,'$1'},[],['$1']} || C <- CList]),
+%    % Need to filter out any entitiy IDs that don't appear at least N times,
+%    % where N is len(CList). TODO: See if there's a faster way to do this with
+%    % match expressions
+%    [ ets:lookup(ETable, EntityID) || EntityID <- Matches ];
+%match_component(Component, Query) ->
+%    match_component([Component], Query).
 
 % Functions that call out to the gen_server and somehow mutate state
 add_component(ComponentName, ComponentData, EntityID, World) ->
@@ -94,10 +113,11 @@ proc(World) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 start_link(World) ->
-    gen_server:start_link(?SERVER(World), ?MODULE, [World], []).
+    gen_server:start(?SERVER(World), ?MODULE, [World], []).
 
 init([WorldName]) ->
     World = #world{
+        name = WorldName,
         systems = [],
         entities = ets:new(entities, [set]),
         components = ets:new(components, [bag])
