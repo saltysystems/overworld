@@ -69,7 +69,7 @@ match_component(ComponentName, Query) ->
     Matches = ets:lookup(CTable, ComponentName),
     % Use the entity IDs from the lookup in the component table to generate a
     % list of IDs for which to return data to the caller
-    [ ets:lookup(ETable, EntityID) || {_, EntityID} <- Matches ].
+    [ets:lookup(ETable, EntityID) || {_, EntityID} <- Matches].
 
 % Multi-match ... TODO ?
 %match_component(CList, Query) when is_list(CList) ->
