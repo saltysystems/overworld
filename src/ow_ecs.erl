@@ -17,6 +17,7 @@
     add_system/3,
     add_system/2,
     rm_system/2,
+    world_name/1,
     proc/1
 ]).
 
@@ -41,7 +42,7 @@
 }).
 %-type world() :: #world{}.
 
--opaque query() :: {ets:tid(), ets:tid()}.
+-opaque query() :: {ets:tid(), ets:tid(), any()}.
 -export_type([query/0]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -49,9 +50,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Query, update, etc functions that operate against the ETS tables
+-spec world_name(query()) -> any().
+world_name({_, _, Name}) -> Name.
+
 -spec try_component(term(), integer(), query()) -> [term()].
 try_component(ComponentName, EntityID, Query) ->
-    {ETable, CTable} = Query,
+    {ETable, CTable, _Name} = Query,
     case ets:match_object(CTable, {ComponentName, EntityID}) of
         [] ->
             false;
@@ -62,14 +66,14 @@ try_component(ComponentName, EntityID, Query) ->
             Data
     end.
 
--spec match_component(term(), query()) -> [{integer(), term()}].
+-spec match_component(term(), query()) -> [tuple()].
 match_component(ComponentName, Query) ->
     % From the component bag table, get all matches
-    {ETable, CTable} = Query,
+    {ETable, CTable, _Name} = Query,
     Matches = ets:lookup(CTable, ComponentName),
     % Use the entity IDs from the lookup in the component table to generate a
     % list of IDs for which to return data to the caller
-    [ets:lookup(ETable, EntityID) || {_, EntityID} <- Matches].
+    lists:flatten([ets:lookup(ETable, EntityID) || {_, EntityID} <- Matches]).
 
 % Multi-match ... TODO ?
 %match_component(CList, Query) when is_list(CList) ->
@@ -113,7 +117,7 @@ proc(World) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 start_link(World) ->
-    gen_server:start(?SERVER(World), ?MODULE, [World], []).
+    gen_server:start_link(?SERVER(World), ?MODULE, [World], []).
 
 init([WorldName]) ->
     World = #world{
@@ -128,10 +132,10 @@ init([WorldName]) ->
     {ok, World}.
 
 handle_call(proc, _From, State) ->
-    #world{systems = S, entities = E, components = C} = State,
+    #world{systems = S, entities = E, components = C, name = Name} = State,
     % Process all systems in order
     Fun = fun({_Prio, Sys}) ->
-        Query = {E, C},
+        Query = {E, C, Name},
         case Sys of
             {M, F, _A} ->
                 erlang:apply(M, F, [Query]);
