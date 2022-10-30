@@ -13,7 +13,7 @@
 
 -export([
     encode_log/1,
-    broadcast/1,
+    broadcast/2,
     multicast/2,
     new/0,
     set_id/2,
@@ -203,14 +203,14 @@ encode_log_test() ->
 %% @doc Broadcast a message to all clients. Must already be serialized.
 %% @end
 %%----------------------------------------------------------------------------
--spec broadcast(msg()) -> ok.
-broadcast(EncodedMsg) ->
+-spec broadcast(msg(), {atom(), non_neg_integer() | undefined}) -> ok.
+broadcast(EncodedMsg, Options) ->
     case gproc:lookup_pids({p, l, client_session}) of
         [] ->
             ok;
         _ ->
             gproc:send({p, l, client_session}, {
-                self(), broadcast, EncodedMsg
+                self(), broadcast, EncodedMsg, Options
             })
     end,
     ok.

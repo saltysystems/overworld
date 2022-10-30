@@ -91,7 +91,6 @@ handle_info(tick, {Window, OldTimer}) ->
     erlang:cancel_timer(OldTimer),
     % Create a new unique integer as the beacon ID
     % TODO: SEED ME
-
     % 32-bit unsigned max
     ID = rand:uniform(4_294_967_295),
     % Push the beacon ID + current time to the stack
@@ -99,7 +98,10 @@ handle_info(tick, {Window, OldTimer}) ->
     % Encode the beacon and broadcast it to all clients.
     % n.b., There's a very small race here. A client could conceivably respond
     % faster than the server has updated the list.
-    ow_session:broadcast(encode_beacon(ID)),
+    [BeaconRPC] = rpc_info(),
+    QOS = ow_rpc:qos(BeaconRPC),
+    Channel = ow_rpc:channel(BeaconRPC),
+    ow_session:broadcast(encode_beacon(ID), {QOS, Channel}),
     NewTimer = erlang:send_after(?HEARTBEAT, self(), tick),
     {noreply, {push(Beacon, Window), NewTimer}};
 handle_info(_Info, State) ->
