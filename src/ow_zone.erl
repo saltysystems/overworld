@@ -445,8 +445,13 @@ notify_players(MsgType, Msg, RPCs, Players) ->
                         EncodedMsg = EMod:encode_msg(Msg, MsgType),
                         Channel = ow_rpc:channel(RPC),
                         QOS = ow_rpc:qos(RPC),
-                        Pid ! 
-                            {self(), zone_msg, [<<OpCode:16>>, EncodedMsg], {QOS, Channel}}
+                        Pid !
+                            {
+                                self(),
+                                zone_msg,
+                                [<<OpCode:16>>, EncodedMsg],
+                                {QOS, Channel}
+                            }
                 end
         end
     end,
@@ -615,7 +620,8 @@ update_player(PlayerInfo, ID) ->
     P1 = ow_player_reg:set_info(PlayerInfo, P),
     ow_player_reg:update(P1).
 
--spec enet_msg_opts(atom, state()) -> {atom(), non_neg_integer()|undefined}.
+-spec enet_msg_opts(atom, state()) ->
+    {atom(), non_neg_integer() | undefined}.
 enet_msg_opts(Action, State) ->
     RPCs = State#state.rpcs,
     RPC = ow_rpc:find_call(Action, RPCs),

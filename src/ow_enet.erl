@@ -57,7 +57,9 @@ handle_info({enet, Channel, {unreliable, _Seq, Msg}}, State) ->
 handle_info({enet, Channel, {unsequenced, _Group, Msg}}, State) ->
     S1 = decode_and_reply(Msg, Channel, {enet, send_unsequenced}, State),
     {noreply, State#{session := S1}};
-handle_info({_From, Type, Msg, Options}, State = #{channels := Channels}) when
+handle_info(
+    {_From, Type, Msg, Options}, State = #{channels := Channels}
+) when
     Type =:= 'broadcast'; Type =:= 'zone_msg'
 ->
     % Handle a message from another overworld process
@@ -83,21 +85,21 @@ channelize_msg(Msg, Channels, {QOS, Channel}) ->
     % Not sure if it's worth implementing any fall-throughs here, better to
     % crash early if someone fat-fingers the QOS or channel number rather than
     % to unexpectedly send reliable,0 messages.
-    ChannelPID = 
+    ChannelPID =
         case Channel of
-            undefined -> 
+            undefined ->
                 % Default to channel 0 if undefined
                 maps:get(0, Channels);
-            C -> 
+            C ->
                 maps:get(C, Channels)
         end,
     FlatMsg = iolist_to_binary(Msg),
     case QOS of
-        reliable -> 
+        reliable ->
             enet:send_reliable(ChannelPID, FlatMsg);
-        unreliable -> 
+        unreliable ->
             enet:send_unreliable(ChannelPID, FlatMsg);
-        unsequenced -> 
+        unsequenced ->
             enet:send_unsequenced(ChannelPID, FlatMsg);
         undefined ->
             % Send a reliable packet if nothing defined
