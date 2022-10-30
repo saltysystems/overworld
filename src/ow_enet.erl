@@ -125,6 +125,8 @@ decode_and_reply(Msg, IncomingChannel, {Mod, Fun}, State) ->
             ChannelPid = maps:get(IncomingChannel, Channels),
             erlang:apply(Mod, Fun, [ChannelPid, FlatMsg]),
             Session1;
+        {ok, Session1, {QOS, MsgChannel}} ->
+            Session1
         {Msg1, Session1, {QOS, MsgChannel}} ->
             channelize_msg(Msg1, Channels, {QOS, MsgChannel}),
             Session1
