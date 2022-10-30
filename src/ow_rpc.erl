@@ -7,6 +7,8 @@
     c2s_proto/1,
     s2c_call/1,
     encoder/1,
+    qos/1,
+    channel/1,
     find_call/2,
     find_handler/2
 ]).
@@ -16,7 +18,10 @@
     c2s_handler => mfa() | undefined,
     c2s_proto => atom() | undefined,
     s2c_call => atom() | undefined,
-    encoder := atom() | undefined
+    encoder := atom() | undefined,
+    % Only usable by ENet
+    qos => reliable | unreliable | unsequenced | undefined,
+    channel => non_neg_integer() | undefined
 }.
 -export_type([rpc/0]).
 
@@ -46,6 +51,14 @@ s2c_call(Map) ->
 -spec encoder(map()) -> atom() | undefined.
 encoder(Map) ->
     maps:get(encoder, Map, undefined).
+
+-spec qos(map()) -> atom() | undefined.
+qos(Map) ->
+    maps:get(qos, Map, undefined).
+
+-spec channel(map()) -> non_neg_integer() | undefined.
+channel(Map) ->
+    maps:get(channel, Map, undefined).
 
 -spec find_call(atom(), [rpc(), ...]) -> rpc() | #{}.
 find_call(Msg, [H | L]) ->
