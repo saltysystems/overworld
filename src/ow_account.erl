@@ -32,13 +32,17 @@ rpc_info() ->
             opcode => ?ACCOUNT_NEW,
             c2s_handler => {?MODULE, account_new, 2},
             s2c_call => gen_response,
-            encoder => overworld_pb
+            encoder => overworld_pb,
+            qos => reliable,
+            channel => 0
         },
         #{
             opcode => ?ACCOUNT_LOGIN,
             c2s_handler => {?MODULE, account_login, 2},
             s2c_call => gen_response,
-            encoder => overworld_pb
+            encoder => overworld_pb,
+            qos => reliable,
+            channel => 0
         }
     ].
 

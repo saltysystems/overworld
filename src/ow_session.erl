@@ -87,31 +87,43 @@ rpc_info() ->
     [
         #{
             opcode => ?VERSION,
-            c2s_handler => {?MODULE, version, 1}
+            c2s_handler => {?MODULE, version, 1},
+            qos => reliable,
+            channel => 0
         },
         #{
             opcode => ?SESSION_ID_REQ,
-            c2s_handler => {?MODULE, session_id_req, 2}
+            c2s_handler => {?MODULE, session_id_req, 2},
+            qos => reliable,
+            channel => 0
         },
         #{
             opcode => ?SESSION_ID,
             s2c_call => session_id,
-            encoder => overworld_pb
+            encoder => overworld_pb,
+            qos => reliable,
+            channel => 0
         },
         #{
             opcode => ?SESSION_PING,
             c2s_handler => {?MODULE, session_ping, 2},
-            encoder => overworld_pb
+            encoder => overworld_pb,
+            qos => reliable,
+            channel => 0
         },
         #{
             opcode => ?SESSION_PONG,
             s2c_call => session_pong,
-            encoder => overworld_pb
+            encoder => overworld_pb,
+            qos => reliable,
+            channel => 0
         },
         #{
             opcode => ?SESSION_LOG,
             s2c_call => session_log,
-            encoder => overworld_pb
+            encoder => overworld_pb,
+            qos => reliable,
+            channel => 0
         }
     ].
 

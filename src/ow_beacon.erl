@@ -32,7 +32,9 @@ rpc_info() ->
         #{
             opcode => ?BEACON,
             s2c_call => session_beacon,
-            encoder => overworld_pb
+            encoder => overworld_pb,
+            qos => reliable,
+            channel => 0
         }
     ].
 
