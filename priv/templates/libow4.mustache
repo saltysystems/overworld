@@ -141,7 +141,15 @@ func _send_message(payload, opcode, qos, channel):
 			# TODO: Thread channel and packet type through
 			if payload.is_empty() != true:
 				packet.append_array(payload)
-			p.send(0, packet, ENetPacketPeer.FLAG_RELIABLE)
+			var flag
+			match qos:
+				"reliable":
+					flag = ENetPacketPeer.FLAG_RELIABLE
+				"unreliable":
+					flag = ENetPacketPeer.FLAG_UNRELIABLE_FRAGMENT
+				"unsequenced":
+					flag = ENetPacketPeer.FLAG_UNSEQUENCED
+			p.send(channel, packet, flag)
 
 func _process(_delta):
 	if mode == transport_mode.WEBSOCKET:
