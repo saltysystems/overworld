@@ -126,7 +126,7 @@ decode_and_reply(Msg, IncomingChannel, {Mod, Fun}, State) ->
             erlang:apply(Mod, Fun, [ChannelPid, FlatMsg]),
             Session1;
         {ok, Session1, {QOS, MsgChannel}} ->
-            Session1
+            Session1;
         {Msg1, Session1, {QOS, MsgChannel}} ->
             channelize_msg(Msg1, Channels, {QOS, MsgChannel}),
             Session1
