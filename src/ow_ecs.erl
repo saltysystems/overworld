@@ -2,7 +2,7 @@
 
 -behaviour(gen_server).
 
--export([start_link/1]).
+-export([start/1, start_link/1]).
 
 -define(SERVER(ComponentName),
     {via, gproc, {n, l, {?MODULE, ComponentName}}}
@@ -10,6 +10,7 @@
 
 %% API
 -export([
+    rm_entity/2,
     add_component/4,
     rm_component/3,
     try_component/3,
@@ -89,6 +90,13 @@ match_component(ComponentName, Query) ->
 %    match_component([Component], Query).
 
 % Functions that call out to the gen_server and somehow mutate state
+% Not adding this one til proven useful
+%add_entity(EntityID, World) ->
+%    gen_server:cast(?SERVER(World), {add_entity, EntityID}).
+
+rm_entity(EntityID, World) ->
+    gen_server:cast(?SERVER(World), {rm_entity, EntityID}).
+
 add_component(ComponentName, ComponentData, EntityID, World) ->
     gen_server:cast(
         ?SERVER(World),
@@ -116,6 +124,8 @@ proc(World) ->
 % gen_server callbacks
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+start(World) ->
+    gen_server:start(?SERVER(World), ?MODULE, [World], []).
 start_link(World) ->
     gen_server:start_link(?SERVER(World), ?MODULE, [World], []).
 
@@ -146,6 +156,22 @@ handle_call(proc, _From, State) ->
     lists:foreach(Fun, S),
     {reply, ok, State}.
 
+handle_cast({rm_entity, EntityID}, State) ->
+    #world{entities = E, components = C} = State,
+    case ets:lookup(E, EntityID) of
+        [] ->
+            % ok, nothing to do
+            ok;
+        [{EntityID, ComponentList}] ->
+            % Remove the entity from the entity table
+            ets:delete(E, EntityID),
+            % Delete all instances of it from the component table as well
+            [
+                ets:delete_object(C, {CName, EntityID})
+             || {CName, _} <- ComponentList
+            ]
+    end,
+    {noreply, State};
 handle_cast({add_component, ComponentName, ComponentData, EntityID}, State) ->
     #world{entities = E, components = C} = State,
     % On the entity table, we want to get the entity by key and insert a new
