@@ -479,8 +479,8 @@ generate_marshall(
                         % define an empty message for ping
                         "func " ++ FunStr ++ "():\n" ++
                             ?TAB ++ "_send_message([], OpCode." ++
-                            string:to_upper(FunStr) ++ "," ++ QOS ++
-                            "," ++ Channel ++ ")\n" ++
+                            string:to_upper(FunStr) ++ ", '" ++ QOS ++
+                            "', " ++ Channel ++ ")\n" ++
                             ?TAB ++ "if debug:\n" ++
                             ?TAB(2) ++ "print('[INFO] Sent a " ++
                             FunStr ++
@@ -506,8 +506,8 @@ generate_marshall(
                             %set_parameters(Fields, Encoder) ++
                             ?TAB ++ "var payload = m.to_bytes()\n" ++
                             ?TAB ++ "_send_message(payload, OpCode." ++
-                            string:to_upper(FunStr) ++ "," ++ QOS ++
-                            "," ++ Channel ++ ")\n" ++
+                            string:to_upper(FunStr) ++ ", '" ++ QOS ++
+                            "', " ++ Channel ++ ")\n" ++
                             ?TAB ++ "if debug:\n" ++
                             ?TAB(2) ++ "print('[INFO] Sent a " ++
                             FunStr ++
