@@ -96,7 +96,9 @@ register(Module) ->
 -spec decode(binary(), ow_session:session()) ->
     ok
     | {ok, ow_session:session()}
-    | {binary(), ow_session:session()}.
+    | {binary(), ow_session:session()}
+    | {ok, ow_session:session(), ow_enet:qos()}
+    | {binary(), ow_session:session(), ow_enet:qos()}.
 decode(Message, Session) ->
     gen_server:call(?MODULE, {decode, Message, Session}).
 

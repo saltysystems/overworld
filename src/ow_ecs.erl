@@ -10,15 +10,17 @@
 
 %% API
 -export([
+    new_entity/2,
     rm_entity/2,
     add_component/4,
-    rm_component/3,
+    del_component/3,
     try_component/3,
     match_component/2,
     add_system/3,
     add_system/2,
-    rm_system/2,
+    del_system/2,
     world_name/1,
+    entities/1,
     proc/1
 ]).
 
@@ -37,14 +39,17 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -record(world, {
     name :: term(),
-    systems = [] :: [{integer(), mfa() | fun()}],
+    systems = [] :: [{id(), system()}],
     entities :: ets:tid(),
     components :: ets:tid()
 }).
-%-type world() :: #world{}.
 
 -opaque query() :: {ets:tid(), ets:tid(), any()}.
 -export_type([query/0]).
+
+-type world() :: #world{}.
+-type system() :: {mfa() | fun()}.
+-type id() :: integer().
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % API
@@ -54,7 +59,7 @@
 -spec world_name(query()) -> any().
 world_name({_, _, Name}) -> Name.
 
--spec try_component(term(), integer(), query()) -> [term()].
+-spec try_component(term(), id(), query()) -> [term()].
 try_component(ComponentName, EntityID, Query) ->
     {ETable, CTable, _Name} = Query,
     case ets:match_object(CTable, {ComponentName, EntityID}) of
@@ -89,34 +94,44 @@ match_component(ComponentName, Query) ->
 %match_component(Component, Query) ->
 %    match_component([Component], Query).
 
-% Functions that call out to the gen_server and somehow mutate state
-% Not adding this one til proven useful
-%add_entity(EntityID, World) ->
-%    gen_server:cast(?SERVER(World), {add_entity, EntityID}).
+-spec new_entity(id(), world()) -> ok.
+new_entity(EntityID, World) ->
+    gen_server:cast(?SERVER(World), {new_entity, EntityID}).
 
+-spec rm_entity(id(), world()) -> ok.
 rm_entity(EntityID, World) ->
     gen_server:cast(?SERVER(World), {rm_entity, EntityID}).
 
+-spec entities(world()) -> [{id(), [term()]}].
+entities(World) ->
+    gen_server:call(?SERVER(World), entities).
+
+-spec add_component(term(), term(), id(), world()) -> ok.
 add_component(ComponentName, ComponentData, EntityID, World) ->
     gen_server:cast(
         ?SERVER(World),
         {add_component, ComponentName, ComponentData, EntityID}
     ).
 
-rm_component(ComponentName, EntityID, World) ->
+-spec del_component(term(), id(), world()) -> ok.
+del_component(ComponentName, EntityID, World) ->
     gen_server:cast(
-        ?SERVER(World), {rm_component, ComponentName, EntityID}
+        ?SERVER(World), {del_component, ComponentName, EntityID}
     ).
 
+-spec add_system(system(), world()) -> ok.
 add_system(System, World) ->
     add_system(System, 100, World).
 
+-spec add_system(system(), integer(), world()) -> ok.
 add_system(System, Priority, World) ->
     gen_server:cast(?SERVER(World), {add_system, System, Priority}).
 
-rm_system(System, World) ->
-    gen_server:cast(?SERVER(World), {rm_system, System}).
+-spec del_system(system(), world()) -> ok.
+del_system(System, World) ->
+    gen_server:cast(?SERVER(World), {del_system, System}).
 
+-spec proc(world()) -> ok.
 proc(World) ->
     gen_server:call(?SERVER(World), proc).
 
@@ -154,8 +169,22 @@ handle_call(proc, _From, State) ->
         end
     end,
     lists:foreach(Fun, S),
-    {reply, ok, State}.
+    {reply, ok, State};
+handle_call(entities, _From, State) ->
+    #world{entities = E} = State,
+    Entities = ets:match_object(E, {'$0', '$1'}),
+    {reply, Entities, State}.
 
+handle_cast({new_entity, EntityID}, State) ->
+    #world{entities = E} = State,
+    case ets:lookup(E, EntityID) of
+        [] ->
+            % ok, add 'em
+            ets:insert(E, {EntityID, []});
+        _Entity ->
+            ok
+    end,
+    {noreply, State};
 handle_cast({rm_entity, EntityID}, State) ->
     #world{entities = E, components = C} = State,
     case ets:lookup(E, EntityID) of
@@ -196,7 +225,7 @@ handle_cast({add_component, ComponentName, ComponentData, EntityID}, State) ->
     % Insert the entity EntityID into the component table
     ets:insert(C, {ComponentName, EntityID}),
     {noreply, State};
-handle_cast({rm_component, ComponentName, EntityID}, State) ->
+handle_cast({del_component, ComponentName, EntityID}, State) ->
     #world{entities = E, components = C} = State,
     % Remove the data from the entity
     case ets:lookup_element(E, EntityID, 2) of
@@ -225,7 +254,7 @@ handle_cast({add_system, Callback, Prio}, State) ->
         end,
     S1 = lists:keysort(1, [{Prio, Callback} | S0]),
     {noreply, State#world{systems = S1}};
-handle_cast({rm_system, Callback}, State = #world{systems = S}) ->
+handle_cast({del_system, Callback}, State = #world{systems = S}) ->
     S1 = lists:keydelete(Callback, 2, S),
     {noreply, State#world{systems = S1}};
 handle_cast(_Msg, State) ->
