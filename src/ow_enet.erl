@@ -18,6 +18,12 @@
     start/1
 ]).
 
+-type qos() :: {
+    reliable | unreliable | unsequenced | undefined,
+    non_neg_integer() | undefined
+}.
+-export_type([qos/0]).
+
 start(PeerInfo) ->
     gen_server:start_link(?MODULE, [PeerInfo], []).
 
