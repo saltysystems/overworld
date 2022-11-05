@@ -2,16 +2,17 @@
 
 -behaviour(gen_server).
 
--export([start/1, start_link/1]).
-
--define(SERVER(ComponentName),
-    {via, gproc, {n, l, {?MODULE, ComponentName}}}
+-define(SERVER(World),
+    {via, gproc, {n, l, {?MODULE, World}}}
 ).
 
 %% API
+-export([start/1, start_link/1, stop/1]).
 -export([
     new_entity/2,
     rm_entity/2,
+    entity/2,
+    entities/1,
     add_component/4,
     del_component/3,
     try_component/3,
@@ -20,8 +21,8 @@
     add_system/2,
     del_system/2,
     world_name/1,
-    entities/1,
-    proc/1
+    proc/1,
+    to_map/1
 ]).
 
 %% gen_server callbacks
@@ -39,7 +40,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -record(world, {
     name :: term(),
-    systems = [] :: [{id(), system()}],
+    systems = [] :: [{term(), system()}],
     entities :: ets:tid(),
     components :: ets:tid()
 }).
@@ -48,6 +49,8 @@
 -export_type([query/0]).
 
 -type world() :: #world{}.
+-type entity() :: {term(), [term()]}.
+-export_type([entity/0]).
 -type system() :: {mfa() | fun()}.
 -type id() :: integer().
 
@@ -55,7 +58,17 @@
 % API
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Query, update, etc functions that operate against the ETS tables
+%% Helper functions
+
+% This can potentially create an unbounded number of atoms! Careful!
+-spec to_map(entity()) -> map().
+to_map({EntityID, Components}) ->
+    % Create the component map
+    EMap = maps:from_list(Components),
+    % Add the ID
+    EMap#{id => EntityID}.
+
+%% Query, update, etc functions that operate against the ETS tables
 -spec world_name(query()) -> any().
 world_name({_, _, Name}) -> Name.
 
@@ -102,6 +115,10 @@ new_entity(EntityID, World) ->
 rm_entity(EntityID, World) ->
     gen_server:cast(?SERVER(World), {rm_entity, EntityID}).
 
+-spec entity(id(), world()) -> {id(), [term()]}.
+entity(EntityID, World) ->
+    gen_server:call(?SERVER(World), {entity, EntityID}).
+
 -spec entities(world()) -> [{id(), [term()]}].
 entities(World) ->
     gen_server:call(?SERVER(World), entities).
@@ -143,6 +160,8 @@ start(World) ->
     gen_server:start(?SERVER(World), ?MODULE, [World], []).
 start_link(World) ->
     gen_server:start_link(?SERVER(World), ?MODULE, [World], []).
+stop(World) ->
+    gen_server:stop(?SERVER(World)).
 
 init([WorldName]) ->
     World = #world{
@@ -170,6 +189,14 @@ handle_call(proc, _From, State) ->
     end,
     lists:foreach(Fun, S),
     {reply, ok, State};
+handle_call({entity, EntityID}, _From, State) ->
+    #world{entities = E} = State,
+    Reply =
+        case ets:lookup(E, EntityID) of
+            [] -> false;
+            [Entity] -> Entity
+        end,
+    {reply, Reply, State};
 handle_call(entities, _From, State) ->
     #world{entities = E} = State,
     Entities = ets:match_object(E, {'$0', '$1'}),
