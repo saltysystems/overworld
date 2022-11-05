@@ -18,6 +18,12 @@
     start/1
 ]).
 
+-type qos() :: {
+    reliable | unreliable | unsequenced | undefined,
+    non_neg_integer() | undefined
+}.
+-export_type([qos/0]).
+
 start(PeerInfo) ->
     gen_server:start_link(?MODULE, [PeerInfo], []).
 
@@ -48,45 +54,22 @@ handle_info({enet, disconnected, remote, _Pid, _When}, State) ->
     logger:info("ENet session ~p disconnected", [IP]),
     cleanup_session(Session),
     {stop, normal, State};
-handle_info(
-    {enet, Channel, {reliable, Msg}},
-    State = #{channels := Channels, session := Session}
-) ->
-    ChannelPid = maps:get(Channel, Channels),
-    S1 =
-        case ow_protocol:decode(Msg, Session) of
-            % Table of possible returns
-            %   ok -> No reply, keep old session
-            %   {ok, Session1} -> No reply, update session
-            %   {Msg1, Session1} -> Reply message, update session (which may
-            %   ==Session)
-            ok ->
-                Session;
-            {ok, Session1} ->
-                Session1;
-            {Msg1, Session1} ->
-                FlatMsg = iolist_to_binary(Msg1),
-                enet:send_reliable(ChannelPid, FlatMsg),
-                Session1
-        end,
+handle_info({enet, Channel, {reliable, Msg}}, State) ->
+    S1 = decode_and_reply(Msg, Channel, {enet, send_reliable}, State),
     {noreply, State#{session := S1}};
-handle_info({enet, _Channel, {unreliable, Seq, Packet}}, State) ->
-    logger:debug("Got an unreliable packet: ~p:~p", [Seq, Packet]),
-    {noreply, State};
-handle_info({enet, _Channel, {unsequenced, Group, Packet}}, State) ->
-    logger:debug("Got a message from another process: ~p:~p", [
-        Group, Packet
-    ]),
-    {noreply, State};
-handle_info({_From, Type, Msg}, State = #{channels := Channels}) when
+handle_info({enet, Channel, {unreliable, _Seq, Msg}}, State) ->
+    S1 = decode_and_reply(Msg, Channel, {enet, send_unreliable}, State),
+    {noreply, State#{session := S1}};
+handle_info({enet, Channel, {unsequenced, _Group, Msg}}, State) ->
+    S1 = decode_and_reply(Msg, Channel, {enet, send_unsequenced}, State),
+    {noreply, State#{session := S1}};
+handle_info(
+    {_From, Type, Msg, Options}, State = #{channels := Channels}
+) when
     Type =:= 'broadcast'; Type =:= 'zone_msg'
 ->
     % Handle a message from another overworld process
-    % TODO: Thread through channel
-    ChannelPID = maps:get(0, Channels),
-    %       selection
-    FlatMsg = iolist_to_binary(Msg),
-    enet:send_reliable(ChannelPID, FlatMsg),
+    channelize_msg(Msg, Channels, Options),
     {noreply, State}.
 
 terminate(_Reason, _State = #{session := Session}) ->
@@ -102,4 +85,55 @@ cleanup_session(Session) ->
             erlang:apply(M, F, [Session]);
         _ ->
             ok
+    end.
+
+channelize_msg(Msg, Channels, {QOS, Channel}) ->
+    % Not sure if it's worth implementing any fall-throughs here, better to
+    % crash early if someone fat-fingers the QOS or channel number rather than
+    % to unexpectedly send reliable,0 messages.
+    ChannelPID =
+        case Channel of
+            undefined ->
+                % Default to channel 0 if undefined
+                maps:get(0, Channels);
+            C ->
+                maps:get(C, Channels)
+        end,
+    FlatMsg = iolist_to_binary(Msg),
+    case QOS of
+        reliable ->
+            enet:send_reliable(ChannelPID, FlatMsg);
+        unreliable ->
+            enet:send_unreliable(ChannelPID, FlatMsg);
+        unsequenced ->
+            enet:send_unsequenced(ChannelPID, FlatMsg);
+        undefined ->
+            % Send a reliable packet if nothing defined
+            enet:send_reliable(ChannelPID, FlatMsg)
+    end.
+
+decode_and_reply(Msg, IncomingChannel, {Mod, Fun}, State) ->
+    #{channels := Channels, session := Session} = State,
+    case ow_protocol:decode(Msg, Session) of
+        % Table of possible returns
+        %   ok -> No reply, keep old session
+        %   {ok, Session1} -> No reply, update session
+        %   {Msg1, Session1} -> Reply message, update session (which may
+        %   ==Session)
+        ok ->
+            Session;
+        {ok, Session1} ->
+            Session1;
+        {Msg1, Session1} ->
+            % Default to sending a reliable message on whatever channel the
+            % original message came in on
+            FlatMsg = iolist_to_binary(Msg1),
+            ChannelPid = maps:get(IncomingChannel, Channels),
+            erlang:apply(Mod, Fun, [ChannelPid, FlatMsg]),
+            Session1;
+        {ok, Session1, {_QOS, _MsgChannel}} ->
+            Session1;
+        {Msg1, Session1, {QOS, MsgChannel}} ->
+            channelize_msg(Msg1, Channels, {QOS, MsgChannel}),
+            Session1
     end.

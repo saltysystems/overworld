@@ -13,7 +13,7 @@
 
 -export([
     encode_log/1,
-    broadcast/1,
+    broadcast/2,
     multicast/2,
     new/0,
     set_id/2,
@@ -87,31 +87,43 @@ rpc_info() ->
     [
         #{
             opcode => ?VERSION,
-            c2s_handler => {?MODULE, version, 1}
+            c2s_handler => {?MODULE, version, 1},
+            qos => reliable,
+            channel => 0
         },
         #{
             opcode => ?SESSION_ID_REQ,
-            c2s_handler => {?MODULE, session_id_req, 2}
+            c2s_handler => {?MODULE, session_id_req, 2},
+            qos => reliable,
+            channel => 0
         },
         #{
             opcode => ?SESSION_ID,
             s2c_call => session_id,
-            encoder => overworld_pb
+            encoder => overworld_pb,
+            qos => reliable,
+            channel => 0
         },
         #{
             opcode => ?SESSION_PING,
             c2s_handler => {?MODULE, session_ping, 2},
-            encoder => overworld_pb
+            encoder => overworld_pb,
+            qos => reliable,
+            channel => 0
         },
         #{
             opcode => ?SESSION_PONG,
             s2c_call => session_pong,
-            encoder => overworld_pb
+            encoder => overworld_pb,
+            qos => reliable,
+            channel => 0
         },
         #{
             opcode => ?SESSION_LOG,
             s2c_call => session_log,
-            encoder => overworld_pb
+            encoder => overworld_pb,
+            qos => reliable,
+            channel => 0
         }
     ].
 
@@ -191,14 +203,14 @@ encode_log_test() ->
 %% @doc Broadcast a message to all clients. Must already be serialized.
 %% @end
 %%----------------------------------------------------------------------------
--spec broadcast(msg()) -> ok.
-broadcast(EncodedMsg) ->
+-spec broadcast(msg(), {atom(), non_neg_integer() | undefined}) -> ok.
+broadcast(EncodedMsg, Options) ->
     case gproc:lookup_pids({p, l, client_session}) of
         [] ->
             ok;
         _ ->
             gproc:send({p, l, client_session}, {
-                self(), broadcast, EncodedMsg
+                self(), broadcast, EncodedMsg, Options
             })
     end,
     ok.

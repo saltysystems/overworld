@@ -118,12 +118,12 @@ func ws_connect(url: String, tls: bool):
 
 func enet_connect(ip: String, port: int):
 	print("[INFO] Connecting via ENet to ", ip)
-	var _err = _enet_peer.create_client(ip, port, 1)
+	var _err = _enet_peer.create_client(ip, port, 4)
 	mode = transport_mode.ENET
 
-func _send_message(payload, opcode):
+func _send_message(payload, opcode, qos, channel):
 	# Create a new packet starting with opcode, append the message if it exists,
-	# then send it across the websocket.
+	# then send it across the websocket or ENet connection.
 	# Set the peer mode
 	var peer
 	if mode == transport_mode.WEBSOCKET:
@@ -141,7 +141,15 @@ func _send_message(payload, opcode):
 			# TODO: Thread channel and packet type through
 			if payload.is_empty() != true:
 				packet.append_array(payload)
-			p.send(0, packet, ENetPacketPeer.FLAG_RELIABLE)
+			var flag
+			match qos:
+				"reliable":
+					flag = ENetPacketPeer.FLAG_RELIABLE
+				"unreliable":
+					flag = ENetPacketPeer.FLAG_UNRELIABLE_FRAGMENT
+				"unsequenced":
+					flag = ENetPacketPeer.FLAG_UNSEQUENCED
+			p.send(channel, packet, flag)
 
 func _process(_delta):
 	if mode == transport_mode.WEBSOCKET:

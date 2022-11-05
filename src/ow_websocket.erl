@@ -81,6 +81,12 @@ websocket_handle({binary, Msg}, Session) ->
         {ok, Session1} ->
             {ok, Session1};
         {Msg1, Session1} ->
+            {reply, {binary, Msg1}, Session1};
+        {ok, Session1, _Options} ->
+            % Options only for ENet for the moment
+            {ok, Session1};
+        {Msg1, Session1, _Options} ->
+            % Options only for ENet for the moment
             {reply, {binary, Msg1}, Session1}
     end;
 websocket_handle(Frame, State) ->
@@ -92,7 +98,7 @@ websocket_handle(Frame, State) ->
 %%      process comes into this handler process.
 %% @end
 %%--------------------------------------------------------------------------
-websocket_info({_Pid, Type, Msg}, Session) when
+websocket_info({_Pid, Type, Msg, _Options}, Session) when
     Type =:= 'broadcast'; Type =:= 'zone_msg'
 ->
     {reply, {binary, Msg}, Session};

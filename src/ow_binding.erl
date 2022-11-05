@@ -463,13 +463,24 @@ generate_marshall(
         {_, ClientMsg, _} ->
             FunStr = opcode_name_string(OpInfo),
             Encoder = ow_rpc:encoder(OpInfo),
+            QOS =
+                case ow_rpc:qos(OpInfo) of
+                    undefined -> "reliable";
+                    Type -> atom_to_list(Type)
+                end,
+            Channel =
+                case ow_rpc:channel(OpInfo) of
+                    undefined -> "0";
+                    Number -> integer_to_list(Number)
+                end,
             Op =
                 case Encoder of
                     undefined ->
                         % define an empty message for ping
                         "func " ++ FunStr ++ "():\n" ++
                             ?TAB ++ "_send_message([], OpCode." ++
-                            string:to_upper(FunStr) ++ ")\n" ++
+                            string:to_upper(FunStr) ++ ", '" ++ QOS ++
+                            "', " ++ Channel ++ ")\n" ++
                             ?TAB ++ "if debug:\n" ++
                             ?TAB(2) ++ "print('[INFO] Sent a " ++
                             FunStr ++
@@ -495,8 +506,8 @@ generate_marshall(
                             %set_parameters(Fields, Encoder) ++
                             ?TAB ++ "var payload = m.to_bytes()\n" ++
                             ?TAB ++ "_send_message(payload, OpCode." ++
-                            string:to_upper(FunStr) ++
-                            ")\n" ++
+                            string:to_upper(FunStr) ++ ", '" ++ QOS ++
+                            "', " ++ Channel ++ ")\n" ++
                             ?TAB ++ "if debug:\n" ++
                             ?TAB(2) ++ "print('[INFO] Sent a " ++
                             FunStr ++

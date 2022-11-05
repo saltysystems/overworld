@@ -69,6 +69,7 @@
     require_auth :: boolean(),
     rpcs :: ow_rpcs:callbacks()
 }).
+-type state() :: #state{}.
 
 -define(DEFAULT_CONFIG, #{
     % milliseconds between ticks
@@ -327,11 +328,12 @@ initialize_state(CbMod, CbData, Config = #{tick_ms := TickMs}) ->
 handle_call(?TAG_I({Action, Msg, Session}), _From, St0) ->
     % where Action = join or part.
     {Session1, St1} = maybe_auth_do(Action, Msg, Session, St0),
-    {reply, {ok, Session1}, St1};
+    % Get channel and QOS information
+    {reply, {ok, Session1, enet_msg_opts(Action, St1)}, St1};
 handle_call(?TAG_I({Action, Session}), _From, St0) ->
     % where Action = join or part.
     {Session1, St1} = maybe_auth_do(Action, Session, St0),
-    {reply, {ok, Session1}, St1};
+    {reply, {ok, Session1, enet_msg_opts(Action, St1)}, St1};
 handle_call(?TAG_I({who}), _From, St0) ->
     Players = ow_player_reg:list(self()),
     IDs = [ow_player_reg:get_id(P) || P <- Players],
@@ -350,7 +352,7 @@ handle_call(?TAG_I({status}), _From, St0) ->
     {reply, StatusMsg, St1};
 handle_call(?TAG_I({rpc, Type, Msg, Session}), _From, St0) ->
     {Session1, St1} = maybe_auth_rpc(Type, Msg, Session, St0),
-    {reply, {ok, Session1}, St1};
+    {reply, {ok, Session1, enet_msg_opts(Type, St1)}, St1};
 handle_call(_Call, _From, St0) ->
     {reply, ok, St0}.
 
@@ -441,9 +443,15 @@ notify_players(MsgType, Msg, RPCs, Players) ->
                         EMod = ow_rpc:encoder(RPC),
                         OpCode = ow_rpc:opcode(RPC),
                         EncodedMsg = EMod:encode_msg(Msg, MsgType),
-                        % TODO: to which process is self() referring?
+                        Channel = ow_rpc:channel(RPC),
+                        QOS = ow_rpc:qos(RPC),
                         Pid !
-                            {self(), zone_msg, [<<OpCode:16>>, EncodedMsg]}
+                            {
+                                self(),
+                                zone_msg,
+                                [<<OpCode:16>>, EncodedMsg],
+                                {QOS, Channel}
+                            }
                 end
         end
     end,
@@ -611,3 +619,12 @@ update_player(PlayerInfo, ID) ->
     P = ow_player_reg:get(ID),
     P1 = ow_player_reg:set_info(PlayerInfo, P),
     ow_player_reg:update(P1).
+
+-spec enet_msg_opts(atom, state()) ->
+    {atom(), non_neg_integer() | undefined}.
+enet_msg_opts(Action, State) ->
+    RPCs = State#state.rpcs,
+    RPC = ow_rpc:find_call(Action, RPCs),
+    Channel = ow_rpc:channel(RPC),
+    QOS = ow_rpc:qos(RPC),
+    {QOS, Channel}.
