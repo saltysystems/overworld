@@ -66,7 +66,7 @@ to_map({EntityID, Components}) ->
     % Create the component map
     EMap = maps:from_list(Components),
     % Add the ID
-    EMap#{ id => EntityID }.
+    EMap#{id => EntityID}.
 
 %% Query, update, etc functions that operate against the ETS tables
 -spec world_name(query()) -> any().
@@ -191,7 +191,7 @@ handle_call(proc, _From, State) ->
     {reply, ok, State};
 handle_call({entity, EntityID}, _From, State) ->
     #world{entities = E} = State,
-    Reply = 
+    Reply =
         case ets:lookup(E, EntityID) of
             [] -> false;
             [Entity] -> Entity
