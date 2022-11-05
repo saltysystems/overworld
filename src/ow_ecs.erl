@@ -22,7 +22,8 @@
     del_system/2,
     world_name/1,
     proc/1,
-    to_map/1
+    to_map/1,
+    query/1
 ]).
 
 %% gen_server callbacks
@@ -106,6 +107,11 @@ match_component(ComponentName, Query) ->
 %    [ ets:lookup(ETable, EntityID) || EntityID <- Matches ];
 %match_component(Component, Query) ->
 %    match_component([Component], Query).
+
+% Get the query object from the world name
+-spec query(world()) -> query().
+query(World) ->
+    gen_server:call(?SERVER(World), query).
 
 -spec new_entity(id(), world()) -> ok.
 new_entity(EntityID, World) ->
@@ -200,7 +206,11 @@ handle_call({entity, EntityID}, _From, State) ->
 handle_call(entities, _From, State) ->
     #world{entities = E} = State,
     Entities = ets:match_object(E, {'$0', '$1'}),
-    {reply, Entities, State}.
+    {reply, Entities, State};
+handle_call(query, _From, State) ->
+    #world{entities = E, components = C, name = Name} = State,
+    Query = {E, C, Name},
+    {reply, Query, State}.
 
 handle_cast({new_entity, EntityID}, State) ->
     #world{entities = E} = State,
