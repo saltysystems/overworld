@@ -17,6 +17,7 @@
     del_component/3,
     try_component/3,
     match_component/2,
+    match_components/2,
     add_system/3,
     add_system/2,
     del_system/2,
@@ -86,7 +87,7 @@ try_component(ComponentName, EntityID, Query) ->
             Data
     end.
 
--spec match_component(term(), query()) -> [tuple()].
+-spec match_component(term(), query()) -> [entity()].
 match_component(ComponentName, Query) ->
     % From the component bag table, get all matches
     {ETable, CTable, _Name} = Query,
@@ -95,18 +96,12 @@ match_component(ComponentName, Query) ->
     % list of IDs for which to return data to the caller
     lists:flatten([ets:lookup(ETable, EntityID) || {_, EntityID} <- Matches]).
 
-% Multi-match ... TODO ?
-%match_component(CList, Query) when is_list(CList) ->
-%    {ETable, CTable} = Query,
-%    % http://erlang.org/pipermail/erlang-questions/2012-February/064214.html
-%    % Return the subset of the bag that contains the entity IDs that match
-%    PartialMatches = ets:select(CTable, [{{C,'$1'},[],['$1']} || C <- CList]),
-%    % Need to filter out any entitiy IDs that don't appear at least N times,
-%    % where N is len(CList). TODO: See if there's a faster way to do this with
-%    % match expressions
-%    [ ets:lookup(ETable, EntityID) || EntityID <- Matches ];
-%match_component(Component, Query) ->
-%    match_component([Component], Query).
+-spec match_components([term()], query()) -> [entity()].
+match_components(List, Query) ->
+    % Multi-match. Try to match several components and return the common
+    % elements. Use sets v2 introduced in OTP 24
+    Sets = [ sets:from_list(match_component(X, Query),[{version, 2}]) || X <- List ],
+    sets:to_list(sets:intersection(Sets)).
 
 % Get the query object from the world name
 -spec query(world()) -> query().
