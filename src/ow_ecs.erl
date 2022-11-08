@@ -21,7 +21,7 @@
     add_system/3,
     add_system/2,
     del_system/2,
-    world_name/1,
+    world/1,
     proc/1,
     to_map/1,
     query/1
@@ -59,8 +59,23 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % API
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+start(World) ->
+    gen_server:start(?SERVER(World), ?MODULE, [World], []).
 
-%% Helper functions
+start_link(World) ->
+    gen_server:start_link(?SERVER(World), ?MODULE, [World], []).
+
+stop(World) ->
+    gen_server:stop(?SERVER(World)).
+
+% Get the query object from the world name
+-spec query(world()) -> query().
+query(World) ->
+    gen_server:call(?SERVER(World), query).
+
+-spec world(query()) -> any().
+world({_E, _C, World}) ->
+    World.
 
 % This can potentially create an unbounded number of atoms! Careful!
 -spec to_map(entity()) -> map().
@@ -69,10 +84,6 @@ to_map({EntityID, Components}) ->
     EMap = maps:from_list(Components),
     % Add the ID
     EMap#{id => EntityID}.
-
-%% Query, update, etc functions that operate against the ETS tables
--spec world_name(query()) -> any().
-world_name({_, _, Name}) -> Name.
 
 -spec try_component(term(), id(), query()) -> [term()].
 try_component(ComponentName, EntityID, Query) ->
@@ -100,69 +111,121 @@ match_component(ComponentName, Query) ->
 match_components(List, Query) ->
     % Multi-match. Try to match several components and return the common
     % elements. Use sets v2 introduced in OTP 24
-    Sets = [ sets:from_list(match_component(X, Query),[{version, 2}]) || X <- List ],
+    Sets = [
+        sets:from_list(match_component(X, Query), [{version, 2}])
+     || X <- List
+    ],
     sets:to_list(sets:intersection(Sets)).
 
-% Get the query object from the world name
--spec query(world()) -> query().
-query(World) ->
-    gen_server:call(?SERVER(World), query).
+-spec new_entity(id(), query()) -> ok.
+new_entity(EntityID, Query) ->
+    {E, _C, _W} = Query,
+    case ets:lookup(E, EntityID) of
+        [] ->
+            % ok, add 'em
+            ets:insert(E, {EntityID, []});
+        _Entity ->
+            ok
+    end.
 
--spec new_entity(id(), world()) -> ok.
-new_entity(EntityID, World) ->
-    gen_server:cast(?SERVER(World), {new_entity, EntityID}).
+-spec rm_entity(id(), query()) -> ok.
+rm_entity(EntityID, Query) ->
+    {E, C, _W} = Query,
+    case ets:lookup(E, EntityID) of
+        [] ->
+            % ok, nothing to do
+            ok;
+        [{EntityID, Components}] ->
+            % Remove the entity from the entity table
+            ets:delete(E, EntityID),
+            % Delete all instances of it from the component table as well
+            [ets:delete_object(C, {N, EntityID}) || {N, _} <- Components],
+            ok
+    end.
 
--spec rm_entity(id(), world()) -> ok.
-rm_entity(EntityID, World) ->
-    gen_server:cast(?SERVER(World), {rm_entity, EntityID}).
+-spec entity(id(), query()) -> {id(), [term()]}.
+entity(EntityID, Query) ->
+    {E, _C, _W} = Query,
+    case ets:lookup(E, EntityID) of
+        [] -> false;
+        [Entity] -> Entity
+    end.
 
--spec entity(id(), world()) -> {id(), [term()]}.
-entity(EntityID, World) ->
-    gen_server:call(?SERVER(World), {entity, EntityID}).
+-spec entities(query()) -> [{id(), [term()]}].
+entities(Query) ->
+    {E, _C, _W} = Query,
+    ets:match_object(E, {'$0', '$1'}).
 
--spec entities(world()) -> [{id(), [term()]}].
-entities(World) ->
-    gen_server:call(?SERVER(World), entities).
+-spec add_component(term(), term(), id(), query()) -> true.
+add_component(ComponentName, ComponentData, EntityID, Query) ->
+    {E, C, _W} = Query,
+    % On the entity table, we want to get the entity by key and insert a new
+    % version with the data
+    Components =
+        case ets:lookup(E, EntityID) of
+            [] ->
+                % No components
+                [{ComponentName, ComponentData}];
+            [{EntityID, ComponentList}] ->
+                % Check if the component already exists
+                case lists:keytake(ComponentName, 1, ComponentList) of
+                    {value, _Tuple, ComponentList2} ->
+                        % Throw away the old data and add the new data
+                        [{ComponentName, ComponentData} | ComponentList2];
+                    false ->
+                        [{ComponentName, ComponentData} | ComponentList]
+                end
+        end,
+    % Insert the new entity and component list
+    ets:insert(E, {EntityID, Components}),
+    % Insert the entity EntityID into the component table
+    ets:insert(C, {ComponentName, EntityID}).
 
--spec add_component(term(), term(), id(), world()) -> ok.
-add_component(ComponentName, ComponentData, EntityID, World) ->
-    gen_server:cast(
-        ?SERVER(World),
-        {add_component, ComponentName, ComponentData, EntityID}
-    ).
+-spec del_component(term(), id(), query()) -> true.
+del_component(ComponentName, EntityID, Query) ->
+    {E, C, _W} = Query,
+    % Remove the data from the entity
+    case ets:lookup_element(E, EntityID, 2) of
+        [] ->
+            ok;
+        ComponentList ->
+            % Delete the key-value identified by ComponentName
+            ComponentList1 = lists:keydelete(
+                ComponentName, 1, ComponentList
+            ),
+            % Update the entity table
+            ets:insert(E, {EntityID, ComponentList1})
+    end,
+    % Remove the data from the component bag
+    ets:delete_object(C, {ComponentName, EntityID}).
 
--spec del_component(term(), id(), world()) -> ok.
-del_component(ComponentName, EntityID, World) ->
-    gen_server:cast(
-        ?SERVER(World), {del_component, ComponentName, EntityID}
-    ).
-
--spec add_system(system(), world()) -> ok.
+-spec add_system(system(), any() | query()) -> ok.
+add_system(System, {_E, _C, World}) ->
+    add_system(System, World);
 add_system(System, World) ->
     add_system(System, 100, World).
 
--spec add_system(system(), integer(), world()) -> ok.
+-spec add_system(system(), integer(), any() | query()) -> ok.
+add_system(System, Priority, {_E, _C, World}) ->
+    add_system(System, Priority, World);
 add_system(System, Priority, World) ->
-    gen_server:cast(?SERVER(World), {add_system, System, Priority}).
+    gen_server:call(?SERVER(World), {add_system, System, Priority}).
 
--spec del_system(system(), world()) -> ok.
+-spec del_system(system(), any() | query()) -> ok.
+del_system(System, {_E, _C, World}) ->
+    del_system(System, World);
 del_system(System, World) ->
-    gen_server:cast(?SERVER(World), {del_system, System}).
+    gen_server:call(?SERVER(World), {del_system, System}).
 
--spec proc(world()) -> ok.
+-spec proc(any()) -> ok.
+proc({_E, _C, World}) ->
+    proc(World);
 proc(World) ->
     gen_server:call(?SERVER(World), proc).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % gen_server callbacks
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-start(World) ->
-    gen_server:start(?SERVER(World), ?MODULE, [World], []).
-start_link(World) ->
-    gen_server:start_link(?SERVER(World), ?MODULE, [World], []).
-stop(World) ->
-    gen_server:stop(?SERVER(World)).
 
 init([WorldName]) ->
     World = #world{
@@ -190,91 +253,11 @@ handle_call(proc, _From, State) ->
     end,
     lists:foreach(Fun, S),
     {reply, ok, State};
-handle_call({entity, EntityID}, _From, State) ->
-    #world{entities = E} = State,
-    Reply =
-        case ets:lookup(E, EntityID) of
-            [] -> false;
-            [Entity] -> Entity
-        end,
-    {reply, Reply, State};
-handle_call(entities, _From, State) ->
-    #world{entities = E} = State,
-    Entities = ets:match_object(E, {'$0', '$1'}),
-    {reply, Entities, State};
 handle_call(query, _From, State) ->
     #world{entities = E, components = C, name = Name} = State,
     Query = {E, C, Name},
-    {reply, Query, State}.
-
-handle_cast({new_entity, EntityID}, State) ->
-    #world{entities = E} = State,
-    case ets:lookup(E, EntityID) of
-        [] ->
-            % ok, add 'em
-            ets:insert(E, {EntityID, []});
-        _Entity ->
-            ok
-    end,
-    {noreply, State};
-handle_cast({rm_entity, EntityID}, State) ->
-    #world{entities = E, components = C} = State,
-    case ets:lookup(E, EntityID) of
-        [] ->
-            % ok, nothing to do
-            ok;
-        [{EntityID, ComponentList}] ->
-            % Remove the entity from the entity table
-            ets:delete(E, EntityID),
-            % Delete all instances of it from the component table as well
-            [
-                ets:delete_object(C, {CName, EntityID})
-             || {CName, _} <- ComponentList
-            ]
-    end,
-    {noreply, State};
-handle_cast({add_component, ComponentName, ComponentData, EntityID}, State) ->
-    #world{entities = E, components = C} = State,
-    % On the entity table, we want to get the entity by key and insert a new
-    % version with the data
-    Components =
-        case ets:lookup(E, EntityID) of
-            [] ->
-                % No components
-                [{ComponentName, ComponentData}];
-            [{EntityID, ComponentList}] ->
-                % Check if the component already exists
-                case lists:keytake(ComponentName, 1, ComponentList) of
-                    {value, _Tuple, ComponentList2} ->
-                        % Throw away the old data and add the new data
-                        [{ComponentName, ComponentData} | ComponentList2];
-                    false ->
-                        [{ComponentName, ComponentData} | ComponentList]
-                end
-        end,
-    % Insert the new entity and component list
-    ets:insert(E, {EntityID, Components}),
-    % Insert the entity EntityID into the component table
-    ets:insert(C, {ComponentName, EntityID}),
-    {noreply, State};
-handle_cast({del_component, ComponentName, EntityID}, State) ->
-    #world{entities = E, components = C} = State,
-    % Remove the data from the entity
-    case ets:lookup_element(E, EntityID, 2) of
-        [] ->
-            ok;
-        ComponentList ->
-            % Delete the key-value identified by ComponentName
-            ComponentList1 = lists:keydelete(
-                ComponentName, 1, ComponentList
-            ),
-            % Update the entity table
-            ets:insert(E, {EntityID, ComponentList1})
-    end,
-    % Remove the data from the component bag
-    ets:delete_object(C, {ComponentName, EntityID}),
-    {noreply, State};
-handle_cast({add_system, Callback, Prio}, State) ->
+    {reply, Query, State};
+handle_call({add_system, Callback, Prio}, _From, State) ->
     #world{systems = S} = State,
     S0 =
         case lists:keytake(Callback, 2, S) of
@@ -285,10 +268,12 @@ handle_cast({add_system, Callback, Prio}, State) ->
                 SRest
         end,
     S1 = lists:keysort(1, [{Prio, Callback} | S0]),
-    {noreply, State#world{systems = S1}};
-handle_cast({del_system, Callback}, State = #world{systems = S}) ->
+    Reply = {ok, Prio},
+    {reply, Reply, State#world{systems = S1}};
+handle_call({del_system, Callback}, _From, State = #world{systems = S}) ->
     S1 = lists:keydelete(Callback, 2, S),
-    {noreply, State#world{systems = S1}};
+    {reply, ok, State#world{systems = S1}}.
+
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
