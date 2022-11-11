@@ -231,8 +231,8 @@ init([WorldName]) ->
     World = #world{
         name = WorldName,
         systems = [],
-        entities = ets:new(entities, [set]),
-        components = ets:new(components, [bag])
+        entities = ets:new(entities, [set, public]),
+        components = ets:new(components, [bag, public])
     },
     logger:notice("Started ECS server: ~p", [WorldName]),
     logger:debug("Entity table ref: ~p", [World#world.entities]),
