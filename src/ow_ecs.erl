@@ -24,6 +24,7 @@
     world/1,
     proc/1,
     to_map/1,
+    get/2,
     query/1
 ]).
 
@@ -51,7 +52,8 @@
 -export_type([query/0]).
 
 -type world() :: #world{}.
--type entity() :: {term(), [term()]}.
+-type component() :: {term(), term()}.
+-type entity() :: {term(), [component()]}.
 -export_type([entity/0]).
 -type system() :: {mfa() | fun()}.
 -type id() :: integer().
@@ -84,6 +86,11 @@ to_map({EntityID, Components}) ->
     EMap = maps:from_list(Components),
     % Add the ID
     EMap#{id => EntityID}.
+
+-spec get(term(), [component()]) -> term().
+get(Component, ComponentList) -> 
+    {_Component, Data} = lists:keyfind(Component, 1, ComponentList),
+    Data.
 
 -spec try_component(term(), id(), query()) -> [term()].
 try_component(ComponentName, EntityID, Query) ->
