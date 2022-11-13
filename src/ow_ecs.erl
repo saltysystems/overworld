@@ -23,6 +23,7 @@
     del_system/2,
     world/1,
     proc/1,
+    proc/2,
     to_map/1,
     get/2,
     query/1
@@ -88,9 +89,13 @@ to_map({EntityID, Components}) ->
     EMap#{id => EntityID}.
 
 -spec get(term(), [component()]) -> term().
-get(Component, ComponentList) -> 
-    {_Component, Data} = lists:keyfind(Component, 1, ComponentList),
-    Data.
+get(Component, ComponentList) ->
+    case lists:keyfind(Component, 1, ComponentList) of
+        {_Component, Data} ->
+            Data;
+        false ->
+            false
+    end.
 
 -spec try_component(term(), id(), query()) -> [term()].
 try_component(ComponentName, EntityID, Query) ->
@@ -224,11 +229,17 @@ del_system(System, {_E, _C, World}) ->
 del_system(System, World) ->
     gen_server:call(?SERVER(World), {del_system, System}).
 
+-spec proc(any(), any()) -> ok.
+proc({_E, _C, World}, Data) ->
+    proc(World, Data);
+proc(World, Data) ->
+    gen_server:call(?SERVER(World), {proc, Data}).
+
 -spec proc(any()) -> ok.
 proc({_E, _C, World}) ->
     proc(World);
 proc(World) ->
-    gen_server:call(?SERVER(World), proc).
+    gen_server:call(?SERVER(World), {proc, []}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % gen_server callbacks
@@ -246,14 +257,16 @@ init([WorldName]) ->
     logger:debug("Component table ref: ~p", [World#world.components]),
     {ok, World}.
 
-handle_call(proc, _From, State) ->
+handle_call({proc, Data}, _From, State) ->
     #world{systems = S, entities = E, components = C, name = Name} = State,
     % Process all systems in order
     Fun = fun({_Prio, Sys}) ->
         Query = {E, C, Name},
         case Sys of
-            {M, F, _A} ->
+            {M, F, 1} ->
                 erlang:apply(M, F, [Query]);
+            {M, F, 2} ->
+                erlang:apply(M, F, [Query, Data]);
             Fun ->
                 Fun(Query)
         end
