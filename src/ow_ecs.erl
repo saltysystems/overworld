@@ -18,6 +18,7 @@
     try_component/3,
     match_component/2,
     match_components/2,
+    foreach_component/3,
     add_system/3,
     add_system/2,
     del_system/2,
@@ -128,6 +129,16 @@ match_components(List, Query) ->
      || X <- List
     ],
     sets:to_list(sets:intersection(Sets)).
+
+-spec foreach_component(fun(), term(), query()) -> ok.
+foreach_component(Fun, Component, Query) ->
+    Entities = ow_ecs:match_component(Component, Query),
+    F =
+        fun({ID, EntityComponents}) ->
+            Values = ow_ecs:get(Component, EntityComponents),
+            Fun(ID, Values)
+        end,
+    lists:foreach(F, Entities).
 
 -spec new_entity(id(), query()) -> ok.
 new_entity(EntityID, Query) ->
