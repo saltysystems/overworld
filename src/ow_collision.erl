@@ -1,5 +1,7 @@
 -module(ow_collision).
--export([new/4, new/2, add_entity/3, add_entities/3, check_area/3]).
+-export([
+    new/5, new/4, new/3, new/2, add_entity/3, add_entities/3, check_area/3
+]).
 
 % these aren't eunit tests as such, just some scaffolding toward building those
 -export([
@@ -22,16 +24,35 @@
 -spec new(integer(), integer(), integer(), integer()) ->
     erlquad:erlquad_node().
 new(Xmin, Ymin, Xmax, Ymax) ->
-    erlquad:new(Xmin, Ymin, Xmax, Ymax, 5).
+    erlquad:new(Xmin, Ymin, Xmax, Ymax, 3).
+
+-spec new(integer(), integer(), integer(), integer(), pos_integer()) ->
+    erlquad:erlquad_node().
+new(Xmin, Ymin, Xmax, Ymax, Depth) ->
+    erlquad:new(Xmin, Ymin, Xmax, Ymax, Depth).
 
 -spec new(pos_integer(), pos_integer()) -> erlquad:erlquad_node().
 new(X, Y) ->
+    new(X, Y, 3).
+
+-spec new(pos_integer(), pos_integer(), pos_integer()) ->
+    erlquad:erlquad_node().
+new(X, Y, Depth) ->
     % Create an empty quadtree with no entities.
-    erlquad:new(0, 0, X, Y, 5).
-%Random internet stuff suggests the depth of the quadtree should be
-%log4(N) where N is number of entities.
-% log4(25) -> 2.32
-% log4(100) -> 3.32
+    % NOTE: In totally unscientific studies, I've found empirically on an old
+    % Athlon X4 that the following are pretty good rules of thumb for erlquad
+    % performance
+    % | tree depth | time (us) |
+    % |------------|-----------|
+    % |          3 |      1600 |
+    % |          4 |      6000 |
+    % |          5 |     29000 |
+    % Random internet stuff suggests the optimal depth of the quadtree should
+    % be log4(N) where N is number of entities.
+    % log4(25) -> 2.32
+    % log4(100) -> 3.32
+    % log4(1000) -> 4.98
+    erlquad:new(0, 0, X, Y, Depth).
 
 -spec add_entity(any(), fun(), erlquad:erlquad_node()) ->
     erlquad:erlquad_node().
