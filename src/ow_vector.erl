@@ -5,10 +5,12 @@
 
 -export([
     add/2,
+    subtract/2,
     rotate/2,
     length_squared/1,
     scale/2,
     dot/2,
+    cross/2,
     normalize/1,
     orthogonal/1,
     edge_direction/2,
@@ -16,14 +18,19 @@
     project/2,
     overlap/2,
     translate/2,
+    intersect/4,
+    intersect/5,
     is_collision/2,
     aabb/1,
     test/0,
+    test_intersect/0,
     vector_map/1,
     vector_tuple/1,
     rect_to_maps/1,
     rect_to_tuples/1
 ]).
+
+-define(EPSILON, 1.0e-10).
 
 -type vector() :: {scalar(), scalar()}.
 -type vector_map() :: #{x => scalar(), y => scalar()}.
@@ -34,6 +41,9 @@
 -spec add(vector(), vector()) -> vector().
 add({X1, Y1}, {X2, Y2}) ->
     {X1 + X2, Y1 + Y2}.
+
+subtract({X1, Y1}, {X2, Y2}) ->
+    {X2 - X1, Y2 - Y1}.
 
 -spec rotate(vector(), scalar()) -> vector().
 rotate({X, Y}, RotRad) ->
@@ -52,6 +62,11 @@ scale({X, Y}, Scalar) ->
 -spec dot(vector(), vector()) -> scalar().
 dot({X1, Y1}, {X2, Y2}) ->
     X1 * X2 + Y1 * Y2.
+
+-spec cross(vector(), vector()) -> scalar().
+cross({X1, Y1}, {X2, Y2}) ->
+    % the 2D cross product is a mathematical hack :)
+    (X1 * Y2) - (Y1 * X2).
 
 -spec normalize(vector()) -> vector().
 normalize({X1, Y1}) ->
@@ -112,12 +127,19 @@ detect_overlaps(Object1, Object2, Axis) ->
 aabb(Vertices) ->
     XList = [X || {X, _} <- Vertices],
     YList = [Y || {_, Y} <- Vertices],
+    Xs = lists:sort(XList),
+    Ys = lists:sort(YList),
+    [XMin | _] = Xs,
+    [YMin | _] = Ys,
+    [XMax | _] = lists:last(Xs),
+    [YMax | _] = lists:last(Ys),
+
     % Axis-aligned bounding box.
     [
-        {lists:min(XList), lists:min(YList)},
-        {lists:max(XList), lists:min(YList)},
-        {lists:min(XList), lists:max(YList)},
-        {lists:max(XList), lists:max(YList)}
+        {XMin, YMin},
+        {XMax, YMin},
+        {XMin, YMax},
+        {XMax, YMax}
     ].
 
 % If Pos is a tuple, assume tuple mode
@@ -132,7 +154,6 @@ translate(Object, Pos) when is_map(Pos) ->
         [#{x => X + XNew, y => Y + YNew} | AccIn]
     end,
     lists:foldl(Fun, [], Object).
-
 test() ->
     A = [{0, 0}, {70, 0}, {0, 70}],
     B = [{70, 70}, {150, 70}, {70, 150}],
@@ -143,6 +164,81 @@ test() ->
         is_collision(A, C),
         is_collision(B, C)
     ].
+
+-spec intersect(vector(), vector(), vector(), vector()) -> boolean().
+intersect(A, B, C, D) ->
+    intersect(A, B, C, D, lineline).
+-spec intersect(
+    vector(), vector(), vector(), vector(), rayline | rayray | lineline
+) -> boolean().
+intersect({Ax, Ay} = A, B, {Cx, Cy} = C, D, LineType) ->
+    % Let A and B be two points that constitute a line segment.
+    % Let C and D be two more points that constitute another line segment.
+    R = subtract(A, B),
+    {Rx, Ry} = R,
+    S = subtract(C, D),
+    {Sx, Sy} = S,
+    % calculate the 2d 'cross product' of these segments
+    case cross(R, S) of
+        0 ->
+            % Lines are co-linear
+            false;
+        RcrossS ->
+            U = ((Cx - Ax) * Ry - (Cy - Ay) * Rx) / RcrossS,
+            T = ((Cx - Ax) * Sy - (Cy - Ay) * Sx) / RcrossS,
+            Intersects =
+                case LineType of
+                    rayray ->
+                        0 =< U andalso 0 =< T;
+                    rayline ->
+                        0 =< U andalso U =< 1 andalso 0 =< T;
+                    lineline ->
+                        0 =< U andalso U =< 1 andalso 0 =< T andalso T =< 1
+                end,
+            case Intersects of
+                true ->
+                    add(A, scale(R, T));
+                false ->
+                    false
+            end
+    end.
+
+test_intersect() ->
+    %TODO : Write proper eunit tests
+    % Check if parallel lines succeed.
+    Ap = {0, 0},
+    Bp = {2, 2},
+    Cp = {2, 0},
+    Dp = {4, 2},
+    % Check if coincidental lines succeed
+    Ac = {0, 0},
+    Bc = {0, 2},
+    Cc = {0, 4},
+    Dc = {0, 6},
+    % Check if crossing lines succeed
+    Ax = {0, 0},
+    Bx = {2, 2},
+    Cx = {2, 0},
+    Dx = {0, 2},
+    % Check if eventually crossing but not right now lines succeed
+    Ae = {0, 0},
+    Be = {1, 1},
+    Ce = {2, 0},
+    De = {2, 2},
+    LineLine = [
+        intersect(Ap, Bp, Cp, Dp, lineline),
+        intersect(Ac, Bc, Cc, Dc, lineline),
+        intersect(Ax, Bx, Cx, Dx, lineline),
+        intersect(Ae, Be, Ce, De, lineline)
+    ],
+    RayLine = [
+        intersect(Ap, Bp, Cp, Dp, rayline),
+        intersect(Ac, Bc, Cc, Dc, rayline),
+        intersect(Ax, Bx, Cx, Dx, rayline),
+        intersect(Ae, Be, Ce, De, rayline)
+    ],
+    io:format("Line intersect results: ~p~n", [LineLine]),
+    io:format("Ray intersect results: ~p~n", [RayLine]).
 
 %----------------------------------------------------------------------
 % Network Encoding/Decoding Functions
