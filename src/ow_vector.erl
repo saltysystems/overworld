@@ -101,7 +101,7 @@ project(Vertices, Axis) ->
     % A vector showing how much of the vertices lies along the axis
     Dots = [dot(Vertex, Axis) || Vertex <- Vertices],
     SortDot = lists:sort(Dots),
-    [ Min | _ ] = SortDot,
+    [Min | _] = SortDot,
     Max = lists:last(SortDot),
     [Min, Max].
 
@@ -109,8 +109,8 @@ project(Vertices, Axis) ->
 overlap(Projection1, Projection2) ->
     Proj1Sort = lists:sort(Projection1),
     Proj2Sort = lists:sort(Projection2),
-    [ Min1 | _ ] = Proj1Sort,
-    [ Min2 | _ ] = Proj2Sort,
+    [Min1 | _] = Proj1Sort,
+    [Min2 | _] = Proj2Sort,
     Max1 = lists:last(Proj1Sort),
     Max2 = lists:last(Proj2Sort),
     (Min1 =< Max2) and (Min2 =< Max1).
