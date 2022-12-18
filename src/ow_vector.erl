@@ -100,14 +100,19 @@ vertices_to_edges([V1, V2 | Rest], First, Acc) ->
 project(Vertices, Axis) ->
     % A vector showing how much of the vertices lies along the axis
     Dots = [dot(Vertex, Axis) || Vertex <- Vertices],
-    [lists:min(Dots), lists:max(Dots)].
+    SortDot = lists:sort(Dots),
+    [ Min | _ ] = SortDot,
+    Max = lists:last(SortDot),
+    [Min, Max].
 
 -spec overlap([scalar(), ...], [scalar(), ...]) -> boolean().
 overlap(Projection1, Projection2) ->
-    Min1 = lists:min(Projection1),
-    Min2 = lists:min(Projection2),
-    Max1 = lists:max(Projection1),
-    Max2 = lists:max(Projection2),
+    Proj1Sort = lists:sort(Projection1),
+    Proj2Sort = lists:sort(Projection2),
+    [ Min1 | _ ] = Proj1Sort,
+    [ Min2 | _ ] = Proj2Sort,
+    Max1 = lists:last(Proj1Sort),
+    Max2 = lists:last(Proj2Sort),
     (Min1 =< Max2) and (Min2 =< Max1).
 
 is_collision(Object1, Object2) ->
