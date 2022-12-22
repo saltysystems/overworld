@@ -7,6 +7,9 @@
     add/2,
     subtract/2,
     rotate/2,
+    rotate/3,
+    rotate_polygon/2,
+    rotate_polygon/3,
     length_squared/1,
     scale/2,
     dot/2,
@@ -18,8 +21,11 @@
     project/2,
     overlap/2,
     translate/2,
+    ray_intersect/4,
     intersect/4,
     intersect/5,
+    edges/1,
+    outer_edges/1,
     is_collision/2,
     aabb/1,
     test/0,
@@ -47,9 +53,22 @@ subtract({X1, Y1}, {X2, Y2}) ->
 
 -spec rotate(vector(), scalar()) -> vector().
 rotate({X, Y}, RotRad) ->
-    CR = math:cos(RotRad),
-    SR = math:sin(RotRad),
-    {CR * X - SR * Y, SR * X + CR * Y}.
+    rotate({X, Y}, RotRad, {0, 0}).
+
+-spec rotate(vector(), scalar(), vector()) -> vector().
+rotate({Xv, Yv}, RotRad, {Xp, Yp}) ->
+    % v = vertex/vector, p = point
+    NewX = Xp + (Xv - Xp) * math:cos(RotRad) - (Yv - Yp) * math:sin(RotRad),
+    NewY = Yp + (Xv - Xp) * math:sin(RotRad) + (Yv - Yp) * math:cos(RotRad),
+    {NewX, NewY}.
+
+-spec rotate_polygon([vector()], scalar()) -> [vector()].
+rotate_polygon(Vertices, RotRad) ->
+    [ow_vector:rotate(Vertex, RotRad) || Vertex <- Vertices].
+
+-spec rotate_polygon([vector()], scalar(), vector()) -> [vector()].
+rotate_polygon(Vertices, RotRad, Point) ->
+    [ow_vector:rotate(Vertex, RotRad, Point) || Vertex <- Vertices].
 
 -spec length_squared(vector()) -> float().
 length_squared({X, Y}) ->
@@ -170,6 +189,10 @@ test() ->
         is_collision(B, C)
     ].
 
+-spec ray_intersect(vector(), vector(), vector(), vector()) -> boolean().
+ray_intersect(A, B, C, D) ->
+    intersect(A, B, C, D, rayline).
+
 -spec intersect(vector(), vector(), vector(), vector()) -> boolean().
 intersect(A, B, C, D) ->
     intersect(A, B, C, D, lineline).
@@ -244,6 +267,47 @@ test_intersect() ->
     ],
     io:format("Line intersect results: ~p~n", [LineLine]),
     io:format("Ray intersect results: ~p~n", [RayLine]).
+
+edges(Vertices) ->
+    edges(Vertices, []).
+edges([], Acc) ->
+    Acc;
+edges([First, Second | Rest], Acc) ->
+    % Take the first two vertices and make a pair
+    Edge = [First, Second],
+    % Remove the first vertex and continue
+    edges([Second | Rest], First, [Edge | Acc]);
+edges([_Last | _Rest], Acc) ->
+    % Handle the case of an odd number of edges
+    Acc.
+
+edges([], _First, Acc) ->
+    Acc;
+edges([A, B | Rest], First, Acc) ->
+    Edge = [A, B],
+    edges([B | Rest], First, [Edge | Acc]);
+edges([Last], First, Acc) ->
+    Edge = [Last, First],
+    edges([], [Edge | Acc]).
+
+% Given a deep list of edges, delete all shared edges, producing only outer
+% edges. This trick only works in 2D.
+outer_edges(EdgeList) ->
+    % There is probably a much more effiient way to do this, but we don't need
+    % to do it frequently.
+    % For every edge in the list, sort the inner edge lists
+    Sorted = [lists:sort(E) || E <- EdgeList],
+    % Get the unique vertex pairs
+    Uniques = lists:uniq(Sorted),
+    % Remove the unique vertex pairs from the edge list to get a list
+    % containing only duplicates
+    Duplicates = Sorted -- Uniques,
+    % Remove the duplicates and their reverses from the unsorted list
+    F = fun([X, Y]) ->
+        not (lists:member([X, Y], Duplicates) or
+            lists:member([Y, X], Duplicates))
+    end,
+    lists:filter(F, Sorted).
 
 %----------------------------------------------------------------------
 % Network Encoding/Decoding Functions
