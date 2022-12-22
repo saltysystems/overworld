@@ -104,6 +104,8 @@ edge_direction({X1, Y1}, {X2, Y2}) ->
     % A vector pointing from V1 to V2
     {X2 - X1, Y2 - Y1}.
 
+% This may have duplicate functionality with edges/1
+% TODO: Eliminate the extraneous fun
 -spec vertices_to_edges([vector(), ...]) -> [vector(), ...].
 vertices_to_edges(Vertices = [First | _Rest]) ->
     % A list of the edges of the vertices as vectors
@@ -189,16 +191,16 @@ test() ->
         is_collision(B, C)
     ].
 
--spec ray_intersect(vector(), vector(), vector(), vector()) -> boolean().
+-spec ray_intersect(vector(), vector(), vector(), vector()) -> false | vector().
 ray_intersect(A, B, C, D) ->
     intersect(A, B, C, D, rayline).
 
--spec intersect(vector(), vector(), vector(), vector()) -> boolean().
+-spec intersect(vector(), vector(), vector(), vector()) -> false | vector().
 intersect(A, B, C, D) ->
     intersect(A, B, C, D, lineline).
 -spec intersect(
     vector(), vector(), vector(), vector(), rayline | rayray | lineline
-) -> boolean().
+) -> false | vector().
 intersect({Ax, Ay} = A, B, {Cx, Cy} = C, D, LineType) ->
     % Let A and B be two points that constitute a line segment.
     % Let C and D be two more points that constitute another line segment.
@@ -268,6 +270,7 @@ test_intersect() ->
     io:format("Line intersect results: ~p~n", [LineLine]),
     io:format("Ray intersect results: ~p~n", [RayLine]).
 
+%-spec edges([vector()]) -> [vector()].
 edges(Vertices) ->
     edges(Vertices, []).
 edges([], Acc) ->
@@ -281,6 +284,7 @@ edges([_Last | _Rest], Acc) ->
     % Handle the case of an odd number of edges
     Acc.
 
+%-spec edges([vector()], vector(), [vector()]) -> [[vector()]].
 edges([], _First, Acc) ->
     Acc;
 edges([A, B | Rest], First, Acc) ->
@@ -288,7 +292,7 @@ edges([A, B | Rest], First, Acc) ->
     edges([B | Rest], First, [Edge | Acc]);
 edges([Last], First, Acc) ->
     Edge = [Last, First],
-    edges([], [Edge | Acc]).
+    edges([], First, [Edge | Acc]).
 
 % Given a deep list of edges, delete all shared edges, producing only outer
 % edges. This trick only works in 2D.
