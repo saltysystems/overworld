@@ -191,7 +191,8 @@ test() ->
         is_collision(B, C)
     ].
 
--spec ray_intersect(vector(), vector(), vector(), vector()) -> false | vector().
+-spec ray_intersect(vector(), vector(), vector(), vector()) ->
+    false | vector().
 ray_intersect(A, B, C, D) ->
     intersect(A, B, C, D, rayline).
 
