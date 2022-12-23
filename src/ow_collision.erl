@@ -1,6 +1,6 @@
 -module(ow_collision).
 -export([
-    new/5, new/4, new/3, new/2,
+    new/5, new/3, new/2,
     add_entity/3,
     add_entities/3,
     check_area/3,
@@ -24,19 +24,14 @@
     bbox
 }).
 
--spec new(integer(), integer(), integer(), integer()) ->
-    erlquad:erlquad_node().
-new(Xmin, Ymin, Xmax, Ymax) ->
-    erlquad:new(Xmin, Ymin, Xmax, Ymax, 3).
-
--spec new(integer(), integer(), integer(), integer(), pos_integer()) ->
-    erlquad:erlquad_node().
-new(Xmin, Ymin, Xmax, Ymax, Depth) ->
-    erlquad:new(Xmin, Ymin, Xmax, Ymax, Depth).
-
--spec new(pos_integer(), pos_integer()) -> erlquad:erlquad_node().
-new(X, Y) ->
-    new(X, Y, 3).
+% Random internet posters suggest the optimal depth of the quadtree should be
+% log4(N) where N is number of entities. Empirically it seems about right!
+% log4(25) -> 2.32
+% log4(100) -> 3.32
+% log4(1000) -> 4.98
+-spec new(integer(), integer()) -> erlquad:erlquad_node().
+new(Radius, Depth) ->
+    erlquad:new(-Radius, -Radius, Radius, Radius, Depth).
 
 -spec new(pos_integer(), pos_integer(), pos_integer()) ->
     erlquad:erlquad_node().
@@ -47,6 +42,11 @@ new(X, Y, Depth) ->
     % log4(100) -> 3.32
     % log4(1000) -> 4.98
     erlquad:new(0, 0, X, Y, Depth).
+
+-spec new(integer(), integer(), integer(), integer(), pos_integer()) ->
+    erlquad:erlquad_node().
+new(Xmin, Ymin, Xmax, Ymax, Depth) ->
+    erlquad:new(Xmin, Ymin, Xmax, Ymax, Depth).
 
 -spec add_entity(any(), fun(), erlquad:erlquad_node()) ->
     erlquad:erlquad_node().
