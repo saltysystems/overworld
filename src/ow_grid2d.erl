@@ -6,8 +6,8 @@
     put_col/3,
     get_row/2,
     put_row/3,
-    put_obj/3,
-    get_obj/2,
+    put/3,
+    get/2,
     floodfill/2,
     is_contiguous/2,
     get_empty/1,
@@ -38,8 +38,8 @@ new(N, M, Object) ->
         Coords
     ).
 
--spec get_obj(coords(), map()) -> any().
-get_obj({X, Y}, Map) ->
+-spec get(coords(), map()) -> any().
+get({X, Y}, Map) ->
     Tile = maps:get({X, Y}, Map),
     Tile#tile.object.
 
@@ -55,8 +55,8 @@ get_row(Row, Map) ->
 
 %-spec get_subgrid(StartCoords, EndCoords, map()) -> map().
 
--spec put_obj(coords(), any(), map()) -> map().
-put_obj({X, Y}, What, Map) ->
+-spec put(coords(), any(), map()) -> map().
+put({X, Y}, What, Map) ->
     Tile = #tile{object = What},
     M1 = maps:put({X, Y}, Tile, Map),
     set_flag({X, Y}, nonempty, M1).
