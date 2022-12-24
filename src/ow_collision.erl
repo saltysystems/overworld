@@ -88,7 +88,7 @@ check_area(
 
 check_area_test() ->
     % create a new quadtree
-    Q1 = new(10000, 10000),
+    Q1 = new(10000, 3),
     % Create some entities in the quadtree
     Entities = [
         #test_entity{
@@ -132,45 +132,45 @@ check_area_test() ->
 
 % TODO: It may be desireable to have an early-exit version of this, such that
 %       it completes after finding one intersection.
-check_ray({L, B, R, T}, RayOrigin, RayDirection, BBoxFun, QuadTree) ->
+check_ray({L, B, R, T}, RO, RD, BBoxFun, QuadTree) ->
     % Get the list of objects
     Objects = erlquad:area_query(L, B, R, T, QuadTree),
     % Get all edges
-    F = fun(Object, AccIn) ->
+    F = fun(Obj, Acc) ->
         % Get the bounding box vertices in tuple form and convert them
         % to edges
-        Edges = ow_vector:edges(BBoxFun(Object)),
-        % Add the edges to the accumulator
-        Edges ++ AccIn
+        E = ow_vector:edges(BBoxFun(Obj)),
+        Result = [
+            {Obj, ow_vector:ray_intersect(RO, RD, P1, P2)}
+         || [P1, P2] <- E
+        ],
+        % valid use of ++?
+        Result ++ Acc
     end,
-    Edges = lists:foldl(F, [], Objects),
-    % Test if the ray intersects any of the edges
-    TestIntersect =
-        fun([P1, P2], Acc) ->
-            case ow_vector:ray_intersect(RayOrigin, RayDirection, P1, P2) of
-                false ->
-                    Acc;
-                Result ->
-                    [Result | Acc]
-            end
+    % The intermediate result (IR) should have a list of results, extract the
+    % non-false results
+    IR = lists:foldl(F, [], Objects),
+    Filter =
+        fun
+            ({_Obj, Result}) when Result =/= false ->
+                true;
+            ({_Obj, _Result}) ->
+                false
         end,
-    lists:foldl(TestIntersect, [], Edges).
+    lists:filter(Filter, IR).
 
 check_ray_test() ->
     % create a new quadtree
-    Q1 = new(1000, 1000, 3),
+    Q1 = new(10000, 3),
     % Create some entities in the quadtree
     Entities = [
         #test_entity{
-            pos = {10, 10},
+            pos = {0, 0},
             % counter-clockwise winding
             bbox = [{-5, -5}, {-5, 5}, {5, 5}, {5, -5}]
-        }#test_entity{
-            pos = {10, 21},
-            bbox = [{-5, -5}, {-5, 5}, {5, -5}, {5, 5}]
         },
         #test_entity{
-            pos = {0, 0},
+            pos = {10, -25},
             bbox = [{-5, -5}, {-5, 5}, {5, -5}, {5, 5}]
         }
     ],
@@ -179,8 +179,8 @@ check_ray_test() ->
     % Add entity positions to the quadtree
     Q2 = add_entities(Entities, PositionFun, Q1),
     % Create a new ray
-    {ROx, ROy} = {0, 5},
-    RayDirection = {5, 5},
+    {ROx, ROy} = {2, 10},
+    RayDirection = {-2, 5},
     % Extend 100 units in all directions around the entity to define the area
     % to check for collisions
     Left = ROx - 50,
