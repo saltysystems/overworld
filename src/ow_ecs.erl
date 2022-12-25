@@ -14,7 +14,9 @@
     entity/2,
     entities/1,
     add_component/4,
+    add_components/3,
     del_component/3,
+    del_components/3,
     try_component/3,
     match_component/2,
     match_components/2,
@@ -204,6 +206,14 @@ add_component(ComponentName, ComponentData, EntityID, Query) ->
     % Insert the entity EntityID into the component table
     ets:insert(C, {ComponentName, EntityID}).
 
+-spec add_components([{term(), term()}], id(), query()) -> ok.
+add_components(Components, EntityID, Query) ->
+    F =
+        fun({Component, Data}) ->
+            add_component(Component, Data, EntityID, Query)
+        end,
+    lists:foreach(F, Components).
+
 -spec del_component(term(), id(), query()) -> true.
 del_component(ComponentName, EntityID, Query) ->
     {E, C, _W} = Query,
@@ -221,6 +231,14 @@ del_component(ComponentName, EntityID, Query) ->
     end,
     % Remove the data from the component bag
     ets:delete_object(C, {ComponentName, EntityID}).
+
+-spec del_components([term()], id(), query()) -> ok.
+del_components(Components, EntityID, Query) ->
+    F =
+        fun(Component) ->
+            del_component(Component, EntityID, Query)
+        end,
+    lists:foreach(F, Components).
 
 -spec add_system(system(), any() | query()) -> ok.
 add_system(System, {_E, _C, World}) ->
