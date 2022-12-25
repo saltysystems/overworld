@@ -130,7 +130,7 @@ try_component(ComponentName, EntityID, Query) ->
             % It exists in the component table, so return the Entity data back
             % to the caller
             [{EntityID, Data}] = ets:lookup(ETable, EntityID),
-            take(ComponentName, Data)
+            Data
     end.
 
 -spec match_component(term(), query()) -> [entity()].
