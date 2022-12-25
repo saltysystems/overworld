@@ -22,10 +22,11 @@
 }).
 
 eprof(Count, Area, Depth, Test) ->
-    TestFun = case Test of
-                  ray -> check_ray_random_test;
-                  sat -> check_area_random_test
-              end,
+    TestFun =
+        case Test of
+            ray -> check_ray_random_test;
+            sat -> check_area_random_test
+        end,
     {ok, Pid} = eprof:start(),
     {ok, _Result} = eprof:profile(
         [Pid], ow_microbench, TestFun, [Count, Area, Depth]
