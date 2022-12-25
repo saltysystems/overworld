@@ -25,6 +25,8 @@
 
 -record(tile, {flags = #{}, object}).
 
+%TODO: Can we just make this without the initialization step? How does this
+%      affect floodfill etc?
 -spec new(pos_integer(), pos_integer()) -> map().
 new(M, N) ->
     new(M, N, undefined).
