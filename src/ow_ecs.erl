@@ -120,7 +120,7 @@ take(Component, ComponentList, Default) ->
             Default
     end.
 
--spec try_component(term(), id(), query()) -> {term(), [term()]} | false.
+-spec try_component(term(), id(), query()) -> [term()] | false.
 try_component(ComponentName, EntityID, Query) ->
     {ETable, CTable, _Name} = Query,
     case ets:match_object(CTable, {ComponentName, EntityID}) of
