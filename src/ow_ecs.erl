@@ -30,6 +30,8 @@
     to_map/1,
     get/3,
     get/2,
+    take/3,
+    take/2,
     query/1
 ]).
 
@@ -105,7 +107,20 @@ get(Component, ComponentList, Default) ->
             Default
     end.
 
--spec try_component(term(), id(), query()) -> [term()].
+-spec take(term(), [component()]) -> term().
+take(Component, ComponentList) ->
+    take(Component, ComponentList, false).
+
+-spec take(term(), [component()], term()) -> {term(), [term()]}.
+take(Component, ComponentList, Default) ->
+    case lists:keytake(Component, 1, ComponentList) of
+        {value, {_Component, Data}, Rest} ->
+            {Data, Rest};
+        false ->
+            Default
+    end.
+
+-spec try_component(term(), id(), query()) -> {term(), [term()]} | false.
 try_component(ComponentName, EntityID, Query) ->
     {ETable, CTable, _Name} = Query,
     case ets:match_object(CTable, {ComponentName, EntityID}) of
@@ -115,7 +130,7 @@ try_component(ComponentName, EntityID, Query) ->
             % It exists in the component table, so return the Entity data back
             % to the caller
             [{EntityID, Data}] = ets:lookup(ETable, EntityID),
-            Data
+            take(ComponentName, Data)
     end.
 
 -spec match_component(term(), query()) -> [entity()].
