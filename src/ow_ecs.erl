@@ -28,6 +28,7 @@
     proc/1,
     proc/2,
     to_map/1,
+    get/3,
     get/2,
     query/1
 ]).
@@ -93,11 +94,15 @@ to_map({EntityID, Components}) ->
 
 -spec get(term(), [component()]) -> term().
 get(Component, ComponentList) ->
+    get(Component, ComponentList, false).
+
+-spec get(term(), [component()], term()) -> term().
+get(Component, ComponentList, Default) ->
     case lists:keyfind(Component, 1, ComponentList) of
         {_Component, Data} ->
             Data;
         false ->
-            false
+            Default
     end.
 
 -spec try_component(term(), id(), query()) -> [term()].
@@ -137,7 +142,7 @@ foreach_component(Fun, Component, Query) ->
     Entities = ow_ecs:match_component(Component, Query),
     F =
         fun({ID, EntityComponents}) ->
-            Values = ow_ecs:get(Component, EntityComponents),
+            Values = get(Component, EntityComponents),
             Fun(ID, Values)
         end,
     lists:foreach(F, Entities).
