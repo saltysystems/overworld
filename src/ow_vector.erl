@@ -33,7 +33,8 @@
     vector_map/1,
     vector_tuple/1,
     rect_to_maps/1,
-    rect_to_tuples/1
+    rect_to_tuples/1,
+    distance/2
 ]).
 
 -define(EPSILON, 1.0e-10).
@@ -333,3 +334,7 @@ vector_map({X, Y}) ->
 -spec vector_tuple(map()) -> vector().
 vector_tuple(#{x := X, y := Y}) ->
     {X, Y}.
+
+-spec distance(vector(), vector()) -> pos_integer().
+distance({X1, Y1}, {X2, Y2}) ->
+    abs(X2 - X1) + abs(Y2 - Y1).
