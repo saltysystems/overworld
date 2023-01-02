@@ -41,6 +41,8 @@
 -define(EPSILON, 1.0e-10).
 
 -type vector() :: {scalar(), scalar()}.
+-type vector3() :: {scalar(), scalar(), scalar()}.
+-type vector4() :: {scalar(), scalar(), scalar(), scalar()}.
 -type vector_map() :: #{x => scalar(), y => scalar()}.
 -type scalar() :: number().
 
@@ -328,7 +330,7 @@ rect_to_maps(Vertices) ->
 rect_to_tuples(Vertices) ->
     [{X, Y} || #{x := X, y := Y} <- Vertices].
 
--spec vector_map(vector()) -> map().
+-spec vector_map(vector()|vector3()|vector4()) -> map().
 vector_map({X, Y}) ->
     #{x => X, y => Y};
 vector_map({X, Y, Z}) ->
@@ -336,7 +338,9 @@ vector_map({X, Y, Z}) ->
 vector_map({W, X, Y, Z}) ->
     #{w => W, x => X, y => Y, z => Z}.
 
--spec vector_tuple(map()) -> vector().
+-spec vector_tuple(map()) -> vector() | vector3() | vector4().
+vector_tuple(#{x := X, y := Y}) ->
+    {X, Y};
 vector_tuple(#{x := X, y := Y, z := Z}) ->
     {X, Y, Z};
 vector_tuple(#{w := W, x := X, y := Y, z := Z}) ->
