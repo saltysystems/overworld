@@ -30,6 +30,7 @@
     aabb/1,
     test/0,
     test_intersect/0,
+    to_proto/1,
     vector_map/1,
     vector_tuple/1,
     rect_to_maps/1,
@@ -338,3 +339,24 @@ vector_tuple(#{x := X, y := Y}) ->
 -spec distance(vector(), vector()) -> pos_integer().
 distance({X1, Y1}, {X2, Y2}) ->
     abs(X2 - X1) + abs(Y2 - Y1).
+
+-spec to_proto(map()) -> map().
+to_proto(Map) ->
+    F = fun
+        (_Key, {X, Y}) ->
+            ow_vector:vector_map({X, Y});
+        (_Key, Val) when is_list(Val) ->
+            maybe_vector_map(Val);
+        (_Key, Val) ->
+            Val
+    end,
+    maps:map(F, Map).
+
+maybe_vector_map(List) ->
+    maybe_vector_map(List, []).
+maybe_vector_map([], Acc) ->
+    Acc;
+maybe_vector_map([{X, Y} | Rest], Acc) ->
+    maybe_vector_map(Rest, [ow_vector:vector_map({X, Y}) | Acc]);
+maybe_vector_map([Head | Tail], Acc) ->
+    maybe_vector_map(Tail, [Head | Acc]).
