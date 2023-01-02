@@ -330,11 +330,17 @@ rect_to_tuples(Vertices) ->
 
 -spec vector_map(vector()) -> map().
 vector_map({X, Y}) ->
-    #{x => X, y => Y}.
+    #{x => X, y => Y};
+vector_map({X, Y, Z}) ->
+    #{x => X, y => Y, z => Z};
+vector_map({W, X, Y, Z}) ->
+    #{w => W, x => X, y => Y, z => Z}.
 
 -spec vector_tuple(map()) -> vector().
-vector_tuple(#{x := X, y := Y}) ->
-    {X, Y}.
+vector_tuple(#{x := X, y := Y, z := Z}) ->
+    {X, Y, Z};
+vector_tuple(#{w := W, x := X, y := Y, z := Z}) ->
+    {W, X, Y, Z}.
 
 -spec distance(vector(), vector()) -> pos_integer().
 distance({X1, Y1}, {X2, Y2}) ->
@@ -358,5 +364,9 @@ maybe_vector_map([], Acc) ->
     Acc;
 maybe_vector_map([{X, Y} | Rest], Acc) ->
     maybe_vector_map(Rest, [ow_vector:vector_map({X, Y}) | Acc]);
+maybe_vector_map([{X, Y, Z} | Rest], Acc) ->
+    maybe_vector_map(Rest, [ow_vector:vector_map({X, Y, Z}) | Acc]);
+maybe_vector_map([{W, X, Y, Z} | Rest], Acc) ->
+    maybe_vector_map(Rest, [ow_vector:vector_map({W, X, Y, Z}) | Acc]);
 maybe_vector_map([Head | Tail], Acc) ->
     maybe_vector_map(Tail, [Head | Acc]).
