@@ -273,11 +273,11 @@ del_system(System, World) ->
 
 -spec proc(world(), any()) -> ok.
 proc(World, Data) ->
-    gen_server:call(?SERVER(World), {proc, Data}).
+    gen_server:cast(?SERVER(World), {proc, Data}).
 
 -spec proc(world()) -> ok.
 proc(World) ->
-    gen_server:call(?SERVER(World), {proc, []}).
+    gen_server:cast(?SERVER(World), {proc, []}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % gen_server callbacks
@@ -295,22 +295,6 @@ init([WorldName]) ->
     logger:debug("Component table ref: ~p", [World#world.components]),
     {ok, World}.
 
-handle_call({proc, Data}, _From, State) ->
-    #world{systems = S, entities = E, components = C, name = Name} = State,
-    % Process all systems in order
-    Fun = fun({_Prio, Sys}) ->
-        Query = {E, C, Name},
-        case Sys of
-            {M, F, 1} ->
-                erlang:apply(M, F, [Query]);
-            {M, F, 2} ->
-                erlang:apply(M, F, [Query, Data]);
-            Fun ->
-                Fun(Query)
-        end
-    end,
-    lists:foreach(Fun, S),
-    {reply, ok, State};
 handle_call(query, _From, State) ->
     #world{entities = E, components = C, name = Name} = State,
     Query = {E, C, Name},
@@ -332,6 +316,21 @@ handle_call({del_system, Callback}, _From, State = #world{systems = S}) ->
     S1 = lists:keydelete(Callback, 2, S),
     {reply, ok, State#world{systems = S1}}.
 
+handle_cast({proc, Data}, State) ->
+    #world{systems = S, name = Name} = State,
+    % Process all systems in order
+    Fun = fun({_Prio, Sys}) ->
+        case Sys of
+            {M, F, 1} ->
+                erlang:apply(M, F, [Name]);
+            {M, F, 2} ->
+                erlang:apply(M, F, [Name, Data]);
+            Fun ->
+                Fun(Name)
+        end
+    end,
+    lists:foreach(Fun, S),
+    {noreply, State};
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
