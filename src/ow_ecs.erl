@@ -24,15 +24,13 @@
     add_system/3,
     add_system/2,
     del_system/2,
-    world/1,
     proc/1,
     proc/2,
     to_map/1,
     get/3,
     get/2,
     take/3,
-    take/2,
-    query/1
+    take/2
 ]).
 
 %% gen_server callbacks
@@ -55,10 +53,9 @@
     components :: ets:tid()
 }).
 
--opaque query() :: {ets:tid(), ets:tid(), any()}.
--export_type([query/0]).
-
+-type query() :: {ets:tid(), ets:tid(), any()}.
 -type world() :: #world{}.
+-export_type([world/0]).
 -type component() :: {term(), term()}.
 -type entity() :: {term(), [component()]}.
 -export_type([entity/0]).
@@ -76,15 +73,6 @@ start_link(World) ->
 
 stop(World) ->
     gen_server:stop(?SERVER(World)).
-
-% Get the query object from the world name
--spec query(world()) -> query().
-query(World) ->
-    gen_server:call(?SERVER(World), query).
-
--spec world(query()) -> any().
-world({_E, _C, World}) ->
-    World.
 
 % This can potentially create an unbounded number of atoms! Careful!
 -spec to_map(entity()) -> map().
@@ -120,41 +108,43 @@ take(Component, ComponentList, Default) ->
             Default
     end.
 
--spec try_component(term(), id(), query()) -> [term()] | false.
-try_component(ComponentName, EntityID, Query) ->
+-spec try_component(term(), id(), world()) -> [term()] | false.
+try_component(ComponentName, EntityID, World) ->
+    Query = query(World),
     {ETable, CTable, _Name} = Query,
     case ets:match_object(CTable, {ComponentName, EntityID}) of
         [] ->
             false;
         _Match ->
-            % It exists in the component table, so return the Entity data back
-            % to the caller
+            % It exists in the component table, so return the Entity data
+            % back to the caller
             [{EntityID, Data}] = ets:lookup(ETable, EntityID),
             Data
     end.
 
--spec match_component(term(), query()) -> [entity()].
-match_component(ComponentName, Query) ->
+-spec match_component(term(), world()) -> [entity()].
+match_component(ComponentName, World) ->
+    Query = query(World),
     % From the component bag table, get all matches
     {ETable, CTable, _Name} = Query,
     Matches = ets:lookup(CTable, ComponentName),
-    % Use the entity IDs from the lookup in the component table to generate a
-    % list of IDs for which to return data to the caller
+    % Use the entity IDs from the lookup in the component table to
+    % generate a list of IDs for which to return data to the caller
     lists:flatten([ets:lookup(ETable, EntityID) || {_, EntityID} <- Matches]).
 
--spec match_components([term()], query()) -> [entity()].
-match_components(List, Query) ->
+-spec match_components([term()], world()) -> [entity()].
+match_components(List, World) ->
     % Multi-match. Try to match several components and return the common
     % elements. Use sets v2 introduced in OTP 24
     Sets = [
-        sets:from_list(match_component(X, Query), [{version, 2}])
+        sets:from_list(match_component(X, World), [{version, 2}])
      || X <- List
     ],
     sets:to_list(sets:intersection(Sets)).
 
--spec foreach_component(fun(), term(), query()) -> ok.
-foreach_component(Fun, Component, Query) ->
-    Entities = ow_ecs:match_component(Component, Query),
+-spec foreach_component(fun(), term(), world()) -> ok.
+foreach_component(Fun, Component, World) ->
+    Entities = ow_ecs:match_component(Component, World),
     F =
         fun({ID, EntityComponents}) ->
             Values = get(Component, EntityComponents),
@@ -162,8 +152,9 @@ foreach_component(Fun, Component, Query) ->
         end,
     lists:foreach(F, Entities).
 
--spec new_entity(id(), query()) -> ok.
-new_entity(EntityID, Query) ->
+-spec new_entity(id(), world()) -> ok.
+new_entity(EntityID, World) ->
+    Query = query(World),
     {E, _C, _W} = Query,
     case ets:lookup(E, EntityID) of
         [] ->
@@ -173,8 +164,9 @@ new_entity(EntityID, Query) ->
             ok
     end.
 
--spec rm_entity(id(), query()) -> ok.
-rm_entity(EntityID, Query) ->
+-spec rm_entity(id(), world()) -> ok.
+rm_entity(EntityID, World) ->
+    Query = query(World),
     {E, C, _W} = Query,
     case ets:lookup(E, EntityID) of
         [] ->
@@ -188,21 +180,27 @@ rm_entity(EntityID, Query) ->
             ok
     end.
 
--spec entity(id(), query()) -> {id(), [term()]}.
-entity(EntityID, Query) ->
+-spec entity(id(), world()) -> [term()] | false.
+entity(EntityID, World) ->
+    Query = query(World),
     {E, _C, _W} = Query,
     case ets:lookup(E, EntityID) of
-        [] -> false;
-        [Entity] -> Entity
+        [] ->
+            false;
+        [Entity] ->
+            {_ID, Components} = Entity,
+            Components
     end.
 
--spec entities(query()) -> [{id(), [term()]}].
-entities(Query) ->
+-spec entities(world()) -> [{id(), list()}].
+entities(World) ->
+    Query = query(World),
     {E, _C, _W} = Query,
     ets:match_object(E, {'$0', '$1'}).
 
--spec add_component(term(), term(), id(), query()) -> true.
-add_component(ComponentName, ComponentData, EntityID, Query) ->
+-spec add_component(term(), term(), id(), world()) -> true.
+add_component(ComponentName, ComponentData, EntityID, World) ->
+    Query = query(World),
     {E, C, _W} = Query,
     % On the entity table, we want to get the entity by key and insert a new
     % version with the data
@@ -226,16 +224,17 @@ add_component(ComponentName, ComponentData, EntityID, Query) ->
     % Insert the entity EntityID into the component table
     ets:insert(C, {ComponentName, EntityID}).
 
--spec add_components([{term(), term()}], id(), query()) -> ok.
-add_components(Components, EntityID, Query) ->
+-spec add_components([{term(), term()}], id(), world()) -> ok.
+add_components(Components, EntityID, World) ->
     F =
         fun({Component, Data}) ->
-            add_component(Component, Data, EntityID, Query)
+            add_component(Component, Data, EntityID, World)
         end,
     lists:foreach(F, Components).
 
--spec del_component(term(), id(), query()) -> true.
-del_component(ComponentName, EntityID, Query) ->
+-spec del_component(term(), id(), world()) -> true.
+del_component(ComponentName, EntityID, World) ->
+    Query = query(World),
     {E, C, _W} = Query,
     % Remove the data from the entity
     case ets:lookup_element(E, EntityID, 2) of
@@ -252,41 +251,31 @@ del_component(ComponentName, EntityID, Query) ->
     % Remove the data from the component bag
     ets:delete_object(C, {ComponentName, EntityID}).
 
--spec del_components([term()], id(), query()) -> ok.
-del_components(Components, EntityID, Query) ->
+-spec del_components([term()], id(), world()) -> ok.
+del_components(Components, EntityID, World) ->
     F =
         fun(Component) ->
-            del_component(Component, EntityID, Query)
+            del_component(Component, EntityID, World)
         end,
     lists:foreach(F, Components).
 
--spec add_system(system(), any() | query()) -> ok.
-add_system(System, {_E, _C, World}) ->
-    add_system(System, World);
+-spec add_system(system(), world()) -> ok.
 add_system(System, World) ->
     add_system(System, 100, World).
 
--spec add_system(system(), integer(), any() | query()) -> ok.
-add_system(System, Priority, {_E, _C, World}) ->
-    add_system(System, Priority, World);
+-spec add_system(system(), integer(), world()) -> ok.
 add_system(System, Priority, World) ->
     gen_server:call(?SERVER(World), {add_system, System, Priority}).
 
--spec del_system(system(), any() | query()) -> ok.
-del_system(System, {_E, _C, World}) ->
-    del_system(System, World);
+-spec del_system(system(), world()) -> ok.
 del_system(System, World) ->
     gen_server:call(?SERVER(World), {del_system, System}).
 
--spec proc(any(), any()) -> ok.
-proc({_E, _C, World}, Data) ->
-    proc(World, Data);
+-spec proc(world(), any()) -> ok.
 proc(World, Data) ->
     gen_server:call(?SERVER(World), {proc, Data}).
 
--spec proc(any()) -> ok.
-proc({_E, _C, World}) ->
-    proc(World);
+-spec proc(world()) -> ok.
 proc(World) ->
     gen_server:call(?SERVER(World), {proc, []}).
 
@@ -354,3 +343,12 @@ terminate(_Reason, _State) ->
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% internal functions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Get the query object from the world name
+-spec query(world()) -> query().
+query(World) ->
+    gen_server:call(?SERVER(World), query).
