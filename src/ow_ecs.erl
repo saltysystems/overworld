@@ -109,7 +109,9 @@ take(Component, ComponentList, Default) ->
 
 -spec try_component(term(), id(), world()) -> [term()] | false.
 try_component(ComponentName, EntityID, World) ->
-    gen_server:call(?SERVER(World), {try_component, ComponentName, EntityID}).
+    gen_server:call(
+        ?SERVER(World), {try_component, ComponentName, EntityID}
+    ).
 
 -spec match_component(term(), world()) -> [entity()].
 match_component(ComponentName, World) ->
@@ -155,7 +157,7 @@ entities(World) ->
 add_component(Name, Data, EntityID, World) ->
     gen_server:call(?SERVER(World), {add_component, Name, Data, EntityID}).
 
-% TODO: ok -> true? 
+% TODO: ok -> true?
 -spec add_components([{term(), term()}], id(), world()) -> ok.
 add_components(Components, EntityID, World) ->
     F =
@@ -168,7 +170,7 @@ add_components(Components, EntityID, World) ->
 del_component(Name, EntityID, World) ->
     gen_server:call(?SERVER(World), {del_component, Name, EntityID}).
 
-% TODO: ok -> true? 
+% TODO: ok -> true?
 -spec del_components([term()], id(), world()) -> ok.
 del_components(Components, EntityID, World) ->
     F =
@@ -197,7 +199,7 @@ proc(World) ->
 proc(World, Data) ->
     Systems = gen_server:call(?SERVER(World), systems),
     Fun = fun({_Prio, Sys}, Acc) ->
-        Result = 
+        Result =
             case Sys of
                 {M, F, 1} ->
                     erlang:apply(M, F, [World]);
@@ -206,7 +208,7 @@ proc(World, Data) ->
                 Fun2 ->
                     Fun2(World, Data)
             end,
-        [ Result | Acc ]
+        [Result | Acc]
     end,
     lists:foldl(Fun, [], Systems).
 
@@ -226,7 +228,9 @@ init([WorldName]) ->
     logger:debug("Component table ref: ~p", [World#world.components]),
     {ok, World}.
 
-handle_call({add_component, ComponentName, ComponentData, EntityID}, _From, State) ->
+handle_call(
+    {add_component, ComponentName, ComponentData, EntityID}, _From, State
+) ->
     #world{entities = E, components = C} = State,
     % On the entity table, we want to get the entity by key and insert a new
     % version with the data
@@ -269,7 +273,7 @@ handle_call({del_component, ComponentName, EntityID}, _From, State) ->
     {reply, true, State};
 handle_call({try_component, ComponentName, EntityID}, _From, State) ->
     #world{entities = E, components = C} = State,
-    Resp = 
+    Resp =
         case ets:match_object(C, {ComponentName, EntityID}) of
             [] ->
                 false;
@@ -290,8 +294,8 @@ handle_call({match_component, ComponentName}, _From, State) ->
     Resp = lists:flatten(IDs),
     {reply, Resp, State};
 handle_call({new_entity, EntityID}, _From, State) ->
-    #world{entities = E } = State,
-    Resp = 
+    #world{entities = E} = State,
+    Resp =
         case ets:lookup(E, EntityID) of
             [] ->
                 % ok, add 'em
@@ -302,7 +306,7 @@ handle_call({new_entity, EntityID}, _From, State) ->
     {reply, Resp, State};
 handle_call({rm_entity, EntityID}, _From, State) ->
     #world{entities = E, components = C} = State,
-    Resp = 
+    Resp =
         case ets:lookup(E, EntityID) of
             [] ->
                 % ok, nothing to do
@@ -311,7 +315,10 @@ handle_call({rm_entity, EntityID}, _From, State) ->
                 % Remove the entity from the entity table
                 ets:delete(E, EntityID),
                 % Delete all instances of it from the component table as well
-                [ets:delete_object(C, {N, EntityID}) || {N, _} <- Components],
+                [
+                    ets:delete_object(C, {N, EntityID})
+                 || {N, _} <- Components
+                ],
                 ok
         end,
     {reply, Resp, State};
