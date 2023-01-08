@@ -632,16 +632,13 @@ fields_to_str([{N, T, O} | Tail], Acc) ->
     fields_to_str(Tail, Acc1).
 
 dict_fields_to_str(List) ->
-    dict_fields_to_str(List, "").
+    dict_fields_to_str(List, []).
 dict_fields_to_str([], Acc) ->
-    Acc;
-dict_fields_to_str([{N, _T, _O} | Tail], "") ->
-    Acc1 = "d['" ++ atom_to_list(N) ++ "']",
-    dict_fields_to_str(Tail, Acc1);
+    % join the results into a string
+    string:join(Acc, ", ");
 dict_fields_to_str([{N, _T, _O} | Tail], Acc) ->
-    Name = atom_to_list(N),
-    Acc1 = Acc ++ "," ++ "d['" ++ Name ++ "']",
-    dict_fields_to_str(Tail, Acc1).
+    D = "d['" ++ atom_to_list(N) ++ "']",
+    dict_fields_to_str(Tail, [D | Acc]).
 
 untyped_fields_to_str(List) ->
     untyped_fields_to_str(List, "").
