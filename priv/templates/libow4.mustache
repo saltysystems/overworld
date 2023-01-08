@@ -98,14 +98,15 @@ func route(packet):
 ############################################################################
 
 func _ready():
-	# Connect base signals to get notified of connection open, close, and errors.
-	_ws_client.connection_closed.connect(_closed)
-	_ws_client.connection_error.connect(_closed)
-	_ws_client.connection_established.connect(_connected)
-	# This signal is emitted when not using the Multiplayer API every time
-	# a full packet is received.
-	# Alternatively, you could check get_peer(1).get_available_packets() in a loop.
-	_ws_client.data_received.connect(_on_data)
+    ## TODO: Fix WebSocket
+	## Connect base signals to get notified of connection open, close, and errors.
+	##_ws_client.connection_closed.connect(_closed)
+	##_ws_client.connection_error.connect(_closed)
+	##_ws_client.connection_established.connect(_connected)
+	## This signal is emitted when not using the Multiplayer API every time
+	## a full packet is received.
+	## Alternatively, you could check get_peer(1).get_available_packets() in a loop.
+	##_ws_client.data_received.connect(_on_data)
 	# Automatically reply to beacons
 	server_session_beacon.connect(self._on_session_beacon)
 
