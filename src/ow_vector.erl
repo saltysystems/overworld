@@ -330,7 +330,7 @@ rect_to_maps(Vertices) ->
 rect_to_tuples(Vertices) ->
     [{X, Y} || #{x := X, y := Y} <- Vertices].
 
--spec vector_map(vector()|vector3()|vector4()) -> map().
+-spec vector_map(vector() | vector3() | vector4()) -> map().
 vector_map({X, Y}) ->
     #{x => X, y => Y};
 vector_map({X, Y, Z}) ->
@@ -365,7 +365,7 @@ to_proto(Map) ->
 maybe_vector_map(List) ->
     maybe_vector_map(List, []).
 maybe_vector_map([], Acc) ->
-    Acc;
+    lists:reverse(Acc);
 maybe_vector_map([{X, Y} | Rest], Acc) ->
     maybe_vector_map(Rest, [ow_vector:vector_map({X, Y}) | Acc]);
 maybe_vector_map([{X, Y, Z} | Rest], Acc) ->
