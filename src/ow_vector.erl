@@ -35,7 +35,9 @@
     vector_tuple/1,
     rect_to_maps/1,
     rect_to_tuples/1,
-    distance/2
+    distance/2,
+    ysort/1,
+    convex_hull/1
 ]).
 
 -define(EPSILON, 1.0e-10).
@@ -317,6 +319,40 @@ outer_edges(EdgeList) ->
             lists:member([Y, X], Duplicates))
     end,
     lists:filter(F, Sorted).
+
+ysort(Vertices) ->
+    % https://stackoverflow.com/a/4370294
+    % Keysort will only look at selected key, while this will sort the first
+    % element properly as well.
+    Fun = fun({X1, Y1}, {X2, Y2}) -> {Y1, X1} =< {Y2, X2} end,
+    lists:sort(Fun, Vertices).
+
+% Calculate a 2D convex hull via Graham's Scan technique
+-spec convex_hull([vector()]) -> [vector()].
+convex_hull(Vertices) ->
+    % Sort the list by the lowest (x,y) coordinate relative to the origin
+    SortedVertices = vertex_sort(Vertices),
+    convex_hull(SortedVertices, []).
+
+convex_hull([P1, P2], Acc) ->
+    lists:reverse([P2, P1 | Acc]);
+convex_hull(Vertices, Acc) ->
+    % Get the first 3 vertices
+    [P1, P2, P3 | Rest] = Vertices,
+    {X1, Y1} = P1,
+    {X2, Y2} = P2,
+    {X3, Y3} = P3,
+    % Calculate the cross product
+    % If negative/zero, then the point is point is a cavity or colinear so we
+    % discard it.
+    P0xP1xP2 = (X2 - X1) * (Y3 - Y1) - (Y2 - Y1) * (X3 - X1),
+    if
+        P0xP1xP2 =< 0 ->
+            % This angle is bad or colinear, discard P2 and try again
+            convex_hull([P1, P3 | Rest], Acc);
+        true ->
+            convex_hull([P2, P3 | Rest], [P1 | Acc])
+    end.
 
 %----------------------------------------------------------------------
 % Network Encoding/Decoding Functions
