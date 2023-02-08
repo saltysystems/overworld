@@ -331,7 +331,7 @@ ysort(Vertices) ->
 -spec convex_hull([vector()]) -> [vector()].
 convex_hull(Vertices) ->
     % Sort the list by the lowest (x,y) coordinate relative to the origin
-    SortedVertices = vertex_sort(Vertices),
+    SortedVertices = lists:sort(Vertices),
     convex_hull(SortedVertices, []).
 
 convex_hull([P1, P2], Acc) ->
