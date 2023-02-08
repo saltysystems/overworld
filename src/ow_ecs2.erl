@@ -243,7 +243,7 @@ del_components(Components, EntityID, World) ->
     lists:foreach(F, Components),
     ok.
 
--spec add_system(system(), world()) -> ok.
+-spec add_system(system(), world()) -> {ok, world()}.
 add_system(Callback, World) ->
     add_system(Callback, 100, World).
 
