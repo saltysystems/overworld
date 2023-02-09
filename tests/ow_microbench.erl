@@ -29,7 +29,7 @@ eprof(Count, Area, Depth, Test) ->
         end,
     {ok, Pid} = eprof:start(),
     {ok, _Result} = eprof:profile(
-        [Pid], ow_microbench, TestFun, [Count, Area, Depth]
+        [Pid], ?MODULE, TestFun, [Count, Area, Depth]
     ),
     R = eprof:analyze(),
     eprof:stop(),
@@ -55,7 +55,7 @@ timer(Count, Area, Depth, Test) ->
             sat -> check_area_random_test;
             ray -> check_ray_random_test
         end,
-    {Time, _Results} = timer:tc(ow_microbench, TestFun, [
+    {Time, _Results} = timer:tc(?MODULE, TestFun, [
         Count, Area, Depth
     ]),
     Time.

@@ -1,4 +1,4 @@
--module(ow_microbench_ecs3).
+-module(ow_microbench_ecs2).
 
 -export([
     eprof/5,
@@ -23,7 +23,7 @@ eprof(Count, Area, Depth, Test, World) ->
         end,
     {ok, Pid} = eprof:start(),
     {ok, _Result} = eprof:profile(
-        [Pid], ow_microbench_ecs3, TestFun, [QuadTree, Entities, World]
+        [Pid], ?MODULE, TestFun, [QuadTree, Entities, World]
     ),
     R = eprof:analyze(),
     eprof:stop(),
@@ -53,7 +53,7 @@ timer(Count, Area, Depth, Test, World) ->
             sat -> check_area_random_test;
             ray -> check_ray_random_test
         end,
-    {Time, _Results} = timer:tc(ow_microbench_ecs3, TestFun, [
+    {Time, _Results} = timer:tc(?MODULE, TestFun, [
         QuadTree, Entities
     ]),
     Time.
@@ -72,9 +72,9 @@ run_ray() ->
 
 run(N, Count, Area, Depth, Test) ->
     F = fun(_Elem, AccIn) ->
-        World = ow_ecs3:start(),
+        World = ow_ecs2:start(),
         R = [timer(Count, Area, Depth, Test, World) | AccIn],
-        ow_ecs3:stop(World),
+        ow_ecs2:stop(World),
         R
     end,
     Trials = lists:foldl(F, [], lists:seq(1, N)),
@@ -93,20 +93,20 @@ generate_random_entities(Number, XRange, YRange, World) ->
                 }),
                 rot => rand:uniform_real() * math:pi()
             },
-            ow_ecs3:add_component(phys, Phys, ID, World),
+            ow_ecs2:add_component(phys, Phys, ID, World),
             Hitbox = ow_vector:rect_to_maps(Bounds),
-            ow_ecs3:add_component(hitbox, Hitbox, ID, World)
+            ow_ecs2:add_component(hitbox, Hitbox, ID, World)
         end,
     lists:foreach(NewEntity, L),
     % Retrieve the entities
-    ow_ecs3:match_components([phys, hitbox], World).
+    ow_ecs2:match_components([phys, hitbox], World).
 
 check_area_random_test(QuadTree, Entities) ->
     Q1 = QuadTree,
     % Create some entities in the quadtree
     % Function for deriving the position of the entity
     PositionFun = fun({_ID, Components}) ->
-        Phys = ow_ecs3:get(phys, Components),
+        Phys = ow_ecs2:get(phys, Components),
         #{pos := Pos} = Phys,
         ow_vector:vector_tuple(Pos)
     end,
@@ -115,7 +115,7 @@ check_area_random_test(QuadTree, Entities) ->
     % Calculate an area of interest from one of the entities
     [H | _T] = Entities,
     {_EID, EComponents} = H,
-    #{pos := EPos} = ow_ecs3:get(phys, EComponents),
+    #{pos := EPos} = ow_ecs2:get(phys, EComponents),
     {POI_X, POI_Y} = ow_vector:vector_tuple(EPos),
     % Extend 100 units in all directions around the entity to define the area
     % to check for collisions
@@ -126,9 +126,9 @@ check_area_random_test(QuadTree, Entities) ->
     %BoundingBox = fun(#test_entity{bbox = Box, pos = Pos}) ->
     BoundingBox = fun({_ID, Components}) ->
         % translate all coordinates by Pos
-        Phys = ow_ecs3:get(phys, Components),
+        Phys = ow_ecs2:get(phys, Components),
         #{pos := Pos} = Phys,
-        Hitbox = ow_ecs3:get(hitbox, Components),
+        Hitbox = ow_ecs2:get(hitbox, Components),
         PosTuple = ow_vector:vector_tuple(Pos),
         BBoxTuple = ow_vector:rect_to_tuples(Hitbox),
         ow_vector:translate(BBoxTuple, PosTuple)
@@ -147,7 +147,7 @@ check_ray_random_test(QuadTree, Entities) ->
     Q1 = QuadTree,
     % Function for deriving the position of the entity
     PositionFun = fun({_ID, Components}) ->
-        Phys = ow_ecs3:get(phys, Components),
+        Phys = ow_ecs2:get(phys, Components),
         #{pos := Pos} = Phys,
         ow_vector:vector_tuple(Pos)
     end,
@@ -167,9 +167,9 @@ check_ray_random_test(QuadTree, Entities) ->
     Top = ROy + 50,
     BBoxFun = fun({_ID, Components}) ->
         % translate all coordinates by Pos
-        Phys = ow_ecs3:get(phys, Components),
+        Phys = ow_ecs2:get(phys, Components),
         #{pos := Pos, rot := Rot} = Phys,
-        Hitbox = ow_ecs3:get(hitbox, Components),
+        Hitbox = ow_ecs2:get(hitbox, Components),
         PosTuple = ow_vector:vector_tuple(Pos),
         BBoxTuple = ow_vector:rect_to_tuples(Hitbox),
         B1 = ow_vector:translate(BBoxTuple, PosTuple),

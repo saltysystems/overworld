@@ -23,7 +23,7 @@ eprof(Count, Area, Depth, Test, World) ->
         end,
     {ok, Pid} = eprof:start(),
     {ok, _Result} = eprof:profile(
-        [Pid], ow_microbench_ecs, TestFun, [QuadTree, Entities, World]
+        [Pid], ?MODULE, TestFun, [QuadTree, Entities, World]
     ),
     R = eprof:analyze(),
     eprof:stop(),
@@ -53,7 +53,7 @@ timer(Count, Area, Depth, Test, World) ->
             sat -> check_area_random_test;
             ray -> check_ray_random_test
         end,
-    {Time, _Results} = timer:tc(ow_microbench_ecs3, TestFun, [
+    {Time, _Results} = timer:tc(?MODULE, TestFun, [
         QuadTree, Entities
     ]),
     Time.
