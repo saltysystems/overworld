@@ -327,18 +327,47 @@ ysort(Vertices) ->
     Fun = fun({X1, Y1}, {X2, Y2}) -> {Y1, X1} =< {Y2, X2} end,
     lists:sort(Fun, Vertices).
 
+slope_sort([Start|Rest]) ->
+    slope_sort(Start, Rest).
+slope_sort({Xs,Ys}, Rest) ->
+    Fun = fun({X1,Y1}, {X2, Y2}) -> 
+                % Avoid divide by zero errors.
+                S1D = (X1-Xs),
+                case S1D of
+                    0 ->
+                        % infinity =< S2
+                        false;
+                    _ -> 
+                        S1 = (Y1 - Ys) / S1D,
+                        S2D = (X2-Xs),
+                        case S2D of
+                           0 ->
+                            % S1 =< infinity
+                             true;
+                           _ -> 
+                             S2 = (Y2 - Ys) / S2D,
+                             S1 =< S2
+                        end
+                end
+          end,
+    [{Xs,Ys} | lists:sort(Fun, Rest)].
+
 % Calculate a 2D convex hull via Graham's Scan technique
 -spec convex_hull([vector()]) -> [vector()].
 convex_hull(Vertices) ->
-    % Sort the list by the lowest (x,y) coordinate relative to the origin
+    % Sort the list by the lowest (x,y) coordinate relative to the origin, then
+    % sort all following points by slope relative to the starting point
     SortedVertices = lists:sort(Vertices),
-    convex_hull(SortedVertices, []).
+    SlopedSort = slope_sort(SortedVertices),
+    convex_hull(SlopedSort, []).
 
 convex_hull([P1, P2], Acc) ->
-    lists:reverse([P2, P1 | Acc]);
-convex_hull(Vertices, Acc) ->
+    lists:reverse(Acc) ++ [P1, P2];
+convex_hull([Start|Rest], []) ->
+    convex_hull(Rest, [Start]);
+convex_hull(Points, Acc) ->
     % Get the first 3 vertices
-    [P1, P2, P3 | Rest] = Vertices,
+    [P1, P2, P3 | Rest] = Points,
     {X1, Y1} = P1,
     {X2, Y2} = P2,
     {X3, Y3} = P3,
@@ -347,9 +376,10 @@ convex_hull(Vertices, Acc) ->
     % discard it.
     P0xP1xP2 = (X2 - X1) * (Y3 - Y1) - (Y2 - Y1) * (X3 - X1),
     if
-        P0xP1xP2 =< 0 ->
-            % This angle is bad or colinear, discard P2 and try again
-            convex_hull([P1, P3 | Rest], Acc);
+        P0xP1xP2 < 0 ->
+            % This angle is bad, discard P3 and try again
+            [Last | AccRest] = Acc,
+            convex_hull([Last, P1, P3 | Rest], AccRest);
         true ->
             convex_hull([P2, P3 | Rest], [P1 | Acc])
     end.
