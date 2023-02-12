@@ -282,7 +282,7 @@ proc(Data, World) ->
                 {M, F, 2} ->
                     erlang:apply(M, F, [Data, World]);
                 Fun2 ->
-                    Fun2(World, Data)
+                    Fun2(Data, World)
             end,
         [Result | Acc]
     end,
