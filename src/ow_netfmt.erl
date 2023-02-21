@@ -19,7 +19,7 @@ vec2map({W, X, Y, Z}) ->
     #{w => W, x => X, y => Y, z => Z}.
 
 map2vec(Vectors) when is_list(Vectors) ->
-    [map2vec(Vector) || Vector <- Vertices];
+    [map2vec(Vector) || Vector <- Vectors];
 map2vec(#{w := W, x := X, y := Y, z := Z}) ->
     {W, X, Y, Z};
 map2vec(#{x := X, y := Y, z := Z}) ->
@@ -31,11 +31,11 @@ map2vec(#{x := X, y := Y}) ->
 to_proto(Map) ->
     % Marshall any type not understood by gpb
     F = fun
-        (_Key, {X,Y}) ->
+        (_Key, {X, Y}) ->
             vec2map({X, Y});
-        (_Key, {X,Y,Z}) ->
+        (_Key, {X, Y, Z}) ->
             vec2map({X, Y, Z});
-        (_Key, {W,X,Y,Z}) ->
+        (_Key, {W, X, Y, Z}) ->
             vec2map({W, X, Y, Z});
         (_Key, Val) ->
             Val

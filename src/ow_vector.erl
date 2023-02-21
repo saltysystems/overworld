@@ -30,11 +30,6 @@
     aabb/1,
     test/0,
     test_intersect/0,
-    to_proto/1,
-    vector_map/1,
-    vector_tuple/1,
-    rect_to_maps/1,
-    rect_to_tuples/1,
     distance/2,
     ysort/1,
     convex_hull/1
@@ -48,7 +43,7 @@
 -type vector_map() :: #{x => scalar(), y => scalar()}.
 -type scalar() :: number().
 
--export_type([vector/0, vector_map/0, scalar/0]).
+-export_type([vector/0, vector3/0, vector4/0, vector_map/0, scalar/0]).
 
 -spec add(vector(), vector()) -> vector().
 add({X1, Y1}, {X2, Y2}) ->
