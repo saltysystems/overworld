@@ -327,30 +327,30 @@ ysort(Vertices) ->
     Fun = fun({X1, Y1}, {X2, Y2}) -> {Y1, X1} =< {Y2, X2} end,
     lists:sort(Fun, Vertices).
 
-slope_sort([Start|Rest]) ->
+slope_sort([Start | Rest]) ->
     slope_sort(Start, Rest).
-slope_sort({Xs,Ys}, Rest) ->
-    Fun = fun({X1,Y1}, {X2, Y2}) -> 
-                % Avoid divide by zero errors.
-                S1D = (X1-Xs),
-                case S1D of
+slope_sort({Xs, Ys}, Rest) ->
+    Fun = fun({X1, Y1}, {X2, Y2}) ->
+        % Avoid divide by zero errors.
+        S1D = (X1 - Xs),
+        case S1D of
+            0 ->
+                % infinity =< S2
+                false;
+            _ ->
+                S1 = (Y1 - Ys) / S1D,
+                S2D = (X2 - Xs),
+                case S2D of
                     0 ->
-                        % infinity =< S2
-                        false;
-                    _ -> 
-                        S1 = (Y1 - Ys) / S1D,
-                        S2D = (X2-Xs),
-                        case S2D of
-                           0 ->
-                            % S1 =< infinity
-                             true;
-                           _ -> 
-                             S2 = (Y2 - Ys) / S2D,
-                             S1 =< S2
-                        end
+                        % S1 =< infinity
+                        true;
+                    _ ->
+                        S2 = (Y2 - Ys) / S2D,
+                        S1 =< S2
                 end
-          end,
-    [{Xs,Ys} | lists:sort(Fun, Rest)].
+        end
+    end,
+    [{Xs, Ys} | lists:sort(Fun, Rest)].
 
 % Calculate a 2D convex hull via Graham's Scan technique
 -spec convex_hull([vector()]) -> [vector()].
@@ -363,7 +363,7 @@ convex_hull(Vertices) ->
 
 convex_hull([P1, P2], Acc) ->
     lists:reverse(Acc) ++ [P1, P2];
-convex_hull([Start|Rest], []) ->
+convex_hull([Start | Rest], []) ->
     convex_hull(Rest, [Start]);
 convex_hull(Points, Acc) ->
     % Get the first 3 vertices
@@ -384,59 +384,6 @@ convex_hull(Points, Acc) ->
             convex_hull([P2, P3 | Rest], [P1 | Acc])
     end.
 
-%----------------------------------------------------------------------
-% Network Encoding/Decoding Functions
-%----------------------------------------------------------------------
-
--spec rect_to_maps([vector()]) -> [map()].
-rect_to_maps(Vertices) ->
-    [vector_map(Vector) || Vector <- Vertices].
-
--spec rect_to_tuples([map()]) -> [vector()].
-rect_to_tuples(Vertices) ->
-    [{X, Y} || #{x := X, y := Y} <- Vertices].
-
--spec vector_map(vector() | vector3() | vector4()) -> map().
-vector_map({X, Y}) ->
-    #{x => X, y => Y};
-vector_map({X, Y, Z}) ->
-    #{x => X, y => Y, z => Z};
-vector_map({W, X, Y, Z}) ->
-    #{w => W, x => X, y => Y, z => Z}.
-
--spec vector_tuple(map()) -> vector() | vector3() | vector4().
-vector_tuple(#{x := X, y := Y}) ->
-    {X, Y};
-vector_tuple(#{x := X, y := Y, z := Z}) ->
-    {X, Y, Z};
-vector_tuple(#{w := W, x := X, y := Y, z := Z}) ->
-    {W, X, Y, Z}.
-
 -spec distance(vector(), vector()) -> pos_integer().
 distance({X1, Y1}, {X2, Y2}) ->
     abs(X2 - X1) + abs(Y2 - Y1).
-
--spec to_proto(map()) -> map().
-to_proto(Map) ->
-    F = fun
-        (_Key, {X, Y}) ->
-            ow_vector:vector_map({X, Y});
-        (_Key, Val) when is_list(Val) ->
-            maybe_vector_map(Val);
-        (_Key, Val) ->
-            Val
-    end,
-    maps:map(F, Map).
-
-maybe_vector_map(List) ->
-    maybe_vector_map(List, []).
-maybe_vector_map([], Acc) ->
-    lists:reverse(Acc);
-maybe_vector_map([{X, Y} | Rest], Acc) ->
-    maybe_vector_map(Rest, [ow_vector:vector_map({X, Y}) | Acc]);
-maybe_vector_map([{X, Y, Z} | Rest], Acc) ->
-    maybe_vector_map(Rest, [ow_vector:vector_map({X, Y, Z}) | Acc]);
-maybe_vector_map([{W, X, Y, Z} | Rest], Acc) ->
-    maybe_vector_map(Rest, [ow_vector:vector_map({W, X, Y, Z}) | Acc]);
-maybe_vector_map([Head | Tail], Acc) ->
-    maybe_vector_map(Tail, [Head | Acc]).
