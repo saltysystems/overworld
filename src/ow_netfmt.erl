@@ -8,7 +8,9 @@
 % Network Encoding/Decoding Functions
 %----------------------------------------------------------------------
 
--spec vec2map([ow_vector:vector()]) -> [map()].
+-type any_vector() :: ow_vector:vector() | ow_vector:vector3() | ow_vector:vector4().
+
+-spec vec2map(any_vector() | [any_vector()]) -> [map()] | map().
 vec2map(Vectors) when is_list(Vectors) ->
     [vec2map(Vector) || Vector <- Vectors];
 vec2map({X, Y}) ->
@@ -18,6 +20,7 @@ vec2map({X, Y, Z}) ->
 vec2map({W, X, Y, Z}) ->
     #{w => W, x => X, y => Y, z => Z}.
 
+-spec map2vec([map()] | map()) -> [any_vector()] | any_vector().
 map2vec(Vectors) when is_list(Vectors) ->
     [map2vec(Vector) || Vector <- Vectors];
 map2vec(#{w := W, x := X, y := Y, z := Z}) ->
