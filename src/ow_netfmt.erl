@@ -31,21 +31,24 @@ map2vec(#{x := X, y := Y, z := Z}) ->
 map2vec(#{x := X, y := Y}) ->
     {X, Y}.
 
+maybe_proto({X,Y}) ->
+    vec2map({X,Y});
+maybe_proto({X,Y,Z}) ->
+    vec2map({X,Y,Z});
+maybe_proto({W,X,Y,Z}) ->
+    vec2map({W,X,Y,Z});
+maybe_proto(V) when is_map(V) ->
+    to_proto(V);
+maybe_proto(V) ->
+    V.
+
 -spec to_proto(map()) -> map().
 to_proto(Map) ->
     % Marshall any type not understood by gpb
     F = fun
-        (_Key, {X, Y}) ->
-            vec2map({X, Y});
-        (_Key, {X, Y, Z}) ->
-            vec2map({X, Y, Z});
-        (_Key, {W, X, Y, Z}) ->
-            vec2map({W, X, Y, Z});
-        (_Key, Val) when is_map(Val) ->
-            to_proto(Val);
         (_Key, Val) when is_list(Val) ->
-            [ to_proto(V) || V <- Val ];
+            [ maybe_proto(V) || V <- Val ];
         (_Key, Val) ->
-            Val
+            maybe_proto(Val)
     end,
     maps:map(F, Map).
