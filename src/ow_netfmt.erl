@@ -42,7 +42,7 @@ to_proto(Map) ->
         (_Key, {W, X, Y, Z}) ->
             vec2map({W, X, Y, Z});
         (_Key, Val) when is_map(Val) ->
-            to_proto(Map);
+            to_proto(Val);
         (_Key, Val) ->
             Val
     end,
