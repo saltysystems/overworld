@@ -43,6 +43,8 @@ to_proto(Map) ->
             vec2map({W, X, Y, Z});
         (_Key, Val) when is_map(Val) ->
             to_proto(Val);
+        (_Key, Val) when is_list(Val) ->
+            [ to_proto(V) || V <- Val ];
         (_Key, Val) ->
             Val
     end,
