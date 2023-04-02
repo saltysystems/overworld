@@ -67,7 +67,8 @@
 -export_type([serializer/0]).
 
 -define(PROTOCOLVERSION, 1).
--define(DEFAULT_TOKEN_LENGTH, 16). % bytes
+% bytes
+-define(DEFAULT_TOKEN_LENGTH, 16).
 
 %%===========================================================================
 %% Reserved OpCodes
@@ -174,7 +175,7 @@ version(_S) ->
 session_req(_Msg, Session) ->
     ID = ow_session:get_id(Session),
     ReconnToken = ow_session:get_reconn_token(Session),
-    Msg = #{ id => ID, reconn_token => ReconnToken },
+    Msg = #{id => ID, reconn_token => ReconnToken},
     Resp = overworld_pb:encode_msg(Msg, session_new),
     {[<<?SESSION_NEW:16>>, Resp], Session}.
 
@@ -242,8 +243,8 @@ multicast(EncodedMsg, SessionIDs) ->
 -spec new() -> session().
 new() ->
     #session{
-       id = erlang:unique_integer(), 
-       reconn_token = crypto:strong_rand_bytes(?DEFAULT_TOKEN_LENGTH) 
+        id = erlang:unique_integer(),
+        reconn_token = crypto:strong_rand_bytes(?DEFAULT_TOKEN_LENGTH)
     }.
 
 %%----------------------------------------------------------------------------
