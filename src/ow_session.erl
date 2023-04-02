@@ -18,6 +18,8 @@
     new/0,
     set_id/2,
     get_id/1,
+    set_reconn_token/1,
+    get_reconn_token/1,
     set_pid/2,
     get_pid/1,
     set_serializer/2,
@@ -32,7 +34,7 @@
     get_game_info/1,
     set_termination_callback/2,
     get_termination_callback/1,
-    session_id_req/2,
+    session_req/2,
     session_ping/2,
     session_pong/1,
     version/1
@@ -53,6 +55,7 @@
     latency = 0 :: non_neg_integer(),
     % it can be anything but we default to map
     game_info = #{} :: term(),
+    reconn_token :: binary(),
     termination_callback :: mfa() | undefined
 }).
 
@@ -64,6 +67,7 @@
 -export_type([serializer/0]).
 
 -define(PROTOCOLVERSION, 1).
+-define(DEFAULT_TOKEN_LENGTH, 16). % bytes
 
 %%===========================================================================
 %% Reserved OpCodes
@@ -76,8 +80,8 @@
 %%----------------------------------------------------------------------------
 
 -define(VERSION, 16#0010).
--define(SESSION_ID_REQ, 16#0015).
--define(SESSION_ID, 16#0016).
+-define(SESSION_REQ, 16#0015).
+-define(SESSION_NEW, 16#0016).
 -define(SESSION_PING, 16#0020).
 -define(SESSION_PONG, 16#0021).
 -define(SESSION_LOG, 16#0050).
@@ -92,14 +96,14 @@ rpc_info() ->
             channel => 0
         },
         #{
-            opcode => ?SESSION_ID_REQ,
-            c2s_handler => {?MODULE, session_id_req, 2},
+            opcode => ?SESSION_REQ,
+            c2s_handler => {?MODULE, session_req, 2},
             qos => reliable,
             channel => 0
         },
         #{
-            opcode => ?SESSION_ID,
-            s2c_call => session_id,
+            opcode => ?SESSION_NEW,
+            s2c_call => session_new,
             encoder => overworld_pb,
             qos => reliable,
             channel => 0
@@ -164,13 +168,15 @@ version(_S) ->
     ok.
 
 %%----------------------------------------------------------------------------
-%% @doc Return the session ID back to the caller
+%% @doc Start a new session. Return id and reconnect token to the caller
 %% @end
 %%----------------------------------------------------------------------------
-session_id_req(_Msg, Session) ->
+session_req(_Msg, Session) ->
     ID = ow_session:get_id(Session),
-    Resp = overworld_pb:encode_msg(#{id => ID}, session_id),
-    {[<<?SESSION_ID:16>>, Resp], Session}.
+    ReconnToken = ow_session:get_reconn_token(Session),
+    Msg = #{ id => ID, reconn_token => ReconnToken },
+    Resp = overworld_pb:encode_msg(Msg, session_new),
+    {[<<?SESSION_NEW:16>>, Resp], Session}.
 
 %%----------------------------------------------------------------------------
 %% @doc Encodes a log message to be sent back to the client
@@ -235,7 +241,10 @@ multicast(EncodedMsg, SessionIDs) ->
 %%----------------------------------------------------------------------------
 -spec new() -> session().
 new() ->
-    #session{id = erlang:unique_integer()}.
+    #session{
+       id = erlang:unique_integer(), 
+       reconn_token = crypto:strong_rand_bytes(?DEFAULT_TOKEN_LENGTH) 
+    }.
 
 %%----------------------------------------------------------------------------
 %% @doc Set the session ID
@@ -252,6 +261,23 @@ set_id(ID, Session) ->
 -spec get_id(session()) -> integer().
 get_id(Session) ->
     Session#session.id.
+
+%%----------------------------------------------------------------------------
+%% @doc Set a new reconnect token
+%% @end
+%%----------------------------------------------------------------------------
+-spec set_reconn_token(session()) -> session().
+set_reconn_token(Session) ->
+    Token = crypto:strong_rand_bytes(?DEFAULT_TOKEN_LENGTH),
+    Session#session{reconn_token = Token}.
+
+%%----------------------------------------------------------------------------
+%% @doc Return the reconnect token
+%% @end
+%%----------------------------------------------------------------------------
+-spec get_reconn_token(session()) -> binary().
+get_reconn_token(Session) ->
+    Session#session.reconn_token.
 
 %%----------------------------------------------------------------------------
 %% @doc Set the socket PID

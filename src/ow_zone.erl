@@ -67,14 +67,16 @@
     cb_data :: term(),
     tick_ms :: pos_integer(),
     require_auth :: boolean(),
+    reconn_ms :: integer(),
     rpcs :: ow_rpcs:callbacks()
 }).
 -type state() :: #state{}.
 
 -define(DEFAULT_CONFIG, #{
     % milliseconds between ticks
-    tick_ms => 20,
-    require_auth => false
+    tick_ms => 50,
+    require_auth => false,
+    reconn_ms => 0 
 }).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -303,11 +305,13 @@ init(_CbMod, ignore) ->
 init(_CbMod, Stop) ->
     Stop.
 
-initialize_state(CbMod, CbData, Config = #{tick_ms := TickMs}) ->
+initialize_state(CbMod, CbData, Config) ->
+    TickMs = maps:get(tick_ms, Config),
     % setup the timer
     timer:send_interval(TickMs, self(), ?TAG_I(tick)),
-    % configure auth
+    % Bind the rest of the configuration
     RequireAuth = maps:get(require_auth, Config),
+    ReconnMs = maps:get(reconn_ms, Config),
     RPCInfo =
         case rpc_info(CbMod) of
             [] ->
@@ -322,6 +326,7 @@ initialize_state(CbMod, CbData, Config = #{tick_ms := TickMs}) ->
         cb_data = CbData,
         tick_ms = TickMs,
         require_auth = RequireAuth,
+        reconn_ms = ReconnMs,
         rpcs = RPCInfo
     }.
 
@@ -544,10 +549,6 @@ add_and_notify(Session0, St0, Status, CbMod, CbData1, Notify) ->
     {Session2, St1}.
 
 rm_and_notify(Session0, St0, Status, CbData1, Notify) ->
-    % TODO: This needs some significant thought. In a single zone case - it
-    % makes sense to just delete the user from the player registry. In the
-    % multi-zone case this may not make sense.
-    % I think this code needs to be a bit more flexible.
     Session1 =
         case Status of
             {ok, S1, PlayerInfo} ->
