@@ -76,7 +76,7 @@
     % milliseconds between ticks
     tick_ms => 50,
     require_auth => false,
-    reconn_ms => 0 
+    reconn_ms => 0
 }).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
