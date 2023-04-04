@@ -41,7 +41,11 @@ start(_StartType, _StartArgs) ->
         #{env => #{dispatch => Dispatch}}
     ),
     % Start ENet
-    Options = [{peer_limit, ?PEER_LIMIT}, {channel_limit, ?CHANNEL_LIMIT}],
+    Options = [
+        {peer_limit, ?PEER_LIMIT},
+        {channel_limit, ?CHANNEL_LIMIT},
+        {compression_mode, zlib}
+    ],
     Handler = {ow_enet, start, []},
     enet:start_host(?ENET_PORT, Handler, Options),
     % Start the OW supervisor
