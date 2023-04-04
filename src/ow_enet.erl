@@ -99,22 +99,24 @@ channelize_msg(Msg, Channels, {QOS, Channel}) ->
             C ->
                 maps:get(C, Channels)
         end,
-    FlatMsg = iolist_to_binary(Msg),
+    %FlatMsg = iolist_to_binary(Msg),
+    ZipData = zlib:gzip(Msg),
     case QOS of
         reliable ->
-            enet:send_reliable(ChannelPID, FlatMsg);
+            enet:send_reliable(ChannelPID, ZipData);
         unreliable ->
-            enet:send_unreliable(ChannelPID, FlatMsg);
+            enet:send_unreliable(ChannelPID, ZipData);
         unsequenced ->
-            enet:send_unsequenced(ChannelPID, FlatMsg);
+            enet:send_unsequenced(ChannelPID, ZipData);
         undefined ->
             % Send a reliable packet if nothing defined
-            enet:send_reliable(ChannelPID, FlatMsg)
+            enet:send_reliable(ChannelPID, ZipData)
     end.
 
 decode_and_reply(Msg, IncomingChannel, {Mod, Fun}, State) ->
     #{channels := Channels, session := Session} = State,
-    case ow_protocol:decode(Msg, Session) of
+    UnzippedMsg = zlib:gunzip(Msg),
+    case ow_protocol:decode(UnzippedMsg, Session) of
         % Table of possible returns
         %   ok -> No reply, keep old session
         %   {ok, Session1} -> No reply, update session
@@ -127,9 +129,10 @@ decode_and_reply(Msg, IncomingChannel, {Mod, Fun}, State) ->
         {Msg1, Session1} ->
             % Default to sending a reliable message on whatever channel the
             % original message came in on
-            FlatMsg = iolist_to_binary(Msg1),
+            %FlatMsg = iolist_to_binary(Msg1),
+            ZipData = zlib:gzip(Msg1),
             ChannelPid = maps:get(IncomingChannel, Channels),
-            erlang:apply(Mod, Fun, [ChannelPid, FlatMsg]),
+            erlang:apply(Mod, Fun, [ChannelPid, ZipData]),
             Session1;
         {ok, Session1, {_QOS, _MsgChannel}} ->
             Session1;
