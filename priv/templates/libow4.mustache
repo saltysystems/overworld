@@ -121,6 +121,8 @@ func enet_connect(ip: String, port: int):
 	print("[INFO] Connecting via ENet to ", ip)
 	var _err = _enet_peer.create_client(ip, port, 4)
 	mode = transport_mode.ENET
+	# Set mode to ZLIB
+	_enet_peer.host.compress(ENetConnection.COMPRESS_ZLIB)
 
 func _send_message(payload, opcode, qos, channel):
 	# Create a new packet starting with opcode, append the message if it exists,
