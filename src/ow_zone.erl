@@ -20,7 +20,8 @@
     rpc/4,
     who/1,
     status/1,
-    broadcast/2
+    broadcast/2,
+    send/3
 ]).
 
 % gen_server callbacks
@@ -283,6 +284,10 @@ status(ServerRef) ->
 broadcast(ServerRef, Msg) ->
     gen_server:cast(ServerRef, ?TAG_I({broadcast, Msg})).
 
+-spec send(server_ref(), [session_id()], term()) -> ok.
+send(ServerRef, IDs, Msg) ->
+    gen_server:cast(ServerRef, ?TAG_I({send, IDs, Msg})).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% gen_server callback functions for internal state
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -357,8 +362,10 @@ handle_call(_Call, _From, St0) ->
     {reply, ok, St0}.
 
 handle_cast(?TAG_I({broadcast, Msg}), St0) ->
-    io:format("Sending broadcast..~n"),
     handle_notify({'@zone', Msg}, St0),
+    {noreply, St0};
+handle_cast(?TAG_I({send, IDs, Msg}), St0) ->
+    handle_notify({{'@', IDs}, Msg}, St0),
     {noreply, St0};
 handle_cast(_Cast, St0) ->
     {noreply, St0}.
