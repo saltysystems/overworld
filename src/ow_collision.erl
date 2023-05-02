@@ -144,7 +144,6 @@ check_ray({L, B, R, T}, RO, RD, BBoxFun, QuadTree) ->
             {Obj, ow_vector:ray_intersect(RO, RD, P1, P2)}
          || [P1, P2] <- E
         ],
-        % valid use of ++?
         Result ++ Acc
     end,
     % The intermediate result (IR) should have a list of results, extract the
@@ -152,10 +151,10 @@ check_ray({L, B, R, T}, RO, RD, BBoxFun, QuadTree) ->
     IR = lists:foldl(F, [], Objects),
     Filter =
         fun
-            ({_Obj, Result}) when Result =/= false ->
-                true;
+            ({_Obj, false}) ->
+                false;
             ({_Obj, _Result}) ->
-                false
+                true
         end,
     lists:filter(Filter, IR).
 
