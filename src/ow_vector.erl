@@ -21,6 +21,8 @@
     project/2,
     overlap/2,
     translate/2,
+    line_of_sight/4,
+    ray_between/3,
     ray_intersect/4,
     intersect/4,
     intersect/5,
@@ -31,6 +33,7 @@
     test/0,
     test_intersect/0,
     distance/2,
+    component_sort/2,
     ysort/1,
     convex_hull/1
 ]).
@@ -192,8 +195,75 @@ test() ->
         is_collision(B, C)
     ].
 
+-spec line_of_sight(vector(), vector(), vector(), [vector()]) -> [vector()].
+line_of_sight(Location, Upper, Lower, Edges) ->
+    % Always check upper and lower rays corresponding to the vision arc.
+    Rays = [Upper, Lower],
+    % Acceptance function for line segments that fall within the vision arc
+    AllVertices = lists:uniq(lists:flatten(Edges)),
+    ValidRayCheck =
+        fun(Vertex, Acc) ->
+            MaybeValidRay = subtract(Location, Vertex),
+            case ray_between(MaybeValidRay, Lower, Upper) of
+                true ->
+                    [MaybeValidRay | Acc];
+                false ->
+                    Acc
+            end
+        end,
+    % TODO: Doublecheck this. Doesn't seem right on graph paper.
+    ValidRays = lists:foldl(ValidRayCheck, Rays, AllVertices),
+    % Sort the rays by component
+    SortedRays = component_sort(Lower, ValidRays),
+    % Check visibility of the segment
+    visible_edges(Location, Edges, SortedRays).
+
+visible_edges(Location, Edges, Rays) ->
+    visible_edges(Location, Edges, Rays, []).
+visible_edges(_Location, _Edges, [], Acc) ->
+    lists:uniq(Acc);
+visible_edges(Location, Edges, [Ray | Rest], Acc) ->
+    % For each ray, cast it through every segment in our list
+    % Determine the closest hit, and return that segment.
+    Intersections = [
+        {
+            [EdgeStart, EdgeEnd],
+            ray_intersect(Location, Ray, EdgeStart, EdgeEnd)
+        }
+     || [EdgeStart, EdgeEnd] <- Edges
+    ],
+    % Filter out the rays that did not hit anything ("false") and
+    % create a new list with the segments crossed and distance to each
+    FilteredIntersections = [
+        {Segment, Distance}
+     || {Segment, {true, _Where, Distance}} <- Intersections,
+        Intersections /= false
+    ],
+    % Sort the intersections by the shortest
+    case FilteredIntersections of
+        [] ->
+            visible_edges(Location, Edges, Rest, Acc);
+        _ ->
+            [{Edge, _Distance} | _Rest] = lists:keysort(
+                2, FilteredIntersections
+            ),
+            % Add the segment to our visibile list
+            Acc1 = [Edge | Acc],
+            visible_edges(Location, Edges, Rest, Acc1)
+    end.
+
+-spec ray_between(vector(), vector(), vector()) -> boolean().
+ray_between({RayX, RayY}, {LowerX, LowerY}, {UpperX, UpperY}) ->
+    % Dot product of upper rotated ccw by pi/2
+    UpperComponent = RayY * UpperX - RayX * UpperY,
+    % Dot product of lower rotated cw by pi/2
+    % Could be slightly more efficient by bailing out early if you first check
+    % to see if !(UpperComponent > ?EPSILON)
+    LowerComponent = RayX * LowerY - RayY * LowerX,
+    (not (UpperComponent > ?EPSILON)) and (not (LowerComponent > ?EPSILON)).
+
 -spec ray_intersect(vector(), vector(), vector(), vector()) ->
-    false | vector().
+    false | {true, vector(), number()}.
 ray_intersect(A, B, C, D) ->
     intersect(A, B, C, D, rayline).
 
@@ -202,7 +272,11 @@ intersect(A, B, C, D) ->
     intersect(A, B, C, D, lineline).
 -spec intersect(
     vector(), vector(), vector(), vector(), rayline | rayray | lineline
-) -> false | vector().
+) ->
+    false
+    | {true, vector()}
+    | {true, vector(), number()}
+    | {true, vector(), {number(), number()}}.
 intersect({Ax, Ay} = A, B, {Cx, Cy} = C, D, LineType) ->
     % Let A and B be two points that constitute a line segment.
     % Let C and D be two more points that constitute another line segment.
@@ -212,7 +286,7 @@ intersect({Ax, Ay} = A, B, {Cx, Cy} = C, D, LineType) ->
     {Sx, Sy} = S,
     % calculate the 2d 'cross product' of these segments
     case cross(R, S) of
-        0 ->
+        RcrossS when RcrossS == 0; RcrossS == 0.0 ->
             % Lines are co-linear
             false;
         RcrossS ->
@@ -223,13 +297,21 @@ intersect({Ax, Ay} = A, B, {Cx, Cy} = C, D, LineType) ->
                     rayray ->
                         0 =< U andalso 0 =< T;
                     rayline ->
-                        0 =< U andalso U =< 1 andalso 0 =< T;
+                        % TODO: Review. Sometimes lights up too many
+                        %       edges.
+                        -?EPSILON < U andalso U < 1 + ?EPSILON andalso
+                            -?EPSILON < T;
+                    %0 =< U andalso U =< 1 andalso 0 =< T;
                     lineline ->
                         0 =< U andalso U =< 1 andalso 0 =< T andalso T =< 1
                 end,
             case Intersects of
                 true ->
-                    add(A, scale(R, T));
+                    case LineType of
+                        rayray -> {true, add(A, scale(R, T)), {U, T}};
+                        rayline -> {true, add(A, scale(R, T)), T};
+                        lineline -> {true, add(A, scale(R, T))}
+                    end;
                 false ->
                     false
             end
@@ -314,6 +396,19 @@ outer_edges(EdgeList) ->
             lists:member([Y, X], Duplicates))
     end,
     lists:filter(F, Sorted).
+
+-spec component_sort(vector(), [vector()]) -> [vector()].
+component_sort(Lower, Rays) ->
+    % from https://basstabs.github.io/2d-line-of-sight/Angle.html
+    Fun = fun(A = {Xa, Ya}, B = {Xb, Yb}) ->
+        ADotL = dot(A, Lower),
+        LHS = abs(ADotL) * ADotL * (Xb * Xb + Yb * Yb),
+
+        BDotL = dot(B, Lower),
+        RHS = abs(BDotL) * BDotL * (Xa * Xa + Ya * Ya),
+        LHS >= RHS
+    end,
+    lists:sort(Fun, Rays).
 
 ysort(Vertices) ->
     % https://stackoverflow.com/a/4370294
