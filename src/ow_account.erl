@@ -17,34 +17,12 @@
 -include_lib("eunit/include/eunit.hrl").
 
 %%----------------------------------------------------------------------------
-%% @doc Required callback for Goblet. Register the ?ACCOUNT_NEW and
-%%      ?ACCOUNT_LOGIN opcodes, callbacks and messages.
+%% @doc RPC hints for generating client library
 %% @end
 %%----------------------------------------------------------------------------
 
--define(ACCOUNT_NEW, 16#0100).
--define(ACCOUNT_LOGIN, 16#0110).
-
--spec rpc_info() -> ow_rpc:callbacks().
-rpc_info() ->
-    [
-        #{
-            opcode => ?ACCOUNT_NEW,
-            c2s_handler => {?MODULE, account_new, 2},
-            s2c_call => gen_response,
-            encoder => overworld_pb,
-            qos => reliable,
-            channel => 0
-        },
-        #{
-            opcode => ?ACCOUNT_LOGIN,
-            c2s_handler => {?MODULE, account_login, 2},
-            s2c_call => gen_response,
-            encoder => overworld_pb,
-            qos => reliable,
-            channel => 0
-        }
-    ].
+-rpc_server([account_new, account_login]).
+-rpc_client([gen_response]).
 
 %%----------------------------------------------------------------------------
 %% @doc Registers a new account, storing it in the database
