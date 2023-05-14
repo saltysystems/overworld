@@ -114,7 +114,7 @@ channelize_msg(Msg, Channels, {QOS, Channel}) ->
 
 decode_and_reply(Msg, IncomingChannel, {Mod, Fun}, State) ->
     #{channels := Channels, session := Session} = State,
-    case ow_protocol:decode(Msg, Session) of
+    case ow_protocol:route(Msg, Session) of
         % Table of possible returns
         %   ok -> No reply, keep old session
         %   {ok, Session1} -> No reply, update session
