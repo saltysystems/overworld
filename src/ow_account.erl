@@ -1,12 +1,5 @@
 -module(ow_account).
 
--behaviour(ow_rpc).
-
-% Required callbacks for Goblet
--export([
-    rpc_info/0
-]).
-
 % Handlers for protobuf messages
 -export([
     new_account/2,
@@ -21,6 +14,7 @@
 %% @end
 %%----------------------------------------------------------------------------
 
+-rpc_encoder(overworld_pb).
 -rpc_server([account_new, account_login]).
 -rpc_client([gen_response]).
 
@@ -28,12 +22,9 @@
 %% @doc Registers a new account, storing it in the database
 %% @end
 %%----------------------------------------------------------------------------
--spec new_account(binary(), ow_session:session()) ->
-    ow_session:net_msg().
-new_account(Message, Session) ->
-    Decode = overworld_pb:decode_msg(Message, account_new),
-    Email = maps:get(email, Decode),
-    Password = maps:get(password, Decode),
+-spec new_account(map(), ow_session:session()) ->
+    {binary(), ow_session:session()}.
+new_account(#{email := Email, password := Password}, Session) ->
     IsValid =
         case
             ow_util:run_checks([
@@ -60,47 +51,33 @@ new_account(Email, Password, true, Session) ->
                 S1 = ow_session:set_authenticated(true, Session),
                 {Reply, S1}
         end,
-    OpCode = <<?ACCOUNT_NEW:16>>,
-    R = {[OpCode, Msg], Session1},
-    io:format("Response: ~p~n", [R]),
-    R;
+    {Msg, Session1};
 new_account(_Email, _Password, {error, ErrMsg}, Session) ->
     Msg = ow_protocol:response(error, atom_to_list(ErrMsg)),
-    OpCode = <<?ACCOUNT_NEW:16>>,
-    R = {[OpCode, Msg], Session},
-    io:format("Response: ~p~n", [R]),
-    R.
+    {Msg, Session}.
 
 new_test() ->
     % Generate a message mocking a new player registration
     Email = "TestUser@doesntexist.notadomain",
     Password = "TestPassword1234",
     ow_db_account:delete(Email),
-    Msg = overworld_pb:encode_msg(
-        #{
-            email => Email,
-            password => Password
-        },
-        account_new
-    ),
-    {[RespOp, RespMsg], _State} = new_account(Msg, ow_session:new()),
-    ?assertEqual(<<?ACCOUNT_NEW:16>>, RespOp),
-    DecodedResp = overworld_pb:decode_msg(RespMsg, gen_response),
+    Msg = #{
+        email => Email,
+        password => Password
+    },
+    {RespMsg, _State} = new_account(Msg, ow_session:new()),
+    {_Type, DecodedResp} = ow_msg:raw_decode(RespMsg),
     ?assertEqual('OK', maps:get(status, DecodedResp)).
 
 new_already_exists_test() ->
     Email = "TestUser@doesntexist.notadomain",
     Password = "TestPassword1234",
-    Msg = overworld_pb:encode_msg(
-        #{
-            email => Email,
-            password => Password
-        },
-        account_new
-    ),
-    {[RespOp, RespMsg], _State} = new_account(Msg, ow_session:new()),
-    ?assertEqual(<<?ACCOUNT_NEW:16>>, RespOp),
-    DecodedResp = overworld_pb:decode_msg(RespMsg, gen_response),
+    Msg = #{
+        email => Email,
+        password => Password
+    },
+    {RespMsg, _State} = new_account(Msg, ow_session:new()),
+    {_Type, DecodedResp} = ow_msg:raw_decode(RespMsg),
     ?assertEqual('ERROR', maps:get(status, DecodedResp)),
     ?assertEqual("email_already_registered", maps:get(msg, DecodedResp)).
 
@@ -108,12 +85,9 @@ new_already_exists_test() ->
 %% @doc Login the user and mutate the session state
 %% @end
 %%----------------------------------------------------------------------------
--spec login(binary(), ow_session:session()) ->
-    ow_session:net_msg().
-login(Message, Session) ->
-    Decode = overworld_pb:decode_msg(Message, account_login),
-    Email = maps:get(email, Decode),
-    Password = maps:get(password, Decode),
+-spec login(map(), ow_session:session()) ->
+    {binary(), ow_session:session()}.
+login(#{email := Email, password := Password}, Session) ->
     {Msg, NewState} =
         case ow_db_account:login(Email, Password) of
             true ->
@@ -134,37 +108,28 @@ login(Message, Session) ->
                 ),
                 {Reply, Session}
         end,
-    OpCode = <<?ACCOUNT_LOGIN:16>>,
-    {[OpCode, Msg], NewState}.
+    {Msg, NewState}.
 
 login_bad_password_test() ->
     Email = "TestUser@doesntexist.notadomain",
     Password = "Password",
-    Msg = overworld_pb:encode_msg(
-        #{
-            email => Email,
-            password => Password
-        },
-        account_login
-    ),
-    {[RespOp, RespMsg], _State} = login(Msg, ow_session:new()),
-    ?assertEqual(<<?ACCOUNT_LOGIN:16>>, RespOp),
-    DecodedResp = overworld_pb:decode_msg(RespMsg, gen_response),
+    Msg = #{
+        email => Email,
+        password => Password
+    },
+    {RespMsg, _Session} = login(Msg, ow_session:new()),
+    {_Type, DecodedResp} = ow_msg:raw_decode(RespMsg),
     ?assertEqual('ERROR', maps:get(status, DecodedResp)).
 
 login_test() ->
     Email = "TestUser@doesntexist.notadomain",
     Password = "TestPassword1234",
-    Msg = overworld_pb:encode_msg(
-        #{
-            email => Email,
-            password => Password
-        },
-        account_login
-    ),
-    {[RespOp, RespMsg], _State} = login(Msg, ow_session:new()),
-    ?assertEqual(<<?ACCOUNT_LOGIN:16>>, RespOp),
-    DecodedResp = overworld_pb:decode_msg(RespMsg, gen_response),
+    Msg = #{
+        email => Email,
+        password => Password
+    },
+    {RespMsg, _State} = login(Msg, ow_session:new()),
+    {_Type, DecodedResp} = ow_msg:raw_decode(RespMsg),
     ?assertEqual('OK', maps:get(status, DecodedResp)).
 
 %%----------------------------------------------------------------------------
