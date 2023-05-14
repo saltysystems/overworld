@@ -8,7 +8,7 @@ init(Req, State) ->
     logger:info("Got a request for API package from ~p", [IP]),
     % Compile the latest code
     ClientAPI = ow_binding:print(),
-    Apps = ow_protocol:registered_apps(),
+    Apps = ow_protocol:apps(),
     ProtoFiles = protofiles(Apps),
     {ok, {"file", Zip}} = zip:create(
         "file", [{"libow.gd", ClientAPI} | ProtoFiles], [memory]

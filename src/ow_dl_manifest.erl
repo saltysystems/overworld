@@ -22,16 +22,16 @@ init(Req, State) ->
 
 manifest(Req) ->
     % List all registered apps
-    Apps = ow_protocol:registered_apps(),
+    Apps = ow_protocol:apps(),
     % Get the list of files
-    ClientLib =
+    ClientLibs =
         case godot_client_lib_version(Req) of
             3 ->
-                <<"libow3.gd">>;
+                [<<"libow3.gd">>];
             4 ->
-                <<"libow4.gd">>
+                [<<"libow4.gd">>, <<"WebSocketClient.gd">>]
         end,
-    ProtoFiles = [ClientLib | protofiles(Apps)],
+    ProtoFiles = ClientLibs ++ protofiles(Apps),
     % Encode the list via jsone
     Manifest = jsone:encode(ProtoFiles),
     cowboy_req:reply(
@@ -45,6 +45,19 @@ manifest(Req) ->
         Req
     ).
 
+send_file([{<<"file">>, <<"WebSocketClient.gd">>}], Req) ->
+    PrivDir = code:priv_dir(overworld),
+    {ok, WSClient} = file:read_file(PrivDir ++ "/WebSocketClient.gd"),
+    cowboy_req:reply(
+        200,
+        #{
+            <<"content-type">> => <<"text/plain">>,
+            <<"content-disposition">> =>
+                <<"attachment; filename=WebSocketClient.gd">>
+        },
+        WSClient,
+        Req
+    );
 send_file([{<<"file">>, <<"libow3.gd">>}], Req) ->
     ClientAPI = ow_binding:print(3),
     cowboy_req:reply(
