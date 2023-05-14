@@ -67,10 +67,9 @@
     cb_mod :: module(),
     cb_data :: term(),
     tick_ms :: pos_integer(),
-    require_auth :: boolean(),
-    rpcs :: ow_rpcs:callbacks()
+    require_auth :: boolean()
 }).
--type state() :: #state{}.
+%-type state() :: #state{}.
 
 -define(DEFAULT_CONFIG, #{
     % milliseconds between ticks
@@ -313,32 +312,31 @@ initialize_state(CbMod, CbData, Config = #{tick_ms := TickMs}) ->
     timer:send_interval(TickMs, self(), ?TAG_I(tick)),
     % configure auth
     RequireAuth = maps:get(require_auth, Config),
-    RPCInfo =
-        case rpc_info(CbMod) of
-            [] ->
-                [];
-            RPCs ->
-                logger:debug("Registering ~p", [CbMod]),
-                ow_protocol:register(CbMod),
-                RPCs
-        end,
+    %RPCInfo =
+    %    case rpc_info(CbMod) of
+    %        [] ->
+    %            [];
+    %        RPCs ->
+    %            logger:debug("Registering ~p", [CbMod]),
+    %            ow_protocol:register_app(CbMod),
+    %            RPCs
+    %    end,
     #state{
         cb_mod = CbMod,
         cb_data = CbData,
         tick_ms = TickMs,
-        require_auth = RequireAuth,
-        rpcs = RPCInfo
+        require_auth = RequireAuth
     }.
 
 handle_call(?TAG_I({Action, Msg, Session}), _From, St0) ->
     % where Action = join or part.
     {Session1, St1} = maybe_auth_do(Action, Msg, Session, St0),
     % Get channel and QOS information
-    {reply, {ok, Session1, enet_msg_opts(Action, St1)}, St1};
+    {reply, {ok, Session1, enet_msg_opts(Action)}, St1};
 handle_call(?TAG_I({Action, Session}), _From, St0) ->
     % where Action = join or part.
     {Session1, St1} = maybe_auth_do(Action, Session, St0),
-    {reply, {ok, Session1, enet_msg_opts(Action, St1)}, St1};
+    {reply, {ok, Session1, enet_msg_opts(Action)}, St1};
 handle_call(?TAG_I({who}), _From, St0) ->
     Players = ow_player_reg:list(self()),
     IDs = [ow_player_reg:get_id(P) || P <- Players],
@@ -357,7 +355,7 @@ handle_call(?TAG_I({status}), _From, St0) ->
     {reply, StatusMsg, St1};
 handle_call(?TAG_I({rpc, Type, Msg, Session}), _From, St0) ->
     {Session1, St1} = maybe_auth_rpc(Type, Msg, Session, St0),
-    {reply, {ok, Session1, enet_msg_opts(Type, St1)}, St1};
+    {reply, {ok, Session1, enet_msg_opts(Type)}, St1};
 handle_call(_Call, _From, St0) ->
     {reply, ok, St0}.
 
@@ -387,15 +385,7 @@ tick(St0 = #state{cb_mod = CbMod, cb_data = CbData0, tick_ms = TickMs}) ->
     handle_notify(Notify, St1),
     St1.
 
-rpc_info(CbMod) ->
-    case erlang:function_exported(CbMod, rpc_info, 0) of
-        true ->
-            CbMod:rpc_info();
-        _ ->
-            []
-    end.
-
-handle_notify({{'@', IDs}, {MsgType, Msg}}, #state{rpcs = RPCs}) ->
+handle_notify({{'@', IDs}, {MsgType, Msg}}, _State) ->
     % SEND MESSAGE: Filter just for the players we want to notify
     Players = [ow_player_reg:get(ID) || ID <- IDs],
     case Players of
@@ -403,9 +393,9 @@ handle_notify({{'@', IDs}, {MsgType, Msg}}, #state{rpcs = RPCs}) ->
             % Nothing to send
             ok;
         Players ->
-            notify_players(MsgType, Msg, RPCs, Players)
+            notify_players(MsgType, Msg, Players)
     end;
-handle_notify({'@zone', {MsgType, Msg}}, #state{rpcs = RPCs}) ->
+handle_notify({'@zone', {MsgType, Msg}}, _State) ->
     % SEND MESSAGE: Send everyone the message
     Players = ow_player_reg:list(self()),
     case Players of
@@ -413,7 +403,7 @@ handle_notify({'@zone', {MsgType, Msg}}, #state{rpcs = RPCs}) ->
             % Nothing to send
             ok;
         Players ->
-            notify_players(MsgType, Msg, RPCs, Players)
+            notify_players(MsgType, Msg, Players)
     end;
 handle_notify(noreply, _State) ->
     % NO MESSAGE
@@ -433,7 +423,7 @@ player_rm(Session) ->
     ID = ow_session:get_id(Session),
     ow_player_reg:delete(ID).
 
-notify_players(MsgType, Msg, RPCs, Players) ->
+notify_players(MsgType, Msg, Players) ->
     Send = fun(Player) ->
         % causes a crash if the pid doesn't exist
         PID = ow_player_reg:get_pid(Player),
@@ -446,17 +436,14 @@ notify_players(MsgType, Msg, RPCs, Players) ->
                     undefined ->
                         Pid ! {self(), zone_msg, {MsgType, Msg}};
                     protobuf ->
-                        RPC = ow_rpc:find_call(MsgType, RPCs),
-                        EMod = ow_rpc:encoder(RPC),
-                        OpCode = ow_rpc:opcode(RPC),
-                        EncodedMsg = EMod:encode_msg(Msg, MsgType),
-                        Channel = ow_rpc:channel(RPC),
-                        QOS = ow_rpc:qos(RPC),
+                        #{channel := Channel, qos := QOS} =
+                            ow_protocol:client_rpc(MsgType),
+                        EncodedMsg = ow_msg:encode(Msg, MsgType),
                         Pid !
                             {
                                 self(),
                                 zone_msg,
-                                [<<OpCode:16>>, EncodedMsg],
+                                EncodedMsg,
                                 {QOS, Channel}
                             }
                 end
@@ -464,21 +451,22 @@ notify_players(MsgType, Msg, RPCs, Players) ->
     end,
     lists:foreach(Send, Players).
 
-decode_msg(_MsgType, <<>>, _RPCs, _Session) ->
-    % Suppose you have a message that is just a repeated type.
-    % If the number of entries is 0, you just get a <<>> back after stripping
-    % off the opcode. So we return an empty list here.
-    [];
-decode_msg(MsgType, Msg, RPCs, Session) ->
-    Serializer = ow_session:get_serializer(Session),
-    case Serializer of
-        undefined ->
-            Msg;
-        protobuf ->
-            RPC = ow_rpc:find_handler(MsgType, RPCs),
-            EMod = ow_rpc:encoder(RPC),
-            EMod:decode_msg(Msg, MsgType)
-    end.
+%decode_msg(_MsgType, <<>>, _Session) ->
+%    % Suppose you have a message that is just a repeated type.
+%    % If the number of entries is 0, you just get a <<>> back after stripping
+%    % off the opcode. So we return an empty list here.
+%    [];
+%decode_msg(MsgType, Msg, Session) ->
+%    Serializer = ow_session:get_serializer(Session),
+%    case Serializer of
+%        undefined ->
+%            Msg;
+%        protobuf ->
+%            RPC = ow_protocol:server_rpc(RPC),
+%
+%            EMod = ow_rpc:encoder(RPC),
+%            EMod:decode_msg(Msg, MsgType)
+%    end.
 
 maybe_auth_do(Action, Msg, Session, St0 = #state{require_auth = RA}) when
     RA =:= true
@@ -517,12 +505,11 @@ actually_do(Action, Session, St0) ->
             rm_and_notify(Session, St0, Status, CbData1, Notify)
     end.
 actually_do(Action, Msg, Session, St0) ->
-    RPCs = St0#state.rpcs,
-    DecodedMsg = decode_msg(Action, Msg, RPCs, Session),
+    %DecodedMsg = decode_msg(Action, Msg, Session),
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
     CbFun = list_to_existing_atom("handle_" ++ atom_to_list(Action)),
-    {Notify, Status, CbData1} = CbMod:CbFun(DecodedMsg, Session, CbData0),
+    {Notify, Status, CbData1} = CbMod:CbFun(Msg, Session, CbData0),
     case Action of
         join ->
             add_and_notify(Session, St0, Status, CbMod, CbData1, Notify);
@@ -587,15 +574,14 @@ maybe_auth_rpc(Type, Msg, Session, St0) ->
 actually_rpc(Type, Msg, Session, St0) ->
     CbMod = St0#state.cb_mod,
     CbData = St0#state.cb_data,
-    RPCs = St0#state.rpcs,
-    DecodedMsg = decode_msg(Type, Msg, RPCs, Session),
+    %DecodedMsg = decode_msg(Type, Msg, Session),
     SessionID = ow_session:get_id(Session),
     % Overworld will confirm that the player is actually part of the zone to
     % which they are sending RPCs
     {Notify, Status, CbData1} =
         case is_player(SessionID) of
             true ->
-                CbMod:handle_rpc(Type, DecodedMsg, Session, CbData);
+                CbMod:handle_rpc(Type, Msg, Session, CbData);
             false ->
                 {noreply, ok, CbData}
         end,
@@ -627,11 +613,12 @@ update_player(PlayerInfo, ID) ->
     P1 = ow_player_reg:set_info(PlayerInfo, P),
     ow_player_reg:update(P1).
 
--spec enet_msg_opts(atom, state()) ->
-    {atom(), non_neg_integer() | undefined}.
-enet_msg_opts(Action, State) ->
-    RPCs = State#state.rpcs,
-    RPC = ow_rpc:find_call(Action, RPCs),
-    Channel = ow_rpc:channel(RPC),
-    QOS = ow_rpc:qos(RPC),
+-spec enet_msg_opts(atom()) ->
+    {atom(), non_neg_integer()}.
+enet_msg_opts(Action) ->
+    %RPCs = State#state.rpcs,
+    %RPC = ow_rpc:find_call(Action, RPCs),
+    %Channel = ow_rpc:channel(RPC),
+    %QOS = ow_rpc:qos(RPC),
+    #{channel := Channel, qos := QOS} = ow_protocol:client_rpc(Action),
     {QOS, Channel}.
