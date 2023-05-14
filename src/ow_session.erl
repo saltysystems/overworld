@@ -6,11 +6,6 @@
 %%=========================================================================
 -module(ow_session).
 
--behaviour(ow_rpc).
-
-% Required ow callbacks
--export([rpc_info/0]).
-
 -export([
     encode_log/1,
     broadcast/2,
@@ -34,8 +29,7 @@
     get_termination_callback/1,
     session_id_req/2,
     session_ping/2,
-    session_pong/1,
-    version/1
+    session_pong/1
 ]).
 
 -include_lib("kernel/include/logger.hrl").
@@ -70,62 +64,13 @@
 %%===========================================================================
 
 %%----------------------------------------------------------------------------
-%% @doc Required callback for Overworld. Register the ?ACCOUNT_NEW and
-%%      ?ACCOUNT_LOGIN opcodes and associated functions.
+%% @doc RPC hints for Client library generation
 %% @end
 %%----------------------------------------------------------------------------
 
--define(VERSION, 16#0010).
--define(SESSION_ID_REQ, 16#0015).
--define(SESSION_ID, 16#0016).
--define(SESSION_PING, 16#0020).
--define(SESSION_PONG, 16#0021).
--define(SESSION_LOG, 16#0050).
-
--spec rpc_info() -> ow_rpc:callbacks().
-rpc_info() ->
-    [
-        #{
-            opcode => ?VERSION,
-            c2s_handler => {?MODULE, version, 1},
-            qos => reliable,
-            channel => 0
-        },
-        #{
-            opcode => ?SESSION_ID_REQ,
-            c2s_handler => {?MODULE, session_id_req, 2},
-            qos => reliable,
-            channel => 0
-        },
-        #{
-            opcode => ?SESSION_ID,
-            s2c_call => session_id,
-            encoder => overworld_pb,
-            qos => reliable,
-            channel => 0
-        },
-        #{
-            opcode => ?SESSION_PING,
-            c2s_handler => {?MODULE, session_ping, 2},
-            encoder => overworld_pb,
-            qos => reliable,
-            channel => 0
-        },
-        #{
-            opcode => ?SESSION_PONG,
-            s2c_call => session_pong,
-            encoder => overworld_pb,
-            qos => reliable,
-            channel => 0
-        },
-        #{
-            opcode => ?SESSION_LOG,
-            s2c_call => session_log,
-            encoder => overworld_pb,
-            qos => reliable,
-            channel => 0
-        }
-    ].
+-rpc_encoder(overworld_pb).
+-rpc_client([session_id, session_pong, session_log]).
+-rpc_server([session_id_req, session_ping]).
 
 %%===========================================================================
 %% API
@@ -136,16 +81,15 @@ rpc_info() ->
 %% @end
 %%----------------------------------------------------------------------------
 session_ping(Msg, Session) ->
-    D = overworld_pb:decode_msg(Msg, session_ping),
-    ID = maps:get(id, D),
+    ID = maps:get(id, Msg),
     Last = ow_beacon:get_by_id(ID),
     Now = erlang:monotonic_time(),
     Latency = erlang:convert_time_unit(
         round((Now - Last) / 2), native, millisecond
     ),
     Session1 = set_latency(Latency, Session),
-    Resp = overworld_pb:encode_msg(#{latency => Latency}, session_pong),
-    {[<<?SESSION_PONG:16>>, Resp], Session1}.
+    Resp = ow_msg:encode(#{latency => Latency}, session_pong),
+    {Resp, Session1}.
 
 %%----------------------------------------------------------------------------
 %% @doc Receives PONGs from the Client. No op - this is basically a stub to
@@ -156,21 +100,13 @@ session_pong(_) ->
     ok.
 
 %%----------------------------------------------------------------------------
-%% @doc Receives VERSION requests
-%% @end
-%%----------------------------------------------------------------------------
-version(_S) ->
-    logger:debug("Got a VERSION request"),
-    ok.
-
-%%----------------------------------------------------------------------------
 %% @doc Return the session ID back to the caller
 %% @end
 %%----------------------------------------------------------------------------
 session_id_req(_Msg, Session) ->
     ID = ow_session:get_id(Session),
-    Resp = overworld_pb:encode_msg(#{id => ID}, session_id),
-    {[<<?SESSION_ID:16>>, Resp], Session}.
+    Resp = ow_msg:encode(#{id => ID}, session_id),
+    {Resp, Session}.
 
 %%----------------------------------------------------------------------------
 %% @doc Encodes a log message to be sent back to the client
@@ -178,24 +114,21 @@ session_id_req(_Msg, Session) ->
 %%----------------------------------------------------------------------------
 -spec encode_log(string()) -> msg().
 encode_log(Message) ->
-    OpCode = <<?SESSION_LOG:16>>,
     Sanitized = sanitize_message(Message),
     % Send a 1-byte color message in hex - default black
     Color = <<000000:8>>,
-    Msg = overworld_pb:encode_msg(
+    ow_msg:encode(
         #{color => Color, msg => Sanitized}, session_log
-    ),
-    [OpCode, Msg].
+    ).
 
 -spec encode_log_test() -> ok.
 encode_log_test() ->
     OriginalMessage = "Hello World",
-    [OpCode, Message] = encode_log(OriginalMessage),
-    % Check that the expected OpCode comes back
-    ?assertEqual(OpCode, <<?SESSION_LOG:16>>),
+    Message = encode_log(OriginalMessage),
     % Check that the message decodes correctly
-    Decoded = overworld_pb:decode_msg(Message, session_log),
-    ToList = maps:get(msg, Decoded),
+    {Type, Msg} = ow_msg:raw_decode(Message),
+    ToList = maps:get(msg, Msg),
+    ?assertEqual(Type, session_log),
     ?assertEqual(OriginalMessage, ToList),
     ok.
 
