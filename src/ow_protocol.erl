@@ -74,7 +74,8 @@ stop() ->
 register_app(Prefix, Application) ->
     gen_server:call(?MODULE, {register_app, Prefix, Application}).
 
--spec register_app({atom(), atom()}) -> {reply, ok | {error, atom()}, map()}.
+-spec register_app({atom(), atom()}) ->
+    {reply, ok | {error, atom()}, map()}.
 register_app(Application) ->
     gen_server:call(?MODULE, {register_app, Application}).
 
@@ -155,7 +156,7 @@ server_rpc(RPC) ->
 %% @end
 %%-------------------------------------------------------------------------
 -spec route(<<_:8, _:_*8>>, ow_session:session()) ->
-        ow_session:net_msg().
+    ow_session:net_msg().
 route(<<Prefix:8, Msg/binary>>, Session) ->
     % Get the decoder M/F for a given Overworld application
     {Mod, Fun} = ow_protocol:handler(Prefix),
@@ -211,7 +212,7 @@ handle_call({client_rpc, RPC}, _From, #{c_rpc := C} = St0) ->
 handle_call({server_rpc, RPC}, _From, #{s_rpc := S} = St0) ->
     Reply = maps:get(RPC, S),
     {reply, Reply, St0};
-handle_call({handler, Prefix}, _From, #{ apps := Apps } = St0) ->
+handle_call({handler, Prefix}, _From, #{apps := Apps} = St0) ->
     Reply = orddict:fetch(Prefix, Apps),
     {reply, Reply, St0}.
 
@@ -273,47 +274,47 @@ reg_app(App, AppList) ->
 -spec reg_app_test() -> ok.
 reg_app_test() ->
     Apps0 = orddict:new(),
-    Apps1 = reg_app({ow_test1,hello}, Apps0),
+    Apps1 = reg_app({ow_test1, hello}, Apps0),
     ?assertEqual(true, orddict:is_key(0, Apps1)),
     % Try adding another
-    Apps2 = reg_app({ow_test2,goodbye}, Apps1),
+    Apps2 = reg_app({ow_test2, goodbye}, Apps1),
     ?assertEqual(true, orddict:is_key(1, Apps2)),
     ok.
 
 -spec reg_app_prefix_test() -> ok.
 reg_app_prefix_test() ->
     Apps0 = orddict:new(),
-    Apps1 = reg_app(10, {ow_test1,foo}, Apps0),
+    Apps1 = reg_app(10, {ow_test1, foo}, Apps0),
     ?assertEqual(true, orddict:is_key(10, Apps1)),
     % Try adding another to see if it increments properly
-    Apps2 = reg_app({ow_test2,bar}, Apps1),
+    Apps2 = reg_app({ow_test2, bar}, Apps1),
     ?assertEqual(true, orddict:is_key(11, Apps2)),
     ok.
 
 -spec deep_propmap(list()) -> map().
 deep_propmap(PropList) ->
     deep_propmap(PropList, #{}).
-deep_propmap([], Map) -> 
+deep_propmap([], Map) ->
     Map;
-deep_propmap([H|T], Map) ->
+deep_propmap([H | T], Map) ->
     % Take the first item in the list and convert it to a map
-    Map0 = 
+    Map0 =
         case H of
             H when is_atom(H) ->
-                #{ H => #{} };
-            {K,{K1,V1}} ->
-                #{ K => deep_propmap([{K1,V1}]) };
+                #{H => #{}};
+            {K, {K1, V1}} ->
+                #{K => deep_propmap([{K1, V1}])};
             {K, V} ->
-                #{ K => V }
+                #{K => V}
         end,
     Map1 = maps:merge(Map0, Map),
     deep_propmap(T, Map1).
 
 -spec inject_module(atom(), map()) -> map().
-inject_module(Module, PropMap) -> 
+inject_module(Module, PropMap) ->
     F = fun(_Key, Val) ->
-            Val#{ module => Module }
-        end,
+        Val#{module => Module}
+    end,
     maps:map(F, PropMap).
 
 -spec inject_module_test() -> ok.
@@ -331,8 +332,8 @@ inject_module_test() ->
 -spec inject_defaults(map()) -> map().
 inject_defaults(PropMap) ->
     F = fun(_Key, Val) ->
-            maps:merge(Val, ow_rpc:defaults())
-        end,
+        maps:merge(Val, ow_rpc:defaults())
+    end,
     maps:map(F, PropMap).
 
 -spec setup_propmap_tests() -> map().
@@ -353,13 +354,14 @@ deep_propmap_test() ->
 
 inject_encoder(Module, PropMap) ->
     Attributes = erlang:apply(Module, module_info, [attributes]),
-    E = 
+    E =
         case proplists:lookup(rpc_encoder, Attributes) of
-            none -> 
+            none ->
                 % Try to guess the encoder module based on convention
                 ModuleString = erlang:atom_to_list(Module),
-                [ Prefix | _Rest ] = string:split(ModuleString, "_", leading),
-                EncoderGuess = Prefix ++ "_pb", % per GPB defaults
+                [Prefix | _Rest] = string:split(ModuleString, "_", leading),
+                % per GPB defaults
+                EncoderGuess = Prefix ++ "_pb",
                 % Try to convert to an exist atom or crash, we can't continue
                 % without an encoder.
                 erlang:list_to_existing_atom(EncoderGuess);
@@ -367,16 +369,16 @@ inject_encoder(Module, PropMap) ->
                 Encoder
         end,
     F = fun
-            (_Key, #{ encoder := _Existing } = Val) ->
-                % Existing encoder found, do nothing
-                Val;
-            (_Key, Val) -> 
-                Val#{ encoder => E }
-        end,
+        (_Key, #{encoder := _Existing} = Val) ->
+            % Existing encoder found, do nothing
+            Val;
+        (_Key, Val) ->
+            Val#{encoder => E}
+    end,
     maps:map(F, PropMap).
 
 -spec inject_encoder_test() -> ok.
-inject_encoder_test() -> 
+inject_encoder_test() ->
     Map = setup_propmap_tests(),
     EncMap = inject_encoder('overworld_pb', Map),
     ExpectedFoo = #{encoder => overworld_pb},
