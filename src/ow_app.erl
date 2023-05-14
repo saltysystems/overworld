@@ -26,9 +26,6 @@ start(_StartType, _StartArgs) ->
             {"/client/download", ow_dl_handler, []},
             {"/client/manifest", ow_dl_manifest, []},
             {"/stats", ow_stats, []}
-            % TODO - See if this is needed, I think it's old.
-            %{"/libow.gd", cowboy_static,
-            %    {file, "apps/ow_core/static/libow.gd"}}
         ]}
     ]),
     % Start WebSocket/CowBoy
@@ -49,7 +46,14 @@ start(_StartType, _StartArgs) ->
     Handler = {ow_enet, start, []},
     enet:start_host(?ENET_PORT, Handler, Options),
     % Start the OW supervisor
-    ow_sup:start_link().
+    SuperLink = ow_sup:start_link(),
+    % Now register the initial application and modules before returning
+    Application = {ow_msg, decode},
+    ow_protocol:register_app(Application),
+    Modules = [ow_account, ow_session, ow_beacon],
+    [ow_protocol:register_rpc(RPC) || RPC <- Modules],
+    % Return the supervisor pid
+    SuperLink.
 
 stop(_State) ->
     ok.
