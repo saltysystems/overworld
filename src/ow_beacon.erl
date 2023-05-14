@@ -1,6 +1,5 @@
 -module(ow_beacon).
 -behaviour(gen_server).
--behaviour(ow_rpc).
 
 -define(SERVER, ?MODULE).
 
@@ -8,7 +7,7 @@
 -export([start/0, stop/0, last/0, get_by_id/1, dump/0]).
 
 % ow callbacks
--export([rpc_info/0, beacon/1]).
+-export([beacon/1]).
 
 % genserver callbacks
 -export([
@@ -25,18 +24,8 @@
 % The number of beacons to hold in memory
 -define(WINDOW_SIZE, 25).
 
--define(BEACON, 16#0019).
--spec rpc_info() -> ow_rpc:callbacks().
-rpc_info() ->
-    [
-        #{
-            opcode => ?BEACON,
-            s2c_call => session_beacon,
-            encoder => overworld_pb,
-            qos => reliable,
-            channel => 0
-        }
-    ].
+-rpc_encoder(overworld_pb).
+-rpc_client([session_beacon]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % API
@@ -97,10 +86,12 @@ handle_info(tick, {Window, OldTimer}) ->
     Beacon = {ID, erlang:monotonic_time()},
     % Encode the beacon and broadcast it to all clients.
     % n.b., There's a very small race here. A client could conceivably respond
-    % faster than the server has updated the list.
-    [BeaconRPC] = rpc_info(),
-    QOS = ow_rpc:qos(BeaconRPC),
-    Channel = ow_rpc:channel(BeaconRPC),
+    % faster than the server has updated the list but I've never observed this
+    % even on LAN
+    % Look up the QOS/Channel for the beacon
+    #{channel := Channel, qos := QOS} = ow_protocol:client_rpc(
+        session_beacon
+    ),
     ow_session:broadcast(encode_beacon(ID), {QOS, Channel}),
     NewTimer = erlang:send_after(?HEARTBEAT, self(), tick),
     {noreply, {push(Beacon, Window), NewTimer}};
@@ -119,13 +110,12 @@ new_state() ->
     NewTimer = erlang:send_after(?HEARTBEAT, self(), tick),
     {[{ID, Now}], NewTimer}.
 
-% Push the latest beacon onto a fixed length list  of the last ?WINDOW_SIZE
+% Push the latest beacon onto a fixed length list of the last ?WINDOW_SIZE
 % number of beacons.
 push(Beacon, List) ->
     L1 = lists:sublist(List, ?WINDOW_SIZE - 1),
     [Beacon | L1].
 
+-spec encode_beacon(integer()) -> binary().
 encode_beacon(ID) ->
-    OpCode = <<?BEACON:16>>,
-    Msg = overworld_pb:encode_msg(#{id => ID}, session_beacon),
-    [OpCode, Msg].
+    ow_msg:encode(#{id => ID}, session_beacon).
