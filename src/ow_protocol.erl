@@ -17,13 +17,14 @@
     start/0,
     stop/0,
     register_rpc/1,
+    register_app/1,
     register_app/2,
     apps/0,
-    app/1,
     rpcs/0,
     client_rpc/1,
     server_rpc/1,
-    decode/2,
+    route/2,
+    handler/1,
     response/1,
     response/2
 ]).
@@ -37,8 +38,6 @@
     terminate/2,
     code_change/3
 ]).
-
--include("db/ow_database.hrl").
 
 -include_lib("kernel/include/logger.hrl").
 -include_lib("eunit/include/eunit.hrl").
@@ -70,9 +69,14 @@ stop() ->
 %%      State}} if the registration fails.
 %% @end
 %%-------------------------------------------------------------------------
--spec register_app(atom(), atom()) -> {reply, ok | {error, atom()}, map()}.
-register_app(Application, Encoder) ->
-    gen_server:call(?MODULE, {register_app, Application, Encoder}).
+-spec register_app(pos_integer(), {atom(), atom()}) ->
+    {reply, ok | {error, atom()}, map()}.
+register_app(Prefix, Application) ->
+    gen_server:call(?MODULE, {register_app, Prefix, Application}).
+
+-spec register_app({atom(), atom()}) -> {reply, ok | {error, atom()}, map()}.
+register_app(Application) ->
+    gen_server:call(?MODULE, {register_app, Application}).
 
 %%-------------------------------------------------------------------------
 %% @doc Register a new opcode and associated callback function for Module.
@@ -86,28 +90,14 @@ register_rpc(Module) ->
     gen_server:call(?MODULE, {register_rpc, Module}).
 
 %%-------------------------------------------------------------------------
-%% @doc Decode messages from clients and route them to an appropriate
-%%      function
-%% @end
-%%-------------------------------------------------------------------------
--spec decode(binary(), ow_session:session()) ->
-    ok
-    | {ok, ow_session:session()}
-    | {binary(), ow_session:session()}
-    | {ok, ow_session:session(), ow_enet:qos()}
-    | {binary(), ow_session:session(), ow_enet:qos()}.
-decode(Message, Session) ->
-    gen_server:call(?MODULE, {decode, Message, Session}).
-
-%%-------------------------------------------------------------------------
 %% @doc Encode a general response
 %% @end
 %%-------------------------------------------------------------------------
 -spec response(ok | error) -> binary().
 response(ok) ->
-    overworld_pb:encode_msg(#{status => 'OK'}, gen_response);
+    ow_msg:encode(#{status => 'OK'}, gen_response);
 response(error) ->
-    overworld_pb:encode_msg(#{status => 'ERROR'}, gen_response).
+    ow_msg:encode(#{status => 'ERROR'}, gen_response).
 
 %%-------------------------------------------------------------------------
 %% @doc Encode a general response with reasoning
@@ -115,7 +105,7 @@ response(error) ->
 %%-------------------------------------------------------------------------
 -spec response(ok | error, string()) -> binary().
 response(ok, Msg) ->
-    overworld_pb:encode_msg(
+    ow_msg:encode(
         #{
             status => 'OK',
             msg => Msg
@@ -123,7 +113,7 @@ response(ok, Msg) ->
         gen_response
     );
 response(error, Msg) ->
-    overworld_pb:encode_msg(
+    ow_msg:encode(
         #{
             status => 'ERROR',
             msg => Msg
@@ -148,14 +138,6 @@ apps() ->
     gen_server:call(?MODULE, apps).
 
 %%-------------------------------------------------------------------------
-%% @doc Get information for a particular registered app
-%% @end
-%%-------------------------------------------------------------------------
--spec app(atom()) -> tuple().
-app(App) ->
-    gen_server:call(?MODULE, {app, App}).
-
-%%-------------------------------------------------------------------------
 %% @doc Return the info map for a particular opcode
 %% @end
 %%-------------------------------------------------------------------------
@@ -166,6 +148,26 @@ client_rpc(RPC) ->
 -spec server_rpc(atom()) -> map().
 server_rpc(RPC) ->
     gen_server:call(?MODULE, {server_rpc, RPC}).
+
+%%-------------------------------------------------------------------------
+%% @doc Route a message to the appropriate Overworld application based on
+%%      application prefix
+%% @end
+%%-------------------------------------------------------------------------
+-spec route(<<_:8, _:_*8>>, ow_session:session()) ->
+        ow_session:net_msg().
+route(<<Prefix:8, Msg/binary>>, Session) ->
+    % Get the decoder M/F for a given Overworld application
+    {Mod, Fun} = ow_protocol:handler(Prefix),
+    % Now call
+    erlang:apply(Mod, Fun, [Msg, Session]).
+
+%%-------------------------------------------------------------------------
+%% @doc Return the module and decoder function for a given prefix
+%% @end
+%%-------------------------------------------------------------------------
+handler(Prefix) ->
+    gen_server:call(?MODULE, {handler, Prefix}).
 
 %%============================================================================
 %% gen_server callbacks
@@ -183,33 +185,34 @@ init([]) ->
     {ok, St0}.
 
 handle_call({register_rpc, Module}, _From, St0) ->
-    % Get list of opcodes to register for Module
+    % Get list of RPCs to register for Module
     %Ops0 = maps:get(ops, St0),
     St1 = reg_rpc(Module, St0),
     {reply, ok, St1};
 handle_call(
-    {register_app, Application, Encoder}, _From, #{apps := Apps} = St0
+    {register_app, Prefix, App}, _F, #{apps := Apps} = St0
 ) ->
     % Get list of opcodes to register for Module
-    Apps1 = reg_app(Application, Encoder, Apps),
+    Apps1 = reg_app(Prefix, App, Apps),
     {reply, ok, St0#{apps := Apps1}};
-handle_call({decode, Message, Session}, _From, St0) ->
-    Reply = route(Message, Session, St0),
-    {reply, Reply, St0};
+handle_call({register_app, App}, _From, #{apps := Apps} = St0) ->
+    % Get list of opcodes to register for Module
+    Apps1 = reg_app(App, Apps),
+    {reply, ok, St0#{apps := Apps1}};
 handle_call(rpcs, _From, #{c_rpc := C, s_rpc := S} = St0) ->
     Reply = {{client_rpc, maps:keys(C)}, {server_rpc, maps:keys(S)}},
     {reply, Reply, St0};
 handle_call(apps, _From, St0) ->
     Apps = maps:get(apps, St0),
     {reply, Apps, St0};
-handle_call({app, App}, _From, #{apps := Apps} = St0) ->
-    Reply = proplist:lookup(App, Apps),
-    {reply, Reply, St0};
 handle_call({client_rpc, RPC}, _From, #{c_rpc := C} = St0) ->
     Reply = maps:get(RPC, C),
     {reply, Reply, St0};
 handle_call({server_rpc, RPC}, _From, #{s_rpc := S} = St0) ->
     Reply = maps:get(RPC, S),
+    {reply, Reply, St0};
+handle_call({handler, Prefix}, _From, #{ apps := Apps } = St0) ->
+    Reply = orddict:fetch(Prefix, Apps),
     {reply, Reply, St0}.
 
 handle_cast(_Request, St0) ->
@@ -227,14 +230,6 @@ code_change(_OldVsn, St0, _Extra) ->
 %%============================================================================
 %% Internal functions
 %%============================================================================
--spec route(<<_:8, _:_*8>>, ow_session:session(), map()) ->
-    ow_session:net_msg().
-route(<<Prefix:8, Msg/binary>>, Session, #{apps := Apps}) ->
-    % Message will be prefixed with an application identifier
-    % Get the callback module and route the message as appropriate
-    {Mod, Fun} = orddict:fetch(Prefix, Apps),
-    erlang:apply(Mod, Fun, [Msg, Session]).
-
 -spec reg_rpc(atom(), map()) -> map().
 reg_rpc(Module, #{c_rpc := CRPC, s_rpc := SRPC} = St0) ->
     % Get module info for the module
@@ -244,7 +239,10 @@ reg_rpc(Module, #{c_rpc := CRPC, s_rpc := SRPC} = St0) ->
             none ->
                 #{};
             {Attribute, Calls} ->
-                deeper_propmap(Calls)
+                M = deep_propmap(Calls),
+                M2 = inject_defaults(M),
+                M3 = inject_module(Module, M2),
+                inject_encoder(Module, M3)
         end
     end,
     ClientMap = F(rpc_client),
@@ -253,12 +251,12 @@ reg_rpc(Module, #{c_rpc := CRPC, s_rpc := SRPC} = St0) ->
     SRPC1 = maps:merge(ServerMap, SRPC),
     St0#{c_rpc => CRPC1, s_rpc => SRPC1}.
 
--spec reg_app(pos_integer(), {atom(), atom()}, atom(), list()) -> list().
-reg_app(Prefix, App, Encoder, AppList) ->
+-spec reg_app(pos_integer(), {atom(), atom()}, list()) -> list().
+reg_app(Prefix, App, AppList) ->
     % Note that this will bump the next available slot up.
-    orddict:store(Prefix, {App, Encoder}, AppList).
--spec reg_app({atom(), atom()}, atom(), list()) -> list().
-reg_app(App, Encoder, AppList) ->
+    orddict:store(Prefix, App, AppList).
+-spec reg_app({atom(), atom()}, list()) -> list().
+reg_app(App, AppList) ->
     % Determine the next available prefix
     Next =
         case orddict:fetch_keys(AppList) of
@@ -268,55 +266,121 @@ reg_app(App, Encoder, AppList) ->
                 Max = lists:max(Keys),
                 Max + 1
         end,
-    % The prefix is assumed to be 8-bits, weird stuff may happen beyond 255 apps
-    orddict:store(Next, {App, Encoder}, AppList).
+    % The prefix is assumed to be 8-bits, weird stuff may happen beyond 255
+    % apps
+    orddict:store(Next, App, AppList).
 
 -spec reg_app_test() -> ok.
 reg_app_test() ->
     Apps0 = orddict:new(),
-    Apps1 = reg_app(foo, test_pb, Apps0),
+    Apps1 = reg_app({ow_test1,hello}, Apps0),
     ?assertEqual(true, orddict:is_key(0, Apps1)),
     % Try adding another
-    Apps2 = reg_app(bar, test_pb, Apps1),
+    Apps2 = reg_app({ow_test2,goodbye}, Apps1),
     ?assertEqual(true, orddict:is_key(1, Apps2)),
     ok.
 
 -spec reg_app_prefix_test() -> ok.
 reg_app_prefix_test() ->
     Apps0 = orddict:new(),
-    Apps1 = reg_app(10, foo, test_pb, Apps0),
+    Apps1 = reg_app(10, {ow_test1,foo}, Apps0),
     ?assertEqual(true, orddict:is_key(10, Apps1)),
     % Try adding another to see if it increments properly
-    Apps2 = reg_app(bar, test_pb, Apps1),
+    Apps2 = reg_app({ow_test2,bar}, Apps1),
     ?assertEqual(true, orddict:is_key(11, Apps2)),
     ok.
 
--spec deeper_propmap(list()) -> map().
-deeper_propmap(PropList) ->
-    F = fun
-        ({K, V}) ->
-            proplists:to_map([{K, V}]);
-        (List) when is_list(List) ->
-            proplists:to_map(List);
-        (Atom) when is_atom(Atom) ->
-            Atom
-    end,
-    G = fun(K, V, MapIn) ->
-        Map = F(V),
-        MapIn#{K => Map}
-    end,
-    Map = proplists:to_map(PropList),
-    maps:fold(G, #{}, Map).
+-spec deep_propmap(list()) -> map().
+deep_propmap(PropList) ->
+    deep_propmap(PropList, #{}).
+deep_propmap([], Map) -> 
+    Map;
+deep_propmap([H|T], Map) ->
+    % Take the first item in the list and convert it to a map
+    Map0 = 
+        case H of
+            H when is_atom(H) ->
+                #{ H => #{} };
+            {K,{K1,V1}} ->
+                #{ K => deep_propmap([{K1,V1}]) };
+            {K, V} ->
+                #{ K => V }
+        end,
+    Map1 = maps:merge(Map0, Map),
+    deep_propmap(T, Map1).
 
--spec deeper_propmap_test() -> ok.
-deeper_propmap_test() ->
+-spec inject_module(atom(), map()) -> map().
+inject_module(Module, PropMap) -> 
+    F = fun(_Key, Val) ->
+            Val#{ module => Module }
+        end,
+    maps:map(F, PropMap).
+
+-spec inject_module_test() -> ok.
+inject_module_test() ->
+    Map = setup_propmap_tests(),
+    InjMap = inject_module(ow_test, Map),
+    ExpectedFoo = #{module => ow_test},
+    ?assertEqual(ExpectedFoo, maps:get(foo, InjMap)),
+    ExpectedBar = #{module => ow_test, qos => reliable},
+    ?assertEqual(ExpectedBar, maps:get(bar, InjMap)),
+    ok.
+
+% TODO: Not clear this is the best place for it, but it's the most functional
+%       place at the moment.
+-spec inject_defaults(map()) -> map().
+inject_defaults(PropMap) ->
+    F = fun(_Key, Val) ->
+            maps:merge(Val, ow_rpc:defaults())
+        end,
+    maps:map(F, PropMap).
+
+-spec setup_propmap_tests() -> map().
+setup_propmap_tests() ->
     PropList = [
-        {foo, true},
-        bar,
-        {baz, {deep, true}}
+        foo,
+        {bar, {qos, reliable}},
+        {baz, {encoder, test_pb}}
     ],
-    Map = deeper_propmap(PropList),
-    ?assertEqual(true, maps:get(foo, Map)),
-    ?assertEqual(true, maps:get(bar, Map)),
-    ?assertEqual(#{deep => true}, maps:get(baz, Map)),
+    deep_propmap(PropList).
+
+-spec deep_propmap_test() -> ok.
+deep_propmap_test() ->
+    Map = setup_propmap_tests(),
+    ?assertEqual(#{}, maps:get(foo, Map)),
+    ?assertEqual(#{qos => reliable}, maps:get(bar, Map)),
+    ok.
+
+inject_encoder(Module, PropMap) ->
+    Attributes = erlang:apply(Module, module_info, [attributes]),
+    E = 
+        case proplists:lookup(rpc_encoder, Attributes) of
+            none -> 
+                % Try to guess the encoder module based on convention
+                ModuleString = erlang:atom_to_list(Module),
+                [ Prefix | _Rest ] = string:split(ModuleString, "_", leading),
+                EncoderGuess = Prefix ++ "_pb", % per GPB defaults
+                % Try to convert to an exist atom or crash, we can't continue
+                % without an encoder.
+                erlang:list_to_existing_atom(EncoderGuess);
+            {rpc_encoder, [Encoder]} ->
+                Encoder
+        end,
+    F = fun
+            (_Key, #{ encoder := _Existing } = Val) ->
+                % Existing encoder found, do nothing
+                Val;
+            (_Key, Val) -> 
+                Val#{ encoder => E }
+        end,
+    maps:map(F, PropMap).
+
+-spec inject_encoder_test() -> ok.
+inject_encoder_test() -> 
+    Map = setup_propmap_tests(),
+    EncMap = inject_encoder('overworld_pb', Map),
+    ExpectedFoo = #{encoder => overworld_pb},
+    ?assertEqual(ExpectedFoo, maps:get(foo, EncMap)),
+    ExpectedBaz = #{encoder => test_pb},
+    ?assertEqual(ExpectedBaz, maps:get(baz, EncMap)),
     ok.
