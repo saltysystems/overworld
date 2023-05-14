@@ -19,7 +19,7 @@ init(Req0, State) ->
     {ok, Req, State}.
 
 poll_status() ->
-    Apps = ow_protocol:registered_apps(),
+    Apps = ow_protocol:apps(),
     % Assume every Overworld app is an OTP app
     F = fun(Atom) ->
         AString = erlang:atom_to_list(Atom),
