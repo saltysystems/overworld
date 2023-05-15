@@ -437,7 +437,7 @@ notify_players(MsgType, Msg, Players) ->
                         Pid ! {self(), zone_msg, {MsgType, Msg}};
                     protobuf ->
                         #{channel := Channel, qos := QOS} =
-                            ow_protocol:client_rpc(MsgType),
+                            ow_protocol:rpc(MsgType, client),
                         EncodedMsg = ow_msg:encode(Msg, MsgType),
                         Pid !
                             {
@@ -620,5 +620,5 @@ enet_msg_opts(Action) ->
     %RPC = ow_rpc:find_call(Action, RPCs),
     %Channel = ow_rpc:channel(RPC),
     %QOS = ow_rpc:qos(RPC),
-    #{channel := Channel, qos := QOS} = ow_protocol:client_rpc(Action),
+    #{channel := Channel, qos := QOS} = ow_protocol:rpc(Action, client),
     {QOS, Channel}.

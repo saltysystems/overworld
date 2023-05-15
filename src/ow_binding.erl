@@ -38,18 +38,12 @@ write() ->
 print() ->
     print(4).
 print(Version) ->
-    %    Ops = [
-    %        ow_protocol:op_info(X)
-    %     || X <- ow_protocol:registered_ops()
-    %    ],
-    %Ops = ow_protocol:all_rpcs(),
     Encoders = get_encoders(),
     Preloads = load_scripts(Encoders),
     Enums = generate_enums(Encoders),
     Signals = generate_signals(),
-    %Opcodes = generate_opcodes(Ops, []), % replace with prefixes
     Prefixes = generate_prefixes(),
-    %Router = generate_router(Ops, []),
+    %%Router = generate_router(Ops, []),
     Submsgs = [generate_submsgs(E) || E <- Encoders],
     Unmarshall = generate_unmarshall(),
     MarshallSubmsgs = [generate_marshall_submsgs(E) || E <- Encoders],
@@ -65,11 +59,6 @@ print(Version) ->
         "marshall_submsgs" => MarshallSubmsgs,
         "marshall" => Marshall
     },
-    logger:notice("Preloads: ~p", [Preloads]),
-    logger:notice("Enums: ~p", [Enums]),
-    logger:notice("Unmarshall: ~p", [Unmarshall]),
-    logger:notice("Submsgs: ~p", [MarshallSubmsgs]),
-    logger:notice("Marshall: ~p", [Marshall]),
     T = get_template(Version),
     bbmustache:compile(T, Map).
 
@@ -107,6 +96,7 @@ pb_to_godot_type(Type) ->
         _Other -> void
     end.
 
+-spec get_encoders() -> list().
 get_encoders() ->
     % For each RPC, build a list of encoders
     G = fun(Type) ->
@@ -122,6 +112,11 @@ get_encoders() ->
     % Uniq the list to get the actual encoders used.
     lists:uniq(ClientEncoders ++ ServerEncoders).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Generate messages and submsgs                                     %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+-spec filter_for_pure_msgs(atom()) -> list().
 filter_for_pure_msgs(Encoder) ->
     MsgList = erlang:apply(Encoder, get_msg_defs, []),
     filter_for_pure_msgs(MsgList, []).
@@ -148,6 +143,7 @@ filter_for_pure_msgs([{{msg, Name}, MapList} | Rest], Acc) ->
         end,
     filter_for_pure_msgs(Rest, Acc1).
 
+-spec generate_submsgs(atom()) -> string().
 generate_submsgs(Encoder) ->
     % Filter for pure messages in this encoder
     Pures = filter_for_pure_msgs(Encoder),

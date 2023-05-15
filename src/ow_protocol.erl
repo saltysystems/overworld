@@ -125,7 +125,7 @@ response(error, Msg) ->
 %% @doc Get a list of Overworld applications registered with the server
 %% @end
 %%-------------------------------------------------------------------------
--spec apps() -> [atom(), ...].
+-spec apps() -> [atom()].
 apps() ->
     gen_server:call(?MODULE, apps).
 
@@ -134,7 +134,7 @@ apps() ->
 %%      Type options are: all, client, server
 %% @end
 %%-------------------------------------------------------------------------
--spec rpcs(all | client | server) -> {list(), list()}.
+-spec rpcs(all | client | server) -> list().
 rpcs(Type) ->
     gen_server:call(?MODULE, {rpcs, Type}).
 
