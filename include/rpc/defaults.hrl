@@ -1,0 +1,1 @@
+-define(DEFAULT_RPC, #{ qos => reliable, channel => 0 }).
