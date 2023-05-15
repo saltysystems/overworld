@@ -20,9 +20,8 @@
     register_app/1,
     register_app/2,
     apps/0,
-    rpcs/0,
-    client_rpc/1,
-    server_rpc/1,
+    rpc/2,
+    rpcs/1,
     route/2,
     handler/1,
     response/1,
@@ -123,14 +122,6 @@ response(error, Msg) ->
     ).
 
 %%-------------------------------------------------------------------------
-%% @doc Get a list of RPCs registered with the server
-%% @end
-%%-------------------------------------------------------------------------
--spec rpcs() -> {list(), list()}.
-rpcs() ->
-    gen_server:call(?MODULE, rpcs).
-
-%%-------------------------------------------------------------------------
 %% @doc Get a list of Overworld applications registered with the server
 %% @end
 %%-------------------------------------------------------------------------
@@ -139,16 +130,22 @@ apps() ->
     gen_server:call(?MODULE, apps).
 
 %%-------------------------------------------------------------------------
-%% @doc Return the info map for a particular opcode
+%% @doc Get a list of all RPCs registered with the server (keys only).
+%%      Type options are: all, client, server
 %% @end
 %%-------------------------------------------------------------------------
--spec client_rpc(atom()) -> map().
-client_rpc(RPC) ->
-    gen_server:call(?MODULE, {client_rpc, RPC}).
+-spec rpcs(all | client | server) -> {list(), list()}.
+rpcs(Type) ->
+    gen_server:call(?MODULE, {rpcs, Type}).
 
--spec server_rpc(atom()) -> map().
-server_rpc(RPC) ->
-    gen_server:call(?MODULE, {server_rpc, RPC}).
+%%-------------------------------------------------------------------------
+%% @doc Return the full map for a particular RPC
+%%      Type options are: client, server
+%% @end
+%%-------------------------------------------------------------------------
+-spec rpc(atom(), client | server) -> map().
+rpc(RPC, Type) ->
+    gen_server:call(?MODULE, {rpc, RPC, Type}).
 
 %%-------------------------------------------------------------------------
 %% @doc Route a message to the appropriate Overworld application based on
@@ -200,16 +197,22 @@ handle_call({register_app, App}, _From, #{apps := Apps} = St0) ->
     % Get list of opcodes to register for Module
     Apps1 = reg_app(App, Apps),
     {reply, ok, St0#{apps := Apps1}};
-handle_call(rpcs, _From, #{c_rpc := C, s_rpc := S} = St0) ->
-    Reply = {{client_rpc, maps:keys(C)}, {server_rpc, maps:keys(S)}},
-    {reply, Reply, St0};
 handle_call(apps, _From, St0) ->
     Apps = maps:get(apps, St0),
     {reply, Apps, St0};
-handle_call({client_rpc, RPC}, _From, #{c_rpc := C} = St0) ->
+handle_call({rpcs, all}, _From, #{c_rpc := C, s_rpc := S} = St0) ->
+    Reply = maps:keys(C) ++ maps:keys(S),
+    {reply, Reply, St0};
+handle_call({rpcs, client}, _From, #{c_rpc := C} = St0) ->
+    Reply = maps:keys(C),
+    {reply, Reply, St0};
+handle_call({rpcs, server}, _From, #{s_rpc := S} = St0) ->
+    Reply = maps:keys(S),
+    {reply, Reply, St0};
+handle_call({rpc, RPC, client}, _From, #{c_rpc := C} = St0) ->
     Reply = maps:get(RPC, C),
     {reply, Reply, St0};
-handle_call({server_rpc, RPC}, _From, #{s_rpc := S} = St0) ->
+handle_call({rpc, RPC, server}, _From, #{s_rpc := S} = St0) ->
     Reply = maps:get(RPC, S),
     {reply, Reply, St0};
 handle_call({handler, Prefix}, _From, #{apps := Apps} = St0) ->
