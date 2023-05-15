@@ -89,8 +89,8 @@ handle_info(tick, {Window, OldTimer}) ->
     % faster than the server has updated the list but I've never observed this
     % even on LAN
     % Look up the QOS/Channel for the beacon
-    #{channel := Channel, qos := QOS} = ow_protocol:client_rpc(
-        session_beacon
+    #{channel := Channel, qos := QOS} = ow_protocol:rpc(
+        session_beacon, client
     ),
     ow_session:broadcast(encode_beacon(ID), {QOS, Channel}),
     NewTimer = erlang:send_after(?HEARTBEAT, self(), tick),
