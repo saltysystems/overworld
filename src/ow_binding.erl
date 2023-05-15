@@ -110,13 +110,13 @@ pb_to_godot_type(Type) ->
 get_encoders() ->
     % For each RPC, build a list of encoders
     G = fun(Type) ->
-            RPCs = ow_protocol:rpcs(Type),
-            F = fun(RPC, Acc) ->
-                    #{ encoder := Encoder }  = ow_protocol:rpc(RPC, Type),
-                    [ Encoder | Acc ]
-                end,
-            lists:foldl(F, [], RPCs)
+        RPCs = ow_protocol:rpcs(Type),
+        F = fun(RPC, Acc) ->
+            #{encoder := Encoder} = ow_protocol:rpc(RPC, Type),
+            [Encoder | Acc]
         end,
+        lists:foldl(F, [], RPCs)
+    end,
     ClientEncoders = G(client),
     ServerEncoders = G(server),
     % Uniq the list to get the actual encoders used.
@@ -261,15 +261,17 @@ generate_impure_submsgs(Encoder, [H | T], Acc) ->
 %% Generate enums                                                    %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-generate_enums(ProtoLib) -> 
+generate_enums(ProtoLib) ->
     generate_enums(ProtoLib, []).
 generate_enums([], Acc) ->
     [Acc];
-generate_enums([ProtoLib|Rest], Acc) ->
+generate_enums([ProtoLib | Rest], Acc) ->
     Enums = erlang:apply(ProtoLib, get_enum_names, []),
     % Process all enums
     Comment = "# via " ++ atom_to_list(ProtoLib) ++ "\n",
-    Acc1 = lists:flatten([Acc | [ Comment | stringify_enums(ProtoLib, Enums)]]),
+    Acc1 = lists:flatten([
+        Acc | [Comment | stringify_enums(ProtoLib, Enums)]
+    ]),
     generate_enums(Rest, Acc1).
 
 stringify_enums(ProtoLib, Enums) ->
@@ -303,7 +305,7 @@ load_scripts(Encoders) ->
     load_scripts(Encoders, []).
 load_scripts([], Acc) ->
     Acc;
-load_scripts([Encoder|Rest], Acc) ->
+load_scripts([Encoder | Rest], Acc) ->
     Const =
         "const " ++ string:titlecase(atom_to_list(Encoder)) ++
             " = preload('",
@@ -313,10 +315,10 @@ load_scripts([Encoder|Rest], Acc) ->
 load_scripts_test() ->
     E = ['overworld_pb', 'game_pb'],
     Results = load_scripts(E),
-    [GameResult,OverworldResult|_Rest] = Results,
-    OverworldTest="const Overworld_pb = preload('overworld_pb.gd')",
+    [GameResult, OverworldResult | _Rest] = Results,
+    OverworldTest = "const Overworld_pb = preload('overworld_pb.gd')",
     ?assertEqual(OverworldTest, OverworldResult),
-    GameTest="const Game_pb = preload('game_pb.gd')",
+    GameTest = "const Game_pb = preload('game_pb.gd')",
     ?assertEqual(GameTest, GameResult).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -327,9 +329,9 @@ generate_signals() ->
     Type = client,
     RPCs = ow_protocol:rpcs(Type),
     F = fun(RPC, Acc) ->
-            #{ encoder := Encoder } = ow_protocol:rpc(RPC, Type),
-            [ next_signal(RPC, Encoder) | Acc ]
-        end,
+        #{encoder := Encoder} = ow_protocol:rpc(RPC, Type),
+        [next_signal(RPC, Encoder) | Acc]
+    end,
     lists:foldl(F, [], RPCs).
 
 next_signal(RPC, Encoder) ->
@@ -350,14 +352,15 @@ next_signal_test() ->
 
 generate_prefixes() ->
     Apps = ow_protocol:apps(),
-    F = 
+    F =
         fun({Prefix, {Module, _Decoder}}, AccIn) ->
             AppName = atom_to_list(Module),
             %PrefixPacked = integer_to_list(Prefix),
             [PrefixPacked] = erl_bin_to_godot(0),
             Comment = "0x" ++ integer_to_list(Prefix, 16),
-            Op = string:to_upper(AppName) ++ " = " ++ PrefixPacked 
-                ++ ", # " ++ Comment,
+            Op =
+                string:to_upper(AppName) ++ " = " ++ PrefixPacked ++
+                    ", # " ++ Comment,
             Op ++ AccIn
         end,
     lists:flatten(lists:foldl(F, [], Apps)).
@@ -387,9 +390,9 @@ generate_unmarshall() ->
     Type = client,
     RPCs = ow_protocol:rpcs(Type),
     F = fun(RPC, Acc) ->
-            #{ encoder := Encoder } = ow_protocol:rpc(RPC, Type),
-            Acc ++ write_function(RPC,RPC,Encoder,Acc)
-        end,
+        #{encoder := Encoder} = ow_protocol:rpc(RPC, Type),
+        Acc ++ write_function(RPC, RPC, Encoder, Acc)
+    end,
     [lists:flatten(lists:foldl(F, [], RPCs))].
 
 write_function(undefined, ClientCall, _Encoder, St0) ->
@@ -473,14 +476,15 @@ generate_marshall() ->
     Type = client,
     RPCs = ow_protocol:rpcs(Type),
     F = fun(RPC, Acc) ->
-            #{ encoder := Encoder, qos := QOS, channel := Channel } = 
-                ow_protocol:rpc(RPC, Type),
-            %FunStr = opcode_name_string(RPC),
-            FunStr = atom_to_list(RPC),
-            Fields = field_info({Encoder, RPC}),
-            FieldStr = fields_to_str(Fields),
-            EncStr = string:titlecase(atom_to_list(Encoder)),
-            Func = "func " ++ FunStr ++ "(" ++ FieldStr ++ "):\n" ++
+        #{encoder := Encoder, qos := QOS, channel := Channel} =
+            ow_protocol:rpc(RPC, Type),
+        %FunStr = opcode_name_string(RPC),
+        FunStr = atom_to_list(RPC),
+        Fields = field_info({Encoder, RPC}),
+        FieldStr = fields_to_str(Fields),
+        EncStr = string:titlecase(atom_to_list(Encoder)),
+        Func =
+            "func " ++ FunStr ++ "(" ++ FieldStr ++ "):\n" ++
                 ?TAB ++ "var m = " ++ EncStr ++ "." ++
                 atom_to_list(RPC) ++
                 ".new()\n" ++
@@ -494,10 +498,10 @@ generate_marshall() ->
                 ?TAB(2) ++ "print('[INFO] Sent a " ++
                 FunStr ++
                 " packet')\n\n",
-            [ Func | Acc ]
-        end,
+        [Func | Acc]
+    end,
     [lists:flatten(lists:foldl(F, [], RPCs))].
-    
+
 set_new_parameters(ClientMsg, Encoder) ->
     Defn = erlang:apply(Encoder, fetch_msg_def, [ClientMsg]),
     parameter_body(Defn, []).
