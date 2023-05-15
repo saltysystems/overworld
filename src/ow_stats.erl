@@ -21,7 +21,7 @@ init(Req0, State) ->
 poll_status() ->
     Apps = ow_protocol:apps(),
     % Assume every Overworld app is an OTP app
-    F = fun({AppName, {Mod, _Fun}}) ->
+    F = fun({_Prefix, {AppName, {Mod, _Fun}}}) ->
         AString = erlang:atom_to_list(AppName),
         Mod = erlang:list_to_existing_atom(AString ++ "_app"),
         case erlang:function_exported(Mod, status, 0) of

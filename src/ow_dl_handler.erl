@@ -30,9 +30,10 @@ init(Req, State) ->
 protofiles(FileList) ->
     protofiles(FileList, []).
 
+-spec protofiles([{atom(), {atom(), atom()}}], list()) -> list().
 protofiles([], Acc) ->
     Acc;
-protofiles([{App, {_Mod, _Fun}} | T], Acc) ->
+protofiles([{_Prefix, {App, {_Mod, _Fun}}} | T], Acc) ->
     Files = {atom_to_list(App) ++ ".proto", protofile(App)},
     protofiles(T, [Files | Acc]).
 
