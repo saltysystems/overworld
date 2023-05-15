@@ -4,7 +4,7 @@ extends Node
 {{.}}
 {{/preloads}} 
 
-var _ws_client = WebSocketClient.new()
+#var _ws_client = WebSocketClient.new()
 var _enet_peer = ENetMultiplayerPeer.new()
 
 @export var session: Dictionary
@@ -116,11 +116,11 @@ func _ready():
 	server_session_beacon.connect(self._on_session_beacon)
 
 # Take the host and whether or not its a TLS conncetion
-func ws_connect(url: String, tls: bool):
-	_ws_client.verify_tls = tls
-	print("[INFO] Attempting to connect to ", url)
-	_ws_client.connect_to_url(url+"/ws")
-	mode = transport_mode.WEBSOCKET
+##func ws_connect(url: String, tls: bool):
+##	_ws_client.verify_tls = tls
+##	print("[INFO] Attempting to connect to ", url)
+##	_ws_client.connect_to_url(url+"/ws")
+##	mode = transport_mode.WEBSOCKET
 
 func enet_connect(ip: String, port: int):
 	print("[INFO] Connecting via ENet to ", ip)
@@ -160,9 +160,9 @@ func _send_message(payload, opcode, qos, channel):
 			p.send(channel, packet, flag)
 
 func _process(_delta):
-	if mode == transport_mode.WEBSOCKET:
-		if _ws_client.get_connection_status() == _ws_client.CONNECTION_CONNECTING || _ws_client.get_connection_status() == _ws_client.CONNECTION_CONNECTED:
-			_ws_client.poll()
+	##if mode == transport_mode.WEBSOCKET:
+	##	if _ws_client.get_connection_status() == _ws_client.CONNECTION_CONNECTING || _ws_client.get_connection_status() == _ws_client.CONNECTION_CONNECTED:
+	##		_ws_client.poll()
 	if mode == transport_mode.ENET:
 		var p = _enet_peer.host.service() # Check for packets
 		if p[0] == ENetConnection.EVENT_CONNECT:
@@ -188,9 +188,9 @@ func _connected(proto = ""):
 	# sub-protocol (which is optional)
 	print("Connected with protocol: ", proto)
 
-func _on_data():
-	var packet = _ws_client.get_peer(1).get_packet()
-	route(packet)
+##func _on_data():
+##	var packet = _ws_client.get_peer(1).get_packet()
+##	route(packet)
 
 func _on_session_beacon(id):
 	# Used for latency measurements
