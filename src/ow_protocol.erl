@@ -68,12 +68,12 @@ stop() ->
 %%      State}} if the registration fails.
 %% @end
 %%-------------------------------------------------------------------------
--spec register_app(pos_integer(), {atom(), atom()}) ->
+-spec register_app(pos_integer(), {atom(), {atom(), atom()}}) ->
     {reply, ok | {error, atom()}, map()}.
 register_app(Prefix, Application) ->
     gen_server:call(?MODULE, {register_app, Prefix, Application}).
 
--spec register_app({atom(), atom()}) ->
+-spec register_app({atom(), {atom(), atom()}}) ->
     {reply, ok | {error, atom()}, map()}.
 register_app(Application) ->
     gen_server:call(?MODULE, {register_app, Application}).
@@ -152,9 +152,9 @@ rpc(RPC, Type) ->
 %%      application prefix
 %% @end
 %%-------------------------------------------------------------------------
--spec route(<<_:8, _:_*8>>, ow_session:session()) ->
+-spec route(<<_:16, _:_*8>>, ow_session:session()) ->
     ow_session:net_msg().
-route(<<Prefix:8, Msg/binary>>, Session) ->
+route(<<Prefix:16, Msg/binary>>, Session) ->
     % Get the decoder M/F for a given Overworld application
     {Mod, Fun} = ow_protocol:handler(Prefix),
     % Now call

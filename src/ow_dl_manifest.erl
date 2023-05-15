@@ -29,7 +29,7 @@ manifest(Req) ->
             3 ->
                 [<<"libow3.gd">>];
             4 ->
-                [<<"libow4.gd">>, <<"WebSocketClient.gd">>]
+                [<<"libow4.gd">>]
         end,
     ProtoFiles = ClientLibs ++ protofiles(Apps),
     % Encode the list via jsone
@@ -47,7 +47,7 @@ manifest(Req) ->
 
 send_file([{<<"file">>, <<"WebSocketClient.gd">>}], Req) ->
     PrivDir = code:priv_dir(overworld),
-    {ok, WSClient} = file:read_file(PrivDir ++ "/WebSocketClient.gd"),
+    {ok, WSClient} = file:read_file(PrivDir ++ "static/WebSocketClient.gd"),
     cowboy_req:reply(
         200,
         #{
@@ -108,8 +108,10 @@ protofiles(FileList) ->
     protofiles(FileList, []).
 protofiles([], Acc) ->
     Acc;
-protofiles([H | T], Acc) ->
-    Files = list_to_binary(atom_to_list(H) ++ ".proto"),
+protofiles([{_Prefix, {AppName, {_Mod, _Fun}}} | T], Acc) ->
+    % Simple namer
+    ProtoName = atom_to_list(AppName),
+    Files = list_to_binary(ProtoName ++ ".proto"),
     protofiles(T, [Files | Acc]).
 
 % return the path of the proto file for the given application

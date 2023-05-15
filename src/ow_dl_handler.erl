@@ -32,8 +32,8 @@ protofiles(FileList) ->
 
 protofiles([], Acc) ->
     Acc;
-protofiles([H | T], Acc) ->
-    Files = {atom_to_list(H) ++ ".proto", protofile(H)},
+protofiles([{App, {_Mod, _Fun}} | T], Acc) ->
+    Files = {atom_to_list(App) ++ ".proto", protofile(App)},
     protofiles(T, [Files | Acc]).
 
 % return the path of the proto file for the given application
