@@ -125,7 +125,7 @@ response(error, Msg) ->
 %% @doc Get a list of Overworld applications registered with the server
 %% @end
 %%-------------------------------------------------------------------------
--spec apps() -> [atom()].
+-spec apps() -> [{non_neg_integer(), {atom(), {atom(), atom()}}}].
 apps() ->
     gen_server:call(?MODULE, apps).
 
