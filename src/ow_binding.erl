@@ -17,7 +17,8 @@
     generate_submsgs/1,
     generate_unmarshall/0,
     generate_marshall_submsgs/1,
-    generate_marshall/0
+    generate_marshall/0,
+    generate_router/0
 ]).
 
 -include_lib("eunit/include/eunit.hrl").
@@ -43,7 +44,7 @@ print(Version) ->
     Enums = generate_enums(Encoders),
     Signals = generate_signals(),
     Prefixes = generate_prefixes(),
-    %%Router = generate_router(Ops, []),
+    Router = generate_router(),
     Submsgs = [generate_submsgs(E) || E <- Encoders],
     Unmarshall = generate_unmarshall(),
     MarshallSubmsgs = [generate_marshall_submsgs(E) || E <- Encoders],
@@ -53,7 +54,7 @@ print(Version) ->
         "constants" => Enums,
         "signals" => Signals,
         "prefixes" => Prefixes,
-        %"router" => Router,
+        "router" => Router,
         "submsgs" => Submsgs,
         "unmarshall" => Unmarshall,
         "marshall_submsgs" => MarshallSubmsgs,
@@ -349,21 +350,33 @@ next_signal_test() ->
 generate_prefixes() ->
     Apps = ow_protocol:apps(),
     F =
-        fun({Prefix, {Module, _Decoder}}, AccIn) ->
-            AppName = atom_to_list(Module),
+        fun({Prefix, {AppName, {_Module, _Decoder}}}, AccIn) ->
+            AppString = atom_to_list(AppName),
             %PrefixPacked = integer_to_list(Prefix),
             [PrefixPacked] = erl_bin_to_godot(0),
             Comment = "0x" ++ integer_to_list(Prefix, 16),
             Op =
-                string:to_upper(AppName) ++ " = " ++ PrefixPacked ++
+                string:to_upper(AppString) ++ " = " ++ PrefixPacked ++
                     ", # " ++ Comment,
             Op ++ AccIn
         end,
-    lists:flatten(lists:foldl(F, [], Apps)).
+    [lists:flatten(lists:foldl(F, [], Apps))].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Setup Packet Router                                               %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+generate_router() ->
+    Apps = ow_protocol:apps(),
+    F =
+        fun({_Prefix, {AppName, {_Module, _Decoder}}}, AccIn) ->
+            AppString = atom_to_list(AppName),
+            Op =
+                "Prefix." ++ string:to_upper(AppString) ++ ":\n" ++
+                    ?TAB(3) ++ "_server_" ++ AppString ++ "(payload)",
+            [Op, AccIn]
+        end,
+    [lists:flatten(lists:foldl(F, [], Apps))].
 
 %generate_router(Operation, St0) ->
 %    generate_router(Operation, [], St0).
@@ -387,22 +400,11 @@ generate_unmarshall() ->
     RPCs = ow_protocol:rpcs(Type),
     F = fun(RPC, Acc) ->
         #{encoder := Encoder} = ow_protocol:rpc(RPC, Type),
-        Acc ++ write_function(RPC, RPC, Encoder, Acc)
+        [write_function(RPC, RPC, Encoder) | Acc]
     end,
     [lists:flatten(lists:foldl(F, [], RPCs))].
 
-write_function(undefined, ClientCall, _Encoder, St0) ->
-    % There's no sensible message to unpack or handler to write.
-    % We still need to make a handler that can understand the opcode because
-    % the message router expects one.
-    ClientCallStr = atom_to_list(ClientCall),
-    Op =
-        "func " ++ "_server_" ++ ClientCallStr ++ "(_packet):\n" ++
-            ?TAB ++ "print('[WARN] Received a " ++
-            ClientCallStr ++ " packet')\n" ++
-            ?TAB ++ "return\n",
-    [Op | St0];
-write_function(ProtoMsg, ClientCall, Encoder, St0) ->
+write_function(ProtoMsg, ClientCall, Encoder) ->
     EncStr = string:titlecase(atom_to_list(Encoder)),
     ClientCallStr = atom_to_list(ClientCall),
     ProtoMsgStr = atom_to_list(ProtoMsg),
@@ -424,7 +426,7 @@ write_function(ProtoMsg, ClientCall, Encoder, St0) ->
         ?TAB ++ "emit_signal('server_" ++ ProtoMsgStr ++ "'," ++
             dict_fields_to_str(field_info({Encoder, ProtoMsg})) ++
             "\)\n\n",
-    [Op ++ Vars ++ Signal | St0].
+    Op ++ Vars ++ Signal.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Generate functions for marshalling submsgs                        %%
@@ -469,7 +471,7 @@ marshall_submsg_body([#{name := Name} | T], Acc) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 generate_marshall() ->
-    Type = client,
+    Type = server,
     RPCs = ow_protocol:rpcs(Type),
     F = fun(RPC, Acc) ->
         #{encoder := Encoder, qos := QOS, channel := Channel} =
