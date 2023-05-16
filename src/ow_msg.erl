@@ -1,6 +1,10 @@
 -module(ow_msg).
+-behaviour(ow_rpc).
 
--export([decode/2, raw_decode/1, encode/2]).
+-export([encoder/0, decode/2, raw_decode/1, encode/2]).
+
+-spec encoder() -> atom().
+encoder() -> overworld_pb.
 
 -spec decode(binary(), ow_session:session()) -> any().
 decode(Msg, Session) ->
@@ -19,9 +23,7 @@ raw_decode(Msg) ->
 
 -spec encode(map(), atom()) -> binary().
 encode(Msg, Type) ->
-    Apps = ow_protocol:apps(),
-    % is there a better way to do this? seems suboptimal..
-    [Prefix] = [ P || {P, {App, _ModFun}} <- Apps, App == overworld],
+    Prefix = ow_protocol:prefix(overworld),
     B1 = <<Prefix:16>>,
     B2 = overworld_pb:encode_msg(#{msg => {Type, Msg}}, overworld),
     <<B1/binary, B2/binary>>.
