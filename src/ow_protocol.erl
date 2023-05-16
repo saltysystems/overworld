@@ -20,6 +20,8 @@
     register_app/1,
     register_app/2,
     apps/0,
+    app_names/0,
+    prefix/1,
     rpc/2,
     rpcs/1,
     route/2,
@@ -122,12 +124,29 @@ response(error, Msg) ->
     ).
 
 %%-------------------------------------------------------------------------
-%% @doc Get a list of Overworld applications registered with the server
+%% @doc Get all apps registered with the server, including prefix and 
+%%      decoder module definition
 %% @end
 %%-------------------------------------------------------------------------
 -spec apps() -> [{non_neg_integer(), {atom(), {atom(), atom()}}}].
 apps() ->
     gen_server:call(?MODULE, apps).
+
+%%-------------------------------------------------------------------------
+%% @doc Get a list of Overworld applications registered with the server
+%% @end
+%%-------------------------------------------------------------------------
+-spec app_names() -> [atom()].
+app_names() ->
+    gen_server:call(?MODULE, app_names).
+
+%%-------------------------------------------------------------------------
+%% @doc Get the base-10 prefix for a particular application
+%% @end
+%%-------------------------------------------------------------------------
+-spec prefix(atom()) -> non_neg_integer().
+prefix(Name) -> 
+    gen_server:call(?MODULE, {prefix, Name}).
 
 %%-------------------------------------------------------------------------
 %% @doc Get a list of all RPCs registered with the server (keys only).
@@ -205,6 +224,14 @@ handle_call({register_app, App}, _From, #{apps := Apps} = St0) ->
 handle_call(apps, _From, St0) ->
     Apps = maps:get(apps, St0),
     {reply, Apps, St0};
+handle_call({prefix, PrefixName}, _From, St0) ->
+    Apps = maps:get(apps, St0),
+    [Prefix] = [ P || {P, {App, _ModFun}} <- Apps, App == PrefixName],
+    {reply, Prefix, St0};
+handle_call(app_names, _From, St0) ->
+    Apps = maps:get(apps, St0),
+    Names = [ App || {_P, {App, _ModFun}} <- Apps],
+    {reply, Names, St0};
 handle_call({rpcs, all}, _From, #{c_rpc := C, s_rpc := S} = St0) ->
     Reply = maps:keys(C) ++ maps:keys(S),
     {reply, Reply, St0};
