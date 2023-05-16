@@ -156,9 +156,14 @@ rpc(RPC, Type) ->
     ow_session:net_msg().
 route(<<Prefix:16, Msg/binary>>, Session) ->
     % Get the decoder M/F for a given Overworld application
-    {Mod, Fun} = ow_protocol:handler(Prefix),
-    % Now call
-    erlang:apply(Mod, Fun, [Msg, Session]).
+    case ow_protocol:handler(Prefix) of
+        false ->
+            logger:notice("No handler for prefix: 0x~.16b", [Prefix]),
+            logger:notice("The rest of the message: ~p", [Msg]);
+        {Mod, Fun} -> 
+            % Now call
+            erlang:apply(Mod, Fun, [Msg, Session])
+    end.
 
 %%-------------------------------------------------------------------------
 %% @doc Return the module and decoder function for a given prefix
@@ -216,7 +221,13 @@ handle_call({rpc, RPC, server}, _From, #{s_rpc := S} = St0) ->
     Reply = maps:get(RPC, S),
     {reply, Reply, St0};
 handle_call({handler, Prefix}, _From, #{apps := Apps} = St0) ->
-    Reply = orddict:fetch(Prefix, Apps),
+    Reply = 
+        case orddict:is_key(Prefix, Apps) of
+            true -> 
+                orddict:fetch(Prefix, Apps);
+            false ->
+                false
+        end,
     {reply, Reply, St0}.
 
 handle_cast(_Request, St0) ->
