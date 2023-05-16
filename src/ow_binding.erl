@@ -246,33 +246,33 @@ generate_impure_submsgs(_Encoder, [], Acc) ->
     Acc;
 generate_impure_submsgs(Encoder, [H | T], Acc) ->
     Defn = erlang:apply(Encoder, fetch_msg_def, [H]),
-    [Inner|_Rest] = Defn, % Definition is a list
-    Signature = 
+    % Definition is a list
+    [Inner | _Rest] = Defn,
+    Signature =
         "func unpack_" ++ fix_delim(atom_to_list(H)) ++ "(object):\n",
     Body =
         case maps:get(fields, Inner, undefined) of
-            undefined -> 
-               impure_submsg_body(Defn);
-            Fields -> 
-                oneof_body(Fields,Encoder) ++ "\n"
+            undefined ->
+                impure_submsg_body(Defn);
+            Fields ->
+                oneof_body(Fields, Encoder) ++ "\n"
         end,
     generate_impure_submsgs(Encoder, T, Signature ++ Body ++ Acc).
 
-impure_submsg_body(Defn) -> 
+impure_submsg_body(Defn) ->
     ?TAB ++ "if typeof(object) == TYPE_ARRAY and object != []:\n" ++
-    ?TAB(2) ++ "var array = []\n" ++
-    ?TAB(2) ++ "for obj in object:\n" ++
-    generate_submsg_body(Defn, "obj", 3, []) ++
-    ?TAB(3) ++ generate_submsg_dict(Defn) ++
-    ?TAB(3) ++ "array.append(dict)\n" ++
-    ?TAB(2) ++ "return array\n" ++
-    ?TAB ++ "elif typeof(object) == TYPE_ARRAY and object == []:\n" ++
-    ?TAB(2) ++ "return []\n" ++
-    ?TAB ++ "else:\n" ++
-    generate_submsg_body(Defn, "object", 2, []) ++
-    ?TAB(2) ++ generate_submsg_dict(Defn) ++
-    ?TAB(2) ++ "return dict\n".
-
+        ?TAB(2) ++ "var array = []\n" ++
+        ?TAB(2) ++ "for obj in object:\n" ++
+        generate_submsg_body(Defn, "obj", 3, []) ++
+        ?TAB(3) ++ generate_submsg_dict(Defn) ++
+        ?TAB(3) ++ "array.append(dict)\n" ++
+        ?TAB(2) ++ "return array\n" ++
+        ?TAB ++ "elif typeof(object) == TYPE_ARRAY and object == []:\n" ++
+        ?TAB(2) ++ "return []\n" ++
+        ?TAB ++ "else:\n" ++
+        generate_submsg_body(Defn, "object", 2, []) ++
+        ?TAB(2) ++ generate_submsg_dict(Defn) ++
+        ?TAB(2) ++ "return dict\n".
 
 % Unpacking the overworld uber object example
 % func unpack_overworld(object):
@@ -283,25 +283,30 @@ impure_submsg_body(Defn) ->
 %		print("has gen response")
 %	elif object.has_account_new():
 %		print("has account new")
-oneof_body(Fields,Encoder) -> % TODO: doesn't handle the case of multiple oneofs
-    F = 
-        fun (Map, []) ->
+
+% TODO: doesn't handle the case of multiple oneofs
+oneof_body(Fields, Encoder) ->
+    F =
+        fun
+            (Map, []) ->
                 % Handle the first case separately
-                #{ name := Name } = Map,
-                Body = ?TAB ++ "if object.has_" ++ atom_to_list(Name) ++ 
-                    "():\n" ++ ?TAB(2) ++ "var d = unpack_" ++ 
-                    atom_to_list(Name) ++ "(object.get_" ++ 
-                    atom_to_list(Name) ++ "())\n" ++ 
-                    emit_signal(Name,Encoder),
+                #{name := Name} = Map,
+                Body =
+                    ?TAB ++ "if object.has_" ++ atom_to_list(Name) ++
+                        "():\n" ++ ?TAB(2) ++ "var d = unpack_" ++
+                        atom_to_list(Name) ++ "(object.get_" ++
+                        atom_to_list(Name) ++ "())\n" ++
+                        emit_signal(Name, Encoder),
                 [Body];
             (Map, Acc) ->
-                #{ name := Name } = Map,
-                Body = ?TAB ++ "elif object.has_" ++ atom_to_list(Name) ++ 
-                    "():\n" ++ ?TAB(2) ++ "var d = unpack_" ++ 
-                    atom_to_list(Name) ++ "(object.get_" ++ 
-                    atom_to_list(Name) ++ "())\n" ++
-                    emit_signal(Name,Encoder),
-                [Body | Acc ]
+                #{name := Name} = Map,
+                Body =
+                    ?TAB ++ "elif object.has_" ++ atom_to_list(Name) ++
+                        "():\n" ++ ?TAB(2) ++ "var d = unpack_" ++
+                        atom_to_list(Name) ++ "(object.get_" ++
+                        atom_to_list(Name) ++ "())\n" ++
+                        emit_signal(Name, Encoder),
+                [Body | Acc]
         end,
     [lists:flatten(lists:reverse(lists:foldl(F, [], Fields)))].
 
@@ -310,7 +315,6 @@ emit_signal(ProtoMsg, Encoder) ->
     ?TAB(2) ++ "emit_signal('server_" ++ ProtoMsgStr ++ "'," ++
         dict_fields_to_str(field_info({Encoder, ProtoMsg})) ++
         "\)\n".
-        
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Generate enums                                                    %%
@@ -465,22 +469,22 @@ generate_router() ->
 %	print(d)
 
 generate_unmarshall() ->
-%    % Get RPCs that need unpacked
-%    Type = client,
-%    RPCs = ow_protocol:rpcs(Type),
-%    F = fun(RPC, Acc) ->
-%            #{encoder := Encoder} = ow_protocol:rpc(RPC, Type),
-%            [write_function(RPC, RPC, Encoder) | Acc]
-%    end,
-%    RPCUnpack = lists:foldl(F, [], RPCs),
+    %    % Get RPCs that need unpacked
+    %    Type = client,
+    %    RPCs = ow_protocol:rpcs(Type),
+    %    F = fun(RPC, Acc) ->
+    %            #{encoder := Encoder} = ow_protocol:rpc(RPC, Type),
+    %            [write_function(RPC, RPC, Encoder) | Acc]
+    %    end,
+    %    RPCUnpack = lists:foldl(F, [], RPCs),
     % Get apps that need unpacked
     Apps = ow_protocol:app_names(),
     G = fun(App, Acc) ->
-            % TODO: Add a test for the encoder/0 function in the app for
-            %       non-standard protobuf names
-            Encoder = list_to_existing_atom(atom_to_list(App) ++ "_pb"),
-            [write_app_function(App, Encoder) | Acc]
-        end,
+        % TODO: Add a test for the encoder/0 function in the app for
+        %       non-standard protobuf names
+        Encoder = list_to_existing_atom(atom_to_list(App) ++ "_pb"),
+        [write_app_function(App, Encoder) | Acc]
+    end,
     AppUnpack = lists:foldl(G, [], Apps),
     [lists:flatten(AppUnpack)].
 

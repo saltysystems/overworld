@@ -3,23 +3,21 @@
 -export([defaults/0]).
 
 -callback encode(Msg, Type) -> Result when
-      Msg :: map(),
-      Type :: atom(),
-      Result :: binary().
+    Msg :: map(),
+    Type :: atom(),
+    Result :: binary().
 -callback decode(BinMsg, Session) -> Result when
-      BinMsg :: binary(),
-      Session :: ow_session:session(),
-      Result :: any().
+    BinMsg :: binary(),
+    Session :: ow_session:session(),
+    Result :: any().
 -callback encoder() -> Result when
-      Result :: atom().
+    Result :: atom().
 -optional_callbacks([encoder/0]).
 
 -include("rpc/defaults.hrl").
 
 defaults() ->
     ?DEFAULT_RPC.
-
-
 
 %% Functions for handling RPCs
 %-export([

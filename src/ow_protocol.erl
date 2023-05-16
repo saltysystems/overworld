@@ -124,7 +124,7 @@ response(error, Msg) ->
     ).
 
 %%-------------------------------------------------------------------------
-%% @doc Get all apps registered with the server, including prefix and 
+%% @doc Get all apps registered with the server, including prefix and
 %%      decoder module definition
 %% @end
 %%-------------------------------------------------------------------------
@@ -145,7 +145,7 @@ app_names() ->
 %% @end
 %%-------------------------------------------------------------------------
 -spec prefix(atom()) -> non_neg_integer().
-prefix(Name) -> 
+prefix(Name) ->
     gen_server:call(?MODULE, {prefix, Name}).
 
 %%-------------------------------------------------------------------------
@@ -179,7 +179,7 @@ route(<<Prefix:16, Msg/binary>>, Session) ->
         false ->
             logger:notice("No handler for prefix: 0x~.16b", [Prefix]),
             logger:notice("The rest of the message: ~p", [Msg]);
-        {Mod, Fun} -> 
+        {Mod, Fun} ->
             % Now call
             erlang:apply(Mod, Fun, [Msg, Session])
     end.
@@ -226,11 +226,11 @@ handle_call(apps, _From, St0) ->
     {reply, Apps, St0};
 handle_call({prefix, PrefixName}, _From, St0) ->
     Apps = maps:get(apps, St0),
-    [Prefix] = [ P || {P, {App, _ModFun}} <- Apps, App == PrefixName],
+    [Prefix] = [P || {P, {App, _ModFun}} <- Apps, App == PrefixName],
     {reply, Prefix, St0};
 handle_call(app_names, _From, St0) ->
     Apps = maps:get(apps, St0),
-    Names = [ App || {_P, {App, _ModFun}} <- Apps],
+    Names = [App || {_P, {App, _ModFun}} <- Apps],
     {reply, Names, St0};
 handle_call({rpcs, all}, _From, #{c_rpc := C, s_rpc := S} = St0) ->
     Reply = maps:keys(C) ++ maps:keys(S),
@@ -248,9 +248,9 @@ handle_call({rpc, RPC, server}, _From, #{s_rpc := S} = St0) ->
     Reply = maps:get(RPC, S),
     {reply, Reply, St0};
 handle_call({handler, Prefix}, _From, #{apps := Apps} = St0) ->
-    Reply = 
+    Reply =
         case orddict:is_key(Prefix, Apps) of
-            true -> 
+            true ->
                 orddict:fetch(Prefix, Apps);
             false ->
                 false
