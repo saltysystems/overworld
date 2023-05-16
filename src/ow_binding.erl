@@ -117,6 +117,16 @@ get_encoders() ->
 %% Generate messages and submsgs                                     %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% Unpacking the overworld uber object example
+% func unpack_overworld(object):
+%	if object.has_session_beacon():
+%		print("has session beacon")
+%		return unpack_session_beacon(object.get_session_beacon())
+%	elif object.has_gen_response():
+%		print("has gen response")
+%	elif object.has_account_new():
+%		print("has account new")
+
 -spec filter_for_pure_msgs(atom()) -> list().
 filter_for_pure_msgs(Encoder) ->
     MsgList = erlang:apply(Encoder, get_msg_defs, []),
@@ -394,6 +404,17 @@ generate_router() ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Generate functions for unmarshalling server data                  %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Example from GDScript:
+% -----------------------
+% func _server_overworld(packet):
+%	print("Packet is: ", packet)
+%	var m = Overworld_new_pb.overworld.new()
+%	m.from_bytes(packet)
+%	print(m)
+%	var d = {}
+%	d = unpack_overworld(m)
+%	print(d)
 
 generate_unmarshall() ->
     Type = client,
