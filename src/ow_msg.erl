@@ -19,4 +19,9 @@ raw_decode(Msg) ->
 
 -spec encode(map(), atom()) -> binary().
 encode(Msg, Type) ->
-    overworld_pb:encode_msg(#{msg => {Type, Msg}}, overworld).
+    Apps = ow_protocol:apps(),
+    % is there a better way to do this? seems suboptimal..
+    [Prefix] = [ P || {P, {App, _ModFun}} <- Apps, App == overworld],
+    B1 = <<Prefix:16>>,
+    B2 = overworld_pb:encode_msg(#{msg => {Type, Msg}}, overworld),
+    <<B1/binary, B2/binary>>.
