@@ -476,6 +476,8 @@ generate_unmarshall() ->
     % Get apps that need unpacked
     Apps = ow_protocol:app_names(),
     G = fun(App, Acc) ->
+            % TODO: Add a test for the encoder/0 function in the app for
+            %       non-standard protobuf names
             Encoder = list_to_existing_atom(atom_to_list(App) ++ "_pb"),
             [write_app_function(App, Encoder) | Acc]
         end,
