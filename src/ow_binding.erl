@@ -751,17 +751,17 @@ field_info([H | T], Acc) ->
     Acc1 = [{Name, Type, Occurrence} | Acc],
     field_info(T, Acc1).
 
-unmarshall_var({ProtoLib, ProtoMsg}) ->
-    unmarshall_var(
-        field_info({ProtoLib, ProtoMsg}), ProtoMsg, ProtoLib, []
-    ).
-unmarshall_var([], _ProtoMsg, _ProtoLib, Acc) ->
-    Acc;
-unmarshall_var([{_F, _T, _O} | _Rest], ProtoMsg, ProtoLib, Acc) ->
-    V =
-        ?TAB ++ "var d = {}\n" ++ ?TAB ++ "d = unpack_" ++
-            atom_to_list(ProtoMsg) ++ "(m)\n",
-    unmarshall_var([], ProtoMsg, ProtoLib, Acc ++ V).
+%unmarshall_var({ProtoLib, ProtoMsg}) ->
+%    unmarshall_var(
+%        field_info({ProtoLib, ProtoMsg}), ProtoMsg, ProtoLib, []
+%    ).
+%unmarshall_var([], _ProtoMsg, _ProtoLib, Acc) ->
+%    Acc;
+%unmarshall_var([{_F, _T, _O} | _Rest], ProtoMsg, ProtoLib, Acc) ->
+%    V =
+%        ?TAB ++ "var d = {}\n" ++ ?TAB ++ "d = unpack_" ++
+%            atom_to_list(ProtoMsg) ++ "(m)\n",
+%    unmarshall_var([], ProtoMsg, ProtoLib, Acc ++ V).
 
 %opcode_name_string(OpInfo) ->
 %    OpCode = ow_rpc:opcode(OpInfo),
