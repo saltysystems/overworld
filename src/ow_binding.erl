@@ -641,7 +641,7 @@ dict_fields_to_str([{N, _T, _O} | Tail], Acc) ->
     dict_fields_to_str(Tail, [D | Acc]).
 
 untyped_fields_to_str(List) ->
-    untyped_fields_to_str(List, "").
+    untyped_fields_to_str(lists:reverse(List), "").
 untyped_fields_to_str([], Acc) ->
     Acc;
 untyped_fields_to_str([{N, _T, _O} | Tail], "") ->
