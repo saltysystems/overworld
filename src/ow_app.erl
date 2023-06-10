@@ -49,7 +49,7 @@ start(_StartType, _StartArgs) ->
     SuperLink = ow_sup:start_link(),
     % Now register the initial application and modules before returning
     Application = {overworld, {ow_msg, decode}},
-    ow_protocol:register_app(Application),
+    ow_protocol:register_app(100, Application),
     Modules = [ow_account, ow_session, ow_beacon],
     [ow_protocol:register_rpc(RPC) || RPC <- Modules],
     % Return the supervisor pid
