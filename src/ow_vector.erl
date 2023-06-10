@@ -195,7 +195,8 @@ test() ->
         is_collision(B, C)
     ].
 
--spec line_of_sight(vector(), vector(), vector(), [vector()]) -> {[vector()],[vector()]}.
+-spec line_of_sight(vector(), vector(), vector(), [vector()]) ->
+    {[vector()], [vector()]}.
 line_of_sight(Location, Upper, Lower, Edges) ->
     % Always check upper and lower rays corresponding to the vision arc.
     Rays = [Upper, Lower],
