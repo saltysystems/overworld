@@ -179,7 +179,9 @@ route(<<Prefix:16, Msg/binary>>, Session) ->
         false ->
             logger:notice("No handler for prefix: 0x~.16b", [Prefix]),
             logger:notice("The rest of the message: ~p", [Msg]);
-        {Mod, Fun} ->
+        {_App, {Mod, Fun}} ->
+            logger:notice("Message prefix: 0x~.16b", [Prefix]),
+            logger:notice("The rest of the message: ~p", [Msg]),
             % Now call
             erlang:apply(Mod, Fun, [Msg, Session])
     end.
