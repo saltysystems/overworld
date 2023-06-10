@@ -576,11 +576,11 @@ marshall_submsg_body([#{name := Name} | T], Acc) ->
 
 % Example GDScript for encoding 
 %func session_id_req():
-%	var m = Overworld_new_pb.overworld.new()
+%	var m = Overworld_pb.overworld.new()
 %	var n = m.new_session_id_req()
 %	n.set_version(1)
 %	var payload = m.to_bytes()
-%	_send_message(payload, OpCode.OVERWORLD, 'reliable', 0)
+%	_send_message(payload, Prefix.OVERWORLD, 'reliable', 0)
 %	if debug:
 %		print('[INFO] Sent a session_id_req packet')
 
@@ -588,31 +588,61 @@ generate_marshall() ->
     Type = server,
     RPCs = ow_protocol:rpcs(Type),
     F = fun(RPC, Acc) ->
-        #{encoder := Encoder, qos := QOS, channel := Channel} =
-            ow_protocol:rpc(RPC, Type),
-        %FunStr = opcode_name_string(RPC),
-        FunStr = atom_to_list(RPC),
-        Fields = field_info({Encoder, RPC}),
-        FieldStr = fields_to_str(Fields),
-        EncStr = string:titlecase(atom_to_list(Encoder)),
-        Func =
-            "func " ++ FunStr ++ "(" ++ FieldStr ++ "):\n" ++
-                ?TAB ++ "var m = " ++ EncStr ++ "." ++
-                atom_to_list(RPC) ++
-                ".new()\n" ++
+            #{encoder := Encoder, qos := QOS, channel := Channel} =
+                ow_protocol:rpc(RPC, Type),
+            FunStr = atom_to_list(RPC),
+            Fields = field_info({Encoder, RPC}),
+            FieldStr = fields_to_str(Fields),
+            EncoderBare = strip_pb_suffix(Encoder),
+            EncoderPrefix = string:to_upper(EncoderBare),
+            EncoderTitle = string:titlecase(atom_to_list(Encoder)),
+            Func = 
+                "func " ++ FunStr ++ "(" ++ FieldStr ++ "):\n" ++
+                ?TAB ++ "var m = " ++ EncoderTitle ++ "." ++ 
+                EncoderBare ++ ".new()\n" ++
+                ?TAB ++ "var n = m.new_" ++ FunStr ++ "()\n" ++
                 set_new_parameters(RPC, Encoder) ++
-                %set_parameters(Fields, Encoder) ++
                 ?TAB ++ "var payload = m.to_bytes()\n" ++
-                ?TAB ++ "_send_message(payload, OpCode." ++
-                string:to_upper(FunStr) ++ ", '" ++ atom_to_list(QOS) ++
-                "', " ++ integer_to_list(Channel) ++ ")\n" ++
+                ?TAB ++ "_send_message(payload, Prefix." ++ EncoderPrefix ++
+                ", '" ++ atom_to_list(QOS) ++ "', " ++ 
+                integer_to_list(Channel) ++ ")\n" ++ 
                 ?TAB ++ "if debug:\n" ++
-                ?TAB(2) ++ "print('[INFO] Sent a " ++
-                FunStr ++
+                ?TAB(2) ++ "print('[INFO] Send a " ++ FunStr ++ 
                 " packet')\n\n",
-        [Func | Acc]
-    end,
+            [ Func | Acc ] 
+        end,
     [lists:flatten(lists:foldl(F, [], RPCs))].
+
+
+%generate_marshall() ->
+%    Type = server,
+%    RPCs = ow_protocol:rpcs(Type),
+%    F = fun(RPC, Acc) ->
+%        #{encoder := Encoder, qos := QOS, channel := Channel} =
+%            ow_protocol:rpc(RPC, Type),
+%        %FunStr = opcode_name_string(RPC),
+%        FunStr = atom_to_list(RPC),
+%        Fields = field_info({Encoder, RPC}),
+%        FieldStr = fields_to_str(Fields),
+%        EncStr = string:titlecase(atom_to_list(Encoder)),
+%        Func =
+%            "func " ++ FunStr ++ "(" ++ FieldStr ++ "):\n" ++
+%                ?TAB ++ "var m = " ++ EncStr ++ "." ++
+%                atom_to_list(RPC) ++
+%                ".new()\n" ++
+%                set_new_parameters(RPC, Encoder) ++
+%                %set_parameters(Fields, Encoder) ++
+%                ?TAB ++ "var payload = m.to_bytes()\n" ++
+%                ?TAB ++ "_send_message(payload, Prefix." ++
+%                string:to_upper(FunStr) ++ ", '" ++ atom_to_list(QOS) ++
+%                "', " ++ integer_to_list(Channel) ++ ")\n" ++
+%                ?TAB ++ "if debug:\n" ++
+%                ?TAB(2) ++ "print('[INFO] Sent a " ++
+%                FunStr ++
+%                " packet')\n\n",
+%        [Func | Acc]
+%    end,
+%    [lists:flatten(lists:foldl(F, [], RPCs))].
 
 set_new_parameters(ClientMsg, Encoder) ->
     Defn = erlang:apply(Encoder, fetch_msg_def, [ClientMsg]),
@@ -827,3 +857,8 @@ erl_bin_to_godot(Bin) ->
         true ->
             io_lib:format("~p", [B])
     end.
+
+strip_pb_suffix(Encoder) ->
+    S = atom_to_list(Encoder),
+    [ Leading | _ ] = string:split(S, "_pb"),
+    Leading.
