@@ -574,6 +574,16 @@ marshall_submsg_body([#{name := Name} | T], Acc) ->
 %% Generate functions for marshalling msgs                           %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% Example GDScript for encoding 
+%func session_id_req():
+%	var m = Overworld_new_pb.overworld.new()
+%	var n = m.new_session_id_req()
+%	n.set_version(1)
+%	var payload = m.to_bytes()
+%	_send_message(payload, OpCode.OVERWORLD, 'reliable', 0)
+%	if debug:
+%		print('[INFO] Sent a session_id_req packet')
+
 generate_marshall() ->
     Type = server,
     RPCs = ow_protocol:rpcs(Type),
