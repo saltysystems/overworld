@@ -422,7 +422,7 @@ generate_prefixes() ->
             Comment = "0x" ++ integer_to_list(Prefix, 16),
             Op =
                 ?TAB ++ string:to_upper(AppString) ++ " = " ++ PrefixPacked ++
-                ", # " ++ Comment ++ "\n",
+                    ", # " ++ Comment ++ "\n",
             Op ++ AccIn
         end,
     [lists:flatten(lists:foldl(F, [], Apps))].
