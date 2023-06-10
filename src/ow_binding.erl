@@ -388,12 +388,15 @@ generate_signals() ->
     Type = client,
     RPCs = ow_protocol:rpcs(Type),
     F = fun(RPC, Acc) ->
+        logger:notice("RPC is: ~p", [RPC]),
         #{encoder := Encoder} = ow_protocol:rpc(RPC, Type),
+        logger:notice("Encoder is: ~p", [Encoder]),
         [next_signal(RPC, Encoder) | Acc]
     end,
     lists:foldl(F, [], RPCs).
 
 next_signal(RPC, Encoder) ->
+    logger:notice("RPC, Encoder: ~p,~p", [RPC, Encoder]),
     F =
         "(" ++ untyped_fields_to_str(field_info({Encoder, RPC})) ++
             ")",
@@ -418,8 +421,8 @@ generate_prefixes() ->
             [PrefixPacked] = erl_bin_to_godot(0),
             Comment = "0x" ++ integer_to_list(Prefix, 16),
             Op =
-                string:to_upper(AppString) ++ " = " ++ PrefixPacked ++
-                    ", # " ++ Comment,
+                ?TAB ++ string:to_upper(AppString) ++ " = " ++ PrefixPacked ++
+                ", # " ++ Comment ++ "\n",
             Op ++ AccIn
         end,
     [lists:flatten(lists:foldl(F, [], Apps))].
@@ -434,8 +437,8 @@ generate_router() ->
         fun({_Prefix, {AppName, {_Module, _Decoder}}}, AccIn) ->
             AppString = atom_to_list(AppName),
             Op =
-                "Prefix." ++ string:to_upper(AppString) ++ ":\n" ++
-                    ?TAB(3) ++ "_server_" ++ AppString ++ "(payload)",
+                ?TAB(2) ++ "Prefix." ++ string:to_upper(AppString) ++ ":\n" ++
+                    ?TAB(3) ++ "_server_" ++ AppString ++ "(payload)\n",
             [Op, AccIn]
         end,
     [lists:flatten(lists:foldl(F, [], Apps))].
