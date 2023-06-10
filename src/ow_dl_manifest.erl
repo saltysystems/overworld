@@ -24,13 +24,7 @@ manifest(Req) ->
     % List all registered apps
     Apps = ow_protocol:apps(),
     % Get the list of files
-    ClientLibs =
-        case godot_client_lib_version(Req) of
-            3 ->
-                [<<"libow3.gd">>];
-            4 ->
-                [<<"libow4.gd">>]
-        end,
+    ClientLibs = [<<"libow4.gd">>], % only support 4 
     ProtoFiles = ClientLibs ++ protofiles(Apps),
     % Encode the list via jsone
     Manifest = jsone:encode(ProtoFiles),
@@ -123,15 +117,4 @@ protofile(App) ->
     case file:read_file(F) of
         {ok, Proto} -> Proto;
         _ -> error
-    end.
-
--spec godot_client_lib_version(map()) -> 3 | 4.
-godot_client_lib_version(#{headers := #{<<"user-agent">> := UserAgent}}) ->
-    % TODO: Improve me
-    case string:find(UserAgent, <<"GodotEngine/4">>) of
-        nomatch ->
-            % Assume Godot 3.x
-            3;
-        _ ->
-            4
     end.
