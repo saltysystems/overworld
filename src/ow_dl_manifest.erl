@@ -24,7 +24,9 @@ manifest(Req) ->
     % List all registered apps
     Apps = ow_protocol:apps(),
     % Get the list of files
-    ClientLibs = [<<"libow4.gd">>], % only support 4 
+
+    % only support 4
+    ClientLibs = [<<"libow4.gd">>],
     ProtoFiles = ClientLibs ++ protofiles(Apps),
     % Encode the list via jsone
     Manifest = jsone:encode(ProtoFiles),
