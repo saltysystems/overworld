@@ -47,9 +47,9 @@ signal server_disconnected()
 
 # Prefixes determine how to route packages to the correct protobuf library
 const Prefix = {
-	{{#prefixes}}
-	{{.}}
-	{{/prefixes}}
+{{#prefixes}}
+{{.}}
+{{/prefixes}}
 }
 
 
@@ -63,9 +63,9 @@ func route(packet):
 	if packet.size() > 2:
 		payload = packet.slice(2)
 	match opcode:
-		{{#router}}
-		{{.}}
-		{{/router}}
+{{#router}}
+{{.}}
+{{/router}}
 		_:
 			print("[WARNING] Unknown opcode from the server:" + str(opcode))
 
