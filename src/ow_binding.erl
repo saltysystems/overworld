@@ -388,15 +388,12 @@ generate_signals() ->
     Type = client,
     RPCs = ow_protocol:rpcs(Type),
     F = fun(RPC, Acc) ->
-        logger:notice("RPC is: ~p", [RPC]),
         #{encoder := Encoder} = ow_protocol:rpc(RPC, Type),
-        logger:notice("Encoder is: ~p", [Encoder]),
         [next_signal(RPC, Encoder) | Acc]
     end,
     lists:foldl(F, [], RPCs).
 
 next_signal(RPC, Encoder) ->
-    logger:notice("RPC, Encoder: ~p,~p", [RPC, Encoder]),
     F =
         "(" ++ untyped_fields_to_str(field_info({Encoder, RPC})) ++
             ")",
@@ -418,14 +415,14 @@ generate_prefixes() ->
         fun({Prefix, {AppName, {_Module, _Decoder}}}, AccIn) ->
             AppString = atom_to_list(AppName),
             %PrefixPacked = integer_to_list(Prefix),
-            [PrefixPacked] = erl_bin_to_godot(0),
+            [PrefixPacked] = erl_bin_to_godot(Prefix),
             Comment = "0x" ++ integer_to_list(Prefix, 16),
             Op =
                 ?TAB ++ string:to_upper(AppString) ++ " = " ++ PrefixPacked ++
                     ", # " ++ Comment ++ "\n",
             Op ++ AccIn
         end,
-    [lists:flatten(lists:foldl(F, [], Apps))].
+    [chomp(lists:flatten(lists:foldl(F, [], Apps)))].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Setup Packet Router                                               %%
@@ -441,7 +438,7 @@ generate_router() ->
                     ?TAB(3) ++ "_server_" ++ AppString ++ "(payload)\n",
             [Op, AccIn]
         end,
-    [lists:flatten(lists:foldl(F, [], Apps))].
+    [chomp(lists:flatten(lists:foldl(F, [], Apps)))].
 
 %generate_router(Operation, St0) ->
 %    generate_router(Operation, [], St0).
@@ -574,7 +571,7 @@ marshall_submsg_body([#{name := Name} | T], Acc) ->
 %% Generate functions for marshalling msgs                           %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Example GDScript for encoding 
+% Example GDScript for encoding
 %func session_id_req():
 %	var m = Overworld_pb.overworld.new()
 %	var n = m.new_session_id_req()
@@ -588,31 +585,30 @@ generate_marshall() ->
     Type = server,
     RPCs = ow_protocol:rpcs(Type),
     F = fun(RPC, Acc) ->
-            #{encoder := Encoder, qos := QOS, channel := Channel} =
-                ow_protocol:rpc(RPC, Type),
-            FunStr = atom_to_list(RPC),
-            Fields = field_info({Encoder, RPC}),
-            FieldStr = fields_to_str(Fields),
-            EncoderBare = strip_pb_suffix(Encoder),
-            EncoderPrefix = string:to_upper(EncoderBare),
-            EncoderTitle = string:titlecase(atom_to_list(Encoder)),
-            Func = 
-                "func " ++ FunStr ++ "(" ++ FieldStr ++ "):\n" ++
-                ?TAB ++ "var m = " ++ EncoderTitle ++ "." ++ 
+        #{encoder := Encoder, qos := QOS, channel := Channel} =
+            ow_protocol:rpc(RPC, Type),
+        FunStr = atom_to_list(RPC),
+        Fields = field_info({Encoder, RPC}),
+        FieldStr = fields_to_str(Fields),
+        EncoderBare = strip_pb_suffix(Encoder),
+        EncoderPrefix = string:to_upper(EncoderBare),
+        EncoderTitle = string:titlecase(atom_to_list(Encoder)),
+        Func =
+            "func " ++ FunStr ++ "(" ++ FieldStr ++ "):\n" ++
+                ?TAB ++ "var m = " ++ EncoderTitle ++ "." ++
                 EncoderBare ++ ".new()\n" ++
                 ?TAB ++ "var n = m.new_" ++ FunStr ++ "()\n" ++
                 set_new_parameters(RPC, Encoder) ++
                 ?TAB ++ "var payload = m.to_bytes()\n" ++
                 ?TAB ++ "_send_message(payload, Prefix." ++ EncoderPrefix ++
-                ", '" ++ atom_to_list(QOS) ++ "', " ++ 
-                integer_to_list(Channel) ++ ")\n" ++ 
+                ", '" ++ atom_to_list(QOS) ++ "', " ++
+                integer_to_list(Channel) ++ ")\n" ++
                 ?TAB ++ "if debug:\n" ++
-                ?TAB(2) ++ "print('[INFO] Send a " ++ FunStr ++ 
+                ?TAB(2) ++ "print('[INFO] Send a " ++ FunStr ++
                 " packet')\n\n",
-            [ Func | Acc ] 
-        end,
+        [Func | Acc]
+    end,
     [lists:flatten(lists:foldl(F, [], RPCs))].
-
 
 %generate_marshall() ->
 %    Type = server,
@@ -653,7 +649,7 @@ parameter_body([#{name := Name, type := {msg, SubMsg}} | T], Acc) ->
     NameStr = atom_to_list(Name),
     B =
         ?TAB ++ "pack_" ++ atom_to_list(SubMsg) ++ "(" ++ NameStr ++
-            ", m.new_" ++
+            ", n.new_" ++
             NameStr ++ "())\n",
     parameter_body(T, B ++ Acc);
 parameter_body([#{name := Name, occurrence := Occurrence} | T], Acc) ->
@@ -667,7 +663,7 @@ parameter_body([#{name := Name, occurrence := Occurrence} | T], Acc) ->
                     "\n" ++
                     ?TAB ++ "if " ++ atom_to_list(Name) ++ ":\n" ++ ?TAB ++
                     ?TAB ++
-                    "m.set_" ++ atom_to_list(Name) ++ "(" ++
+                    "n.set_" ++ atom_to_list(Name) ++ "(" ++
                     atom_to_list(Name) ++
                     ")\n";
             repeated ->
@@ -676,7 +672,7 @@ parameter_body([#{name := Name, occurrence := Occurrence} | T], Acc) ->
                     ?TAB ++ ?TAB ++ "m.add_" ++ atom_to_list(Name) ++
                     "(item)\n";
             _ ->
-                ?TAB ++ "m.set_" ++ atom_to_list(Name) ++ "(" ++
+                ?TAB ++ "n.set_" ++ atom_to_list(Name) ++ "(" ++
                     atom_to_list(Name) ++ ")\n"
         end,
     parameter_body(T, B ++ Acc).
@@ -769,7 +765,7 @@ dict_fields_to_str([{N, _T, _O} | Tail], Acc) ->
     dict_fields_to_str(Tail, [D | Acc]).
 
 untyped_fields_to_str(List) ->
-    untyped_fields_to_str(List, "").
+    untyped_fields_to_str(lists:reverse(List), "").
 untyped_fields_to_str([], Acc) ->
     Acc;
 untyped_fields_to_str([{N, _T, _O} | Tail], "") ->
@@ -860,5 +856,8 @@ erl_bin_to_godot(Bin) ->
 
 strip_pb_suffix(Encoder) ->
     S = atom_to_list(Encoder),
-    [ Leading | _ ] = string:split(S, "_pb"),
+    [Leading | _] = string:split(S, "_pb"),
     Leading.
+
+chomp(String) ->
+    lists:droplast(String).
