@@ -436,9 +436,18 @@ notify_players(MsgType, Msg, Players) ->
                     undefined ->
                         Pid ! {self(), zone_msg, {MsgType, Msg}};
                     protobuf ->
-                        #{channel := Channel, qos := QOS} =
+                        #{channel := Channel, qos := QOS, encoder := Encoder} =
                             ow_protocol:rpc(MsgType, client),
-                        EncodedMsg = ow_msg:encode(Msg, MsgType),
+                        EncoderMod = encoder_to_msg(Encoder),
+                        App = strip_prefix(Encoder),
+                        logger:notice("Encoding msg: (~p)~p:~p", [EncoderMod, Msg, MsgType]),
+                        EncodedMsg = 
+                            case EncoderMod of
+                                ow_msg ->
+                                    ow_msg:encode(Msg, MsgType, App);
+                                Provided ->
+                                    erlang:apply(Provided, encode, [Msg, MsgType])
+                            end,
                         Pid !
                             {
                                 self(),
@@ -622,3 +631,25 @@ enet_msg_opts(Action) ->
     %QOS = ow_rpc:qos(RPC),
     #{channel := Channel, qos := QOS} = ow_protocol:rpc(Action, client),
     {QOS, Channel}.
+
+strip_prefix(ProtoLib) ->
+    [Leading, _] = string:split(atom_to_list(ProtoLib), "_pb"),
+    Leading.
+
+encoder_to_msg(ProtoLib) ->
+    App = strip_prefix(ProtoLib),
+    MaybeMsgLib = list_to_atom(App ++ "_msg"), % careful with atom generation
+    case erlang:module_loaded(MaybeMsgLib) of
+        false ->
+            % OK, just use overworld
+            ow_msg;
+        true -> 
+            % Check if it has the rpc behaviour
+            Attrs = erlang:apply(MaybeMsgLib, module_info, [attributes]),
+            case proplists:get_value(behaviour, Attrs) of
+                undefined -> 
+                    ow_msg;
+                [ow_rpc] -> 
+                    MaybeMsgLib
+            end
+    end.
