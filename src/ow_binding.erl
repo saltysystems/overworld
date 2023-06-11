@@ -129,7 +129,7 @@ get_encoders() ->
 
 -spec filter_for_pure_msgs(atom()) -> list().
 filter_for_pure_msgs(Encoder) ->
-    #{ lib := EncoderLib } = Encoder,
+    #{lib := EncoderLib} = Encoder,
     MsgList = erlang:apply(EncoderLib, get_msg_defs, []),
     filter_for_pure_msgs(MsgList, []).
 filter_for_pure_msgs([], Acc) ->
@@ -184,7 +184,7 @@ generate_pure_submsgs(Encoder, [vector2 | Rest], Acc) ->
             ?TAB(2) ++ "return vec\n",
     generate_pure_submsgs(Encoder, Rest, [Signature ++ Body | Acc]);
 generate_pure_submsgs(Encoder, [MessageName | Rest], Acc) ->
-    #{ lib := EncoderLib } = Encoder,
+    #{lib := EncoderLib} = Encoder,
     Defn = erlang:apply(EncoderLib, fetch_msg_def, [MessageName]),
     Signature =
         "func unpack_" ++ fix_delim(atom_to_list(MessageName)) ++
@@ -241,14 +241,14 @@ generate_submsg_dict([H | T], Acc) ->
 
 generate_impure_submsgs(Encoder) ->
     Pures = filter_for_pure_msgs(Encoder),
-    #{ lib := EncoderLib } = Encoder,
+    #{lib := EncoderLib} = Encoder,
     AllMessages = erlang:apply(EncoderLib, get_msg_names, []),
     Impures = AllMessages -- Pures,
     generate_impure_submsgs(Encoder, Impures, []).
 generate_impure_submsgs(_Encoder, [], Acc) ->
     Acc;
 generate_impure_submsgs(Encoder, [H | T], Acc) ->
-    #{ lib := EncoderLib } = Encoder,
+    #{lib := EncoderLib} = Encoder,
     Defn = erlang:apply(EncoderLib, fetch_msg_def, [H]),
     % Definition is a list
     [Inner | _Rest] = Defn,
@@ -329,7 +329,7 @@ generate_enums(Encoder) ->
 generate_enums([], Acc) ->
     [Acc];
 generate_enums([Encoder | Rest], Acc) ->
-    #{ lib := EncoderLib } = Encoder,
+    #{lib := EncoderLib} = Encoder,
     Enums = erlang:apply(EncoderLib, get_enum_names, []),
     % Process all enums
     Comment = "# via " ++ atom_to_list(EncoderLib) ++ "\n",
@@ -370,7 +370,7 @@ load_scripts(Encoders) ->
 load_scripts([], Acc) ->
     Acc;
 load_scripts([Encoder | Rest], Acc) ->
-    #{ lib := EncoderLib } = Encoder,
+    #{lib := EncoderLib} = Encoder,
     Const =
         "const " ++ string:titlecase(atom_to_list(EncoderLib)) ++
             " = preload('",
@@ -541,7 +541,7 @@ write_app_function(App, Encoder) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 generate_marshall_submsgs(Encoder) ->
-    #{ lib := EncoderLib } = Encoder,
+    #{lib := EncoderLib} = Encoder,
     AllMessages = erlang:apply(EncoderLib, get_msg_names, []),
     generate_marshall_submsgs(AllMessages, Encoder, []).
 generate_marshall_submsgs([], _Encoder, Acc) ->
@@ -553,7 +553,7 @@ generate_marshall_submsgs([vector2 | T], Encoder, Acc) ->
             ?TAB ++ "ref.set_y(obj.y)\n",
     generate_marshall_submsgs(T, Encoder, Signature ++ Body ++ Acc);
 generate_marshall_submsgs([MsgName | T], Encoder, Acc) ->
-    #{ lib := EncoderLib } = Encoder,
+    #{lib := EncoderLib} = Encoder,
     Defn = erlang:apply(EncoderLib, fetch_msg_def, [MsgName]),
     NameStr = fix_delim(atom_to_list(MsgName)),
     Signature = "func pack_" ++ NameStr ++ "(obj, ref):\n",
@@ -596,7 +596,7 @@ generate_marshall() ->
     F = fun(RPC, Acc) ->
         #{encoder := Encoder, qos := QOS, channel := Channel} =
             ow_protocol:rpc(RPC, Type),
-        #{ app := App, lib := EncoderLib } = Encoder,
+        #{app := App, lib := EncoderLib} = Encoder,
         FunStr = atom_to_list(RPC),
         Fields = field_info({EncoderLib, RPC}),
         FieldStr = fields_to_str(Fields),
@@ -651,7 +651,7 @@ generate_marshall() ->
 %    [lists:flatten(lists:foldl(F, [], RPCs))].
 
 set_new_parameters(ClientMsg, Encoder) ->
-    #{ lib := EncoderLib } = Encoder,
+    #{lib := EncoderLib} = Encoder,
     Defn = erlang:apply(EncoderLib, fetch_msg_def, [ClientMsg]),
     parameter_body(Defn, []).
 parameter_body([], Acc) ->
