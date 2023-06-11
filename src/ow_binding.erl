@@ -129,7 +129,8 @@ get_encoders() ->
 
 -spec filter_for_pure_msgs(atom()) -> list().
 filter_for_pure_msgs(Encoder) ->
-    MsgList = erlang:apply(Encoder, get_msg_defs, []),
+    #{ lib := EncoderLib } = Encoder,
+    MsgList = erlang:apply(EncoderLib, get_msg_defs, []),
     filter_for_pure_msgs(MsgList, []).
 filter_for_pure_msgs([], Acc) ->
     Acc;
@@ -183,7 +184,8 @@ generate_pure_submsgs(Encoder, [vector2 | Rest], Acc) ->
             ?TAB(2) ++ "return vec\n",
     generate_pure_submsgs(Encoder, Rest, [Signature ++ Body | Acc]);
 generate_pure_submsgs(Encoder, [MessageName | Rest], Acc) ->
-    Defn = erlang:apply(Encoder, fetch_msg_def, [MessageName]),
+    #{ lib := EncoderLib } = Encoder,
+    Defn = erlang:apply(EncoderLib, fetch_msg_def, [MessageName]),
     Signature =
         "func unpack_" ++ fix_delim(atom_to_list(MessageName)) ++
             "(object):\n",
@@ -239,13 +241,15 @@ generate_submsg_dict([H | T], Acc) ->
 
 generate_impure_submsgs(Encoder) ->
     Pures = filter_for_pure_msgs(Encoder),
-    AllMessages = erlang:apply(Encoder, get_msg_names, []),
+    #{ lib := EncoderLib } = Encoder,
+    AllMessages = erlang:apply(EncoderLib, get_msg_names, []),
     Impures = AllMessages -- Pures,
     generate_impure_submsgs(Encoder, Impures, []).
 generate_impure_submsgs(_Encoder, [], Acc) ->
     Acc;
 generate_impure_submsgs(Encoder, [H | T], Acc) ->
-    Defn = erlang:apply(Encoder, fetch_msg_def, [H]),
+    #{ lib := EncoderLib } = Encoder,
+    Defn = erlang:apply(EncoderLib, fetch_msg_def, [H]),
     % Definition is a list
     [Inner | _Rest] = Defn,
     Signature =
@@ -255,7 +259,7 @@ generate_impure_submsgs(Encoder, [H | T], Acc) ->
             undefined ->
                 impure_submsg_body(Defn);
             Fields ->
-                oneof_body(Fields, Encoder) ++ "\n"
+                oneof_body(Fields, EncoderLib) ++ "\n"
         end,
     generate_impure_submsgs(Encoder, T, Signature ++ Body ++ Acc).
 
@@ -285,7 +289,7 @@ impure_submsg_body(Defn) ->
 %		print("has account new")
 
 % TODO: doesn't handle the case of multiple oneofs
-oneof_body(Fields, Encoder) ->
+oneof_body(Fields, EncoderLib) ->
     F =
         fun
             (Map, []) ->
@@ -296,7 +300,7 @@ oneof_body(Fields, Encoder) ->
                         "():\n" ++ ?TAB(2) ++ "var d = unpack_" ++
                         atom_to_list(Name) ++ "(object.get_" ++
                         atom_to_list(Name) ++ "())\n" ++
-                        emit_signal(Name, Encoder),
+                        emit_signal(Name, EncoderLib),
                 [Body];
             (Map, Acc) ->
                 #{name := Name} = Map,
@@ -305,47 +309,48 @@ oneof_body(Fields, Encoder) ->
                         "():\n" ++ ?TAB(2) ++ "var d = unpack_" ++
                         atom_to_list(Name) ++ "(object.get_" ++
                         atom_to_list(Name) ++ "())\n" ++
-                        emit_signal(Name, Encoder),
+                        emit_signal(Name, EncoderLib),
                 [Body | Acc]
         end,
     [lists:flatten(lists:reverse(lists:foldl(F, [], Fields)))].
 
-emit_signal(ProtoMsg, Encoder) ->
+emit_signal(ProtoMsg, EncoderLib) ->
     ProtoMsgStr = atom_to_list(ProtoMsg),
     ?TAB(2) ++ "emit_signal('server_" ++ ProtoMsgStr ++ "'," ++
-        dict_fields_to_str(field_info({Encoder, ProtoMsg})) ++
+        dict_fields_to_str(field_info({EncoderLib, ProtoMsg})) ++
         "\)\n".
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Generate enums                                                    %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-generate_enums(ProtoLib) ->
-    generate_enums(ProtoLib, []).
+generate_enums(Encoder) ->
+    generate_enums(Encoder, []).
 generate_enums([], Acc) ->
     [Acc];
-generate_enums([ProtoLib | Rest], Acc) ->
-    Enums = erlang:apply(ProtoLib, get_enum_names, []),
+generate_enums([Encoder | Rest], Acc) ->
+    #{ lib := EncoderLib } = Encoder,
+    Enums = erlang:apply(EncoderLib, get_enum_names, []),
     % Process all enums
-    Comment = "# via " ++ atom_to_list(ProtoLib) ++ "\n",
+    Comment = "# via " ++ atom_to_list(EncoderLib) ++ "\n",
     Acc1 = lists:flatten([
-        Acc | [Comment | stringify_enums(ProtoLib, Enums)]
+        Acc | [Comment | stringify_enums(EncoderLib, Enums)]
     ]),
     generate_enums(Rest, Acc1).
 
-stringify_enums(ProtoLib, Enums) ->
-    stringify_enums(ProtoLib, Enums, []).
-stringify_enums(_ProtoLib, [], Acc) ->
+stringify_enums(EncoderLib, Enums) ->
+    stringify_enums(EncoderLib, Enums, []).
+stringify_enums(_EncoderLib, [], Acc) ->
     [Acc];
-stringify_enums(ProtoLib, [H | T], Acc) ->
+stringify_enums(EncoderLib, [H | T], Acc) ->
     % E has the structure [{atom(), non_negative_integer()}, ...]
     EnumName = lists:flatten(string:replace(atom_to_list(H), ".", "_")),
     %logger:notice("EnumName: ~p", [EnumName]),
-    EncStr = string:titlecase(atom_to_list(ProtoLib)),
+    EncStr = string:titlecase(atom_to_list(EncoderLib)),
     %logger:notice("EncStr: ~p", [EncStr]),
     Prefix = "enum " ++ EnumName ++ " {\n",
     %logger:notice("Prefix: ~p", [Prefix]),
-    E = erlang:apply(ProtoLib, fetch_enum_def, [H]),
+    E = erlang:apply(EncoderLib, fetch_enum_def, [H]),
     Estr = [
         ?TAB ++ atom_to_list(Name) ++ " = " ++ EncStr ++ "." ++
             atom_to_list(H) ++ "." ++ atom_to_list(Name) ++ ",\n"
@@ -354,7 +359,7 @@ stringify_enums(ProtoLib, [H | T], Acc) ->
     %logger:notice("Estr: ~p", [Estr]),
     Acc1 = Acc ++ Prefix ++ lists:flatten(Estr) ++ "}\n",
     %logger:notice("Acc1: ~p", [Acc1]),
-    stringify_enums(ProtoLib, T, Acc1).
+    stringify_enums(EncoderLib, T, Acc1).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Preload Protobuf scripts                                          %%
@@ -365,10 +370,11 @@ load_scripts(Encoders) ->
 load_scripts([], Acc) ->
     Acc;
 load_scripts([Encoder | Rest], Acc) ->
+    #{ lib := EncoderLib } = Encoder,
     Const =
-        "const " ++ string:titlecase(atom_to_list(Encoder)) ++
+        "const " ++ string:titlecase(atom_to_list(EncoderLib)) ++
             " = preload('",
-    Script = atom_to_list(Encoder) ++ ".gd')",
+    Script = atom_to_list(EncoderLib) ++ ".gd')",
     load_scripts(Rest, [Const ++ Script | Acc]).
 
 load_scripts_test() ->
@@ -389,13 +395,14 @@ generate_signals() ->
     RPCs = ow_protocol:rpcs(Type),
     F = fun(RPC, Acc) ->
         #{encoder := Encoder} = ow_protocol:rpc(RPC, Type),
-        [next_signal(RPC, Encoder) | Acc]
+        #{lib := EncoderLib} = Encoder,
+        [next_signal(RPC, EncoderLib) | Acc]
     end,
     lists:foldl(F, [], RPCs).
 
-next_signal(RPC, Encoder) ->
+next_signal(RPC, EncoderLib) ->
     F =
-        "(" ++ untyped_fields_to_str(field_info({Encoder, RPC})) ++
+        "(" ++ untyped_fields_to_str(field_info({EncoderLib, RPC})) ++
             ")",
     "signal server_" ++ atom_to_list(RPC) ++ F.
 
@@ -534,7 +541,8 @@ write_app_function(App, Encoder) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 generate_marshall_submsgs(Encoder) ->
-    AllMessages = erlang:apply(Encoder, get_msg_names, []),
+    #{ lib := EncoderLib } = Encoder,
+    AllMessages = erlang:apply(EncoderLib, get_msg_names, []),
     generate_marshall_submsgs(AllMessages, Encoder, []).
 generate_marshall_submsgs([], _Encoder, Acc) ->
     Acc;
@@ -545,7 +553,8 @@ generate_marshall_submsgs([vector2 | T], Encoder, Acc) ->
             ?TAB ++ "ref.set_y(obj.y)\n",
     generate_marshall_submsgs(T, Encoder, Signature ++ Body ++ Acc);
 generate_marshall_submsgs([MsgName | T], Encoder, Acc) ->
-    Defn = erlang:apply(Encoder, fetch_msg_def, [MsgName]),
+    #{ lib := EncoderLib } = Encoder,
+    Defn = erlang:apply(EncoderLib, fetch_msg_def, [MsgName]),
     NameStr = fix_delim(atom_to_list(MsgName)),
     Signature = "func pack_" ++ NameStr ++ "(obj, ref):\n",
     Body = marshall_submsg_body(Defn, []),
@@ -587,12 +596,13 @@ generate_marshall() ->
     F = fun(RPC, Acc) ->
         #{encoder := Encoder, qos := QOS, channel := Channel} =
             ow_protocol:rpc(RPC, Type),
+        #{ app := App, lib := EncoderLib } = Encoder,
         FunStr = atom_to_list(RPC),
-        Fields = field_info({Encoder, RPC}),
+        Fields = field_info({EncoderLib, RPC}),
         FieldStr = fields_to_str(Fields),
-        EncoderBare = strip_pb_suffix(Encoder),
+        EncoderBare = erlang:atom_to_list(App),
         EncoderPrefix = string:to_upper(EncoderBare),
-        EncoderTitle = string:titlecase(atom_to_list(Encoder)),
+        EncoderTitle = string:titlecase(atom_to_list(EncoderLib)),
         Func =
             "func " ++ FunStr ++ "(" ++ FieldStr ++ "):\n" ++
                 ?TAB ++ "var m = " ++ EncoderTitle ++ "." ++
@@ -641,7 +651,8 @@ generate_marshall() ->
 %    [lists:flatten(lists:foldl(F, [], RPCs))].
 
 set_new_parameters(ClientMsg, Encoder) ->
-    Defn = erlang:apply(Encoder, fetch_msg_def, [ClientMsg]),
+    #{ lib := EncoderLib } = Encoder,
+    Defn = erlang:apply(EncoderLib, fetch_msg_def, [ClientMsg]),
     parameter_body(Defn, []).
 parameter_body([], Acc) ->
     Acc;
@@ -780,9 +791,8 @@ untyped_fields_to_str([{N, _T, _O} | Tail], Acc) ->
 % i.e., ping
 field_info({undefined, _ProtoMsg}) ->
     field_info([], []);
-field_info({ProtoLib, ProtoMsg}) ->
-    E = correct_encoder(ProtoLib, ProtoMsg),
-    Defs = erlang:apply(E, fetch_msg_def, [ProtoMsg]),
+field_info({EncoderLib, ProtoMsg}) ->
+    Defs = erlang:apply(EncoderLib, fetch_msg_def, [ProtoMsg]),
     field_info(Defs, []).
 
 field_info([], Acc) ->
@@ -820,21 +830,22 @@ field_info([H | T], Acc) ->
 %    end.
 
 % Make a best guess at a fall through for the encoder. I'm not sure I like this so it's not part of the main RPC module.
-correct_encoder(undefined, _) ->
-    undefined;
-correct_encoder(_, undefined) ->
-    undefined;
-correct_encoder(Encoder, Message) ->
-    case erlang:apply(Encoder, find_msg_def, [Message]) of
-        error ->
-            logger:debug(
-                "Couldn't find message ~p for encoder ~p, assuming encoder is ~p!~n",
-                [Message, Encoder, ?DEFAULT_ENCODER]
-            ),
-            ?DEFAULT_ENCODER;
-        _ ->
-            Encoder
-    end.
+%correct_encoder(undefined, _) ->
+%    undefined;
+%correct_encoder(_, undefined) ->
+%    undefined;
+%correct_encoder(Encoder, Message) ->
+%    #{ lib := EncoderLib } = Encoder,
+%    case erlang:apply(EncoderLib, find_msg_def, [Message]) of
+%        error ->
+%            logger:debug(
+%                "Couldn't find message ~p for encoder ~p, assuming encoder is ~p!~n",
+%                [Message, EncoderLib, ?DEFAULT_ENCODER]
+%            ),
+%            ?DEFAULT_ENCODER;
+%        _ ->
+%            EncoderLib
+%    end.
 
 maybe_submsg({msg, _Type}) ->
     % Do nothing to submessages. Provide a helper function somewhere.
@@ -853,11 +864,6 @@ erl_bin_to_godot(Bin) ->
         true ->
             io_lib:format("~p", [B])
     end.
-
-strip_pb_suffix(Encoder) ->
-    S = atom_to_list(Encoder),
-    [Leading | _] = string:split(S, "_pb"),
-    Leading.
 
 chomp(String) ->
     lists:droplast(String).
