@@ -68,7 +68,7 @@
 %% @end
 %%----------------------------------------------------------------------------
 
--rpc_encoder(overworld_pb).
+-rpc_encoder(#{app => overworld, lib => overworld_pb, interface => ow_msg}).
 -rpc_client([session_id, session_pong, session_log]).
 -rpc_server([session_id_req, session_ping]).
 
