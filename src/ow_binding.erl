@@ -378,7 +378,16 @@ load_scripts([Encoder | Rest], Acc) ->
     load_scripts(Rest, [Const ++ Script | Acc]).
 
 load_scripts_test() ->
-    E = ['overworld_pb', 'game_pb'],
+    E = [
+         #{ app => 'overworld', 
+            lib => 'overworld_pb', 
+            interface => 'ow_msg'
+          },
+         #{ app => 'game',
+            lib => 'game_pb',
+            interface => 'game_msg'
+          }
+        ],
     Results = load_scripts(E),
     [GameResult, OverworldResult | _Rest] = Results,
     OverworldTest = "const Overworld_pb = preload('overworld_pb.gd')",
