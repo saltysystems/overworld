@@ -14,7 +14,7 @@
 %% @end
 %%----------------------------------------------------------------------------
 
--rpc_encoder(overworld_pb).
+-rpc_encoder(#{app => overworld, lib => overworld_pb, interface => ow_msg}).
 -rpc_server([account_new, account_login]).
 -rpc_client([gen_response]).
 
