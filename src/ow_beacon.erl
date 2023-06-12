@@ -24,7 +24,7 @@
 % The number of beacons to hold in memory
 -define(WINDOW_SIZE, 25).
 
--rpc_encoder(overworld_pb).
+-rpc_encoder(#{app => overworld, lib => overworld_pb, interface => ow_msg}).
 -rpc_client([session_beacon]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
