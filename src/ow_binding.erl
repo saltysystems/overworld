@@ -127,7 +127,7 @@ get_encoders() ->
 %	elif object.has_account_new():
 %		print("has account new")
 
--spec filter_for_pure_msgs(atom()) -> list().
+-spec filter_for_pure_msgs(map()) -> list().
 filter_for_pure_msgs(Encoder) ->
     #{lib := EncoderLib} = Encoder,
     MsgList = erlang:apply(EncoderLib, get_msg_defs, []),
@@ -155,7 +155,7 @@ filter_for_pure_msgs([{{msg, Name}, MapList} | Rest], Acc) ->
         end,
     filter_for_pure_msgs(Rest, Acc1).
 
--spec generate_submsgs(atom()) -> string().
+-spec generate_submsgs(map()) -> string().
 generate_submsgs(Encoder) ->
     % Filter for pure messages in this encoder
     Pures = filter_for_pure_msgs(Encoder),
