@@ -382,7 +382,16 @@ setup_propmap_tests() ->
     PropList = [
         foo,
         {bar, {qos, reliable}},
-        {baz, {encoder, test_pb}}
+        {baz,
+            {
+                encoder,
+                #{app => test, lib => test_pb, interface => test_msg}
+            }},
+        {bop,
+            {
+                encoder,
+                #{lib => special_pb}
+            }}
     ],
     deep_propmap(PropList).
 
@@ -395,24 +404,30 @@ deep_propmap_test() ->
 
 inject_encoder(Module, PropMap) ->
     Attributes = erlang:apply(Module, module_info, [attributes]),
+    % Try to guess the encoder module based on convention
+    ModuleString = erlang:atom_to_list(Module),
+    [Prefix | _Rest] = string:split(ModuleString, "_", leading),
+    App = erlang:list_to_atom(Prefix),
+    % Make the best guess for lib and interface modules
+    EncoderLib = erlang:list_to_atom(Prefix ++ "_pb"),
+    EncoderInterface = erlang:list_to_atom(Prefix ++ "_msg"),
+    DefaultMap = #{
+        app => App,
+        lib => EncoderLib,
+        interface => EncoderInterface
+    },
     E =
-        case proplists:lookup(rpc_encoder, Attributes) of
-            none ->
-                % Try to guess the encoder module based on convention
-                ModuleString = erlang:atom_to_list(Module),
-                [Prefix | _Rest] = string:split(ModuleString, "_", leading),
-                % per GPB defaults
-                EncoderGuess = Prefix ++ "_pb",
-                % Try to convert to an exist atom or crash, we can't continue
-                % without an encoder.
-                erlang:list_to_existing_atom(EncoderGuess);
-            {rpc_encoder, [Encoder]} ->
+        case proplists:get_value(rpc_encoder, Attributes) of
+            undefined ->
+                DefaultMap;
+            [Encoder] ->
                 Encoder
         end,
     F = fun
-        (_Key, #{encoder := _Existing} = Val) ->
-            % Existing encoder found, do nothing
-            Val;
+        (_Key, #{encoder := Existing} = Val) ->
+            % Existing encoder found, merge with defaults to fill in any gaps
+            Merged = maps:merge(DefaultMap, Existing),
+            Val#{encoder => Merged};
         (_Key, Val) ->
             Val#{encoder => E}
     end,
@@ -421,9 +436,31 @@ inject_encoder(Module, PropMap) ->
 -spec inject_encoder_test() -> ok.
 inject_encoder_test() ->
     Map = setup_propmap_tests(),
-    EncMap = inject_encoder('overworld_pb', Map),
-    ExpectedFoo = #{encoder => overworld_pb},
+    % ow_app doesn't have anything defined so it ought to generate defaults
+    EncMap = inject_encoder('ow_app', Map),
+    logger:notice("EncMap is: ~p", [EncMap]),
+    ExpectedFoo = #{
+        encoder => #{
+            app => ow,
+            lib => ow_pb,
+            interface => ow_msg
+        }
+    },
     ?assertEqual(ExpectedFoo, maps:get(foo, EncMap)),
-    ExpectedBaz = #{encoder => test_pb},
+    ExpectedBaz = #{
+        encoder => #{
+            app => test,
+            lib => test_pb,
+            interface => test_msg
+        }
+    },
     ?assertEqual(ExpectedBaz, maps:get(baz, EncMap)),
+    ExpectedBop = #{
+        encoder => #{
+            app => ow,
+            lib => special_pb,
+            interface => ow_msg
+        }
+    },
+    ?assertEqual(ExpectedBop, maps:get(bop, EncMap)),
     ok.
