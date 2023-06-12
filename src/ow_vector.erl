@@ -195,7 +195,7 @@ test() ->
         is_collision(B, C)
     ].
 
--spec line_of_sight(vector(), vector(), vector(), [vector()]) -> [vector()].
+-spec line_of_sight(vector(), vector(), vector(), [vector()]) -> {[vector()],[vector()]}.
 line_of_sight(Location, Upper, Lower, Edges) ->
     % Always check upper and lower rays corresponding to the vision arc.
     Rays = [Upper, Lower],
@@ -216,7 +216,8 @@ line_of_sight(Location, Upper, Lower, Edges) ->
     % Sort the rays by component
     SortedRays = component_sort(Lower, ValidRays),
     % Check visibility of the segment
-    visible_edges(Location, Edges, SortedRays).
+    Edges = visible_edges(Location, Edges, SortedRays),
+    {SortedRays, Edges}.
 
 visible_edges(Location, Edges, Rays) ->
     visible_edges(Location, Edges, Rays, []).
