@@ -143,10 +143,6 @@
     Result :: {Response, State},
     Response :: ow_zone_resp().
 
--callback rpc_info() -> Result when
-    Result :: ow_rpc:callbacks().
--optional_callbacks([rpc_info/0]).
-
 -callback handle_status(State) -> Result when
     State :: term(),
     Result :: term().
