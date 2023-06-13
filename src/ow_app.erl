@@ -48,11 +48,12 @@ start(_StartType, _StartArgs) ->
     % Start the OW supervisor
     SuperLink = ow_sup:start_link(),
     % Now register the initial application and modules before returning
-    Application = #{ app => overworld,
-                     prefix => 100,
-                     router => ow_msg, 
-                     modules => [ ow_account, ow_session, ow_beacon ]
-                   },
+    Application = #{
+        app => overworld,
+        prefix => 100,
+        router => ow_msg,
+        modules => [ow_account, ow_session, ow_beacon]
+    },
     ow_protocol:register(Application),
     SuperLink.
 
