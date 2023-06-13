@@ -430,7 +430,7 @@ next_signal_test() ->
 generate_prefixes() ->
     Apps = ow_protocol:apps(),
     F =
-        fun({Prefix, {AppName, {_Module, _Decoder}}}, AccIn) ->
+        fun({Prefix, #{app := AppName}}, AccIn) ->
             AppString = atom_to_list(AppName),
             %PrefixPacked = integer_to_list(Prefix),
             [PrefixPacked] = erl_bin_to_godot(Prefix),
@@ -449,7 +449,7 @@ generate_prefixes() ->
 generate_router() ->
     Apps = ow_protocol:apps(),
     F =
-        fun({_Prefix, {AppName, {_Module, _Decoder}}}, AccIn) ->
+        fun({_Prefix, #{app := AppName}}, AccIn) ->
             AppString = atom_to_list(AppName),
             Op =
                 ?TAB(2) ++ "Prefix." ++ string:to_upper(AppString) ++ ":\n" ++
@@ -457,19 +457,6 @@ generate_router() ->
             [Op, AccIn]
         end,
     [chomp(lists:flatten(lists:foldl(F, [], Apps)))].
-
-%generate_router(Operation, St0) ->
-%    generate_router(Operation, [], St0).
-%
-%generate_router([], Routes, St0) ->
-%    St0 ++ Routes;
-%generate_router([OpInfo | Rest], Routes, St0) ->
-%    OpName = opcode_name_string(OpInfo),
-%    Op =
-%        "OpCode." ++ string:to_upper(OpName) ++ ":\n" ++
-%            ?TAB(3) ++ "_server_" ++ OpName ++
-%            "(payload)",
-%    generate_router(Rest, Routes, [Op | St0]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Generate functions for unmarshalling server data                  %%
@@ -487,21 +474,12 @@ generate_router() ->
 %	print(d)
 
 generate_unmarshall() ->
-    %    % Get RPCs that need unpacked
-    %    Type = client,
-    %    RPCs = ow_protocol:rpcs(Type),
-    %    F = fun(RPC, Acc) ->
-    %            #{encoder := Encoder} = ow_protocol:rpc(RPC, Type),
-    %            [write_function(RPC, RPC, Encoder) | Acc]
-    %    end,
-    %    RPCUnpack = lists:foldl(F, [], RPCs),
-    % Get apps that need unpacked
     Apps = ow_protocol:app_names(),
-    G = fun(App, Acc) ->
+    G = fun(AppName, Acc) ->
         % TODO: Add a test for the encoder/0 function in the app for
         %       non-standard protobuf names
-        Encoder = list_to_existing_atom(atom_to_list(App) ++ "_pb"),
-        [write_app_function(App, Encoder) | Acc]
+        Encoder = list_to_existing_atom(atom_to_list(AppName) ++ "_pb"),
+        [write_app_function(AppName, Encoder) | Acc]
     end,
     AppUnpack = lists:foldl(G, [], Apps),
     [lists:flatten(AppUnpack)].
@@ -522,30 +500,6 @@ write_app_function(App, Encoder) ->
         ProtoMsgStr ++ " packet')\n" ++
         ?TAB(2) ++ "return\n" ++
         ?TAB ++ "unpack_" ++ ProtoMsgStr ++ "(m)\n".
-
-%write_function(ProtoMsg, ClientCall, Encoder) ->
-%    EncStr = string:titlecase(atom_to_list(Encoder)),
-%    ClientCallStr = atom_to_list(ClientCall),
-%    ProtoMsgStr = atom_to_list(ProtoMsg),
-%    Op =
-%        "func " ++ "_server_" ++ ClientCallStr ++ "(packet):\n" ++
-%            ?TAB ++ "if debug:\n" ++
-%            ?TAB(2) ++ "print('[DEBUG] Processing a " ++ ClientCallStr ++
-%            " packet')\n" ++
-%            ?TAB ++ "var m = " ++ EncStr ++ "." ++ ProtoMsgStr ++
-%            ".new()\n" ++
-%            ?TAB ++ "var result_code = m.from_bytes(packet)\n" ++
-%            ?TAB ++ "if result_code != " ++ EncStr ++
-%            ".PB_ERR.NO_ERRORS:\n" ++
-%            ?TAB(2) ++ "print('[CRITICAL] Error decoding new " ++
-%            ClientCallStr ++ " packet')\n" ++
-%            ?TAB(2) ++ "return\n",
-%    Vars = unmarshall_var({Encoder, ProtoMsg}),
-%    Signal =
-%        ?TAB ++ "emit_signal('server_" ++ ProtoMsgStr ++ "'," ++
-%            dict_fields_to_str(field_info({Encoder, ProtoMsg})) ++
-%            "\)\n\n",
-%    Op ++ Vars ++ Signal.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Generate functions for marshalling submsgs                        %%
@@ -630,36 +584,6 @@ generate_marshall() ->
         [Func | Acc]
     end,
     [lists:flatten(lists:foldl(F, [], RPCs))].
-
-%generate_marshall() ->
-%    Type = server,
-%    RPCs = ow_protocol:rpcs(Type),
-%    F = fun(RPC, Acc) ->
-%        #{encoder := Encoder, qos := QOS, channel := Channel} =
-%            ow_protocol:rpc(RPC, Type),
-%        %FunStr = opcode_name_string(RPC),
-%        FunStr = atom_to_list(RPC),
-%        Fields = field_info({Encoder, RPC}),
-%        FieldStr = fields_to_str(Fields),
-%        EncStr = string:titlecase(atom_to_list(Encoder)),
-%        Func =
-%            "func " ++ FunStr ++ "(" ++ FieldStr ++ "):\n" ++
-%                ?TAB ++ "var m = " ++ EncStr ++ "." ++
-%                atom_to_list(RPC) ++
-%                ".new()\n" ++
-%                set_new_parameters(RPC, Encoder) ++
-%                %set_parameters(Fields, Encoder) ++
-%                ?TAB ++ "var payload = m.to_bytes()\n" ++
-%                ?TAB ++ "_send_message(payload, Prefix." ++
-%                string:to_upper(FunStr) ++ ", '" ++ atom_to_list(QOS) ++
-%                "', " ++ integer_to_list(Channel) ++ ")\n" ++
-%                ?TAB ++ "if debug:\n" ++
-%                ?TAB(2) ++ "print('[INFO] Sent a " ++
-%                FunStr ++
-%                " packet')\n\n",
-%        [Func | Acc]
-%    end,
-%    [lists:flatten(lists:foldl(F, [], RPCs))].
 
 set_new_parameters(ClientMsg, Encoder) ->
     #{lib := EncoderLib} = Encoder,
@@ -814,49 +738,6 @@ field_info([H | T], Acc) ->
     Occurrence = maps:get(occurrence, H),
     Acc1 = [{Name, Type, Occurrence} | Acc],
     field_info(T, Acc1).
-
-%unmarshall_var({ProtoLib, ProtoMsg}) ->
-%    unmarshall_var(
-%        field_info({ProtoLib, ProtoMsg}), ProtoMsg, ProtoLib, []
-%    ).
-%unmarshall_var([], _ProtoMsg, _ProtoLib, Acc) ->
-%    Acc;
-%unmarshall_var([{_F, _T, _O} | _Rest], ProtoMsg, ProtoLib, Acc) ->
-%    V =
-%        ?TAB ++ "var d = {}\n" ++ ?TAB ++ "d = unpack_" ++
-%            atom_to_list(ProtoMsg) ++ "(m)\n",
-%    unmarshall_var([], ProtoMsg, ProtoLib, Acc ++ V).
-
-%opcode_name_string(OpInfo) ->
-%    OpCode = ow_rpc:opcode(OpInfo),
-%    case ow_rpc:c2s_handler(OpInfo) of
-%        {_M, F, _A} ->
-%            atom_to_list(F);
-%        undefined ->
-%            % Try the next best guess
-%            case ow_rpc:s2c_call(OpInfo) of
-%                undefined -> "undefined_" ++ integer_to_list(OpCode);
-%                Call -> atom_to_list(Call)
-%            end
-%    end.
-
-% Make a best guess at a fall through for the encoder. I'm not sure I like this so it's not part of the main RPC module.
-%correct_encoder(undefined, _) ->
-%    undefined;
-%correct_encoder(_, undefined) ->
-%    undefined;
-%correct_encoder(Encoder, Message) ->
-%    #{ lib := EncoderLib } = Encoder,
-%    case erlang:apply(EncoderLib, find_msg_def, [Message]) of
-%        error ->
-%            logger:debug(
-%                "Couldn't find message ~p for encoder ~p, assuming encoder is ~p!~n",
-%                [Message, EncoderLib, ?DEFAULT_ENCODER]
-%            ),
-%            ?DEFAULT_ENCODER;
-%        _ ->
-%            EncoderLib
-%    end.
 
 maybe_submsg({msg, _Type}) ->
     % Do nothing to submessages. Provide a helper function somewhere.
