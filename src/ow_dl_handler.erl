@@ -33,7 +33,7 @@ protofiles(FileList) ->
 -spec protofiles([{atom(), map()}], list()) -> list().
 protofiles([], Acc) ->
     Acc;
-protofiles([{_Prefix, #{ app := App}} | T], Acc) ->
+protofiles([{_Prefix, #{app := App}} | T], Acc) ->
     Files = {atom_to_list(App) ++ ".proto", protofile(App)},
     protofiles(T, [Files | Acc]).
 
