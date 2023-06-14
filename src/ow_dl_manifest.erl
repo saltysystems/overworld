@@ -24,7 +24,6 @@ manifest(Req) ->
     % List all registered apps
     Apps = ow_protocol:apps(),
     % Get the list of files
-
     % only support 4
     ClientLibs = [<<"libow4.gd">>],
     ProtoFiles = ClientLibs ++ protofiles(Apps),
@@ -104,7 +103,7 @@ protofiles(FileList) ->
     protofiles(FileList, []).
 protofiles([], Acc) ->
     Acc;
-protofiles([{_Prefix, {AppName, {_Mod, _Fun}}} | T], Acc) ->
+protofiles([{_Prefix, #{app := AppName}} | T], Acc) ->
     % Simple namer
     ProtoName = atom_to_list(AppName),
     Files = list_to_binary(ProtoName ++ ".proto"),
