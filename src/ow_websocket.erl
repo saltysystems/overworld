@@ -70,7 +70,7 @@ websocket_init(State) ->
 websocket_handle({binary, Msg}, Session) ->
     % protocol decoding will reply with an 'ok' for asynchronous messages or
     % will give us a binary to send back to the client
-    case ow_protocol:decode(Msg, Session) of
+    case ow_protocol:route(Msg, Session) of
         % Table of possible returns
         %   ok -> No reply, keep old session
         %   {ok, Session1} -> No reply, update session

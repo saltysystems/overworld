@@ -8,8 +8,20 @@
     write/0,
     pb_to_godot_type/1,
     print/1,
-    print/0
+    print/0,
+    get_encoders/0,
+    load_scripts/1,
+    generate_prefixes/0,
+    generate_signals/0,
+    generate_enums/1,
+    generate_submsgs/1,
+    generate_unmarshall/0,
+    generate_marshall_submsgs/1,
+    generate_marshall/0,
+    generate_router/0
 ]).
+
+-include_lib("eunit/include/eunit.hrl").
 
 -define(TAB, [9]).
 -define(TAB(N),
@@ -21,31 +33,27 @@
 
 write() ->
     file:write_file(
-        "priv/static/libow.gd", ow_binding:print()
+        "priv/static/libow.gd", ow_binding:print(4)
     ).
 
 print() ->
-    print(3).
+    print(4).
 print(Version) ->
-    Ops = [
-        ow_protocol:op_info(X)
-     || X <- ow_protocol:registered_ops()
-    ],
-    Encoders = get_encoders(Ops),
-    Preloads = load_scripts(Ops),
-    Enums = generate_enums(Ops),
-    Signals = generate_signals(Ops, []),
-    Opcodes = generate_opcodes(Ops, []),
-    Router = generate_router(Ops, []),
+    Encoders = get_encoders(),
+    Preloads = load_scripts(Encoders),
+    Enums = generate_enums(Encoders),
+    Signals = generate_signals(),
+    Prefixes = generate_prefixes(),
+    Router = generate_router(),
     Submsgs = [generate_submsgs(E) || E <- Encoders],
-    Unmarshall = generate_unmarshall(Ops, []),
+    Unmarshall = generate_unmarshall(),
     MarshallSubmsgs = [generate_marshall_submsgs(E) || E <- Encoders],
-    Marshall = generate_marshall(Ops, []),
+    Marshall = generate_marshall(),
     Map = #{
         "preloads" => Preloads,
         "constants" => Enums,
         "signals" => Signals,
-        "opcodes" => Opcodes,
+        "prefixes" => Prefixes,
         "router" => Router,
         "submsgs" => Submsgs,
         "unmarshall" => Unmarshall,
@@ -89,27 +97,40 @@ pb_to_godot_type(Type) ->
         _Other -> void
     end.
 
-get_encoders(Ops) ->
-    get_encoders(Ops, []).
-get_encoders([], Acc) ->
-    Acc;
-get_encoders([H | T], Acc) ->
-    E =
-        case maps:get(encoder, H, undefined) of
-            undefined -> overworld_pb;
-            Encoder -> Encoder
+-spec get_encoders() -> list().
+get_encoders() ->
+    % For each RPC, build a list of encoders
+    G = fun(Type) ->
+        RPCs = ow_protocol:rpcs(Type),
+        F = fun(RPC, Acc) ->
+            #{encoder := Encoder} = ow_protocol:rpc(RPC, Type),
+            [Encoder | Acc]
         end,
-    Acc1 =
-        case lists:member(E, Acc) of
-            false ->
-                [E | Acc];
-            true ->
-                Acc
-        end,
-    get_encoders(T, Acc1).
+        lists:foldl(F, [], RPCs)
+    end,
+    ClientEncoders = G(client),
+    ServerEncoders = G(server),
+    % Uniq the list to get the actual encoders used.
+    lists:uniq(ClientEncoders ++ ServerEncoders).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Generate messages and submsgs                                     %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Unpacking the overworld uber object example
+% func unpack_overworld(object):
+%	if object.has_session_beacon():
+%		print("has session beacon")
+%		return unpack_session_beacon(object.get_session_beacon())
+%	elif object.has_gen_response():
+%		print("has gen response")
+%	elif object.has_account_new():
+%		print("has account new")
+
+-spec filter_for_pure_msgs(map()) -> list().
 filter_for_pure_msgs(Encoder) ->
-    MsgList = erlang:apply(Encoder, get_msg_defs, []),
+    #{lib := EncoderLib} = Encoder,
+    MsgList = erlang:apply(EncoderLib, get_msg_defs, []),
     filter_for_pure_msgs(MsgList, []).
 filter_for_pure_msgs([], Acc) ->
     Acc;
@@ -118,9 +139,10 @@ filter_for_pure_msgs([{{enum, _}, _} | Rest], Acc) ->
     filter_for_pure_msgs(Rest, Acc);
 filter_for_pure_msgs([{{msg, Name}, MapList} | Rest], Acc) ->
     Predicate = fun(Map) ->
-        T = maps:get(type, Map),
+        T = maps:get(type, Map, undefined),
         case T of
             {msg, _} -> false;
+            undefined -> false;
             _ -> true
         end
     end,
@@ -133,6 +155,7 @@ filter_for_pure_msgs([{{msg, Name}, MapList} | Rest], Acc) ->
         end,
     filter_for_pure_msgs(Rest, Acc1).
 
+-spec generate_submsgs(map()) -> string().
 generate_submsgs(Encoder) ->
     % Filter for pure messages in this encoder
     Pures = filter_for_pure_msgs(Encoder),
@@ -161,7 +184,8 @@ generate_pure_submsgs(Encoder, [vector2 | Rest], Acc) ->
             ?TAB(2) ++ "return vec\n",
     generate_pure_submsgs(Encoder, Rest, [Signature ++ Body | Acc]);
 generate_pure_submsgs(Encoder, [MessageName | Rest], Acc) ->
-    Defn = erlang:apply(Encoder, fetch_msg_def, [MessageName]),
+    #{lib := EncoderLib} = Encoder,
+    Defn = erlang:apply(EncoderLib, fetch_msg_def, [MessageName]),
     Signature =
         "func unpack_" ++ fix_delim(atom_to_list(MessageName)) ++
             "(object):\n",
@@ -217,208 +241,273 @@ generate_submsg_dict([H | T], Acc) ->
 
 generate_impure_submsgs(Encoder) ->
     Pures = filter_for_pure_msgs(Encoder),
-    AllMessages = erlang:apply(Encoder, get_msg_names, []),
+    #{lib := EncoderLib} = Encoder,
+    AllMessages = erlang:apply(EncoderLib, get_msg_names, []),
     Impures = AllMessages -- Pures,
     generate_impure_submsgs(Encoder, Impures, []).
 generate_impure_submsgs(_Encoder, [], Acc) ->
     Acc;
 generate_impure_submsgs(Encoder, [H | T], Acc) ->
-    Defn = erlang:apply(Encoder, fetch_msg_def, [H]),
+    #{lib := EncoderLib} = Encoder,
+    Defn = erlang:apply(EncoderLib, fetch_msg_def, [H]),
+    % Definition is a list
+    [Inner | _Rest] = Defn,
     Signature =
         "func unpack_" ++ fix_delim(atom_to_list(H)) ++ "(object):\n",
     Body =
-        ?TAB ++ "if typeof(object) == TYPE_ARRAY and object != []:\n" ++
-            ?TAB(2) ++ "var array = []\n" ++
-            ?TAB(2) ++ "for obj in object:\n" ++
-            generate_submsg_body(Defn, "obj", 3, []) ++
-            ?TAB(3) ++ generate_submsg_dict(Defn) ++
-            ?TAB(3) ++ "array.append(dict)\n" ++
-            ?TAB(2) ++ "return array\n" ++
-            ?TAB ++ "elif typeof(object) == TYPE_ARRAY and object == []:\n" ++
-            ?TAB(2) ++ "return []\n" ++
-            ?TAB ++ "else:\n" ++
-            generate_submsg_body(Defn, "object", 2, []) ++
-            ?TAB(2) ++ generate_submsg_dict(Defn) ++
-            ?TAB(2) ++ "return dict\n",
+        case maps:get(fields, Inner, undefined) of
+            undefined ->
+                impure_submsg_body(Defn);
+            Fields ->
+                oneof_body(Fields, EncoderLib) ++ "\n"
+        end,
     generate_impure_submsgs(Encoder, T, Signature ++ Body ++ Acc).
 
-generate_enums(Ops) ->
-    generate_enums(Ops, [], []).
-generate_enums([], _Seen, Acc) ->
-    Acc;
-generate_enums([H | T], Seen, Acc) ->
-    ProtoLib = get_encoder(H),
-    case lists:member(ProtoLib, Seen) of
-        true ->
-            % Already processed this protobuf file, skip
-            generate_enums(T, Seen, Acc);
-        false ->
-            Enums = erlang:apply(ProtoLib, get_enum_names, []),
-            % Process all enums
-            Comment = "# via " ++ atom_to_list(ProtoLib),
-            Acc1 = Acc ++ [Comment] ++ stringify_enums(ProtoLib, Enums),
-            generate_enums(T, [ProtoLib | Seen], Acc1)
-    end.
+impure_submsg_body(Defn) ->
+    ?TAB ++ "if typeof(object) == TYPE_ARRAY and object != []:\n" ++
+        ?TAB(2) ++ "var array = []\n" ++
+        ?TAB(2) ++ "for obj in object:\n" ++
+        generate_submsg_body(Defn, "obj", 3, []) ++
+        ?TAB(3) ++ generate_submsg_dict(Defn) ++
+        ?TAB(3) ++ "array.append(dict)\n" ++
+        ?TAB(2) ++ "return array\n" ++
+        ?TAB ++ "elif typeof(object) == TYPE_ARRAY and object == []:\n" ++
+        ?TAB(2) ++ "return []\n" ++
+        ?TAB ++ "else:\n" ++
+        generate_submsg_body(Defn, "object", 2, []) ++
+        ?TAB(2) ++ generate_submsg_dict(Defn) ++
+        ?TAB(2) ++ "return dict\n".
 
-stringify_enums(ProtoLib, Enums) ->
-    stringify_enums(ProtoLib, Enums, []).
-stringify_enums(_ProtoLib, [], Acc) ->
+% Unpacking the overworld uber object example
+% func unpack_overworld(object):
+%	if object.has_session_beacon():
+%		print("has session beacon")
+%		return unpack_session_beacon(object.get_session_beacon())
+%	elif object.has_gen_response():
+%		print("has gen response")
+%	elif object.has_account_new():
+%		print("has account new")
+
+% TODO: doesn't handle the case of multiple oneofs
+oneof_body(Fields, EncoderLib) ->
+    F =
+        fun
+            (Map, []) ->
+                % Handle the first case separately
+                #{name := Name} = Map,
+                Body =
+                    ?TAB ++ "if object.has_" ++ atom_to_list(Name) ++
+                        "():\n" ++ ?TAB(2) ++ "var d = unpack_" ++
+                        atom_to_list(Name) ++ "(object.get_" ++
+                        atom_to_list(Name) ++ "())\n" ++
+                        emit_signal(Name, EncoderLib),
+                [Body];
+            (Map, Acc) ->
+                #{name := Name} = Map,
+                Body =
+                    ?TAB ++ "elif object.has_" ++ atom_to_list(Name) ++
+                        "():\n" ++ ?TAB(2) ++ "var d = unpack_" ++
+                        atom_to_list(Name) ++ "(object.get_" ++
+                        atom_to_list(Name) ++ "())\n" ++
+                        emit_signal(Name, EncoderLib),
+                [Body | Acc]
+        end,
+    [lists:flatten(lists:reverse(lists:foldl(F, [], Fields)))].
+
+emit_signal(ProtoMsg, EncoderLib) ->
+    ProtoMsgStr = atom_to_list(ProtoMsg),
+    ?TAB(2) ++ "emit_signal('server_" ++ ProtoMsgStr ++ "'," ++
+        dict_fields_to_str(field_info({EncoderLib, ProtoMsg})) ++
+        "\)\n".
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Generate enums                                                    %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+generate_enums(Encoder) ->
+    generate_enums(Encoder, []).
+generate_enums([], Acc) ->
     [Acc];
-stringify_enums(ProtoLib, [H | T], Acc) ->
+generate_enums([Encoder | Rest], Acc) ->
+    #{lib := EncoderLib} = Encoder,
+    Enums = erlang:apply(EncoderLib, get_enum_names, []),
+    % Process all enums
+    Comment = "# via " ++ atom_to_list(EncoderLib) ++ "\n",
+    Acc1 = lists:flatten([
+        Acc | [Comment | stringify_enums(EncoderLib, Enums)]
+    ]),
+    generate_enums(Rest, Acc1).
+
+stringify_enums(EncoderLib, Enums) ->
+    stringify_enums(EncoderLib, Enums, []).
+stringify_enums(_EncoderLib, [], Acc) ->
+    [Acc];
+stringify_enums(EncoderLib, [H | T], Acc) ->
     % E has the structure [{atom(), non_negative_integer()}, ...]
-    EnumName = string:replace(atom_to_list(H), ".", "_"),
-    EncStr = string:titlecase(atom_to_list(ProtoLib)),
+    EnumName = lists:flatten(string:replace(atom_to_list(H), ".", "_")),
+    %logger:notice("EnumName: ~p", [EnumName]),
+    EncStr = string:titlecase(atom_to_list(EncoderLib)),
+    %logger:notice("EncStr: ~p", [EncStr]),
     Prefix = "enum " ++ EnumName ++ " {\n",
-    E = erlang:apply(ProtoLib, fetch_enum_def, [H]),
+    %logger:notice("Prefix: ~p", [Prefix]),
+    E = erlang:apply(EncoderLib, fetch_enum_def, [H]),
     Estr = [
         ?TAB ++ atom_to_list(Name) ++ " = " ++ EncStr ++ "." ++
             atom_to_list(H) ++ "." ++ atom_to_list(Name) ++ ",\n"
      || {Name, _Value} <- E
     ],
+    %logger:notice("Estr: ~p", [Estr]),
     Acc1 = Acc ++ Prefix ++ lists:flatten(Estr) ++ "}\n",
-    stringify_enums(ProtoLib, T, Acc1).
+    %logger:notice("Acc1: ~p", [Acc1]),
+    stringify_enums(EncoderLib, T, Acc1).
 
-get_encoder(Op) ->
-    case ow_rpc:encoder(Op) of
-        undefined ->
-            ?DEFAULT_ENCODER;
-        Encoder ->
-            Encoder
-    end.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Preload Protobuf scripts                                          %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-load_scripts(Ops) ->
-    load_scripts(Ops, [], []).
-load_scripts([], _Seen, Acc) ->
-    lists:reverse(Acc);
-load_scripts([H | T], Seen, Acc) ->
-    case ow_rpc:encoder(H) of
-        undefined ->
-            % do we need to do anthing for the default case?  e.g., ow_pb
-            % TODO: If so, maybe use the get_encoder/1 fun
-            load_scripts(T, Seen, Acc);
-        Encoder ->
-            case lists:member(Encoder, Seen) of
-                false ->
-                    Const =
-                        "const " ++ string:titlecase(atom_to_list(Encoder)) ++
-                            " = preload('",
-                    Script = atom_to_list(Encoder) ++ ".gd')",
-                    Seen1 = [Encoder | Seen],
-                    load_scripts(T, Seen1, [Const ++ Script | Acc]);
-                true ->
-                    load_scripts(T, Seen, Acc)
-            end
-    end.
+load_scripts(Encoders) ->
+    load_scripts(Encoders, []).
+load_scripts([], Acc) ->
+    Acc;
+load_scripts([Encoder | Rest], Acc) ->
+    #{lib := EncoderLib} = Encoder,
+    Const =
+        "const " ++ string:titlecase(atom_to_list(EncoderLib)) ++
+            " = preload('",
+    Script = atom_to_list(EncoderLib) ++ ".gd')",
+    load_scripts(Rest, [Const ++ Script | Acc]).
 
-generate_signals(OpInfo, St0) ->
-    generate_signals(OpInfo, [], St0).
+load_scripts_test() ->
+    E = [
+        #{
+            app => 'overworld',
+            lib => 'overworld_pb',
+            interface => 'ow_msg'
+        },
+        #{
+            app => 'game',
+            lib => 'game_pb',
+            interface => 'game_msg'
+        }
+    ],
+    Results = load_scripts(E),
+    [GameResult, OverworldResult | _Rest] = Results,
+    OverworldTest = "const Overworld_pb = preload('overworld_pb.gd')",
+    ?assertEqual(OverworldTest, OverworldResult),
+    GameTest = "const Game_pb = preload('game_pb.gd')",
+    ?assertEqual(GameTest, GameResult).
 
-generate_signals([], _Seen, St0) ->
-    lists:reverse(St0);
-generate_signals([OpInfo | Rest], SignalsSeen0, St0) ->
-    % Server ---> Client
-    Encoder = ow_rpc:encoder(OpInfo),
-    MsgFromServer = ow_rpc:s2c_call(OpInfo),
-    case lists:member(MsgFromServer, SignalsSeen0) of
-        true ->
-            % Already seen this signal
-            generate_signals(Rest, SignalsSeen0, St0);
-        false ->
-            St1 = next_signal(MsgFromServer, Encoder, St0),
-            SignalsSeen1 = [MsgFromServer | SignalsSeen0],
-            generate_signals(Rest, SignalsSeen1, St1)
-    end.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Setup Godot signaling                                             %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-next_signal(MsgFromServer, Encoder, St0) when
-    Encoder == undefined; MsgFromServer == undefined
-->
-    % If there's no msg to be decoded, there's no relevant signal to send.
-    % TODO: verify this
-    %Signal = "signal " ++ atom_to_list(MsgFromServer),
-    St0;
-next_signal(MsgFromServer, Encoder, St0) ->
+generate_signals() ->
+    Type = client,
+    RPCs = ow_protocol:rpcs(Type),
+    F = fun(RPC, Acc) ->
+        #{encoder := Encoder} = ow_protocol:rpc(RPC, Type),
+        #{lib := EncoderLib} = Encoder,
+        [next_signal(RPC, EncoderLib) | Acc]
+    end,
+    lists:foldl(F, [], RPCs).
+
+next_signal(RPC, EncoderLib) ->
     F =
-        "(" ++ untyped_fields_to_str(field_info({Encoder, MsgFromServer})) ++
+        "(" ++ untyped_fields_to_str(field_info({EncoderLib, RPC})) ++
             ")",
-    Signal = "signal server_" ++ atom_to_list(MsgFromServer) ++ F,
-    [Signal | St0].
+    "signal server_" ++ atom_to_list(RPC) ++ F.
 
-generate_opcodes(Ops, St0) ->
-    next_opcode(Ops, ok, St0).
+next_signal_test() ->
+    RPC = session_id,
+    Encoder = overworld_pb,
+    Expected = "signal server_session_id(id)",
+    ?assertEqual(next_signal(RPC, Encoder), Expected).
 
-next_opcode([], ok, St0) ->
-    lists:reverse(St0);
-next_opcode([OpInfo | Rest], ok, St0) ->
-    OpCode = ow_rpc:opcode(OpInfo),
-    OpName = opcode_name_string(OpInfo),
-    %Op =
-    %    string:to_upper(OpName) ++ " = " ++
-    %        "bytepack(" ++ OpString ++ "),",
-    OpPacked = erl_bin_to_godot(OpCode),
-    Comment = "0x" ++ integer_to_list(OpCode, 16),
-    Op = string:to_upper(OpName) ++ " = " ++ OpPacked ++ ", # " ++ Comment,
-    next_opcode(Rest, ok, [Op | St0]).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Setup Packet Prefixes                                             %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-generate_router(Operation, St0) ->
-    generate_router(Operation, [], St0).
+generate_prefixes() ->
+    Apps = ow_protocol:apps(),
+    F =
+        fun({Prefix, #{app := AppName}}, AccIn) ->
+            AppString = atom_to_list(AppName),
+            %PrefixPacked = integer_to_list(Prefix),
+            [PrefixPacked] = erl_bin_to_godot(Prefix),
+            Comment = "0x" ++ integer_to_list(Prefix, 16),
+            Op =
+                ?TAB ++ string:to_upper(AppString) ++ " = " ++ PrefixPacked ++
+                    ", # " ++ Comment ++ "\n",
+            Op ++ AccIn
+        end,
+    [chomp(lists:flatten(lists:foldl(F, [], Apps)))].
 
-generate_router([], Routes, St0) ->
-    St0 ++ Routes;
-generate_router([OpInfo | Rest], Routes, St0) ->
-    OpName = opcode_name_string(OpInfo),
-    Op =
-        "OpCode." ++ string:to_upper(OpName) ++ ":\n" ++
-            ?TAB(3) ++ "_server_" ++ OpName ++
-            "(payload)",
-    generate_router(Rest, Routes, [Op | St0]).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Setup Packet Router                                               %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-generate_unmarshall([], St0) ->
-    St0;
-generate_unmarshall([OpInfo | Rest], St0) ->
-    ServerMsg = ow_rpc:s2c_call(OpInfo),
-    Encoder = correct_encoder(ow_rpc:encoder(OpInfo), ServerMsg),
-    %FunStr = opcode_name_string(OpInfo),
-    OpFun = rpc_name(OpInfo),
-    St1 = write_function(ServerMsg, OpFun, Encoder, St0),
-    generate_unmarshall(Rest, St1).
+generate_router() ->
+    Apps = ow_protocol:apps(),
+    F =
+        fun({_Prefix, #{app := AppName}}, AccIn) ->
+            AppString = atom_to_list(AppName),
+            Op =
+                ?TAB(2) ++ "Prefix." ++ string:to_upper(AppString) ++ ":\n" ++
+                    ?TAB(3) ++ "_server_" ++ AppString ++ "(payload)\n",
+            [Op, AccIn]
+        end,
+    [chomp(lists:flatten(lists:foldl(F, [], Apps)))].
 
-write_function(undefined, ClientCall, _Encoder, St0) ->
-    % There's no sensible message to unpack or handler to write.
-    % We still need to make a handler that can understand the opcode because
-    % the message router expects one.
-    ClientCallStr = atom_to_list(ClientCall),
-    Op =
-        "func " ++ "_server_" ++ ClientCallStr ++ "(_packet):\n" ++
-            ?TAB ++ "print('[WARN] Received a " ++
-            ClientCallStr ++ " packet')\n" ++
-            ?TAB ++ "return\n",
-    [Op | St0];
-write_function(ProtoMsg, ClientCall, Encoder, St0) ->
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Generate functions for unmarshalling server data                  %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Example from GDScript:
+% -----------------------
+% func _server_overworld(packet):
+%	print("Packet is: ", packet)
+%	var m = Overworld_new_pb.overworld.new()
+%	m.from_bytes(packet)
+%	print(m)
+%	var d = {}
+%	d = unpack_overworld(m)
+%	print(d)
+
+generate_unmarshall() ->
+    Apps = ow_protocol:app_names(),
+    G = fun(AppName, Acc) ->
+        % TODO: Add a test for the encoder/0 function in the app for
+        %       non-standard protobuf names
+        Encoder = list_to_existing_atom(atom_to_list(AppName) ++ "_pb"),
+        [write_app_function(AppName, Encoder) | Acc]
+    end,
+    AppUnpack = lists:foldl(G, [], Apps),
+    [lists:flatten(AppUnpack)].
+
+write_app_function(App, Encoder) ->
     EncStr = string:titlecase(atom_to_list(Encoder)),
-    ClientCallStr = atom_to_list(ClientCall),
-    ProtoMsgStr = atom_to_list(ProtoMsg),
-    Op =
-        "func " ++ "_server_" ++ ClientCallStr ++ "(packet):\n" ++
-            ?TAB ++ "if debug:\n" ++
-            ?TAB(2) ++ "print('[DEBUG] Processing a " ++ ClientCallStr ++
-            " packet')\n" ++
-            ?TAB ++ "var m = " ++ EncStr ++ "." ++ ProtoMsgStr ++
-            ".new()\n" ++
-            ?TAB ++ "var result_code = m.from_bytes(packet)\n" ++
-            ?TAB ++ "if result_code != " ++ EncStr ++
-            ".PB_ERR.NO_ERRORS:\n" ++
-            ?TAB(2) ++ "print('[CRITICAL] Error decoding new " ++
-            ClientCallStr ++ " packet')\n" ++
-            ?TAB(2) ++ "return\n",
-    Vars = unmarshall_var({Encoder, ProtoMsg}),
-    Signal =
-        ?TAB ++ "emit_signal('server_" ++ ProtoMsgStr ++ "'," ++
-            dict_fields_to_str(field_info({Encoder, ProtoMsg})) ++
-            "\)\n\n",
-    [Op ++ Vars ++ Signal | St0].
+    ProtoMsgStr = atom_to_list(App),
+    "func " ++ "_server_" ++ ProtoMsgStr ++ "(packet):\n" ++
+        ?TAB ++ "if debug:\n" ++
+        ?TAB(2) ++ "print('[DEBUG] Processing a " ++ ProtoMsgStr ++
+        " packet')\n" ++
+        ?TAB ++ "var m = " ++ EncStr ++ "." ++ ProtoMsgStr ++
+        ".new()\n" ++
+        ?TAB ++ "var result_code = m.from_bytes(packet)\n" ++
+        ?TAB ++ "if result_code != " ++ EncStr ++
+        ".PB_ERR.NO_ERRORS:\n" ++
+        ?TAB(2) ++ "print('[CRITICAL] Error decoding new " ++
+        ProtoMsgStr ++ " packet')\n" ++
+        ?TAB(2) ++ "return\n" ++
+        ?TAB ++ "unpack_" ++ ProtoMsgStr ++ "(m)\n".
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Generate functions for marshalling submsgs                        %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 generate_marshall_submsgs(Encoder) ->
-    AllMessages = erlang:apply(Encoder, get_msg_names, []),
+    #{lib := EncoderLib} = Encoder,
+    AllMessages = erlang:apply(EncoderLib, get_msg_names, []),
     generate_marshall_submsgs(AllMessages, Encoder, []).
 generate_marshall_submsgs([], _Encoder, Acc) ->
     Acc;
@@ -429,7 +518,8 @@ generate_marshall_submsgs([vector2 | T], Encoder, Acc) ->
             ?TAB ++ "ref.set_y(obj.y)\n",
     generate_marshall_submsgs(T, Encoder, Signature ++ Body ++ Acc);
 generate_marshall_submsgs([MsgName | T], Encoder, Acc) ->
-    Defn = erlang:apply(Encoder, fetch_msg_def, [MsgName]),
+    #{lib := EncoderLib} = Encoder,
+    Defn = erlang:apply(EncoderLib, fetch_msg_def, [MsgName]),
     NameStr = fix_delim(atom_to_list(MsgName)),
     Signature = "func pack_" ++ NameStr ++ "(obj, ref):\n",
     Body = marshall_submsg_body(Defn, []),
@@ -451,73 +541,53 @@ marshall_submsg_body([#{name := Name} | T], Acc) ->
     Body = ?TAB ++ "ref.set_" ++ NameStr ++ "(obj." ++ NameStr ++ ")\n",
     marshall_submsg_body(T, Body ++ Acc).
 
-generate_marshall([], St0) ->
-    lists:reverse(St0);
-generate_marshall(
-    [OpInfo | Rest], St0
-) ->
-    case ow_rpc:c2s_handler(OpInfo) of
-        undefined ->
-            % No message to pack
-            generate_marshall(Rest, St0);
-        {_, ClientMsg, _} ->
-            FunStr = opcode_name_string(OpInfo),
-            Encoder = ow_rpc:encoder(OpInfo),
-            QOS =
-                case ow_rpc:qos(OpInfo) of
-                    undefined -> "reliable";
-                    Type -> atom_to_list(Type)
-                end,
-            Channel =
-                case ow_rpc:channel(OpInfo) of
-                    undefined -> "0";
-                    Number -> integer_to_list(Number)
-                end,
-            Op =
-                case Encoder of
-                    undefined ->
-                        % define an empty message for ping
-                        "func " ++ FunStr ++ "():\n" ++
-                            ?TAB ++ "_send_message([], OpCode." ++
-                            string:to_upper(FunStr) ++ ", '" ++ QOS ++
-                            "', " ++ Channel ++ ")\n" ++
-                            ?TAB ++ "if debug:\n" ++
-                            ?TAB(2) ++ "print('[INFO] Sent a " ++
-                            FunStr ++
-                            " packet')\n\n";
-                    _ ->
-                        % Allow the client message name to be overriden, optionally
-                        ProtoMsg =
-                            case ow_rpc:c2s_proto(OpInfo) of
-                                % If there's no override specified, just
-                                % go with the name of the handler as the
-                                % name of the message
-                                undefined -> ClientMsg;
-                                Proto -> Proto
-                            end,
-                        Fields = field_info({Encoder, ProtoMsg}),
-                        FieldStr = fields_to_str(Fields),
-                        EncStr = string:titlecase(atom_to_list(Encoder)),
-                        "func " ++ FunStr ++ "(" ++ FieldStr ++ "):\n" ++
-                            ?TAB ++ "var m = " ++ EncStr ++ "." ++
-                            atom_to_list(ProtoMsg) ++
-                            ".new()\n" ++
-                            set_new_parameters(ProtoMsg, Encoder) ++
-                            %set_parameters(Fields, Encoder) ++
-                            ?TAB ++ "var payload = m.to_bytes()\n" ++
-                            ?TAB ++ "_send_message(payload, OpCode." ++
-                            string:to_upper(FunStr) ++ ", '" ++ QOS ++
-                            "', " ++ Channel ++ ")\n" ++
-                            ?TAB ++ "if debug:\n" ++
-                            ?TAB(2) ++ "print('[INFO] Sent a " ++
-                            FunStr ++
-                            " packet')\n\n"
-                end,
-            generate_marshall(Rest, [Op | St0])
-    end.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Generate functions for marshalling msgs                           %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Example GDScript for encoding
+%func session_id_req():
+%	var m = Overworld_pb.overworld.new()
+%	var n = m.new_session_id_req()
+%	n.set_version(1)
+%	var payload = m.to_bytes()
+%	_send_message(payload, Prefix.OVERWORLD, 'reliable', 0)
+%	if debug:
+%		print('[INFO] Sent a session_id_req packet')
+
+generate_marshall() ->
+    Type = server,
+    RPCs = ow_protocol:rpcs(Type),
+    F = fun(RPC, Acc) ->
+        #{encoder := Encoder, qos := QOS, channel := Channel} =
+            ow_protocol:rpc(RPC, Type),
+        #{app := App, lib := EncoderLib} = Encoder,
+        FunStr = atom_to_list(RPC),
+        Fields = field_info({EncoderLib, RPC}),
+        FieldStr = fields_to_str(Fields),
+        EncoderBare = erlang:atom_to_list(App),
+        EncoderPrefix = string:to_upper(EncoderBare),
+        EncoderTitle = string:titlecase(atom_to_list(EncoderLib)),
+        Func =
+            "func " ++ FunStr ++ "(" ++ FieldStr ++ "):\n" ++
+                ?TAB ++ "var m = " ++ EncoderTitle ++ "." ++
+                EncoderBare ++ ".new()\n" ++
+                ?TAB ++ "var n = m.new_" ++ FunStr ++ "()\n" ++
+                set_new_parameters(RPC, Encoder) ++
+                ?TAB ++ "var payload = m.to_bytes()\n" ++
+                ?TAB ++ "_send_message(payload, Prefix." ++ EncoderPrefix ++
+                ", '" ++ atom_to_list(QOS) ++ "', " ++
+                integer_to_list(Channel) ++ ")\n" ++
+                ?TAB ++ "if debug:\n" ++
+                ?TAB(2) ++ "print('[INFO] Send a " ++ FunStr ++
+                " packet')\n\n",
+        [Func | Acc]
+    end,
+    [lists:flatten(lists:foldl(F, [], RPCs))].
 
 set_new_parameters(ClientMsg, Encoder) ->
-    Defn = erlang:apply(Encoder, fetch_msg_def, [ClientMsg]),
+    #{lib := EncoderLib} = Encoder,
+    Defn = erlang:apply(EncoderLib, fetch_msg_def, [ClientMsg]),
     parameter_body(Defn, []).
 parameter_body([], Acc) ->
     Acc;
@@ -525,7 +595,7 @@ parameter_body([#{name := Name, type := {msg, SubMsg}} | T], Acc) ->
     NameStr = atom_to_list(Name),
     B =
         ?TAB ++ "pack_" ++ atom_to_list(SubMsg) ++ "(" ++ NameStr ++
-            ", m.new_" ++
+            ", n.new_" ++
             NameStr ++ "())\n",
     parameter_body(T, B ++ Acc);
 parameter_body([#{name := Name, occurrence := Occurrence} | T], Acc) ->
@@ -539,7 +609,7 @@ parameter_body([#{name := Name, occurrence := Occurrence} | T], Acc) ->
                     "\n" ++
                     ?TAB ++ "if " ++ atom_to_list(Name) ++ ":\n" ++ ?TAB ++
                     ?TAB ++
-                    "m.set_" ++ atom_to_list(Name) ++ "(" ++
+                    "n.set_" ++ atom_to_list(Name) ++ "(" ++
                     atom_to_list(Name) ++
                     ")\n";
             repeated ->
@@ -548,7 +618,7 @@ parameter_body([#{name := Name, occurrence := Occurrence} | T], Acc) ->
                     ?TAB ++ ?TAB ++ "m.add_" ++ atom_to_list(Name) ++
                     "(item)\n";
             _ ->
-                ?TAB ++ "m.set_" ++ atom_to_list(Name) ++ "(" ++
+                ?TAB ++ "n.set_" ++ atom_to_list(Name) ++ "(" ++
                     atom_to_list(Name) ++ ")\n"
         end,
     parameter_body(T, B ++ Acc).
@@ -656,9 +726,8 @@ untyped_fields_to_str([{N, _T, _O} | Tail], Acc) ->
 % i.e., ping
 field_info({undefined, _ProtoMsg}) ->
     field_info([], []);
-field_info({ProtoLib, ProtoMsg}) ->
-    E = correct_encoder(ProtoLib, ProtoMsg),
-    Defs = erlang:apply(E, fetch_msg_def, [ProtoMsg]),
+field_info({EncoderLib, ProtoMsg}) ->
+    Defs = erlang:apply(EncoderLib, fetch_msg_def, [ProtoMsg]),
     field_info(Defs, []).
 
 field_info([], Acc) ->
@@ -669,61 +738,6 @@ field_info([H | T], Acc) ->
     Occurrence = maps:get(occurrence, H),
     Acc1 = [{Name, Type, Occurrence} | Acc],
     field_info(T, Acc1).
-
-unmarshall_var({ProtoLib, ProtoMsg}) ->
-    unmarshall_var(
-        field_info({ProtoLib, ProtoMsg}), ProtoMsg, ProtoLib, []
-    ).
-unmarshall_var([], _ProtoMsg, _ProtoLib, Acc) ->
-    Acc;
-unmarshall_var([{_F, _T, _O} | _Rest], ProtoMsg, ProtoLib, Acc) ->
-    V =
-        ?TAB ++ "var d = {}\n" ++ ?TAB ++ "d = unpack_" ++
-            atom_to_list(ProtoMsg) ++ "(m)\n",
-    unmarshall_var([], ProtoMsg, ProtoLib, Acc ++ V).
-
-opcode_name_string(OpInfo) ->
-    OpCode = ow_rpc:opcode(OpInfo),
-    case ow_rpc:c2s_handler(OpInfo) of
-        {_M, F, _A} ->
-            atom_to_list(F);
-        undefined ->
-            % Try the next best guess
-            case ow_rpc:s2c_call(OpInfo) of
-                undefined -> "undefined_" ++ integer_to_list(OpCode);
-                Call -> atom_to_list(Call)
-            end
-    end.
-
-rpc_name(OpInfo) ->
-    OpCode = ow_rpc:opcode(OpInfo),
-    case ow_rpc:c2s_handler(OpInfo) of
-        {_M, F, _A} ->
-            F;
-        undefined ->
-            % Try the next best guess
-            case ow_rpc:s2c_call(OpInfo) of
-                undefined -> "undefined_" ++ integer_to_list(OpCode);
-                Call -> Call
-            end
-    end.
-
-% Make a best guess at a fall through for the encoder. I'm not sure I like this so it's not part of the main RPC module.
-correct_encoder(undefined, _) ->
-    undefined;
-correct_encoder(_, undefined) ->
-    undefined;
-correct_encoder(Encoder, Message) ->
-    case erlang:apply(Encoder, find_msg_def, [Message]) of
-        error ->
-            logger:debug(
-                "Couldn't find message ~p for encoder ~p, assuming encoder is ~p!~n",
-                [Message, Encoder, ?DEFAULT_ENCODER]
-            ),
-            ?DEFAULT_ENCODER;
-        _ ->
-            Encoder
-    end.
 
 maybe_submsg({msg, _Type}) ->
     % Do nothing to submessages. Provide a helper function somewhere.
@@ -742,3 +756,6 @@ erl_bin_to_godot(Bin) ->
         true ->
             io_lib:format("~p", [B])
     end.
+
+chomp(String) ->
+    lists:droplast(String).

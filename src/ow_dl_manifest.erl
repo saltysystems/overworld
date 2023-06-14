@@ -22,16 +22,11 @@ init(Req, State) ->
 
 manifest(Req) ->
     % List all registered apps
-    Apps = ow_protocol:registered_apps(),
+    Apps = ow_protocol:apps(),
     % Get the list of files
-    ClientLib =
-        case godot_client_lib_version(Req) of
-            3 ->
-                <<"libow3.gd">>;
-            4 ->
-                <<"libow4.gd">>
-        end,
-    ProtoFiles = [ClientLib | protofiles(Apps)],
+    % only support 4
+    ClientLibs = [<<"libow4.gd">>],
+    ProtoFiles = ClientLibs ++ protofiles(Apps),
     % Encode the list via jsone
     Manifest = jsone:encode(ProtoFiles),
     cowboy_req:reply(
@@ -45,6 +40,19 @@ manifest(Req) ->
         Req
     ).
 
+send_file([{<<"file">>, <<"WebSocketClient.gd">>}], Req) ->
+    PrivDir = code:priv_dir(overworld),
+    {ok, WSClient} = file:read_file(PrivDir ++ "static/WebSocketClient.gd"),
+    cowboy_req:reply(
+        200,
+        #{
+            <<"content-type">> => <<"text/plain">>,
+            <<"content-disposition">> =>
+                <<"attachment; filename=WebSocketClient.gd">>
+        },
+        WSClient,
+        Req
+    );
 send_file([{<<"file">>, <<"libow3.gd">>}], Req) ->
     ClientAPI = ow_binding:print(3),
     cowboy_req:reply(
@@ -95,8 +103,10 @@ protofiles(FileList) ->
     protofiles(FileList, []).
 protofiles([], Acc) ->
     Acc;
-protofiles([H | T], Acc) ->
-    Files = list_to_binary(atom_to_list(H) ++ ".proto"),
+protofiles([{_Prefix, #{app := AppName}} | T], Acc) ->
+    % Simple namer
+    ProtoName = atom_to_list(AppName),
+    Files = list_to_binary(ProtoName ++ ".proto"),
     protofiles(T, [Files | Acc]).
 
 % return the path of the proto file for the given application
@@ -108,15 +118,4 @@ protofile(App) ->
     case file:read_file(F) of
         {ok, Proto} -> Proto;
         _ -> error
-    end.
-
--spec godot_client_lib_version(map()) -> 3 | 4.
-godot_client_lib_version(#{headers := #{<<"user-agent">> := UserAgent}}) ->
-    % TODO: Improve me
-    case string:find(UserAgent, <<"GodotEngine/4">>) of
-        nomatch ->
-            % Assume Godot 3.x
-            3;
-        _ ->
-            4
     end.

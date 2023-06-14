@@ -8,7 +8,7 @@ init(Req, State) ->
     logger:info("Got a request for API package from ~p", [IP]),
     % Compile the latest code
     ClientAPI = ow_binding:print(),
-    Apps = ow_protocol:registered_apps(),
+    Apps = ow_protocol:apps(),
     ProtoFiles = protofiles(Apps),
     {ok, {"file", Zip}} = zip:create(
         "file", [{"libow.gd", ClientAPI} | ProtoFiles], [memory]
@@ -30,10 +30,11 @@ init(Req, State) ->
 protofiles(FileList) ->
     protofiles(FileList, []).
 
+-spec protofiles([{atom(), map()}], list()) -> list().
 protofiles([], Acc) ->
     Acc;
-protofiles([H | T], Acc) ->
-    Files = {atom_to_list(H) ++ ".proto", protofile(H)},
+protofiles([{_Prefix, #{app := App}} | T], Acc) ->
+    Files = {atom_to_list(App) ++ ".proto", protofile(App)},
     protofiles(T, [Files | Acc]).
 
 % return the path of the proto file for the given application
