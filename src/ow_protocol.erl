@@ -16,16 +16,14 @@
 -export([
     start/0,
     stop/0,
-    register_rpc/1,
-    register_app/1,
-    register_app/2,
+    register/1,
     apps/0,
     app_names/0,
     prefix/1,
     rpc/2,
     rpcs/1,
     route/2,
-    handler/1,
+    router/1,
     response/1,
     response/2
 ]).
@@ -63,33 +61,17 @@ start() ->
 stop() ->
     gen_server:stop(?SERVER).
 
-%%-------------------------------------------------------------------------
-%% @doc Register a new Erlang application with Overworld. This is required
-%%      for Overworld to generate a downloadable zips of protobuf, etc
-%%      files.  Returns {ok, NewState} on success and {{error, Reason},
-%%      State}} if the registration fails.
-%% @end
-%%-------------------------------------------------------------------------
--spec register_app(pos_integer(), {atom(), {atom(), atom()}}) ->
+%%%-------------------------------------------------------------------------
+%%% @doc Register a new game application with Overworld. This is required
+%%%      for Overworld to generate a downloadable zips of protobuf, etc
+%%%      files.  Returns {ok, NewState} on success and {{error, Reason},
+%%%      State}} if the registration fails.
+%%% @end
+%%%-------------------------------------------------------------------------
+-spec register(map()) ->
     {reply, ok | {error, atom()}, map()}.
-register_app(Prefix, Application) ->
-    gen_server:call(?MODULE, {register_app, Prefix, Application}).
-
--spec register_app({atom(), {atom(), atom()}}) ->
-    {reply, ok | {error, atom()}, map()}.
-register_app(Application) ->
-    gen_server:call(?MODULE, {register_app, Application}).
-
-%%-------------------------------------------------------------------------
-%% @doc Register a new opcode and associated callback function for Module.
-%%      Returns {ok, NewState} on success and {{error, Reason}, State}} if
-%%      the registration fails.
-%% @end
-%%-------------------------------------------------------------------------
--spec register_rpc(atom()) -> {reply, ok | {error, atom()}, map()}.
-register_rpc(Module) ->
-    logger:info("Registering callbacks for : ~p~n", [Module]),
-    gen_server:call(?MODULE, {register_rpc, Module}).
+register(App) ->
+    gen_server:call(?MODULE, {register, App}).
 
 %%-------------------------------------------------------------------------
 %% @doc Encode a general response
@@ -128,7 +110,7 @@ response(error, Msg) ->
 %%      decoder module definition
 %% @end
 %%-------------------------------------------------------------------------
--spec apps() -> [{non_neg_integer(), {atom(), {atom(), atom()}}}].
+-spec apps() -> [{non_neg_integer(), map()}].
 apps() ->
     gen_server:call(?MODULE, apps).
 
@@ -175,21 +157,22 @@ rpc(RPC, Type) ->
     ow_session:net_msg().
 route(<<Prefix:16, Msg/binary>>, Session) ->
     % Get the decoder M/F for a given Overworld application
-    case ow_protocol:handler(Prefix) of
+    case ow_protocol:router(Prefix) of
         false ->
-            logger:notice("No handler for prefix: 0x~.16b", [Prefix]),
+            logger:notice("No router for prefix: 0x~.16b", [Prefix]),
             logger:notice("The rest of the message: ~p", [Msg]);
-        {_App, {Mod, Fun}} ->
-            % Now call
-            erlang:apply(Mod, Fun, [Msg, Session])
+        Mod ->
+            % Assume this app implements the ow_router behaviour
+            erlang:apply(Mod, decode, [Msg, Session])
     end.
 
 %%-------------------------------------------------------------------------
 %% @doc Return the module and decoder function for a given prefix
 %% @end
 %%-------------------------------------------------------------------------
-handler(Prefix) ->
-    gen_server:call(?MODULE, {handler, Prefix}).
+-spec router(integer()) -> atom().
+router(Prefix) ->
+    gen_server:call(?MODULE, {router, Prefix}).
 
 %%============================================================================
 %% gen_server callbacks
@@ -206,31 +189,31 @@ init([]) ->
     },
     {ok, St0}.
 
-handle_call({register_rpc, Module}, _From, St0) ->
-    % Get list of RPCs to register for Module
-    %Ops0 = maps:get(ops, St0),
-    St1 = reg_rpc(Module, St0),
-    {reply, ok, St1};
-handle_call(
-    {register_app, Prefix, App}, _F, #{apps := Apps} = St0
-) ->
-    % Get list of opcodes to register for Module
-    Apps1 = reg_app(Prefix, App, Apps),
-    {reply, ok, St0#{apps := Apps1}};
-handle_call({register_app, App}, _From, #{apps := Apps} = St0) ->
-    % Get list of opcodes to register for Module
-    Apps1 = reg_app(App, Apps),
-    {reply, ok, St0#{apps := Apps1}};
-handle_call(apps, _From, St0) ->
-    Apps = maps:get(apps, St0),
+handle_call({register, App}, _From, St0) ->
+    % Fold over the list of modules to register them
+    Modules = maps:get(modules, App, []),
+    F = fun(Module, State) ->
+        reg_rpc(Module, State)
+    end,
+    St1 = lists:foldl(F, St0, Modules),
+    % Get the currently registered apps
+    #{apps := Apps0} = St1,
+    Apps1 =
+        case maps:get(prefix, App, undefined) of
+            undefined ->
+                reg_app(App, Apps0);
+            Prefix ->
+                reg_app(Prefix, App, Apps0)
+        end,
+    {reply, ok, St1#{apps := Apps1}};
+handle_call(apps, _From, #{apps := Apps} = St0) ->
     {reply, Apps, St0};
-handle_call({prefix, PrefixName}, _From, St0) ->
-    Apps = maps:get(apps, St0),
-    [Prefix] = [P || {P, {App, _ModFun}} <- Apps, App == PrefixName],
+handle_call({prefix, PrefixName}, _From, #{apps := Apps} = St0) ->
+    %[Prefix] = [P || {P,App} <- Apps, App == PrefixName],
+    [Prefix] = [P || {P, #{app := App}} <- Apps, App == PrefixName],
     {reply, Prefix, St0};
-handle_call(app_names, _From, St0) ->
-    Apps = maps:get(apps, St0),
-    Names = [App || {_P, {App, _ModFun}} <- Apps],
+handle_call(app_names, _From, #{apps := Apps} = St0) ->
+    Names = [App || {_P, #{app := App}} <- Apps],
     {reply, Names, St0};
 handle_call({rpcs, all}, _From, #{c_rpc := C, s_rpc := S} = St0) ->
     Reply = maps:keys(C) ++ maps:keys(S),
@@ -247,11 +230,13 @@ handle_call({rpc, RPC, client}, _From, #{c_rpc := C} = St0) ->
 handle_call({rpc, RPC, server}, _From, #{s_rpc := S} = St0) ->
     Reply = maps:get(RPC, S),
     {reply, Reply, St0};
-handle_call({handler, Prefix}, _From, #{apps := Apps} = St0) ->
+handle_call({router, Prefix}, _From, #{apps := Apps} = St0) ->
     Reply =
         case orddict:is_key(Prefix, Apps) of
             true ->
-                orddict:fetch(Prefix, Apps);
+                App = orddict:fetch(Prefix, Apps),
+                #{router := Router} = App,
+                Router;
             false ->
                 false
         end,
@@ -293,11 +278,11 @@ reg_rpc(Module, #{c_rpc := CRPC, s_rpc := SRPC} = St0) ->
     SRPC1 = maps:merge(ServerMap, SRPC),
     St0#{c_rpc => CRPC1, s_rpc => SRPC1}.
 
--spec reg_app(pos_integer(), {atom(), atom()}, list()) -> list().
+-spec reg_app(pos_integer(), map(), list()) -> list().
 reg_app(Prefix, App, AppList) ->
     % Note that this will bump the next available slot up.
     orddict:store(Prefix, App, AppList).
--spec reg_app({atom(), atom()}, list()) -> list().
+-spec reg_app(map(), list()) -> list().
 reg_app(App, AppList) ->
     % Determine the next available prefix
     Next =
@@ -315,20 +300,24 @@ reg_app(App, AppList) ->
 -spec reg_app_test() -> ok.
 reg_app_test() ->
     Apps0 = orddict:new(),
-    Apps1 = reg_app({ow_test1, hello}, Apps0),
+    Test1 = #{app => test1, router => test1_msg, modules => []},
+    Apps1 = reg_app(Test1, Apps0),
     ?assertEqual(true, orddict:is_key(0, Apps1)),
     % Try adding another
-    Apps2 = reg_app({ow_test2, goodbye}, Apps1),
+    Test2 = #{app => test2, router => test2_msg, modules => []},
+    Apps2 = reg_app(Test2, Apps1),
     ?assertEqual(true, orddict:is_key(1, Apps2)),
     ok.
 
 -spec reg_app_prefix_test() -> ok.
 reg_app_prefix_test() ->
     Apps0 = orddict:new(),
-    Apps1 = reg_app(10, {ow_test1, foo}, Apps0),
+    Test1 = #{app => test1, router => test1_msg, modules => []},
+    Apps1 = reg_app(10, Test1, Apps0),
     ?assertEqual(true, orddict:is_key(10, Apps1)),
     % Try adding another to see if it increments properly
-    Apps2 = reg_app({ow_test2, bar}, Apps1),
+    Test2 = #{app => test2, router => test2_msg, modules => []},
+    Apps2 = reg_app(Test2, Apps1),
     ?assertEqual(true, orddict:is_key(11, Apps2)),
     ok.
 
@@ -438,7 +427,6 @@ inject_encoder_test() ->
     Map = setup_propmap_tests(),
     % ow_app doesn't have anything defined so it ought to generate defaults
     EncMap = inject_encoder('ow_app', Map),
-    logger:notice("EncMap is: ~p", [EncMap]),
     ExpectedFoo = #{
         encoder => #{
             app => ow,
