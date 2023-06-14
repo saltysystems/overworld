@@ -297,16 +297,20 @@ oneof_body(Fields, EncoderLib) ->
                 #{name := Name} = Map,
                 Body =
                     ?TAB ++ "if object.has_" ++ atom_to_list(Name) ++
-                        "():\n" ++ ?TAB(2) ++ "var d = unpack_" ++
+                        "():\n" ++ ?TAB(2) ++ "var d = {}\n" ++
+                        ?TAB(2) ++ "d = unpack_" ++
                         atom_to_list(Name) ++ "(object.get_" ++
                         atom_to_list(Name) ++ "())\n" ++
                         emit_signal(Name, EncoderLib),
                 [Body];
             (Map, Acc) ->
                 #{name := Name} = Map,
+                % TODO: We should refactor this have a single function body
+                %       after the if/elif
                 Body =
                     ?TAB ++ "elif object.has_" ++ atom_to_list(Name) ++
-                        "():\n" ++ ?TAB(2) ++ "var d = unpack_" ++
+                        "():\n" ++ ?TAB(2) ++ "var d = {}\n" ++
+                        ?TAB(2) ++ "d = unpack_" ++
                         atom_to_list(Name) ++ "(object.get_" ++
                         atom_to_list(Name) ++ "())\n" ++
                         emit_signal(Name, EncoderLib),
