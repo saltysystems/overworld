@@ -1,4 +1,4 @@
--module(ow_rpc).
+-module(ow_router).
 
 -export([defaults/0]).
 
