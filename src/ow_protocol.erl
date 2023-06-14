@@ -362,7 +362,7 @@ inject_module_test() ->
 -spec inject_defaults(map()) -> map().
 inject_defaults(PropMap) ->
     F = fun(_Key, Val) ->
-        maps:merge(Val, ow_rpc:defaults())
+        maps:merge(Val, ow_router:defaults())
     end,
     maps:map(F, PropMap).
 
