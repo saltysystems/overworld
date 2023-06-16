@@ -257,7 +257,6 @@ join(ServerRef, Session) ->
 
 -spec part(server_ref(), term(), session()) -> {ok, session()}.
 part(ServerRef, Msg, Session) ->
-    logger:notice("Part called"),
     gen_server:call(ServerRef, ?TAG_I({part, Msg, Session})).
 
 -spec part(server_ref(), session()) -> {ok, session()}.
@@ -549,7 +548,6 @@ add_and_notify(Session0, St0, Status, CbMod, CbData1, Notify) ->
     St1 = St0#state{cb_data = CbData1},
     handle_notify(Notify, St1),
     % Set the player's termination callback
-    logger:notice("Setting termination callback to ~p:part/1", [CbMod]),
     Session2 = ow_session:set_termination_callback(
         {CbMod, part, 1}, Session1
     ),
