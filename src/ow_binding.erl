@@ -290,32 +290,28 @@ impure_submsg_body(Defn) ->
 
 % TODO: doesn't handle the case of multiple oneofs
 oneof_body(Fields, EncoderLib) ->
-    F =
-        fun
-            (Map, []) ->
-                % Handle the first case separately
-                #{name := Name} = Map,
-                Body =
-                    ?TAB ++ "if object.has_" ++ atom_to_list(Name) ++
-                        "():\n" ++ ?TAB(2) ++ "var d = {}\n" ++
-                        ?TAB(2) ++ "d = unpack_" ++
-                        atom_to_list(Name) ++ "(object.get_" ++
-                        atom_to_list(Name) ++ "())\n" ++
-                        emit_signal(Name, EncoderLib),
-                [Body];
-            (Map, Acc) ->
-                #{name := Name} = Map,
-                % TODO: We should refactor this have a single function body
-                %       after the if/elif
-                Body =
-                    ?TAB ++ "elif object.has_" ++ atom_to_list(Name) ++
-                        "():\n" ++ ?TAB(2) ++ "var d = {}\n" ++
-                        ?TAB(2) ++ "d = unpack_" ++
-                        atom_to_list(Name) ++ "(object.get_" ++
-                        atom_to_list(Name) ++ "())\n" ++
-                        emit_signal(Name, EncoderLib),
-                [Body | Acc]
-        end,
+    F = fun(Map, Acc) ->
+        #{name := Name} = Map,
+        NameStr = atom_to_list(Name),
+        RestOfBody =
+            "object.has_" ++ NameStr ++ "():\n" ++
+                ?TAB(2) ++ "if debug:\n" ++
+                ?TAB(3) ++ "print('[DEBUG] Processing a " ++ NameStr ++
+                " packet')\n" ++
+                ?TAB(2) ++ "var d = {}\n" ++
+                ?TAB(2) ++ "d = unpack_" ++ NameStr ++ "(object.get_" ++
+                NameStr ++ "())\n" ++ emit_signal(Name, EncoderLib),
+        % Start the beginning of the conditional with 'if', otherwise
+        % 'elif'
+        Body =
+            case Acc of
+                [] ->
+                    ?TAB ++ "if " ++ RestOfBody;
+                Acc ->
+                    ?TAB ++ "elif " ++ RestOfBody
+            end,
+        [Body | Acc]
+    end,
     [lists:flatten(lists:reverse(lists:foldl(F, [], Fields)))].
 
 emit_signal(ProtoMsg, EncoderLib) ->
@@ -492,9 +488,6 @@ write_app_function(App, Encoder) ->
     EncStr = string:titlecase(atom_to_list(Encoder)),
     ProtoMsgStr = atom_to_list(App),
     "func " ++ "_server_" ++ ProtoMsgStr ++ "(packet):\n" ++
-        ?TAB ++ "if debug:\n" ++
-        ?TAB(2) ++ "print('[DEBUG] Processing a " ++ ProtoMsgStr ++
-        " packet')\n" ++
         ?TAB ++ "var m = " ++ EncStr ++ "." ++ ProtoMsgStr ++
         ".new()\n" ++
         ?TAB ++ "var result_code = m.from_bytes(packet)\n" ++
