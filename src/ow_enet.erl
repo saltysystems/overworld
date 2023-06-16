@@ -51,7 +51,7 @@ handle_cast(_Msg, State) ->
 handle_info({enet, disconnected, remote, _Pid, _When}, State) ->
     #{session := Session, ip := RawIP} = State,
     IP = inet:ntoa(RawIP),
-    logger:info("ENet session ~p disconnected", [IP]),
+    logger:notice("ENet session ~p disconnected", [IP]),
     cleanup_session(Session),
     {stop, normal, State};
 handle_info({enet, Channel, {reliable, Msg}}, State) ->
@@ -91,14 +91,7 @@ channelize_msg(Msg, Channels, {QOS, Channel}) ->
     % Not sure if it's worth implementing any fall-throughs here, better to
     % crash early if someone fat-fingers the QOS or channel number rather than
     % to unexpectedly send reliable,0 messages.
-    ChannelPID =
-        case Channel of
-            undefined ->
-                % Default to channel 0 if undefined
-                maps:get(0, Channels);
-            C ->
-                maps:get(C, Channels)
-        end,
+    ChannelPID = maps:get(Channel, Channels),
     FlatMsg = iolist_to_binary(Msg),
     case QOS of
         reliable ->
@@ -106,10 +99,7 @@ channelize_msg(Msg, Channels, {QOS, Channel}) ->
         unreliable ->
             enet:send_unreliable(ChannelPID, FlatMsg);
         unsequenced ->
-            enet:send_unsequenced(ChannelPID, FlatMsg);
-        undefined ->
-            % Send a reliable packet if nothing defined
-            enet:send_reliable(ChannelPID, FlatMsg)
+            enet:send_unsequenced(ChannelPID, FlatMsg)
     end.
 
 decode_and_reply(Msg, IncomingChannel, {Mod, Fun}, State) ->
