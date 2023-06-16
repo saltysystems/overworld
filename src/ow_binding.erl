@@ -1,9 +1,5 @@
 -module(ow_binding).
 
-% This module generates GDScript code to handle game-specific signaling.  The
-% module in its 3rd major overhaul and shows no signs of being done.  I have no
-% doubt there will be even more to do with Godot 4.0
-
 -export([
     write/0,
     pb_to_godot_type/1,
@@ -612,7 +608,7 @@ parameter_body([#{name := Name, occurrence := Occurrence} | T], Acc) ->
             repeated ->
                 % If it's repeated type, we need to add instead of set
                 ?TAB ++ "for item in " ++ atom_to_list(Name) ++ ":\n" ++
-                    ?TAB ++ ?TAB ++ "m.add_" ++ atom_to_list(Name) ++
+                    ?TAB ++ ?TAB ++ "n.add_" ++ atom_to_list(Name) ++
                     "(item)\n";
             _ ->
                 ?TAB ++ "n.set_" ++ atom_to_list(Name) ++ "(" ++
