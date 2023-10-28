@@ -543,6 +543,7 @@ add_and_notify(Session0, St0, Status, CbMod, CbData1, Notify) ->
                 player_add(undefined, S1),
                 S1;
             _ ->
+                player_add(undefined, Session0),
                 Session0
         end,
     St1 = St0#state{cb_data = CbData1},
