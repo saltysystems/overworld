@@ -40,7 +40,7 @@
 
 -record(session, {
     id :: integer(),
-    pid = undefined :: pid() | undefined,
+    pid :: pid() | undefined,
     serializer :: serializer(),
     authenticated = false :: boolean(),
     % ms
