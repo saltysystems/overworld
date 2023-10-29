@@ -4,7 +4,7 @@
  {<<"cowlib">>,{pkg,<<"cowlib">>,<<"2.11.0">>},1},
  {<<"enet">>,
   {git,"https://github.com/saltysystems/enet.git",
-       {ref,"bfcbf617de401621b4d069393e768a0d697e23cb"}},
+       {ref,"ab93d1a5110609b385d9890ac1a59c437836b749"}},
   0},
  {<<"erlquad">>,
   {git,"https://github.com/g-andrade/erlquad",
