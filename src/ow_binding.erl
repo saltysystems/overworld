@@ -518,6 +518,9 @@ generate_marshall_submsgs([MsgName | T], Encoder, Acc) ->
     Body = marshall_submsg_body(Defn, []),
     generate_marshall_submsgs(T, Encoder, Signature ++ Body ++ Acc).
 
+marshall_submsg_body([], []) -> 
+    % No body, just return 'pass'
+    "pass\n";
 marshall_submsg_body([], Acc) ->
     Acc ++ "\n";
 marshall_submsg_body([#{name := Name, type := {msg, SubMsg}} | T], Acc) ->
