@@ -4,8 +4,9 @@ extends Node
 {{.}}
 {{/preloads}} 
 
-#var _ws_client = WebSocketClient.new()
 var _enet_peer = ENetMultiplayerPeer.new()
+var _ws_peer = WebSocketClient.new()
+var _ws_connected = false
 
 @export var session: Dictionary
 
@@ -103,24 +104,8 @@ func route(packet):
 ############################################################################
 
 func _ready():
-    ## TODO: Fix WebSocket
-	## Connect base signals to get notified of connection open, close, and errors.
-	##_ws_client.connection_closed.connect(_closed)
-	##_ws_client.connection_error.connect(_closed)
-	##_ws_client.connection_established.connect(_connected)
-	## This signal is emitted when not using the Multiplayer API every time
-	## a full packet is received.
-	## Alternatively, you could check get_peer(1).get_available_packets() in a loop.
-	##_ws_client.data_received.connect(_on_data)
 	# Automatically reply to beacons
 	server_session_beacon.connect(self._on_session_beacon)
-
-# Take the host and whether or not its a TLS conncetion
-##func ws_connect(url: String, tls: bool):
-##	_ws_client.verify_tls = tls
-##	print("[INFO] Attempting to connect to ", url)
-##	_ws_client.connect_to_url(url+"/ws")
-##	mode = transport_mode.WEBSOCKET
 
 func enet_connect(ip: String, port: int):
 	print("[INFO] Connecting via ENet to ", ip)
@@ -129,19 +114,35 @@ func enet_connect(ip: String, port: int):
 	# Set mode to ZLIB
 	_enet_peer.host.compress(ENetConnection.COMPRESS_ZLIB)
 
+# Take the host and whether or not its a TLS conncetion
+func ws_connect(address: String, port: int = 4434):
+	var url = "ws://" + address + ":" + str(port) + "/ws"
+	print("[INFO] Connecting via WebSocket to ", url)
+	_websocket_connect(url)
+	
+func wss_connect(address: String, port: int = 4433):
+	var url = "wss://" + address + ":" + str(port) + "/ws"
+	print("[INFO] Connecting via WebSocketSecure to ", url)
+	_websocket_connect(url)
+
+func _websocket_connect(url):
+	_ws_peer.connect_to_url(url)
+	mode = transport_mode.WEBSOCKET
+	emit_signal("server_connected")
+
 func _send_message(payload, opcode, qos, channel):
 	# Create a new packet starting with opcode, append the message if it exists,
 	# then send it across the websocket or ENet connection.
 	# Set the peer mode
 	var peer
 	if mode == transport_mode.WEBSOCKET:
-		var packet = opcode
-		peer = _ws_client
+		var packet = [] + opcode
+		peer = _ws_peer
 		# Construct the packet
 		if payload.is_empty() != true:
 			# Append the payload to the packet if it's nonempty
 			packet.append_array(payload)
-		peer.get_peer(1).put_packet(packet)
+		peer.send(packet)
 	elif mode == transport_mode.ENET:
 		var packet = [] + opcode # TODO: Workaround
 		peer = _enet_peer
@@ -160,10 +161,22 @@ func _send_message(payload, opcode, qos, channel):
 			p.send(channel, packet, flag)
 
 func _process(_delta):
-	##if mode == transport_mode.WEBSOCKET:
-	##	if _ws_client.get_connection_status() == _ws_client.CONNECTION_CONNECTING || _ws_client.get_connection_status() == _ws_client.CONNECTION_CONNECTED:
-	##		_ws_client.poll()
-	if mode == transport_mode.ENET:
+	if mode == transport_mode.WEBSOCKET:
+		_ws_peer.poll()
+		var state = _ws_peer.get_ready_state()
+		if state == WebSocketPeer.STATE_OPEN:
+			if _ws_connected == false:
+				emit_signal("server_connected")
+				_ws_connected = true
+			while _ws_peer.get_available_packet_count():
+				var packet = _ws_peer.get_packet()
+				route(packet)
+		elif state == WebSocketPeer.STATE_CLOSING:
+			# Keep polling to achieve proper close.
+			pass
+		elif state == WebSocketPeer.STATE_CLOSED:
+			emit_signal("server_disconnected")
+	elif mode == transport_mode.ENET:
 		var p = _enet_peer.host.service() # Check for packets
 		if p[0] == ENetConnection.EVENT_CONNECT:
 			emit_signal("server_connected")
