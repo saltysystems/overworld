@@ -120,7 +120,7 @@ func ws_connect(address: String, port: int = 4434):
 	print("[INFO] Connecting via WebSocket to ", url)
 	_websocket_connect(url)
 	
-func wss_connect(address: String, port: int = 4433):
+func wss_connect(address: String, port: int = 4435):
 	var url = "wss://" + address + ":" + str(port) + "/ws"
 	print("[INFO] Connecting via WebSocketSecure to ", url)
 	_websocket_connect(url)
