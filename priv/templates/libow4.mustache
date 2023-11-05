@@ -5,7 +5,7 @@ extends Node
 {{/preloads}} 
 
 var _enet_peer = ENetMultiplayerPeer.new()
-var _ws_peer = WebSocketClient.new()
+var _ws_peer = WebSocketPeer.new()
 var _ws_connected = false
 
 @export var session: Dictionary
