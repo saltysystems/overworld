@@ -154,7 +154,7 @@ rpc(RPC, Type) ->
 %% @end
 %%-------------------------------------------------------------------------
 -spec route(<<_:16, _:_*8>>, ow_session:session()) ->
-    ow_session:net_msg().
+    term().
 route(<<Prefix:16, Msg/binary>>, Session) ->
     % Get the decoder M/F for a given Overworld application
     case ow_protocol:router(Prefix) of
