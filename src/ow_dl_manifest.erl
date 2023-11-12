@@ -53,20 +53,8 @@ send_file([{<<"file">>, <<"WebSocketClient.gd">>}], Req) ->
         WSClient,
         Req
     );
-send_file([{<<"file">>, <<"libow3.gd">>}], Req) ->
-    ClientAPI = ow_binding:print(3),
-    cowboy_req:reply(
-        200,
-        #{
-            <<"content-type">> => <<"text/plain">>,
-            <<"content-disposition">> =>
-                <<"attachment; filename=libow3.gd">>
-        },
-        ClientAPI,
-        Req
-    );
 send_file([{<<"file">>, <<"libow4.gd">>}], Req) ->
-    ClientAPI = ow_binding:print(4),
+    ClientAPI = ow_binding:print(),
     cowboy_req:reply(
         200,
         #{
