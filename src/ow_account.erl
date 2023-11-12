@@ -6,8 +6,12 @@
     login/2
 ]).
 
+%%----------------------------------------------------------------------------
+%% Defines and includes
+%%----------------------------------------------------------------------------
 -include_lib("kernel/include/logger.hrl").
 -include_lib("eunit/include/eunit.hrl").
+-define(MIN_PASSWORD_LENGTH, 8).
 
 %%----------------------------------------------------------------------------
 %% @doc RPC hints for generating client library
@@ -37,6 +41,8 @@ new_account(#{email := Email, password := Password}, Session) ->
         end,
     new_account(Email, Password, IsValid, Session).
 
+-spec new_account(string(), string(), true, ow_session:session()) ->
+    {term(), ow_session:session()}.
 new_account(Email, Password, true, Session) ->
     {Msg, Session1} =
         case ow_db_account:create(Email, Password) of
@@ -136,13 +142,15 @@ login_test() ->
 %% Internal functions
 %%----------------------------------------------------------------------------
 
-% TODO: Use z_stdlib email validator function? Who cares tho really.
+-spec check_valid_email(string()) -> ok | {error, atom()}.
 check_valid_email([_ | _]) ->
     ok;
 check_valid_email(_Email) ->
     {error, invalid_email}.
 
-check_valid_password(Password) when length(Password) >= 8 ->
+check_valid_password(Password) when
+    length(Password) >= ?MIN_PASSWORD_LENGTH
+->
     ok;
 check_valid_password(_Password) ->
     {error, password_too_short}.
