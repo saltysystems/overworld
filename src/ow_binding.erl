@@ -3,7 +3,6 @@
 -export([
     write/0,
     pb_to_godot_type/1,
-    print/1,
     print/0,
     get_encoders/0,
     load_scripts/1,
@@ -24,17 +23,16 @@
     lists:foldl(fun(_N, Acc0) -> [9] ++ Acc0 end, [], lists:seq(0, N - 1))
 ).
 -define(DEFAULT_ENCODER, overworld_pb).
--define(DEFAULT_TEMPLATE_3, "templates/libow3.mustache").
 -define(DEFAULT_TEMPLATE_4, "templates/libow4.mustache").
 
+-spec write() -> ok | {error, Reason} when
+    Reason :: file:posix() | badarg | terminated | system_limit.
 write() ->
     file:write_file(
-        "priv/static/libow.gd", ow_binding:print(4)
+        "priv/static/libow.gd", ow_binding:print()
     ).
 
 print() ->
-    print(4).
-print(Version) ->
     Encoders = get_encoders(),
     Preloads = load_scripts(Encoders),
     Enums = generate_enums(Encoders),
@@ -56,20 +54,41 @@ print(Version) ->
         "marshall_submsgs" => MarshallSubmsgs,
         "marshall" => Marshall
     },
-    T = get_template(Version),
+    T = get_template(),
     bbmustache:compile(T, Map).
 
-get_template(Version) ->
+-spec get_template() -> bbmustache:template().
+get_template() ->
     PrivDir = code:priv_dir(overworld),
-    Template =
-        case Version of
-            3 -> ?DEFAULT_TEMPLATE_3;
-            4 -> ?DEFAULT_TEMPLATE_4
-        end,
+    Template = ?DEFAULT_TEMPLATE_4,
     bbmustache:parse_file(
         PrivDir ++ "/" ++ Template
     ).
 
+-spec pb_to_godot_type(PbType) -> GodotType when
+    PbType ::
+        double
+        | float
+        | int32
+        | int64
+        | uint32
+        | sint32
+        | sint64
+        | fixed32
+        | fixed64
+        | sfixed32
+        | sfixed64
+        | bool
+        | string
+        | bytes
+        | atom(),
+    GodotType ::
+        float
+        | int
+        | bool
+        | 'String'
+        | 'PackedByteArray'
+        | void.
 pb_to_godot_type(Type) ->
     % https://docs.godotengine.org/en/latest/tutorials/scripting/gdscript/gdscript_basics.html
     % All ints are internally handled as int64_t in GDScript (2.0)
