@@ -1,25 +1,41 @@
 %%%-------------------------------------------------------------------
-%% @doc Overworld Public API
+%% @doc Overworld Application
 %% @end
 %%%-------------------------------------------------------------------
 
 -module(ow_app).
-
 -behaviour(application).
-
 -export([start/2, stop/1]).
 
-% status information via JSON API
--export([status/0]).
+-define(PEER_LIMIT, "64").
+-define(CHANNEL_LIMIT, "4").
+-define(ENET_PORT, "4484").
+-define(WS_PORT, "4434").
 
--define(PEER_LIMIT, 64).
--define(CHANNEL_LIMIT, 4).
--define(ENET_PORT, 4484).
--define(ENET_DTLS_PORT, 4485).
--define(WS_PORT, 4434).
--define(WS_TLS_PORT, 4435).
+-spec make_config(map()) -> map().
+make_config(StartArgs) ->
+    % For each default, check for the appropriate environment variable or
+    % define
+    Cfg = #{
+        peer_limit =>
+            list_to_integer(os:getenv("OW_PEER_LIMIT", ?PEER_LIMIT)),
+        channel_limit =>
+            list_to_integer(os:getenv("OW_CHANNEL_LIMIT", ?CHANNEL_LIMIT)),
+        enet_port =>
+            list_to_integer(os:getenv("OW_ENET_PORT", ?ENET_PORT)),
+        ws_port =>
+            list_to_integer(os:getenv("OW_WS_PORT", ?WS_PORT))
+    },
+    maps:merge(Cfg, StartArgs).
 
-start(_StartType, _StartArgs) ->
+-spec start(application:start_type(), map()) -> supervisor:startlink_ret().
+start(_StartType, StartArgs) ->
+    #{
+        ws_port := WsPort,
+        enet_port := EnetPort,
+        peer_limit := PeerLimit,
+        channel_limit := ChannelLimit
+    } = make_config(StartArgs),
     Dispatch = cowboy_router:compile([
         {'_', [
             {"/ws", ow_websocket, []},
@@ -32,19 +48,20 @@ start(_StartType, _StartArgs) ->
     {ok, _} = cowboy:start_clear(
         http,
         [
-            {port, ?WS_PORT},
+            {port, WsPort},
+            % turn off TCP_NODELAY for better game perf
             {nodelay, true}
         ],
         #{env => #{dispatch => Dispatch}}
     ),
     % Start ENet
     Options = [
-        {peer_limit, ?PEER_LIMIT},
-        {channel_limit, ?CHANNEL_LIMIT},
+        {peer_limit, PeerLimit},
+        {channel_limit, ChannelLimit},
         {compression_mode, zlib}
     ],
     Handler = {ow_enet, start, []},
-    enet:start_host(?ENET_PORT, Handler, Options),
+    enet:start_host(EnetPort, Handler, Options),
     % Start the OW supervisor
     SuperLink = ow_sup:start_link(),
     % Now register the initial application and modules before returning
@@ -57,14 +74,6 @@ start(_StartType, _StartArgs) ->
     ow_protocol:register(Application),
     SuperLink.
 
+-spec stop(term()) -> ok.
 stop(_State) ->
     ok.
-
-status() ->
-    {ok, Version} = application:get_key(overworld, vsn),
-    {ok, Description} = application:get_key(overworld, description),
-    #{
-        <<"name">> => <<"overworld">>,
-        <<"version">> => erlang:list_to_binary(Version),
-        <<"Description">> => erlang:list_to_binary(Description)
-    }.
