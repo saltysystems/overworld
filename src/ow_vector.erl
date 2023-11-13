@@ -30,8 +30,6 @@
     outer_edges/1,
     is_collision/2,
     aabb/1,
-    test/0,
-    test_intersect/0,
     distance/2,
     component_sort/2,
     ysort/1,
@@ -52,6 +50,7 @@
 add({X1, Y1}, {X2, Y2}) ->
     {X1 + X2, Y1 + Y2}.
 
+-spec subtract(vector2(), vector2()) -> vector2().
 subtract({X1, Y1}, {X2, Y2}) ->
     {X2 - X1, Y2 - Y1}.
 
@@ -108,8 +107,6 @@ edge_direction({X1, Y1}, {X2, Y2}) ->
     % A vector pointing from V1 to V2
     {X2 - X1, Y2 - Y1}.
 
-% This may have duplicate functionality with edges/1
-% TODO: Eliminate the extraneous fun
 -spec vertices_to_edges([vector2(), ...]) -> [vector2(), ...].
 vertices_to_edges(Vertices = [First | _Rest]) ->
     % A list of the edges of the vertices as vectors
@@ -140,7 +137,18 @@ overlap(Projection1, Projection2) ->
     Max2 = lists:last(Proj2Sort),
     (Min1 =< Max2) and (Min2 =< Max1).
 
+-spec is_collision([vector2()], [vector2()]) -> boolean().
 is_collision(Object1, Object2) ->
+    %TODO: Compares edges/1 to vertices_to_edges/1
+    % e.g.:
+    %
+    % 1> Vertices = [{1,2},{2,3},{3,4},{4,5}].
+    % [{1,2},{2,3},{3,4},{4,5}]
+    % 2> ow_vector:edges(Vertices).
+    % [{{4,5},{1,2}},{{3,4},{4,5}},{{2,3},{3,4}},[{1,2},{2,3}]]
+    % 3> ow_vector:vertices_to_edges(Vertices).
+    % [{-3,-3},{1,1},{1,1},{1,1}]
+    % Which is the proper behavior for this algo?
     Edges = vertices_to_edges(Object1) ++ vertices_to_edges(Object2),
     Axes = [normalize(orthogonal(Edge)) || Edge <- Edges],
     Overlaps = [detect_overlaps(Object1, Object2, Axis) || Axis <- Axes],
@@ -154,6 +162,7 @@ detect_overlaps(Object1, Object2, Axis) ->
 % Create an axis-aligned bounding box for the entity. This is NOT the minimum
 % bounding box, but is cheaper to calculate. It also must be recalculated for
 % every rotation of the object.
+-spec aabb([vector2()]) -> [vector2()].
 aabb(Vertices) ->
     XList = [X || {X, _} <- Vertices],
     YList = [Y || {_, Y} <- Vertices],
@@ -174,6 +183,7 @@ aabb(Vertices) ->
 
 % If Pos is a tuple, assume tuple mode
 % If Pos is a map, assume map mode
+-spec translate([vector2()], vector2() | map()) -> [vector2()].
 translate(Object, Pos) when is_tuple(Pos) ->
     {XNew, YNew} = Pos,
     [{X + XNew, Y + YNew} || {X, Y} <- Object];
@@ -184,16 +194,17 @@ translate(Object, Pos) when is_map(Pos) ->
         [#{x => X + XNew, y => Y + YNew} | AccIn]
     end,
     lists:foldl(Fun, [], Object).
-test() ->
-    A = [{0, 0}, {70, 0}, {0, 70}],
-    B = [{70, 70}, {150, 70}, {70, 150}],
-    C = [{30, 30}, {150, 70}, {70, 150}],
-
-    [
-        is_collision(A, B),
-        is_collision(A, C),
-        is_collision(B, C)
-    ].
+%TODO: convert to eunit test
+%test() ->
+%    A = [{0, 0}, {70, 0}, {0, 70}],
+%    B = [{70, 70}, {150, 70}, {70, 150}],
+%    C = [{30, 30}, {150, 70}, {70, 150}],
+%
+%    [
+%        is_collision(A, B),
+%        is_collision(A, C),
+%        is_collision(B, C)
+%    ].
 
 -spec line_of_sight(vector2(), vector2(), vector2(), [vector2()]) ->
     {[vector2()], [vector2()]}.
@@ -220,6 +231,7 @@ line_of_sight(Location, Upper, Lower, Edges) ->
     Edges = visible_edges(Location, Edges, SortedRays),
     {SortedRays, Edges}.
 
+-spec visible_edges(vector2(), [vector2()], [vector2()]) -> [vector2()].
 visible_edges(Location, Edges, Rays) ->
     visible_edges(Location, Edges, Rays, []).
 visible_edges(_Location, _Edges, [], Acc) ->
@@ -320,44 +332,45 @@ intersect({Ax, Ay} = A, B, {Cx, Cy} = C, D, LineType) ->
             end
     end.
 
-test_intersect() ->
-    %TODO : Write proper eunit tests
-    % Check if parallel lines succeed.
-    Ap = {0, 0},
-    Bp = {2, 2},
-    Cp = {2, 0},
-    Dp = {4, 2},
-    % Check if coincidental lines succeed
-    Ac = {0, 0},
-    Bc = {0, 2},
-    Cc = {0, 4},
-    Dc = {0, 6},
-    % Check if crossing lines succeed
-    Ax = {0, 0},
-    Bx = {2, 2},
-    Cx = {2, 0},
-    Dx = {0, 2},
-    % Check if eventually crossing but not right now lines succeed
-    Ae = {0, 0},
-    Be = {1, 1},
-    Ce = {2, 0},
-    De = {2, 2},
-    LineLine = [
-        intersect(Ap, Bp, Cp, Dp, lineline),
-        intersect(Ac, Bc, Cc, Dc, lineline),
-        intersect(Ax, Bx, Cx, Dx, lineline),
-        intersect(Ae, Be, Ce, De, lineline)
-    ],
-    RayLine = [
-        intersect(Ap, Bp, Cp, Dp, rayline),
-        intersect(Ac, Bc, Cc, Dc, rayline),
-        intersect(Ax, Bx, Cx, Dx, rayline),
-        intersect(Ae, Be, Ce, De, rayline)
-    ],
-    io:format("Line intersect results: ~p~n", [LineLine]),
-    io:format("Ray intersect results: ~p~n", [RayLine]).
+% TODO: Convert to eunit test
+%test_intersect() ->
+%    %TODO : Write proper eunit tests
+%    % Check if parallel lines succeed.
+%    Ap = {0, 0},
+%    Bp = {2, 2},
+%    Cp = {2, 0},
+%    Dp = {4, 2},
+%    % Check if coincidental lines succeed
+%    Ac = {0, 0},
+%    Bc = {0, 2},
+%    Cc = {0, 4},
+%    Dc = {0, 6},
+%    % Check if crossing lines succeed
+%    Ax = {0, 0},
+%    Bx = {2, 2},
+%    Cx = {2, 0},
+%    Dx = {0, 2},
+%    % Check if eventually crossing but not right now lines succeed
+%    Ae = {0, 0},
+%    Be = {1, 1},
+%    Ce = {2, 0},
+%    De = {2, 2},
+%    LineLine = [
+%        intersect(Ap, Bp, Cp, Dp, lineline),
+%        intersect(Ac, Bc, Cc, Dc, lineline),
+%        intersect(Ax, Bx, Cx, Dx, lineline),
+%        intersect(Ae, Be, Ce, De, lineline)
+%    ],
+%    RayLine = [
+%        intersect(Ap, Bp, Cp, Dp, rayline),
+%        intersect(Ac, Bc, Cc, Dc, rayline),
+%        intersect(Ax, Bx, Cx, Dx, rayline),
+%        intersect(Ae, Be, Ce, De, rayline)
+%    ],
+%    io:format("Line intersect results: ~p~n", [LineLine]),
+%    io:format("Ray intersect results: ~p~n", [RayLine]).
 
-%-spec edges([vector2()]) -> [vector2()].
+-spec edges([vector2()]) -> [{vector2(), vector2()}].
 edges(Vertices) ->
     edges(Vertices, []).
 edges([], Acc) ->
@@ -375,10 +388,10 @@ edges([_Last | _Rest], Acc) ->
 edges([], _First, Acc) ->
     Acc;
 edges([A, B | Rest], First, Acc) ->
-    Edge = [A, B],
+    Edge = {A, B},
     edges([B | Rest], First, [Edge | Acc]);
 edges([Last], First, Acc) ->
-    Edge = [Last, First],
+    Edge = {Last, First},
     edges([], First, [Edge | Acc]).
 
 % Given a deep list of edges, delete all shared edges, producing only outer
