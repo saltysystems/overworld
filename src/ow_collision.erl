@@ -74,14 +74,21 @@ add_entities_test() ->
     PositionFun = fun(#test_entity{pos = {X, Y}}) -> {X, Y} end,
     add_entities(Entities, PositionFun, Q).
 
-check_area(
-    CheckArea, BoundingBoxFun, Quadtree
-) ->
+-spec check_area(CheckArea, BBoxFun, Quadtree) -> Result when
+    CheckArea :: {Left, Bottom, Right, Top},
+    Top :: number(),
+    Bottom :: number(),
+    Left :: number(),
+    Right :: number(),
+    BBoxFun :: fun(),
+    Quadtree :: erlquad:erlquad_node(),
+    Result :: [{term(), term(), boolean()}].
+check_area(CheckArea, BBoxFun, Quadtree) ->
     UniqObjPairs = get_uniques(CheckArea, Quadtree),
     [
         {Obj1, Obj2,
             ow_vector:is_collision(
-                BoundingBoxFun(Obj1), BoundingBoxFun(Obj2)
+                BBoxFun(Obj1), BBoxFun(Obj2)
             )}
      || [Obj1, Obj2] <- UniqObjPairs
     ].
@@ -132,7 +139,19 @@ check_area_test() ->
 
 % TODO: It may be desireable to have an early-exit version of this, such that
 %       it completes after finding one intersection.
-check_ray({L, B, R, T}, RO, RD, BBoxFun, QuadTree) ->
+-spec check_ray(CheckArea, RO, RD, BBoxFun, QuadTree) -> Result when
+    CheckArea :: {Left, Bottom, Right, Top},
+    Top :: number(),
+    Bottom :: number(),
+    Left :: number(),
+    Right :: number(),
+    RO :: ow_vector:vector2(),
+    RD :: ow_vector:vector2(),
+    BBoxFun :: fun(),
+    QuadTree :: erlquad:erlquad_node(),
+    Result :: [{term(), ow_vector:vector2()}].
+check_ray(CheckArea, RO, RD, BBoxFun, QuadTree) ->
+    {L, B, R, T} = CheckArea,
     % Get the list of objects
     Objects = erlquad:area_query(L, B, R, T, QuadTree),
     % Get all edges
