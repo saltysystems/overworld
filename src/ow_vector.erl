@@ -269,7 +269,8 @@ ray_between({RayX, RayY}, {LowerX, LowerY}, {UpperX, UpperY}) ->
 ray_intersect(A, B, C, D) ->
     intersect(A, B, C, D, rayline).
 
--spec intersect(vector2(), vector2(), vector2(), vector2()) -> false | vector2().
+-spec intersect(vector2(), vector2(), vector2(), vector2()) ->
+    false | vector2().
 intersect(A, B, C, D) ->
     intersect(A, B, C, D, lineline).
 -spec intersect(
