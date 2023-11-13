@@ -3,6 +3,7 @@
 
 -export([init/2]).
 
+-spec init(cowboy_req:req(), any()) -> {ok, cowboy_req:req(), any()}.
 init(Req, State) ->
     #{peer := {IP, _Port}} = Req,
     logger:info("Got a request for API package from ~p", [IP]),
