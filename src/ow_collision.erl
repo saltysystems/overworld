@@ -161,7 +161,7 @@ check_ray(CheckArea, RO, RD, BBoxFun, QuadTree) ->
         E = ow_vector:edges(BBoxFun(Obj)),
         Result = [
             {Obj, ow_vector:ray_intersect(RO, RD, P1, P2)}
-         || [P1, P2] <- E
+         || {P1, P2} <- E
         ],
         Result ++ Acc
     end,
