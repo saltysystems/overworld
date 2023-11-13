@@ -3,6 +3,7 @@
 
 -export([init/2]).
 
+-spec init(cowboy_req:req(), any()) -> {ok, cowboy_req:req(), any()}.
 init(Req, State) ->
     #{peer := {RawIP, _Port}} = Req,
     IP = inet:ntoa(RawIP),
