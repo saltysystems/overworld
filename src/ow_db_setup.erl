@@ -5,8 +5,11 @@
 
 -record(ow_table_ids, {table_name, last_id}).
 
+-spec prepare_db() -> ok | {error, term()}.
 prepare_db() ->
     prepare_db([]).
+
+-spec prepare_db([] | string()) -> ok | {error, term()}.
 prepare_db(Path) ->
     E = mnesia:system_info(tables),
     T = tables(),
