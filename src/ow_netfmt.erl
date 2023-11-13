@@ -9,7 +9,7 @@
 %----------------------------------------------------------------------
 
 -type any_vector() ::
-    ow_vector:vector() | ow_vector:vector3() | ow_vector:vector4().
+    ow_vector:vector2() | ow_vector:vector3() | ow_vector:vector4().
 
 -spec vec2map(any_vector() | [any_vector()]) -> [map()] | map().
 vec2map(Vectors) when is_list(Vectors) ->
