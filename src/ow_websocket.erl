@@ -20,6 +20,9 @@
 %% @doc Handler is initialized for any new connection and logs the foreign IP
 %% @end
 %%---------------------------------------------------------------------------
+
+-spec init(cowboy_req:req(), any()) ->
+    {cowboy_websocket, cowboy_req:req(), any()}.
 init(Req, _St0) ->
     #{peer := {RawIP, _Port}} = Req,
     IP = inet:ntoa(RawIP),
@@ -34,6 +37,7 @@ init(Req, _St0) ->
 %% @doc Terminate callback for cleanup processes
 %% @end
 %%---------------------------------------------------------------------------
+-spec terminate(any(), cowboy_req:req(), any()) -> ok.
 terminate(_Reason, Req, State) ->
     #{peer := {IP, _Port}} = Req,
     logger:notice("~p: client disconnected", [IP]),
@@ -44,7 +48,8 @@ terminate(_Reason, Req, State) ->
             erlang:apply(M, F, [State]);
         _ ->
             ok
-    end.
+    end,
+    ok.
 
 %%---------------------------------------------------------------------------
 %% @doc Set up the initial state of the websocket handler
@@ -53,6 +58,7 @@ terminate(_Reason, Req, State) ->
 %%      (preferably over TLS) is working correctly.
 %% @end
 %%---------------------------------------------------------------------------
+-spec websocket_init(any()) -> {reply, {binary, binary()}, any()}.
 websocket_init(State) ->
     gproc:reg({p, l, client_session}),
     St1 = ow_session:set_pid(self(), State),
@@ -98,6 +104,15 @@ websocket_handle(Frame, State) ->
 %%      process comes into this handler process.
 %% @end
 %%--------------------------------------------------------------------------
+-spec websocket_info({Pid, Type, Msg, Options}, Session) -> Reply when
+    Pid :: pid(),
+    Type :: broadcast | zone_msg,
+    Msg :: binary(),
+    Options :: any(),
+    Session :: ow_session:session(),
+    Reply :: {reply, {binary, Msg1}, Session1},
+    Msg1 :: binary(),
+    Session1 :: ow_session:session().
 websocket_info({_Pid, Type, Msg, _Options}, Session) when
     Type =:= 'broadcast'; Type =:= 'zone_msg'
 ->
