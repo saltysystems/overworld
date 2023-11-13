@@ -40,8 +40,7 @@ start(_StartType, StartArgs) ->
         {'_', [
             {"/ws", ow_websocket, []},
             {"/client/download", ow_dl_handler, []},
-            {"/client/manifest", ow_dl_manifest, []},
-            {"/stats", ow_stats, []}
+            {"/client/manifest", ow_dl_manifest, []}
         ]}
     ]),
     % Start WebSocket/CowBoy
