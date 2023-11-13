@@ -49,7 +49,7 @@
 %% @doc Start the gen_server
 %% @end
 %%-------------------------------------------------------------------------
--spec start() -> {ok, pid()} | ignore | {error, term()}.
+-spec start() -> gen_server:start_ret().
 start() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
