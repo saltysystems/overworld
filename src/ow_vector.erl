@@ -40,77 +40,77 @@
 
 -define(EPSILON, 1.0e-10).
 
--type vector() :: {scalar(), scalar()}.
+-type vector2() :: {scalar(), scalar()}.
 -type vector3() :: {scalar(), scalar(), scalar()}.
 -type vector4() :: {scalar(), scalar(), scalar(), scalar()}.
 -type vector_map() :: #{x => scalar(), y => scalar()}.
 -type scalar() :: number().
 
--export_type([vector/0, vector3/0, vector4/0, vector_map/0, scalar/0]).
+-export_type([vector2/0, vector3/0, vector4/0, vector_map/0, scalar/0]).
 
--spec add(vector(), vector()) -> vector().
+-spec add(vector2(), vector2()) -> vector2().
 add({X1, Y1}, {X2, Y2}) ->
     {X1 + X2, Y1 + Y2}.
 
 subtract({X1, Y1}, {X2, Y2}) ->
     {X2 - X1, Y2 - Y1}.
 
--spec rotate(vector(), scalar()) -> vector().
+-spec rotate(vector2(), scalar()) -> vector2().
 rotate({X, Y}, RotRad) ->
     rotate({X, Y}, RotRad, {0, 0}).
 
--spec rotate(vector(), scalar(), vector()) -> vector().
+-spec rotate(vector2(), scalar(), vector2()) -> vector2().
 rotate({Xv, Yv}, RotRad, {Xp, Yp}) ->
     % v = vertex/vector, p = point
     NewX = Xp + (Xv - Xp) * math:cos(RotRad) - (Yv - Yp) * math:sin(RotRad),
     NewY = Yp + (Xv - Xp) * math:sin(RotRad) + (Yv - Yp) * math:cos(RotRad),
     {NewX, NewY}.
 
--spec rotate_polygon([vector()], scalar()) -> [vector()].
+-spec rotate_polygon([vector2()], scalar()) -> [vector2()].
 rotate_polygon(Vertices, RotRad) ->
     [ow_vector:rotate(Vertex, RotRad) || Vertex <- Vertices].
 
--spec rotate_polygon([vector()], scalar(), vector()) -> [vector()].
+-spec rotate_polygon([vector2()], scalar(), vector2()) -> [vector2()].
 rotate_polygon(Vertices, RotRad, Point) ->
     [ow_vector:rotate(Vertex, RotRad, Point) || Vertex <- Vertices].
 
--spec length_squared(vector()) -> float().
+-spec length_squared(vector2()) -> float().
 length_squared({X, Y}) ->
     math:pow(X, 2) + math:pow(Y, 2).
 
--spec scale(vector(), scalar()) -> vector().
+-spec scale(vector2(), scalar()) -> vector2().
 scale({X, Y}, Scalar) ->
     {X * Scalar, Y * Scalar}.
 
--spec dot(vector(), vector()) -> scalar().
+-spec dot(vector2(), vector2()) -> scalar().
 dot({X1, Y1}, {X2, Y2}) ->
     X1 * X2 + Y1 * Y2.
 
--spec cross(vector(), vector()) -> scalar().
+-spec cross(vector2(), vector2()) -> scalar().
 cross({X1, Y1}, {X2, Y2}) ->
     % the 2D cross product is a mathematical hack :)
     (X1 * Y2) - (Y1 * X2).
 
--spec normalize(vector()) -> vector().
+-spec normalize(vector2()) -> vector2().
 normalize({X1, Y1}) ->
     N = math:sqrt(
         math:pow(X1, 2) + math:pow(Y1, 2)
     ),
     {X1 / N, Y1 / N}.
 
--spec orthogonal(vector()) -> vector().
+-spec orthogonal(vector2()) -> vector2().
 orthogonal({X1, Y1}) ->
     % A vector orthogonal to the input vector
     {-Y1, X1}.
 
--spec edge_direction(vector(), vector()) -> vector().
+-spec edge_direction(vector2(), vector2()) -> vector2().
 edge_direction({X1, Y1}, {X2, Y2}) ->
     % A vector pointing from V1 to V2
     {X2 - X1, Y2 - Y1}.
 
 % This may have duplicate functionality with edges/1
 % TODO: Eliminate the extraneous fun
--spec vertices_to_edges([vector(), ...]) -> [vector(), ...].
+-spec vertices_to_edges([vector2(), ...]) -> [vector2(), ...].
 vertices_to_edges(Vertices = [First | _Rest]) ->
     % A list of the edges of the vertices as vectors
     vertices_to_edges(Vertices, First, []).
@@ -121,7 +121,7 @@ vertices_to_edges([V1, V2 | Rest], First, Acc) ->
     E = edge_direction(V1, V2),
     vertices_to_edges([V2 | Rest], First, [E | Acc]).
 
--spec project([vector(), ...], vector()) -> [scalar(), ...].
+-spec project([vector2(), ...], vector2()) -> [scalar(), ...].
 project(Vertices, Axis) ->
     % A vector showing how much of the vertices lies along the axis
     Dots = [dot(Vertex, Axis) || Vertex <- Vertices],
@@ -195,8 +195,8 @@ test() ->
         is_collision(B, C)
     ].
 
--spec line_of_sight(vector(), vector(), vector(), [vector()]) ->
-    {[vector()], [vector()]}.
+-spec line_of_sight(vector2(), vector2(), vector2(), [vector2()]) ->
+    {[vector2()], [vector2()]}.
 line_of_sight(Location, Upper, Lower, Edges) ->
     % Always check upper and lower rays corresponding to the vision arc.
     Rays = [Upper, Lower],
@@ -254,7 +254,7 @@ visible_edges(Location, Edges, [Ray | Rest], Acc) ->
             visible_edges(Location, Edges, Rest, Acc1)
     end.
 
--spec ray_between(vector(), vector(), vector()) -> boolean().
+-spec ray_between(vector2(), vector2(), vector2()) -> boolean().
 ray_between({RayX, RayY}, {LowerX, LowerY}, {UpperX, UpperY}) ->
     % Dot product of upper rotated ccw by pi/2
     UpperComponent = RayY * UpperX - RayX * UpperY,
@@ -264,21 +264,21 @@ ray_between({RayX, RayY}, {LowerX, LowerY}, {UpperX, UpperY}) ->
     LowerComponent = RayX * LowerY - RayY * LowerX,
     (not (UpperComponent > ?EPSILON)) and (not (LowerComponent > ?EPSILON)).
 
--spec ray_intersect(vector(), vector(), vector(), vector()) ->
-    false | {true, vector(), number()}.
+-spec ray_intersect(vector2(), vector2(), vector2(), vector2()) ->
+    false | {true, vector2(), number()}.
 ray_intersect(A, B, C, D) ->
     intersect(A, B, C, D, rayline).
 
--spec intersect(vector(), vector(), vector(), vector()) -> false | vector().
+-spec intersect(vector2(), vector2(), vector2(), vector2()) -> false | vector2().
 intersect(A, B, C, D) ->
     intersect(A, B, C, D, lineline).
 -spec intersect(
-    vector(), vector(), vector(), vector(), rayline | rayray | lineline
+    vector2(), vector2(), vector2(), vector2(), rayline | rayray | lineline
 ) ->
     false
-    | {true, vector()}
-    | {true, vector(), number()}
-    | {true, vector(), {number(), number()}}.
+    | {true, vector2()}
+    | {true, vector2(), number()}
+    | {true, vector2(), {number(), number()}}.
 intersect({Ax, Ay} = A, B, {Cx, Cy} = C, D, LineType) ->
     % Let A and B be two points that constitute a line segment.
     % Let C and D be two more points that constitute another line segment.
@@ -356,7 +356,7 @@ test_intersect() ->
     io:format("Line intersect results: ~p~n", [LineLine]),
     io:format("Ray intersect results: ~p~n", [RayLine]).
 
-%-spec edges([vector()]) -> [vector()].
+%-spec edges([vector2()]) -> [vector2()].
 edges(Vertices) ->
     edges(Vertices, []).
 edges([], Acc) ->
@@ -370,7 +370,7 @@ edges([_Last | _Rest], Acc) ->
     % Handle the case of an odd number of edges
     Acc.
 
-%-spec edges([vector()], vector(), [vector()]) -> [[vector()]].
+%-spec edges([vector2()], vector2(), [vector2()]) -> [[vector2()]].
 edges([], _First, Acc) ->
     Acc;
 edges([A, B | Rest], First, Acc) ->
@@ -399,7 +399,7 @@ outer_edges(EdgeList) ->
     end,
     lists:filter(F, Sorted).
 
--spec component_sort(vector(), [vector()]) -> [vector()].
+-spec component_sort(vector2(), [vector2()]) -> [vector2()].
 component_sort(Lower, Rays) ->
     % from https://basstabs.github.io/2d-line-of-sight/Angle.html
     Fun = fun(A = {Xa, Ya}, B = {Xb, Yb}) ->
@@ -445,7 +445,7 @@ slope_sort({Xs, Ys}, Rest) ->
     [{Xs, Ys} | lists:sort(Fun, Rest)].
 
 % Calculate a 2D convex hull via Graham's Scan technique
--spec convex_hull([vector()]) -> [vector()].
+-spec convex_hull([vector2()]) -> [vector2()].
 convex_hull(Vertices) ->
     % Sort the list by the lowest (x,y) coordinate relative to the origin, then
     % sort all following points by slope relative to the starting point
@@ -476,6 +476,6 @@ convex_hull(Points, Acc) ->
             convex_hull([P2, P3 | Rest], [P1 | Acc])
     end.
 
--spec distance(vector(), vector()) -> pos_integer().
+-spec distance(vector2(), vector2()) -> pos_integer().
 distance({X1, Y1}, {X2, Y2}) ->
     abs(X2 - X1) + abs(Y2 - Y1).
