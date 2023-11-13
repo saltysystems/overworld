@@ -6,9 +6,6 @@
 % Public API
 -export([start/0, stop/0, last/0, get_by_id/1, dump/0]).
 
-% ow callbacks
--export([beacon/1]).
-
 % genserver callbacks
 -export([
     init/1,
@@ -30,25 +27,26 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % API
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec start() -> gen_server:start_ret().
 start() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+
+-spec stop() -> ok.
 stop() ->
     gen_server:stop(?SERVER),
     ok.
 
+-spec last() -> integer().
 last() ->
     gen_server:call(?MODULE, last).
 
+-spec get_by_id(integer()) -> integer().
 get_by_id(ID) ->
     gen_server:call(?MODULE, {get_by_id, ID}).
 
+-spec dump() -> [integer()].
 dump() ->
     gen_server:call(?MODULE, dump).
-
-% It makes no sense for the client to send beacons to the server, just throw
-% away these messages
-beacon(_) ->
-    ok.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % genserver callbacks

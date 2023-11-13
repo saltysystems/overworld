@@ -1,8 +1,6 @@
 Overworld Game Server
 =================================================
 
-<< [Join us on Discord](https://discord.gg/aTQdf8eeZj) >>
-
 Overworld is a multiplayer game server framework powered by Erlang/OTP. The
 project is focused on building tools for the creation of player-driven worlds
 of all kinds, with a special focus on account management, database persistence,
@@ -13,7 +11,7 @@ Ultima Online, EverQuest, Star Wars Galaxies, and the many amazing
 user-generated worlds built with platforms like BYOND, Neverwinter Nights, and
 Roblox.
 
-Overworld is Free Software, available under the GPL.
+Overworld is Free Software, available under the MPL.
 
 Getting started
 -------------------------------------------------
@@ -27,34 +25,3 @@ the server.
 You can consult the [documentation](doc) directory for some examples on using
 Overworld. The [Chat application demo](doc/demo.md) is a good place to get
 started.
-
-
-Style
--------------------------------------------------
-Please try to annotate functions with type specs and edoc comments. This will
-make dialyzer happy, it will make the maintainers happy, and it may even make
-you happy.
-
-
-Before creating a merge request
--------------------------------------------------
-Please ensure that all proposed code changes have been run through rebar in
-the following way:
-```bash
-  rebar3 fmt --write
-```
-
-`.hrl` files are explicitly excluded because some of the data is formatted in a
-particular way there. 
-
-Run dialyzer and try to eliminate errors to the best of your ability:
-```bash
-  rebar3 dialyzer
-```
-
-Ideally, any new function would have a corresponding test written for it
-following the function definition.  You should validate that
-`eunit:run_test(<your module>)` succeeds as expected.
-
-You should also attempt to annotate functions with type specs as best as
-possible.

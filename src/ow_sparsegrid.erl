@@ -20,7 +20,7 @@
 % @doc
 %   This module defines a new version of grid2d with a sparse grid.
 % @end
--type coords() :: ow_vector:vector().
+-type coords() :: ow_vector:vector2().
 
 new() ->
     #{}.

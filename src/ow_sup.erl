@@ -28,10 +28,6 @@ init([]) ->
             start => {ow_protocol, start, []}
         },
         #{
-            id => ow_script_sup,
-            start => {ow_script_sup, start_link, []}
-        },
-        #{
             id => ow_player_reg,
             start => {ow_player_reg, start_link, []}
         },

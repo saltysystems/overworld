@@ -47,6 +47,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % API
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec start() -> world().
 start() ->
     #world{
         systems = [],
@@ -54,9 +55,11 @@ start() ->
         components = ets:new(components, [bag, public])
     }.
 
+-spec stop(world()) -> ok.
 stop(#world{entities = ETable, components = CTable}) ->
     ets:delete(ETable),
-    ets:delete(CTable).
+    ets:delete(CTable),
+    ok.
 
 % This can potentially create an unbounded number of atoms! Careful!
 -spec to_map(entity()) -> map().

@@ -65,6 +65,7 @@ get_by_email(Email) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Account functions              %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec login(string(), string() | binary()) -> {error, term()} | boolean().
 login(Email, Password) ->
     case get_by_email(Email) of
         {error, Error} ->

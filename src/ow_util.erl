@@ -51,11 +51,14 @@ any_in_list(L1, L2) ->
 
 % Remove duplicates from a list
 % https://stackoverflow.com/questions/13673161/remove-duplicate-elements-from-a-list-in-erlang
+-spec remove_dups(list()) -> list().
 remove_dups([]) -> [];
 remove_dups([H | T]) -> [H | [X || X <- remove_dups(T), X /= H]].
 
 % some map* functions equivalent to the list functions that operate over tuples
-% shameless stolen from https://github.com/biokoda/bkdcore/blob/master/src/butil.erl
+% shamelessly stolen from
+% https://github.com/biokoda/bkdcore/blob/master/src/butil.erl
+-spec mapfind(term(), term(), list()) -> term() | false.
 mapfind(K, V, [H | L]) ->
     case maps:get(K, H) of
         V ->
@@ -66,6 +69,7 @@ mapfind(K, V, [H | L]) ->
 mapfind(_, _, []) ->
     false.
 
+-spec mapstore(term(), term(), list(), map()) -> [map()].
 mapstore(Key, Val, [H | L], Map) ->
     case maps:get(Key, H) of
         Val ->
@@ -76,6 +80,7 @@ mapstore(Key, Val, [H | L], Map) ->
 mapstore(_, _, [], Map) ->
     [Map].
 
+-spec maplistsort(term(), list()) -> list().
 maplistsort(Key, L) ->
     maplistsort(Key, L, asc).
 maplistsort(Key, L, asc) ->
@@ -108,6 +113,7 @@ take_random(List, N, Acc) when length(Acc) < N ->
     NewList = lists:delete(Item, List),
     take_random(NewList, N, [Item | Acc]).
 
+-spec weighted_random([{term(), integer()}]) -> [term()].
 weighted_random([]) ->
     [];
 weighted_random([Head | Tail]) ->
