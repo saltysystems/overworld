@@ -395,7 +395,7 @@ inject_encoder(Module, PropMap) ->
     Attributes = erlang:apply(Module, module_info, [attributes]),
     % Try to guess the encoder module based on convention
     ModuleString = erlang:atom_to_list(Module),
-    [Prefix | _Rest] = string:split(ModuleString, "_", leading),
+    [Prefix | _Rest] = string:split(ModuleString, "_", trailing),
     App = erlang:list_to_atom(Prefix),
     % Make the best guess for lib and interface modules
     EncoderLib = erlang:list_to_atom(Prefix ++ "_pb"),
@@ -430,7 +430,7 @@ inject_encoder_test() ->
     ExpectedFoo = #{
         encoder => #{
             app => ow,
-            lib => ow_pb,
+            lib => overworld_pb,
             interface => ow_msg
         }
     },
