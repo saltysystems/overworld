@@ -430,7 +430,7 @@ inject_encoder_test() ->
     ExpectedFoo = #{
         encoder => #{
             app => ow,
-            lib => ow_pb,
+            lib => overworld_pb,
             interface => ow_msg
         }
     },
