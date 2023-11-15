@@ -9,8 +9,8 @@
 
 -define(PEER_LIMIT, "64").
 -define(CHANNEL_LIMIT, "4").
--define(ENET_PORT, "4484").
--define(WS_PORT, "4434").
+-define(ENET_PORT, "4483").
+-define(WS_PORT, "4433"). 
 
 -spec make_config(map()) -> map().
 make_config(StartArgs) ->
