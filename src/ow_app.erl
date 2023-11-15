@@ -10,7 +10,7 @@
 -define(PEER_LIMIT, "64").
 -define(CHANNEL_LIMIT, "4").
 -define(ENET_PORT, "4483").
--define(WS_PORT, "4433"). 
+-define(WS_PORT, "4433").
 
 -spec make_config(map()) -> map().
 make_config(StartArgs) ->
@@ -29,6 +29,8 @@ make_config(StartArgs) ->
     maps:merge(Cfg, StartArgs).
 
 -spec start(application:start_type(), map()) -> supervisor:startlink_ret().
+start(StartType, []) -> 
+    start(StartType, #{});
 start(_StartType, StartArgs) ->
     #{
         ws_port := WsPort,
