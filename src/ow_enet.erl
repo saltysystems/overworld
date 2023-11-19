@@ -49,10 +49,9 @@ handle_call({call, Msg}, _From, State) ->
 handle_cast(_Msg, State) ->
     {noreply, State}.
 handle_info({enet, disconnected, remote, _Pid, _When}, State) ->
-    #{session := Session, ip := RawIP} = State,
+    #{ip := RawIP} = State,
     IP = inet:ntoa(RawIP),
     logger:notice("ENet session ~p disconnected", [IP]),
-    cleanup_session(Session),
     {stop, normal, State};
 handle_info({enet, Channel, {reliable, Msg}}, State) ->
     S1 = decode_and_reply(Msg, Channel, {enet, send_reliable}, State),
@@ -73,7 +72,7 @@ handle_info(
     {noreply, State}.
 
 terminate(_Reason, _State = #{session := Session}) ->
-    % We caught an error, call the cleanup trigger
+    % We've caught an error or otherwise asked to stop, clean up the session
     cleanup_session(Session),
     ok.
 
