@@ -208,7 +208,7 @@ proc(World, Data) ->
                 Fun2 ->
                     Fun2(World, Data)
             end,
-        [Result | Acc]
+        [{Sys, Result} | Acc]
     end,
     lists:foldl(Fun, [], Systems).
 
