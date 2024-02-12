@@ -153,7 +153,7 @@ entity(EntityID, World) ->
 entities(World) ->
     gen_server:call(?SERVER(World), entities).
 
--spec add_component(term(), term(), id(), world()) -> true.
+-spec add_component(term(), term(), id(), world()) -> ok.
 add_component(Name, Data, EntityID, World) ->
     gen_server:call(?SERVER(World), {add_component, Name, Data, EntityID}).
 
@@ -166,7 +166,7 @@ add_components(Components, EntityID, World) ->
         end,
     lists:foreach(F, Components).
 
--spec del_component(term(), id(), world()) -> true.
+-spec del_component(term(), id(), world()) -> ok.
 del_component(Name, EntityID, World) ->
     gen_server:call(?SERVER(World), {del_component, Name, EntityID}).
 
@@ -267,7 +267,7 @@ handle_call({del_component, ComponentName, EntityID}, _From, State) ->
     end,
     % Remove the data from the component bag
     ets:delete_object(C, {ComponentName, EntityID}),
-    {reply, true, State};
+    {reply, ok, State};
 handle_call({try_component, ComponentName, EntityID}, _From, State) ->
     #world{entities = E, components = C} = State,
     Resp =
