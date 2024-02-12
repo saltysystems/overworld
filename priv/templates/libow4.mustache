@@ -115,12 +115,12 @@ func enet_connect(ip: String, port: int):
 	_enet_peer.host.compress(ENetConnection.COMPRESS_ZLIB)
 
 # Take the host and whether or not its a TLS conncetion
-func ws_connect(address: String, port: int = 4434):
+func ws_connect(address: String, port: int = 4433):
 	var url = "ws://" + address + ":" + str(port) + "/ws"
 	print("[INFO] Connecting via WebSocket to ", url)
 	_websocket_connect(url)
 	
-func wss_connect(address: String, port: int = 4435):
+func wss_connect(address: String, port: int = 4434):
 	var url = "wss://" + address + ":" + str(port) + "/ws"
 	print("[INFO] Connecting via WebSocketSecure to ", url)
 	_websocket_connect(url)
