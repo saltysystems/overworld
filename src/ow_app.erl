@@ -61,7 +61,7 @@ start(_StartType, StartArgs) ->
 stop(_State) ->
     ok.
 
--spec start_http(integer(), map()) -> ok.
+-spec start_http(integer(), cowboy_router:dispatch_rules()) -> ok.
 start_http(Port, Dispatch) ->
     {ok, _} = cowboy:start_clear(
         http,
@@ -74,7 +74,9 @@ start_http(Port, Dispatch) ->
     ),
     ok.
 
--spec start_https(integer(), string(), string(), map()) -> ok.
+-spec start_https(
+    integer(), string(), string(), cowboy_router:dispatch_rules()
+) -> ok.
 start_https(Port, CertFile, KeyFile, Dispatch) ->
     case CertFile of
         false ->
