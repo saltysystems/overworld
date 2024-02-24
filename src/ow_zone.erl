@@ -348,12 +348,12 @@ handle_cast(_Cast, St0) ->
 handle_info(?TAG_I(tick), St0) ->
     St1 = tick(St0),
     {noreply, St1};
-handle_info(Msg, #{cb_mod := CbMod} = St0) -> 
+handle_info(Msg, #{cb_mod := CbMod} = St0) ->
     St1 =
         case erlang:function_exported(CbMod, handle_info, 2) of
-            false -> 
+            false ->
                 St0;
-            true -> 
+            true ->
                 info(Msg, St0)
         end,
     {noreply, St1}.
@@ -496,7 +496,7 @@ add_and_notify(Session0, St0, Status, CbMod, CbData1, Notify) ->
     St1 = St0#state{cb_data = CbData1},
     handle_notify(Notify, St1),
     % Set the player's termination callback
-    Session2 = 
+    Session2 =
         ow_session:set_termination_callback(
             {CbMod, disconnect, 1}, Session1
         ),
