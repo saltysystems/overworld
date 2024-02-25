@@ -113,6 +113,13 @@ func enet_connect(ip: String, port: int):
 	mode = transport_mode.ENET
 	# Set mode to ZLIB
 	_enet_peer.host.compress(ENetConnection.COMPRESS_ZLIB)
+    
+func enet_disconnect():
+	for peer in _enet_peer.host.get_peers():
+		print("Peer: " + str(peer))
+		peer.peer_disconnect()
+	_enet_peer.close()
+	mode = null
 
 # Take the host and whether or not its a TLS conncetion
 func ws_connect(address: String, port: int = 4433):
