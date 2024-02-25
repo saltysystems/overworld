@@ -60,8 +60,6 @@ message session_log {
 
 // server -> client
 message session_id_req {
-    // totally unnecessary it makes the client generation simpler
-    optional uint32 version = 1;
 }
 
 // server -> client
