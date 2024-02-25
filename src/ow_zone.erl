@@ -67,7 +67,7 @@
     cb_data :: term(),
     tick_ms :: pos_integer(),
     require_auth :: boolean(),
-    disconnects :: [session()],
+    disconnects = [] :: [session()],
     dc_timeout_ms :: pos_integer()
 }).
 %-type state() :: #state{}.
@@ -361,7 +361,7 @@ handle_info(?TAG_I(tick), St0) ->
     St1 = tick(St0),
     St2 = timeout_disconnects(St1),
     {noreply, St2};
-handle_info(Msg, #{cb_mod := CbMod} = St0) ->
+handle_info(Msg, #state{cb_mod = CbMod} = St0) ->
     St1 =
         case erlang:function_exported(CbMod, handle_info, 2) of
             false ->
@@ -398,8 +398,8 @@ timeout_disconnects(
                     Disconnects1 = lists:delete(P, Disconnects),
                     % The callback part handler MUST accept an empty message as a result
                     {_Session1, St1} = actually_do(part, #{}, Session, St0),
-                    St1#{
-                        disconnects => Disconnects1
+                    St1#state{
+                        disconnects = Disconnects1
                     };
                 false ->
                     St0
