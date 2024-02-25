@@ -99,7 +99,6 @@
     PlayerInfo :: any(),
     Status :: atom() | {ok, Session} | {ok, Session, PlayerInfo},
     Response :: ow_zone_resp().
--optional_callbacks([handle_join/3]).
 
 -callback handle_part(Msg, Session, State) -> Result when
     Msg :: term(),
@@ -108,7 +107,6 @@
     Result :: {Response, Status, State},
     Status :: atom() | {ok, Session},
     Response :: ow_zone_resp().
--optional_callbacks([handle_part/3]).
 
 -callback handle_disconnect(Session, State) -> Result when
     Session :: session(),
@@ -333,6 +331,10 @@ handle_call(?TAG_I({status}), _From, St0) ->
 handle_call(?TAG_I({rpc, Type, Msg, Session}), _From, St0) ->
     {Session1, St1} = maybe_auth_rpc(Type, Msg, Session, St0),
     {reply, {ok, Session1, enet_msg_opts(Type)}, St1};
+handle_call(?TAG_I({disconnect, Session}), _From, St0) ->
+    {Session1, State1} = actually_disconnect(Session, St0),
+    %{Session1, State1} = CbMod:handle_disconnect(Session, CbData),
+    {reply, {ok, Session1}, State1};
 handle_call(_Call, _From, St0) ->
     {reply, ok, St0}.
 
@@ -503,17 +505,7 @@ add_and_notify(Session0, St0, Status, CbMod, CbData1, Notify) ->
     {Session2, St1}.
 
 rm_and_notify(Session0, St0, Status, CbData1, Notify) ->
-    Session1 =
-        case Status of
-            {ok, S1, PlayerInfo} ->
-                ID = ow_session:get_id(S1),
-                update_player(PlayerInfo, ID),
-                S1;
-            {ok, S1} ->
-                S1;
-            _ ->
-                Session0
-        end,
+    Session1 = update_session(Status, Session0),
     player_rm(Session1),
     % Send any messages as needed - called for side effects
     St1 = St0#state{cb_data = CbData1},
@@ -546,18 +538,17 @@ actually_rpc(Type, Msg, Session, St0) ->
             false ->
                 {noreply, ok, CbData}
         end,
-    Session1 =
-        case Status of
-            {ok, S1, PlayerInfo} ->
-                ID = ow_session:get_id(S1),
-                update_player(PlayerInfo, ID),
-                S1;
-            {ok, S1} ->
-                S1;
-            _ ->
-                Session
-        end,
+    Session1 = update_session(Status,Session),
+    St1 = St0#state{cb_data = CbData1},
     % Send any messages as needed - called for side effects
+    handle_notify(Notify, St1),
+    {Session1, St1}.
+
+actually_disconnect(Session, St0) ->
+    CbMod = St0#state.cb_mod,
+    CbData = St0#state.cb_data,
+    {Notify, Status, CbData1} = CbMod:handle_disconnect(Session, CbData),
+    Session1 = update_session(Status, Session),
     St1 = St0#state{cb_data = CbData1},
     handle_notify(Notify, St1),
     {Session1, St1}.
@@ -579,3 +570,16 @@ update_player(PlayerInfo, ID) ->
 enet_msg_opts(Action) ->
     #{channel := Channel, qos := QOS} = ow_protocol:rpc(Action, server),
     {QOS, Channel}.
+
+-spec update_session(term(), session()) -> session().
+update_session({ok, S1, PlayerInfo}, _Session) ->
+    % Update player and the session info
+    ID = ow_session:get_id(S1),
+    update_player(PlayerInfo, ID),
+    S1;
+update_session({ok, S1}, _Session) -> 
+    % Update session info
+    S1;
+update_session(_, Session) ->
+    % No change, return old session info
+    Session.
