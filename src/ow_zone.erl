@@ -66,14 +66,17 @@
     cb_mod :: module(),
     cb_data :: term(),
     tick_ms :: pos_integer(),
-    require_auth :: boolean()
+    require_auth :: boolean(),
+    disconnects :: [session()],
+    dc_timeout_ms :: pos_integer()
 }).
 %-type state() :: #state{}.
 
 -define(DEFAULT_CONFIG, #{
     % milliseconds between ticks
     tick_ms => 20,
-    require_auth => false
+    require_auth => false,
+    dc_timeout_ms => 3000
 }).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -286,7 +289,11 @@ init(_CbMod, ignore) ->
 init(_CbMod, Stop) ->
     Stop.
 
-initialize_state(CbMod, CbData, Config = #{tick_ms := TickMs}) ->
+initialize_state(
+    CbMod,
+    CbData,
+    Config = #{tick_ms := TickMs, dc_timeout_ms := DCTimeoutMs}
+) ->
     % setup the timer
     timer:send_interval(TickMs, self(), ?TAG_I(tick)),
     % configure auth
@@ -304,7 +311,8 @@ initialize_state(CbMod, CbData, Config = #{tick_ms := TickMs}) ->
         cb_mod = CbMod,
         cb_data = CbData,
         tick_ms = TickMs,
-        require_auth = RequireAuth
+        require_auth = RequireAuth,
+        dc_timeout_ms = DCTimeoutMs
     }.
 
 handle_call(?TAG_I({Action, Msg, Session}), _From, St0) ->
@@ -332,9 +340,11 @@ handle_call(?TAG_I({rpc, Type, Msg, Session}), _From, St0) ->
     {Session1, St1} = maybe_auth_rpc(Type, Msg, Session, St0),
     {reply, {ok, Session1, enet_msg_opts(Type)}, St1};
 handle_call(?TAG_I({disconnect, Session}), _From, St0) ->
-    {Session1, State1} = actually_disconnect(Session, St0),
-    %{Session1, State1} = CbMod:handle_disconnect(Session, CbData),
-    {reply, {ok, Session1}, State1};
+    Disconnects = St0#state.disconnects,
+    {Session1, State1} = notify_disconnect(Session, St0),
+    Now = erlang:monotonic_time(),
+    Disconnects1 = [{Session1, Now} | Disconnects],
+    {reply, {ok, Session1}, State1#state{disconnects = Disconnects1}};
 handle_call(_Call, _From, St0) ->
     {reply, ok, St0}.
 
@@ -349,7 +359,8 @@ handle_cast(_Cast, St0) ->
 
 handle_info(?TAG_I(tick), St0) ->
     St1 = tick(St0),
-    {noreply, St1};
+    St2 = timeout_disconnects(St1),
+    {noreply, St2};
 handle_info(Msg, #{cb_mod := CbMod} = St0) ->
     St1 =
         case erlang:function_exported(CbMod, handle_info, 2) of
@@ -372,6 +383,29 @@ tick(St0 = #state{cb_mod = CbMod, cb_data = CbData0, tick_ms = TickMs}) ->
     St1 = St0#state{cb_data = CbData1},
     handle_notify(Notify, St1),
     St1.
+
+timeout_disconnects(
+    #state{disconnects = Disconnects, dc_timeout_ms = DCTimeoutMs} = State
+) ->
+    Now = erlang:monotonic_time(),
+    F =
+        fun(P = {Session, When}, St0) ->
+            Delta = erlang:convert_time_unit(
+                (Now - When), native, millisecond
+            ),
+            case Delta > DCTimeoutMs of
+                true ->
+                    Disconnects1 = lists:delete(P, Disconnects),
+                    % The callback part handler MUST accept an empty message as a result
+                    {_Session1, St1} = actually_do(part, #{}, Session, St0),
+                    St1#{
+                        disconnects => Disconnects1
+                    };
+                false ->
+                    St0
+            end
+        end,
+    lists:foldl(F, State, Disconnects).
 
 info(Msg, St0 = #state{cb_mod = CbMod, cb_data = CbData}) ->
     {Notify, CbData1} = CbMod:handle_info(Msg, CbData),
@@ -538,13 +572,14 @@ actually_rpc(Type, Msg, Session, St0) ->
             false ->
                 {noreply, ok, CbData}
         end,
-    Session1 = update_session(Status,Session),
+    Session1 = update_session(Status, Session),
     St1 = St0#state{cb_data = CbData1},
     % Send any messages as needed - called for side effects
     handle_notify(Notify, St1),
     {Session1, St1}.
 
-actually_disconnect(Session, St0) ->
+-spec notify_disconnect(session(), term()) -> {session(), term()}.
+notify_disconnect(Session, St0) ->
     CbMod = St0#state.cb_mod,
     CbData = St0#state.cb_data,
     {Notify, Status, CbData1} = CbMod:handle_disconnect(Session, CbData),
@@ -577,7 +612,7 @@ update_session({ok, S1, PlayerInfo}, _Session) ->
     ID = ow_session:get_id(S1),
     update_player(PlayerInfo, ID),
     S1;
-update_session({ok, S1}, _Session) -> 
+update_session({ok, S1}, _Session) ->
     % Update session info
     S1;
 update_session(_, Session) ->
