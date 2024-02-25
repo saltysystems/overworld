@@ -32,6 +32,10 @@ init([]) ->
             start => {ow_player_reg, start_link, []}
         },
         #{
+            id => ow_token_serv,
+            start => {ow_token_serv, start_link, []}
+        },
+        #{
             id => ow_beacon,
             start => {ow_beacon, start, []}
         }
