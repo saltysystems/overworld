@@ -9,13 +9,12 @@
 -export([cast/2]).
 -export([reply/2]).
 -export([stop/1, stop/3]).
-% ow_zone specific calls
 
-% must have corresponding callbacks
 -export([
     join/3,
     part/3,
     disconnect/2,
+    reconnect/2,
     rpc/4,
     who/1,
     status/1,
@@ -249,6 +248,10 @@ part(ServerRef, Msg, Session) ->
 disconnect(ServerRef, Session) ->
     gen_server:call(ServerRef, ?TAG_I({disconnect, Session})).
 
+-spec reconnect(server_ref(), session()) -> {ok, session()}.
+reconnect(ServerRef, Session) ->
+    gen_server:cast(ServerRef, ?TAG_I({reconnect, Session})).
+
 -spec rpc(server_ref(), atom(), term(), session()) -> {ok, session()}.
 rpc(ServerRef, Type, Msg, Session) ->
     gen_server:call(ServerRef, ?TAG_I({rpc, Type, Msg, Session})).
@@ -348,6 +351,22 @@ handle_call(?TAG_I({disconnect, Session}), _From, St0) ->
 handle_call(_Call, _From, St0) ->
     {reply, ok, St0}.
 
+handle_cast(
+    ?TAG_I({reconnect, Session}), St0 = #state{disconnects = Disconnects}
+) ->
+    % Filter out the pending disconnect
+    ID = ow_session:get_id(Session),
+    F = fun({PendingSession, When}, Acc) ->
+        PendingID = ow_session:get_id(PendingSession),
+        case PendingID == ID of
+            true ->
+                Acc;
+            false ->
+                [{PendingSession, When} | Acc]
+        end
+    end,
+    Disconnects1 = lists:foldl(F, [], Disconnects),
+    {noreply, St0#state{disconnects = Disconnects1}};
 handle_cast(?TAG_I({broadcast, Msg}), St0) ->
     handle_notify({'@zone', Msg}, St0),
     {noreply, St0};
@@ -395,6 +414,8 @@ timeout_disconnects(
             ),
             case Delta > DCTimeoutMs of
                 true ->
+                    ID = ow_session:get_id(Session),
+                    logger:notice("Disconnecting ~p: timeout", [ID]),
                     Disconnects1 = lists:delete(P, Disconnects),
                     % The callback part handler MUST accept an empty message as a result
                     {_Session1, St1} = actually_do(part, #{}, Session, St0),
@@ -443,9 +464,7 @@ player_add(PlayerInfo, Session) ->
     PID = ow_session:get_pid(Session),
     Serializer = ow_session:get_serializer(Session),
     % Force a crash via failed match if player registration doesn't go well
-    case ow_player_reg:new(ID, PID, Serializer, self(), PlayerInfo) of
-        ok -> ok
-    end.
+    ok = ow_player_reg:new(ID, PID, Serializer, self(), PlayerInfo).
 
 player_rm(Session) ->
     ID = ow_session:get_id(Session),
@@ -582,11 +601,20 @@ actually_rpc(Type, Msg, Session, St0) ->
 notify_disconnect(Session, St0) ->
     CbMod = St0#state.cb_mod,
     CbData = St0#state.cb_data,
-    {Notify, Status, CbData1} = CbMod:handle_disconnect(Session, CbData),
-    Session1 = update_session(Status, Session),
-    St1 = St0#state{cb_data = CbData1},
-    handle_notify(Notify, St1),
-    {Session1, St1}.
+    ID = ow_session:get_id(Session),
+    case ow_player_reg:get(ID) of
+        {error, _} ->
+            % player is already disconnected
+            {Session, St0};
+        _ ->
+            {Notify, Status, CbData1} = CbMod:handle_disconnect(
+                Session, CbData
+            ),
+            Session1 = update_session(Status, Session),
+            St1 = St0#state{cb_data = CbData1},
+            handle_notify(Notify, St1),
+            {Session1, St1}
+    end.
 
 -spec is_player(session_id()) -> boolean().
 is_player(ID) ->
