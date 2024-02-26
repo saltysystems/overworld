@@ -248,7 +248,7 @@ part(ServerRef, Msg, Session) ->
 disconnect(ServerRef, Session) ->
     gen_server:call(ServerRef, ?TAG_I({disconnect, Session})).
 
--spec reconnect(server_ref(), session()) -> {ok, session()}.
+-spec reconnect(server_ref(), session()) -> ok.
 reconnect(ServerRef, Session) ->
     gen_server:cast(ServerRef, ?TAG_I({reconnect, Session})).
 
