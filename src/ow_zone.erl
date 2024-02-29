@@ -9,14 +9,12 @@
 -export([cast/2]).
 -export([reply/2]).
 -export([stop/1, stop/3]).
-% ow_zone specific calls
 
-% must have corresponding callbacks
 -export([
     join/3,
-    join/2,
     part/3,
-    part/2,
+    disconnect/2,
+    reconnect/2,
     rpc/4,
     who/1,
     status/1,
@@ -67,14 +65,17 @@
     cb_mod :: module(),
     cb_data :: term(),
     tick_ms :: pos_integer(),
-    require_auth :: boolean()
+    require_auth :: boolean(),
+    disconnects = [] :: [session()],
+    dc_timeout_ms :: pos_integer()
 }).
 %-type state() :: #state{}.
 
 -define(DEFAULT_CONFIG, #{
     % milliseconds between ticks
     tick_ms => 20,
-    require_auth => false
+    require_auth => false,
+    dc_timeout_ms => 3000
 }).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -92,15 +93,6 @@
     InitialData :: term(),
     Reason :: term().
 
--callback handle_join(Session, State) -> Result when
-    Session :: session(),
-    State :: term(),
-    Result :: {Response, Status, State},
-    PlayerInfo :: any(),
-    Status :: atom() | {ok, Session} | {ok, Session, PlayerInfo},
-    Response :: ow_zone_resp().
--optional_callbacks([handle_join/2]).
-
 -callback handle_join(Msg, Session, State) -> Result when
     Msg :: term(),
     Session :: session(),
@@ -109,15 +101,6 @@
     PlayerInfo :: any(),
     Status :: atom() | {ok, Session} | {ok, Session, PlayerInfo},
     Response :: ow_zone_resp().
--optional_callbacks([handle_join/3]).
-
--callback handle_part(Session, State) -> Result when
-    Session :: session(),
-    State :: term(),
-    Result :: {Response, Status, State},
-    Status :: atom() | {ok, Session},
-    Response :: ow_zone_resp().
--optional_callbacks([handle_part/2]).
 
 -callback handle_part(Msg, Session, State) -> Result when
     Msg :: term(),
@@ -126,7 +109,13 @@
     Result :: {Response, Status, State},
     Status :: atom() | {ok, Session},
     Response :: ow_zone_resp().
--optional_callbacks([handle_part/3]).
+
+-callback handle_disconnect(Session, State) -> Result when
+    Session :: session(),
+    State :: term(),
+    Result :: {Response, Status, State},
+    Status :: atom() | {ok, Session},
+    Response :: ow_zone_resp().
 
 -callback handle_rpc(Type, Msg, Session, State) -> Result when
     Type :: atom(),
@@ -251,17 +240,17 @@ stop(ServerRef, Reason, Timeout) ->
 join(ServerRef, Msg, Session) ->
     gen_server:call(ServerRef, ?TAG_I({join, Msg, Session})).
 
--spec join(server_ref(), session()) -> {ok, session()}.
-join(ServerRef, Session) ->
-    gen_server:call(ServerRef, ?TAG_I({join, Session})).
-
 -spec part(server_ref(), term(), session()) -> {ok, session()}.
 part(ServerRef, Msg, Session) ->
     gen_server:call(ServerRef, ?TAG_I({part, Msg, Session})).
 
--spec part(server_ref(), session()) -> {ok, session()}.
-part(ServerRef, Session) ->
-    gen_server:call(ServerRef, ?TAG_I({part, Session})).
+-spec disconnect(server_ref(), session()) -> {ok, session()}.
+disconnect(ServerRef, Session) ->
+    gen_server:call(ServerRef, ?TAG_I({disconnect, Session})).
+
+-spec reconnect(server_ref(), session()) -> ok.
+reconnect(ServerRef, Session) ->
+    gen_server:cast(ServerRef, ?TAG_I({reconnect, Session})).
 
 -spec rpc(server_ref(), atom(), term(), session()) -> {ok, session()}.
 rpc(ServerRef, Type, Msg, Session) ->
@@ -303,7 +292,11 @@ init(_CbMod, ignore) ->
 init(_CbMod, Stop) ->
     Stop.
 
-initialize_state(CbMod, CbData, Config = #{tick_ms := TickMs}) ->
+initialize_state(
+    CbMod,
+    CbData,
+    Config = #{tick_ms := TickMs, dc_timeout_ms := DCTimeoutMs}
+) ->
     % setup the timer
     timer:send_interval(TickMs, self(), ?TAG_I(tick)),
     % configure auth
@@ -321,17 +314,14 @@ initialize_state(CbMod, CbData, Config = #{tick_ms := TickMs}) ->
         cb_mod = CbMod,
         cb_data = CbData,
         tick_ms = TickMs,
-        require_auth = RequireAuth
+        require_auth = RequireAuth,
+        dc_timeout_ms = DCTimeoutMs
     }.
 
 handle_call(?TAG_I({Action, Msg, Session}), _From, St0) ->
     % where Action = join or part.
     {Session1, St1} = maybe_auth_do(Action, Msg, Session, St0),
     % Get channel and QOS information
-    {reply, {ok, Session1, enet_msg_opts(Action)}, St1};
-handle_call(?TAG_I({Action, Session}), _From, St0) ->
-    % where Action = join or part.
-    {Session1, St1} = maybe_auth_do(Action, Session, St0),
     {reply, {ok, Session1, enet_msg_opts(Action)}, St1};
 handle_call(?TAG_I({who}), _From, St0) ->
     Players = ow_player_reg:list(self()),
@@ -352,9 +342,31 @@ handle_call(?TAG_I({status}), _From, St0) ->
 handle_call(?TAG_I({rpc, Type, Msg, Session}), _From, St0) ->
     {Session1, St1} = maybe_auth_rpc(Type, Msg, Session, St0),
     {reply, {ok, Session1, enet_msg_opts(Type)}, St1};
+handle_call(?TAG_I({disconnect, Session}), _From, St0) ->
+    Disconnects = St0#state.disconnects,
+    {Session1, State1} = notify_disconnect(Session, St0),
+    Now = erlang:monotonic_time(),
+    Disconnects1 = [{Session1, Now} | Disconnects],
+    {reply, {ok, Session1}, State1#state{disconnects = Disconnects1}};
 handle_call(_Call, _From, St0) ->
     {reply, ok, St0}.
 
+handle_cast(
+    ?TAG_I({reconnect, Session}), St0 = #state{disconnects = Disconnects}
+) ->
+    % Filter out the pending disconnect
+    ID = ow_session:get_id(Session),
+    F = fun({PendingSession, When}, Acc) ->
+        PendingID = ow_session:get_id(PendingSession),
+        case PendingID == ID of
+            true ->
+                Acc;
+            false ->
+                [{PendingSession, When} | Acc]
+        end
+    end,
+    Disconnects1 = lists:foldl(F, [], Disconnects),
+    {noreply, St0#state{disconnects = Disconnects1}};
 handle_cast(?TAG_I({broadcast, Msg}), St0) ->
     handle_notify({'@zone', Msg}, St0),
     {noreply, St0};
@@ -366,6 +378,16 @@ handle_cast(_Cast, St0) ->
 
 handle_info(?TAG_I(tick), St0) ->
     St1 = tick(St0),
+    St2 = timeout_disconnects(St1),
+    {noreply, St2};
+handle_info(Msg, #state{cb_mod = CbMod} = St0) ->
+    St1 =
+        case erlang:function_exported(CbMod, handle_info, 2) of
+            false ->
+                St0;
+            true ->
+                info(Msg, St0)
+        end,
     {noreply, St1}.
 
 terminate(_Reason, _St0) -> ok.
@@ -379,6 +401,37 @@ tick(St0 = #state{cb_mod = CbMod, cb_data = CbData0, tick_ms = TickMs}) ->
     {Notify, CbData1} = CbMod:handle_tick(TickMs, CbData0),
     St1 = St0#state{cb_data = CbData1},
     handle_notify(Notify, St1),
+    St1.
+
+timeout_disconnects(
+    #state{disconnects = Disconnects, dc_timeout_ms = DCTimeoutMs} = State
+) ->
+    Now = erlang:monotonic_time(),
+    F =
+        fun(P = {Session, When}, St0) ->
+            Delta = erlang:convert_time_unit(
+                (Now - When), native, millisecond
+            ),
+            case Delta > DCTimeoutMs of
+                true ->
+                    ID = ow_session:get_id(Session),
+                    logger:notice("Disconnecting ~p: timeout", [ID]),
+                    Disconnects1 = lists:delete(P, Disconnects),
+                    % The callback part handler MUST accept an empty message as a result
+                    {_Session1, St1} = actually_do(part, #{}, Session, St0),
+                    St1#state{
+                        disconnects = Disconnects1
+                    };
+                false ->
+                    St0
+            end
+        end,
+    lists:foldl(F, State, Disconnects).
+
+info(Msg, St0 = #state{cb_mod = CbMod, cb_data = CbData}) ->
+    {Notify, CbData1} = CbMod:handle_info(Msg, CbData),
+    St1 = St0#state{cb_data = CbData1},
+    handle_notify(Notify, CbData1),
     St1.
 
 handle_notify({{'@', IDs}, {MsgType, Msg}}, _State) ->
@@ -411,9 +464,7 @@ player_add(PlayerInfo, Session) ->
     PID = ow_session:get_pid(Session),
     Serializer = ow_session:get_serializer(Session),
     % Force a crash via failed match if player registration doesn't go well
-    case ow_player_reg:new(ID, PID, Serializer, self(), PlayerInfo) of
-        ok -> ok
-    end.
+    ok = ow_player_reg:new(ID, PID, Serializer, self(), PlayerInfo).
 
 player_rm(Session) ->
     ID = ow_session:get_id(Session),
@@ -446,15 +497,6 @@ notify_players(MsgType, Msg, Players) ->
                         EncodedMsg = erlang:apply(EncoderMod, encode, [
                             Msg, MsgType, EncoderLib, App
                         ]),
-                        %EncodedMsg =
-                        %    case EncoderMod of
-                        %        ow_msg ->
-                        %            ow_msg:encode(Msg, MsgType, App);
-                        %        Provided ->
-                        %            erlang:apply(Provided, encode, [
-                        %                Msg, MsgType
-                        %            ])
-                        %    end,
                         Pid !
                             {
                                 self(),
@@ -466,23 +508,6 @@ notify_players(MsgType, Msg, Players) ->
         end
     end,
     lists:foreach(Send, Players).
-
-%decode_msg(_MsgType, <<>>, _Session) ->
-%    % Suppose you have a message that is just a repeated type.
-%    % If the number of entries is 0, you just get a <<>> back after stripping
-%    % off the opcode. So we return an empty list here.
-%    [];
-%decode_msg(MsgType, Msg, Session) ->
-%    Serializer = ow_session:get_serializer(Session),
-%    case Serializer of
-%        undefined ->
-%            Msg;
-%        protobuf ->
-%            RPC = ow_protocol:server_rpc(RPC),
-%
-%            EMod = ow_rpc:encoder(RPC),
-%            EMod:decode_msg(Msg, MsgType)
-%    end.
 
 maybe_auth_do(Action, Msg, Session, St0 = #state{require_auth = RA}) when
     RA =:= true
@@ -496,30 +521,7 @@ maybe_auth_do(Action, Msg, Session, St0 = #state{require_auth = RA}) when
     end;
 maybe_auth_do(Action, Msg, Session, St0) ->
     actually_do(Action, Msg, Session, St0).
-maybe_auth_do(Action, Session, St0 = #state{require_auth = RA}) when
-    RA =:= true
-->
-    case ow_session:is_authenticated(Session) of
-        true ->
-            actually_do(Action, Session, St0);
-        false ->
-            % Do not update session, do not update state.
-            {Session, St0}
-    end;
-maybe_auth_do(Action, Session, St0) ->
-    actually_do(Action, Session, St0).
 
-actually_do(Action, Session, St0) ->
-    CbMod = St0#state.cb_mod,
-    CbData0 = St0#state.cb_data,
-    CbFun = list_to_existing_atom("handle_" ++ atom_to_list(Action)),
-    {Notify, Status, CbData1} = CbMod:CbFun(Session, CbData0),
-    case Action of
-        join ->
-            add_and_notify(Session, St0, Status, CbMod, CbData1, Notify);
-        part ->
-            rm_and_notify(Session, St0, Status, CbData1, Notify)
-    end.
 actually_do(Action, Msg, Session, St0) ->
     %DecodedMsg = decode_msg(Action, Msg, Session),
     CbMod = St0#state.cb_mod,
@@ -549,27 +551,14 @@ add_and_notify(Session0, St0, Status, CbMod, CbData1, Notify) ->
     St1 = St0#state{cb_data = CbData1},
     handle_notify(Notify, St1),
     % Set the player's termination callback
-    Session2 = ow_session:set_termination_callback(
-        {CbMod, part, 1}, Session1
-    ),
+    Session2 =
+        ow_session:set_termination_callback(
+            {CbMod, disconnect, 1}, Session1
+        ),
     {Session2, St1}.
 
 rm_and_notify(Session0, St0, Status, CbData1, Notify) ->
-    % TODO: This needs some significant thought. In a single zone case - it
-    % makes sense to just delete the user from the player registry. In the
-    % multi-zone case this may not make sense.
-    % I think this code needs to be a bit more flexible.
-    Session1 =
-        case Status of
-            {ok, S1, PlayerInfo} ->
-                ID = ow_session:get_id(S1),
-                update_player(PlayerInfo, ID),
-                S1;
-            {ok, S1} ->
-                S1;
-            _ ->
-                Session0
-        end,
+    Session1 = update_session(Status, Session0),
     player_rm(Session1),
     % Send any messages as needed - called for side effects
     St1 = St0#state{cb_data = CbData1},
@@ -602,21 +591,30 @@ actually_rpc(Type, Msg, Session, St0) ->
             false ->
                 {noreply, ok, CbData}
         end,
-    Session1 =
-        case Status of
-            {ok, S1, PlayerInfo} ->
-                ID = ow_session:get_id(S1),
-                update_player(PlayerInfo, ID),
-                S1;
-            {ok, S1} ->
-                S1;
-            _ ->
-                Session
-        end,
-    % Send any messages as needed - called for side effects
+    Session1 = update_session(Status, Session),
     St1 = St0#state{cb_data = CbData1},
+    % Send any messages as needed - called for side effects
     handle_notify(Notify, St1),
     {Session1, St1}.
+
+-spec notify_disconnect(session(), term()) -> {session(), term()}.
+notify_disconnect(Session, St0) ->
+    CbMod = St0#state.cb_mod,
+    CbData = St0#state.cb_data,
+    ID = ow_session:get_id(Session),
+    case ow_player_reg:get(ID) of
+        {error, _} ->
+            % player is already disconnected
+            {Session, St0};
+        _ ->
+            {Notify, Status, CbData1} = CbMod:handle_disconnect(
+                Session, CbData
+            ),
+            Session1 = update_session(Status, Session),
+            St1 = St0#state{cb_data = CbData1},
+            handle_notify(Notify, St1),
+            {Session1, St1}
+    end.
 
 -spec is_player(session_id()) -> boolean().
 is_player(ID) ->
@@ -633,28 +631,18 @@ update_player(PlayerInfo, ID) ->
 -spec enet_msg_opts(atom()) ->
     {atom(), non_neg_integer()}.
 enet_msg_opts(Action) ->
-    %RPCs = State#state.rpcs,
-    %RPC = ow_rpc:find_call(Action, RPCs),
-    %Channel = ow_rpc:channel(RPC),
-    %QOS = ow_rpc:qos(RPC),
     #{channel := Channel, qos := QOS} = ow_protocol:rpc(Action, server),
     {QOS, Channel}.
 
-%encoder_to_msg(ProtoLib) ->
-%    App = strip_prefix(ProtoLib),
-%    % careful with atom generation
-%    MaybeMsgLib = list_to_atom(App ++ "_msg"),
-%    case erlang:module_loaded(MaybeMsgLib) of
-%        false ->
-%            % OK, just use overworld
-%            ow_msg;
-%        true ->
-%            % Check if it has the rpc behaviour
-%            Attrs = erlang:apply(MaybeMsgLib, module_info, [attributes]),
-%            case proplists:get_value(behaviour, Attrs) of
-%                undefined ->
-%                    ow_msg;
-%                [ow_rpc] ->
-%                    MaybeMsgLib
-%            end
-%    end.
+-spec update_session(term(), session()) -> session().
+update_session({ok, S1, PlayerInfo}, _Session) ->
+    % Update player and the session info
+    ID = ow_session:get_id(S1),
+    update_player(PlayerInfo, ID),
+    S1;
+update_session({ok, S1}, _Session) ->
+    % Update session info
+    S1;
+update_session(_, Session) ->
+    % No change, return old session info
+    Session.

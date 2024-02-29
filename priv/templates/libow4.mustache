@@ -9,6 +9,7 @@ var _ws_peer = WebSocketPeer.new()
 var _ws_connected = false
 
 @export var session: Dictionary
+@export var rejoin_token: PackedByteArray
 
 var debug = false
 
@@ -113,6 +114,14 @@ func enet_connect(ip: String, port: int):
 	mode = transport_mode.ENET
 	# Set mode to ZLIB
 	_enet_peer.host.compress(ENetConnection.COMPRESS_ZLIB)
+	
+func enet_disconnect():
+	for peer in _enet_peer.host.get_peers():
+		print("Peer: " + str(peer))
+		peer.peer_disconnect()
+	_enet_peer.close()
+	mode = null
+	emit_signal("server_disconnected")
 
 # Take the host and whether or not its a TLS conncetion
 func ws_connect(address: String, port: int = 4433):
@@ -120,15 +129,24 @@ func ws_connect(address: String, port: int = 4433):
 	print("[INFO] Connecting via WebSocket to ", url)
 	_websocket_connect(url)
 	
+func ws_disconnect():
+	_websocket_close()
+	mode = null
+	
 func wss_connect(address: String, port: int = 4434):
 	var url = "wss://" + address + ":" + str(port) + "/ws"
 	print("[INFO] Connecting via WebSocketSecure to ", url)
 	_websocket_connect(url)
 
+func wss_disconnect():
+	_websocket_close()
+
 func _websocket_connect(url):
 	_ws_peer.connect_to_url(url)
 	mode = transport_mode.WEBSOCKET
-	emit_signal("server_connected")
+
+func _websocket_close():
+	_ws_peer.close()
 
 func _send_message(payload, opcode, qos, channel):
 	# Create a new packet starting with opcode, append the message if it exists,
@@ -175,6 +193,7 @@ func _process(_delta):
 			# Keep polling to achieve proper close.
 			pass
 		elif state == WebSocketPeer.STATE_CLOSED:
+			_ws_connected = false
 			emit_signal("server_disconnected")
 	elif mode == transport_mode.ENET:
 		var p = _enet_peer.host.service() # Check for packets
