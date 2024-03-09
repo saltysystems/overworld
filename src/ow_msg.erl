@@ -13,12 +13,18 @@
 -export([raw_decode/1]).
 
 -spec decode(binary(), ow_session:session()) -> any().
+%% @doc Decodes a message using the Overworld-specific application decoder.
 decode(Msg, Session) ->
     EncoderLib = overworld_pb,
     Application = overworld,
     decode(Msg, Session, EncoderLib, Application).
 
 -spec decode(binary(), ow_session:session(), atom(), atom()) -> any().
+%% @doc Decodes a message using the specified encoder library and application.
+%% First, it decodes the larger message using the encoder library and application.
+%% Then, it looks up the appropriate server callback module based on the decoded call.
+%% Finally, it sends the sub-message to the sub-module for further processing and
+%% returns the result.
 decode(Msg, Session, EncoderLib, Application) ->
     % First decode the larger message
     Decoded = erlang:apply(EncoderLib, decode_msg, [Msg, Application]),
@@ -30,11 +36,15 @@ decode(Msg, Session, EncoderLib, Application) ->
     erlang:apply(Module, Call, [SubMsg, Session]).
 
 -spec raw_decode(binary()) -> {atom(), map()}.
+%% @doc Decodes a raw message and returns the decoded call and sub-message.
+%% This function is primarily used for debugging purposes.
 raw_decode(Msg) ->
     #{msg := {Call, SubMsg}} = overworld_pb:decode_msg(Msg, overworld),
     {Call, SubMsg}.
 
 -spec encode(map(), atom(), atom(), atom()) -> binary().
+%% @doc Encodes a message using the specified encoder library and application.
+%% It first retrieves the prefix for the application and prepends it to the encoded message.
 encode(SubMsg, Call, EncoderLib, Application) ->
     Prefix = ow_protocol:prefix(Application),
     B1 = <<Prefix:16>>,
@@ -43,6 +53,8 @@ encode(SubMsg, Call, EncoderLib, Application) ->
     <<B1/binary, B2/binary>>.
 
 -spec encode(map(), atom()) -> binary().
+%% @doc Encodes a message using the Overworld-specific application encoder.
+%% If called from Overworld, the EncoderLib and Application are known.
 encode(SubMsg, Call) ->
     % If being called from Overworld, we know the EncoderLib and Application name
     EncoderLib = overworld_pb,
