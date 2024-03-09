@@ -17,7 +17,8 @@
 start_link() ->
     supervisor:start_link({local, ?SERVER}, ?MODULE, []).
 
--spec init([]) -> {ok, {supervisor:sup_flags(), [supervisor:child_spec()]}} | ignore.
+-spec init([]) ->
+    {ok, {supervisor:sup_flags(), [supervisor:child_spec()]}} | ignore.
 %% @doc Initializes the supervisor with child specifications.
 init([]) ->
     SupFlags = #{
