@@ -670,6 +670,8 @@ fields_to_str([{N, T, O} | Tail], "") ->
                         Name ++ ": " ++ "int";
                     uint32 ->
                         Name ++ ": " ++ "int";
+                    bytes ->
+                        Name ++ ": " ++ "PackedByteArray";
                     Type ->
                         Name ++ ": " ++ maybe_submsg(Type)
                 end;
@@ -705,6 +707,8 @@ fields_to_str([{N, T, O} | Tail], Acc) ->
                         Name ++ ": " ++ "int" ++ ", " ++ Acc;
                     sint32 ->
                         Name ++ ": " ++ "int" ++ ", " ++ Acc;
+                    bytes ->
+                        Name ++ ": " ++ "PackedByteArray" ++ ", " ++ Acc;
                     Type ->
                         Name ++ ": " ++ maybe_submsg(Type) ++ ", " ++ Acc
                 end;
