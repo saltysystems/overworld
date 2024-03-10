@@ -8,20 +8,25 @@
 -behaviour(supervisor).
 
 -export([start_link/0]).
-
 -export([init/1]).
 
 -define(SERVER, ?MODULE).
 
+-spec start_link() -> {ok, pid()} | {error, term()}.
+%% @doc Starts the top-level supervisor.
 start_link() ->
     supervisor:start_link({local, ?SERVER}, ?MODULE, []).
 
+-spec init([]) ->
+    {ok, {supervisor:sup_flags(), [supervisor:child_spec()]}} | ignore.
+%% @doc Initializes the supervisor with child specifications.
 init([]) ->
     SupFlags = #{
         strategy => one_for_one,
         intensity => 1,
         period => 5
     },
+
     ChildSpecs = [
         #{
             id => ow_protocol,
@@ -40,4 +45,5 @@ init([]) ->
             start => {ow_beacon, start, []}
         }
     ],
+
     {ok, {SupFlags, ChildSpecs}}.
