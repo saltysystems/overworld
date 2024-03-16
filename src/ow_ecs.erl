@@ -153,6 +153,10 @@ entity(EntityID, World) ->
 entities(World) ->
     gen_server:call(?SERVER(World), entities).
 
+-spec add_component(term(), id(), world()) -> ok.
+add_component(Name, EntityID, World) ->
+    add_component(Name, true, EntityID, World).
+
 -spec add_component(term(), term(), id(), world()) -> ok.
 add_component(Name, Data, EntityID, World) ->
     gen_server:call(?SERVER(World), {add_component, Name, Data, EntityID}).

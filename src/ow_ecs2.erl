@@ -7,6 +7,7 @@
     rm_entity/2,
     entity/2,
     entities/1,
+    add_component/3,
     add_component/4,
     add_components/3,
     del_component/3,
@@ -182,6 +183,10 @@ foreach_component(Fun, Component, World) ->
             Fun(ID, Values)
         end,
     lists:foreach(F, Entities).
+
+-spec add_component(term(), id(), world()) -> ok.
+add_component(Name, EntityID, World) ->
+    add_component(Name, true, EntityID, World).
 
 -spec add_component(term(), term(), id(), world()) -> ok.
 add_component(Name, Data, EntityID, World) ->
