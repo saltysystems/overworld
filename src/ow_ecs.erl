@@ -13,6 +13,7 @@
     rm_entity/2,
     entity/2,
     entities/1,
+    add_component/3,
     add_component/4,
     add_components/3,
     del_component/3,
