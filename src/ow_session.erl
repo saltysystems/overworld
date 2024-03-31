@@ -168,7 +168,7 @@ multicast(EncodedMsg, SessionIDs) ->
 %%----------------------------------------------------------------------------
 -spec new() -> session().
 new() ->
-    #session{id = erlang:unique_integer()}.
+    #session{id = erlang:unique_integer([positive])}.
 
 %%----------------------------------------------------------------------------
 %% @doc Set the session ID
