@@ -32,8 +32,7 @@ start(PeerInfo) ->
 init([PeerInfo]) ->
     IP = inet:ntoa(maps:get(ip, PeerInfo)),
     logger:notice("Starting ENet session for ~p", [IP]),
-    ID = erlang:unique_integer(),
-    S1 = ow_session:set_id(ID, ow_session:new()),
+    S1 = ow_session:new(),
     S2 = ow_session:set_pid(self(), S1),
     S3 = ow_session:set_serializer(protobuf, S2),
     % Register this proces with gproc
