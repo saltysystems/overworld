@@ -215,33 +215,60 @@ generate_pure_submsgs(Encoder, [MessageName | Rest], Acc) ->
             ?TAB ++ "elif typeof(object) == TYPE_ARRAY and object == []:\n" ++
             ?TAB(2) ++ "return []\n" ++
             ?TAB ++ "else:\n" ++
-            generate_submsg_body(Defn, "object", 2, []) ++
-            ?TAB(2) ++ generate_submsg_dict(Defn) ++
-            ?TAB(2) ++ "return dict\n",
+            ?TAB(2) ++ "if object: \n" ++
+            generate_submsg_body(Defn, "object", 3, []) ++
+            ?TAB(3) ++ generate_submsg_dict(Defn) ++
+            ?TAB(3) ++ "return dict\n" ++
+            ?TAB(2) ++ "else:\n" ++
+            ?TAB(3) ++ "return {}\n",
     generate_pure_submsgs(Encoder, Rest, Signature ++ Body ++ Acc).
 
 generate_submsg_body([], _Prefix, _TabLevel, Acc) ->
     Acc;
 generate_submsg_body(
-    [Defn = #{type := {msg, Submsg}} | T], Prefix, TabLevel, Acc
+    [H = #{type := {msg, Submsg}} | T], Prefix, TabLevel, Acc
 ) ->
     % Impure submsg does not have well known types and we need to call one of
     % the lower-level functions to deal with it
-    Name = atom_to_list(maps:get(name, Defn)),
+    #{name := NameAtom, occurrence := Occurrence} = H,
+    Name = atom_to_list(NameAtom),
     Type = fix_delim(atom_to_list(Submsg)),
     Body =
-        ?TAB(TabLevel) ++ "var " ++ Name ++ " = unpack_" ++ Type ++ "(" ++
-            Prefix ++ ".get_" ++ Name ++ "())\n",
+        case Occurrence of
+            optional ->
+                ?TAB(TabLevel) ++ "var " ++ Name ++ "\n" ++
+                    ?TAB(TabLevel) ++ "if " ++ Prefix ++ ".has_" ++ Name ++
+                    "():\n" ++
+                    ?TAB(TabLevel + 1) ++ Name ++ " = unpack_" ++ Type ++
+                    "(" ++
+                    Prefix ++ ".get_" ++ Name ++ "())\n";
+            _ ->
+                ?TAB(TabLevel) ++ "var " ++ Name ++ " = unpack_" ++ Type ++
+                    "(" ++
+                    Prefix ++ ".get_" ++ Name ++ "())\n"
+        end,
     generate_submsg_body(T, Prefix, TabLevel, Body ++ Acc);
 generate_submsg_body([H | T], Prefix, TabLevel, Acc) ->
     % All members of a pure submsg are of well-known types
-    Name = atom_to_list(maps:get(name, H)),
+    #{name := NameAtom, occurrence := Occurrence} = H,
+    Name = atom_to_list(NameAtom),
     % Godobuf should automagically generate arrays as appropriate for
     % well-knowns, so no need to special case these.
     Body =
-        ?TAB(TabLevel) ++ "var " ++ Name ++ " = " ++ Prefix ++ ".get_" ++
-            Name ++
-            "()\n",
+        case Occurrence of
+            optional ->
+                ?TAB(TabLevel) ++ "var " ++ Name ++ "\n" ++
+                    ?TAB(TabLevel) ++ "if " ++ Prefix ++ ".has_" ++ Name ++
+                    "():\n" ++
+                    ?TAB(TabLevel + 1) ++ Name ++ " = " ++ Prefix ++ ".get_" ++
+                    Name ++ "()\n" ++
+                    ?TAB(TabLevel) ++ "else:\n" ++
+                    ?TAB(TabLevel + 1) ++ Name ++ " = null\n";
+            _ ->
+                ?TAB(TabLevel) ++ "var " ++ Name ++ " = " ++ Prefix ++
+                    ".get_" ++
+                    Name ++ "()\n"
+        end,
     generate_submsg_body(T, Prefix, TabLevel, Body ++ Acc).
 
 generate_submsg_dict(Definitions) ->
@@ -289,9 +316,12 @@ impure_submsg_body(Defn) ->
         ?TAB ++ "elif typeof(object) == TYPE_ARRAY and object == []:\n" ++
         ?TAB(2) ++ "return []\n" ++
         ?TAB ++ "else:\n" ++
-        generate_submsg_body(Defn, "object", 2, []) ++
-        ?TAB(2) ++ generate_submsg_dict(Defn) ++
-        ?TAB(2) ++ "return dict\n".
+        ?TAB(2) ++ "if object: \n" ++
+        generate_submsg_body(Defn, "object", 3, []) ++
+        ?TAB(3) ++ generate_submsg_dict(Defn) ++
+        ?TAB(3) ++ "return dict\n" ++
+        ?TAB(2) ++ "else:\n" ++
+        ?TAB(3) ++ "return {}\n".
 
 % Unpacking the overworld uber object example
 % func unpack_overworld(object):

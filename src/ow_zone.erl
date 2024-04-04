@@ -471,41 +471,43 @@ player_rm(Session) ->
     ow_player_reg:delete(ID).
 
 notify_players(MsgType, Msg, Players) ->
-    Send = fun(Player) ->
-        % causes a crash if the pid doesn't exist
-        PID = ow_player_reg:get_pid(Player),
-        Serializer = ow_player_reg:get_serializer(Player),
-        case PID of
-            undefined ->
-                ok;
-            Pid ->
-                case Serializer of
-                    undefined ->
-                        Pid ! {self(), zone_msg, {MsgType, Msg}};
-                    protobuf ->
-                        #{
-                            channel := Channel,
-                            qos := QOS,
-                            encoder := Encoder
-                        } =
-                            ow_protocol:rpc(MsgType, client),
-                        #{
-                            interface := EncoderMod,
-                            app := App,
-                            lib := EncoderLib
-                        } = Encoder,
-                        EncodedMsg = erlang:apply(EncoderMod, encode, [
-                            Msg, MsgType, EncoderLib, App
-                        ]),
-                        Pid !
-                            {
-                                self(),
-                                zone_msg,
-                                EncodedMsg,
-                                {QOS, Channel}
-                            }
-                end
-        end
+    Send = fun
+        ({error, _}) ->
+            ok;
+        (Player) ->
+            PID = ow_player_reg:get_pid(Player),
+            Serializer = ow_player_reg:get_serializer(Player),
+            case PID of
+                undefined ->
+                    ok;
+                Pid ->
+                    case Serializer of
+                        undefined ->
+                            Pid ! {self(), zone_msg, {MsgType, Msg}};
+                        protobuf ->
+                            #{
+                                channel := Channel,
+                                qos := QOS,
+                                encoder := Encoder
+                            } =
+                                ow_protocol:rpc(MsgType, client),
+                            #{
+                                interface := EncoderMod,
+                                app := App,
+                                lib := EncoderLib
+                            } = Encoder,
+                            EncodedMsg = erlang:apply(EncoderMod, encode, [
+                                Msg, MsgType, EncoderLib, App
+                            ]),
+                            Pid !
+                                {
+                                    self(),
+                                    zone_msg,
+                                    EncodedMsg,
+                                    {QOS, Channel}
+                                }
+                    end
+            end
     end,
     lists:foreach(Send, Players).
 
