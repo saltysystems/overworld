@@ -181,8 +181,9 @@ generate_submsgs(Encoder) ->
 
 generate_pure_submsgs(_Encoder, [], Acc) ->
     Acc;
-generate_pure_submsgs(Encoder, [Vector2 | Rest], Acc) 
-    when Vector2 == vector2; Vector2 == vector2f -> 
+generate_pure_submsgs(Encoder, [Vector2 | Rest], Acc) when
+    Vector2 == vector2; Vector2 == vector2f
+->
     % A bit of a cheat for vector2s and other special Godot types that are
     % not understood by Protobuf
     Signature = "func unpack_vector2(object):\n",
@@ -199,7 +200,7 @@ generate_pure_submsgs(Encoder, [Vector2 | Rest], Acc)
             ?TAB(2) ++ "var vec = Vector2(object.get_x(), object.get_y())\n" ++
             ?TAB(2) ++ "return vec\n",
     generate_pure_submsgs(Encoder, Rest, [Signature ++ Body | Acc]);
-generate_pure_submsgs(Encoder, [ vector2i | Rest], Acc) ->
+generate_pure_submsgs(Encoder, [vector2i | Rest], Acc) ->
     % the same but for vector2 integers
     Signature = "func unpack_vector2i(object):\n",
     Body =
@@ -212,7 +213,8 @@ generate_pure_submsgs(Encoder, [ vector2i | Rest], Acc) ->
             ?TAB ++ "elif typeof(object) == TYPE_ARRAY and object == []:\n" ++
             ?TAB(2) ++ "return []\n" ++
             ?TAB ++ "else:\n" ++
-            ?TAB(2) ++ "var vec = Vector2i(object.get_x(), object.get_y())\n" ++
+            ?TAB(2) ++
+            "var vec = Vector2i(object.get_x(), object.get_y())\n" ++
             ?TAB(2) ++ "return vec\n",
     generate_pure_submsgs(Encoder, Rest, [Signature ++ Body | Acc]);
 generate_pure_submsgs(Encoder, [MessageName | Rest], Acc) ->
@@ -570,14 +572,15 @@ generate_marshall_submsgs(Encoder) ->
     generate_marshall_submsgs(AllMessages, Encoder, []).
 generate_marshall_submsgs([], _Encoder, Acc) ->
     Acc;
-generate_marshall_submsgs([Vector | T], Encoder, Acc) 
-    when Vector == vector2; Vector == vector2f ->
+generate_marshall_submsgs([Vector | T], Encoder, Acc) when
+    Vector == vector2; Vector == vector2f
+->
     Signature = "func pack_vector2(obj, ref):\n",
     Body =
         ?TAB ++ "ref.set_x(obj.x)\n" ++
             ?TAB ++ "ref.set_y(obj.y)\n",
     generate_marshall_submsgs(T, Encoder, Signature ++ Body ++ Acc);
-generate_marshall_submsgs([ vector2i | T], Encoder, Acc) ->
+generate_marshall_submsgs([vector2i | T], Encoder, Acc) ->
     Signature = "func pack_vector2i(obj, ref):\n",
     Body =
         ?TAB ++ "ref.set_x(obj.x)\n" ++
