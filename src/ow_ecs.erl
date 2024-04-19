@@ -254,16 +254,21 @@ handle_call(
 handle_call({del_component, ComponentName, EntityID}, _From, State) ->
     #world{entities = E, components = C} = State,
     % Remove the data from the entity
-    case ets:lookup_element(E, EntityID, 2) of
-        [] ->
-            ok;
-        ComponentList ->
-            % Delete the key-value identified by ComponentName
-            ComponentList1 = lists:keydelete(
-                ComponentName, 1, ComponentList
-            ),
-            % Update the entity table
-            ets:insert(E, {EntityID, ComponentList1})
+    case ets:member(E, EntityID) of
+        true ->
+            case ets:lookup_element(E, EntityID, 2) of
+                [] ->
+                    ok;
+                ComponentList ->
+                    % Delete the key-value identified by ComponentName
+                    ComponentList1 = lists:keydelete(
+                        ComponentName, 1, ComponentList
+                    ),
+                    % Update the entity table
+                    ets:insert(E, {EntityID, ComponentList1})
+            end;
+        false -> 
+            ok
     end,
     % Remove the data from the component bag
     ets:delete_object(C, {ComponentName, EntityID}),
