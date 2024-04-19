@@ -267,7 +267,7 @@ handle_call({del_component, ComponentName, EntityID}, _From, State) ->
                     % Update the entity table
                     ets:insert(E, {EntityID, ComponentList1})
             end;
-        false -> 
+        false ->
             ok
     end,
     % Remove the data from the component bag
