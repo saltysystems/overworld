@@ -39,7 +39,7 @@
 -type serializer() :: 'undefined' | 'protobuf'.
 
 -record(session, {
-    id :: integer(),
+    id :: id(),
     pid :: pid() | undefined,
     serializer :: serializer(),
     authenticated = false :: boolean(),
@@ -51,9 +51,11 @@
 }).
 
 -opaque session() :: #session{}.
+-opaque id() :: integer().
 -opaque state_update() :: session() | {iodata(), session()}.
 
 -export_type([session/0]).
+-export_type([id/0]).
 -export_type([state_update/0]).
 -export_type([serializer/0]).
 
