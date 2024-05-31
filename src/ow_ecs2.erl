@@ -82,11 +82,11 @@ get(Component, ComponentList, Default) ->
             Default
     end.
 
--spec take(term(), [component()]) -> term().
+-spec take(term(), [component()]) -> term() | false.
 take(Component, ComponentList) ->
     take(Component, ComponentList, false).
 
--spec take(term(), [component()], term()) -> {term(), [term()]}.
+-spec take(term(), [component()], term()) -> {term(), [term()]} | term().
 take(Component, ComponentList, Default) ->
     case lists:keytake(Component, 1, ComponentList) of
         {value, {_Component, Data}, Rest} ->
@@ -124,23 +124,22 @@ rm_entity(EntityID, World) ->
             ok
     end.
 
--spec entity(id(), world()) -> [term()] | false.
+-spec entity(id(), world()) -> {id(), [term()]} | false.
 entity(EntityID, World) ->
     #world{entities = E} = World,
     case ets:lookup(E, EntityID) of
         [] ->
             false;
         [Entity] ->
-            {_ID, Components} = Entity,
-            Components
+            Entity
     end.
 
--spec entities(world()) -> [{id(), list()}].
+-spec entities(world()) -> [{id(), [term()]}].
 entities(World) ->
     #world{entities = E} = World,
     ets:match_object(E, {'$0', '$1'}).
 
--spec try_component(term(), id(), world()) -> [term()] | false.
+-spec try_component(term(), id(), world()) -> {ok, [term()]} | false.
 try_component(ComponentName, EntityID, World) ->
     #world{entities = E, components = C} = World,
     case ets:match_object(C, {ComponentName, EntityID}) of
@@ -150,7 +149,7 @@ try_component(ComponentName, EntityID, World) ->
             % It exists in the component table, so return the Entity data
             % back to the caller
             [{EntityID, Data}] = ets:lookup(E, EntityID),
-            Data
+            {ok, Data}
     end.
 
 -spec match_component(term(), world()) -> [entity()].

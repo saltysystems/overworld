@@ -29,9 +29,10 @@
 % log4(25) -> 2.32
 % log4(100) -> 3.32
 % log4(1000) -> 4.98
--spec new(integer(), integer()) -> erlquad:erlquad_node().
-new(Radius, Depth) ->
-    erlquad:new(-Radius, -Radius, Radius, Radius, Depth).
+-spec new(non_neg_integer(), non_neg_integer()) -> erlquad:erlquad_node().
+new(Size, Depth) ->
+    Bounds = round(Size / 2),
+    erlquad:new(-Bounds, -Bounds, Bounds, Bounds, Depth).
 
 -spec new(pos_integer(), pos_integer(), pos_integer()) ->
     erlquad:erlquad_node().

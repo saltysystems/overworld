@@ -32,7 +32,6 @@
     session_pong/1
 ]).
 
--include_lib("kernel/include/logger.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
 -type msg() :: nonempty_binary() | [binary(), ...].
@@ -56,8 +55,6 @@
 -export_type([session/0]).
 -export_type([state_update/0]).
 -export_type([serializer/0]).
-
--define(PROTOCOLVERSION, 1).
 
 %%===========================================================================
 %% Reserved OpCodes
