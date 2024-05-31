@@ -182,7 +182,8 @@ generate_submsgs(Encoder) ->
 generate_pure_submsgs(_Encoder, [], Acc) ->
     Acc;
 generate_pure_submsgs(Encoder, [Vector2 | Rest], Acc) when
-    Vector2 == vector2 ->
+    Vector2 == vector2
+->
     % A bit of a cheat for vector2s and other special Godot types that are
     % not understood by Protobuf
     Signature = "func unpack_vector2(object):\n",
@@ -200,7 +201,8 @@ generate_pure_submsgs(Encoder, [Vector2 | Rest], Acc) when
             ?TAB(2) ++ "return vec\n",
     generate_pure_submsgs(Encoder, Rest, [Signature ++ Body | Acc]);
 generate_pure_submsgs(Encoder, [Vector2 | Rest], Acc) when
-    Vector2 == vector2f ->
+    Vector2 == vector2f
+->
     Signature = "func unpack_vector2f(object):\n",
     Body =
         ?TAB ++ "if typeof(object) == TYPE_ARRAY and object != []:\n" ++
@@ -596,7 +598,8 @@ generate_marshall_submsgs([Vector | T], Encoder, Acc) when
             ?TAB ++ "ref.set_y(obj.y)\n",
     generate_marshall_submsgs(T, Encoder, Signature ++ Body ++ Acc);
 generate_marshall_submsgs([Vector | T], Encoder, Acc) when
-    Vector == vector2f ->
+    Vector == vector2f
+->
     Signature = "func pack_vector2f(obj, ref):\n",
     Body =
         ?TAB ++ "ref.set_x(obj.x)\n" ++

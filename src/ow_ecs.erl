@@ -94,11 +94,11 @@ get(Component, ComponentList, Default) ->
             Default
     end.
 
--spec take(term(), [component()]) -> term().
+-spec take(term(), [component()]) -> term() | false.
 take(Component, ComponentList) ->
     take(Component, ComponentList, false).
 
--spec take(term(), [component()], term()) -> {term(), [term()]}.
+-spec take(term(), [component()], term()) -> {term(), [term()]} | term().
 take(Component, ComponentList, Default) ->
     case lists:keytake(Component, 1, ComponentList) of
         {value, {_Component, Data}, Rest} ->
@@ -107,8 +107,9 @@ take(Component, ComponentList, Default) ->
             Default
     end.
 
--spec try_component(term(), id(), world()) -> [term()] | false.
+-spec try_component(term(), id(), world()) -> {ok, [term()]} | false.
 try_component(ComponentName, EntityID, World) ->
+    % @doc If EntityID has the specified ComponentName, return all components
     gen_server:call(
         ?SERVER(World), {try_component, ComponentName, EntityID}
     ).
@@ -145,11 +146,11 @@ new_entity(EntityID, World) ->
 rm_entity(EntityID, World) ->
     gen_server:call(?SERVER(World), {rm_entity, EntityID}).
 
--spec entity(id(), world()) -> [term()] | false.
+-spec entity(id(), world()) -> {id(), [term()]} | false.
 entity(EntityID, World) ->
     gen_server:call(?SERVER(World), {entity, EntityID}).
 
--spec entities(world()) -> [{id(), list()}].
+-spec entities(world()) -> [{id(), [term()]}].
 entities(World) ->
     gen_server:call(?SERVER(World), entities).
 
@@ -283,7 +284,7 @@ handle_call({try_component, ComponentName, EntityID}, _From, State) ->
                 % It exists in the component table, so return the Entity data
                 % back to the caller
                 [{EntityID, Data}] = ets:lookup(E, EntityID),
-                Data
+                {ok, Data}
         end,
     {reply, Resp, State};
 handle_call({match_component, ComponentName}, _From, State) ->
@@ -331,8 +332,7 @@ handle_call({entity, EntityID}, _From, State) ->
             [] ->
                 false;
             [Entity] ->
-                {_ID, Components} = Entity,
-                Components
+                Entity
         end,
     {reply, Resp, State};
 handle_call(entities, _From, State) ->
