@@ -10,7 +10,6 @@
   {git,"https://github.com/g-andrade/erlquad",
        {ref,"66a8512201477311f1993e559bef3ebd9a2348f4"}},
   0},
- {<<"gdminus">>,{pkg,<<"gdminus">>,<<"1.2.0">>},0},
  {<<"gproc">>,{pkg,<<"gproc">>,<<"0.9.0">>},0},
  {<<"jsone">>,{pkg,<<"jsone">>,<<"1.7.0">>},0},
  {<<"ranch">>,{pkg,<<"ranch">>,<<"1.8.0">>},1}]}.
