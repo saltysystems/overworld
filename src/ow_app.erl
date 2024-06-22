@@ -52,7 +52,7 @@ start(_StartType, StartArgs) ->
         app => overworld,
         prefix => ?OW_PREFIX,
         router => ow_msg,
-        modules => [ow_account, ow_session, ow_beacon]
+        modules => [ow_session, ow_beacon]
     },
     ow_protocol:register(Application),
     SuperLink.
