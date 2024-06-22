@@ -8,17 +8,15 @@ package overworld;
 /////////////////////////////////////////////////////////
 message overworld {
     oneof msg {
-        gen_response   gen_response   = 1;
-        account_new    account_new    = 2;
-        account_login  account_login  = 3;
-        session_log    session_log    = 4;
-        session_beacon session_beacon = 5;
-        session_ping   session_ping   = 6;
-        session_pong   session_pong   = 7;
-        session_new    session_new    = 8;
-        session_id     session_id     = 9;
-        session_id_req session_id_req = 10;
-        hull_cmd       hull_cmd       = 11;
+        account_new    account_new    = 1;
+        account_login  account_login  = 2;
+        session_log    session_log    = 3;
+        session_beacon session_beacon = 4;
+        session_ping   session_ping   = 5;
+        session_pong   session_pong   = 6;
+        session_new    session_new    = 7;
+        session_id     session_id     = 8;
+        session_id_req session_id_req = 9;
     }
 }
 
@@ -88,13 +86,4 @@ message session_new {
     // initialize a sesison and send to the client. 
     required int64 id = 1; // public
     required bytes reconnect_token = 2; // secret
-}
-
-/////////////////////////////////////////////////////////
-// Command-oriented Interface                          //
-/////////////////////////////////////////////////////////
-
-// text-oriented protocol
-message hull_cmd { 
-    required string text = 2;
 }
