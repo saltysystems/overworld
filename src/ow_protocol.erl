@@ -23,9 +23,7 @@
     rpc/2,
     rpcs/1,
     route/2,
-    router/1,
-    response/1,
-    response/2
+    router/1
 ]).
 
 % gen_server callbacks
@@ -72,38 +70,6 @@ stop() ->
     {reply, ok | {error, atom()}, map()}.
 register(App) ->
     gen_server:call(?MODULE, {register, App}).
-
-%%-------------------------------------------------------------------------
-%% @doc Encode a general response
-%% @end
-%%-------------------------------------------------------------------------
--spec response(ok | error) -> binary().
-response(ok) ->
-    ow_msg:encode(#{status => 'OK'}, gen_response);
-response(error) ->
-    ow_msg:encode(#{status => 'ERROR'}, gen_response).
-
-%%-------------------------------------------------------------------------
-%% @doc Encode a general response with reasoning
-%% @end
-%%-------------------------------------------------------------------------
--spec response(ok | error, string()) -> binary().
-response(ok, Msg) ->
-    ow_msg:encode(
-        #{
-            status => 'OK',
-            msg => Msg
-        },
-        gen_response
-    );
-response(error, Msg) ->
-    ow_msg:encode(
-        #{
-            status => 'ERROR',
-            msg => Msg
-        },
-        gen_response
-    ).
 
 %%-------------------------------------------------------------------------
 %% @doc Get all apps registered with the server, including prefix and
