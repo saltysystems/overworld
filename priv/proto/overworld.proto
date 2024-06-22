@@ -8,45 +8,16 @@ package overworld;
 /////////////////////////////////////////////////////////
 message overworld {
     oneof msg {
-        account_new    account_new    = 1;
-        account_login  account_login  = 2;
-        session_log    session_log    = 3;
-        session_beacon session_beacon = 4;
-        session_ping   session_ping   = 5;
-        session_pong   session_pong   = 6;
-        session_new    session_new    = 7;
-        session_id     session_id     = 8;
-        session_id_req session_id_req = 9;
+        session_log    session_log    = 1;
+        session_beacon session_beacon = 2;
+        session_ping   session_ping   = 3;
+        session_pong   session_pong   = 4;
+        session_new    session_new    = 5;
+        session_id     session_id     = 6;
+        session_id_req session_id_req = 7;
     }
 }
 
-
-/////////////////////////////////////////////////////////
-// General messages                                    //
-/////////////////////////////////////////////////////////
-
-message gen_response {
-	enum status {
-		OK = 0;
-		ERROR = 1;
-	}
-	required status status = 1;
-	optional string msg = 2;
-}
-
-/////////////////////////////////////////////////////////
-// Account Messages                                    //
-/////////////////////////////////////////////////////////
-
-message account_new {
-	required string email = 1;
-	required string password = 2;
-}
-
-message account_login {
-	required string email = 1;
-	required string password = 2;
-}
 
 /////////////////////////////////////////////////////////
 // Session Messages                                    //
