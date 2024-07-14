@@ -6,10 +6,6 @@
   {git,"https://github.com/saltysystems/enet.git",
        {ref,"ab93d1a5110609b385d9890ac1a59c437836b749"}},
   0},
- {<<"erlquad">>,
-  {git,"https://github.com/g-andrade/erlquad",
-       {ref,"66a8512201477311f1993e559bef3ebd9a2348f4"}},
-  0},
  {<<"gproc">>,{pkg,<<"gproc">>,<<"0.9.0">>},0},
  {<<"jsone">>,{pkg,<<"jsone">>,<<"1.7.0">>},0},
  {<<"ranch">>,{pkg,<<"ranch">>,<<"1.8.0">>},1}]}.
