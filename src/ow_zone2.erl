@@ -391,7 +391,7 @@ tick(St0 = #state{cb_mod = CbMod, cb_data = CbData0, zone_data = ZoneData}) ->
 
 -spec timeout_disconnects(state()) -> state().
 timeout_disconnects(St0) ->
-    ZoneData = #state.zone_data,
+    ZoneData = St0#state.zone_data,
     #{disconnects := Disconnects, dc_timeout_ms := DCTimeoutMs} = ZoneData,
     Now = erlang:monotonic_time(),
     F =
@@ -414,7 +414,6 @@ timeout_disconnects(St0) ->
         end,
     lists:foldl(F, St0, Disconnects).
 
--spec info(msg, Arg2) -> return_type().
 info(Msg, St0) ->
     #state{cb_mod = CbMod, cb_data = CbData} = St0,
     {Notify, CbData1} = CbMod:handle_info(Msg, CbData),
