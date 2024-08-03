@@ -69,6 +69,7 @@ stop() ->
 -spec register(map()) ->
     {reply, ok | {error, atom()}, map()}.
 register(App) ->
+    logger:notice("Got request to register: ~p", [App]),
     gen_server:call(?MODULE, {register, App}).
 
 %%-------------------------------------------------------------------------
@@ -153,24 +154,18 @@ init([]) ->
         s_rpc => #{},
         apps => []
     },
-    {ok, St0}.
+    % Automatically register all apps
+    St1 = auto_register(St0),
+    {ok, St1}.
 
-handle_call({register, App}, _From, St0) ->
+handle_call({register, AppConfig}, _From, St0) ->
     % Fold over the list of modules to register them
-    Modules = maps:get(modules, App, []),
-    F = fun(Module, State) ->
-        reg_rpc(Module, State)
-    end,
-    St1 = lists:foldl(F, St0, Modules),
+    logger:notice("State before registration: ~p", [St0]),
+    St1 = register_rpcs(AppConfig, St0),
+    logger:notice("State after registration: ~p", [St1]),
     % Get the currently registered apps
     #{apps := Apps0} = St1,
-    Apps1 =
-        case maps:get(prefix, App, undefined) of
-            undefined ->
-                reg_app(App, Apps0);
-            Prefix ->
-                reg_app(Prefix, App, Apps0)
-        end,
+    Apps1 = reg_app(AppConfig, Apps0),
     {reply, ok, St1#{apps := Apps1}};
 handle_call(apps, _From, #{apps := Apps} = St0) ->
     {reply, Apps, St0};
@@ -244,11 +239,10 @@ reg_rpc(Module, #{c_rpc := CRPC, s_rpc := SRPC} = St0) ->
     SRPC1 = maps:merge(ServerMap, SRPC),
     St0#{c_rpc => CRPC1, s_rpc => SRPC1}.
 
--spec reg_app(pos_integer(), map(), list()) -> list().
-reg_app(Prefix, App, AppList) ->
-    % Note that this will bump the next available slot up.
-    orddict:store(Prefix, App, AppList).
 -spec reg_app(map(), list()) -> list().
+reg_app(#{prefix := Prefix} = App, AppList) ->
+    % Note that this will bump the next available slot up.
+    orddict:store(Prefix, App, AppList);
 reg_app(App, AppList) ->
     % Determine the next available prefix
     Next =
@@ -278,8 +272,10 @@ reg_app_test() ->
 -spec reg_app_prefix_test() -> ok.
 reg_app_prefix_test() ->
     Apps0 = orddict:new(),
-    Test1 = #{app => test1, router => test1_msg, modules => []},
-    Apps1 = reg_app(10, Test1, Apps0),
+    Test1 = #{
+        app => test1, prefix => 10, router => test1_msg, modules => []
+    },
+    Apps1 = reg_app(Test1, Apps0),
     ?assertEqual(true, orddict:is_key(10, Apps1)),
     % Try adding another to see if it increments properly
     Test2 = #{app => test2, router => test2_msg, modules => []},
@@ -418,3 +414,58 @@ inject_encoder_test() ->
     },
     ?assertEqual(ExpectedBop, maps:get(bop, EncMap)),
     ok.
+
+-spec register_rpcs(map(), map()) -> map().
+register_rpcs(#{modules := Modules}, St0) when is_list(Modules) ->
+    lists:foldl(fun(M, S) -> reg_rpc(M, S) end, St0, Modules);
+register_rpcs(#{app := App}, St0) ->
+    % Lookup the modules for the application
+    {ok, Modules} = application:get_key(App, modules),
+    % Register any RPCs they might have
+    lists:foldl(fun(M, S) -> reg_rpc(M, S) end, St0, Modules).
+
+-spec auto_register(map()) -> map().
+auto_register(St0) ->
+    % Get all loaded application modules
+    AllApps = application:loaded_applications(),
+    logger:notice("All apps: ~p", [AllApps]),
+    % For each app, attempt to register modules.
+    % If registration is successful, register the app
+    F = fun({App, _Descr, _Vers}, State0) ->
+        {ok, Modules} = application:get_key(App, modules),
+        % For each module, attempt to register it with Overworld
+        State1 = lists:foldl(
+            fun(M, S) -> reg_rpc(M, S) end, State0, Modules
+        ),
+        if
+            State1 =/= State0 ->
+                % This app must have added some new modules, so register
+                AppConfig = get_overworld_config(App),
+                #{apps := RegApps0} = State1,
+                RegApps1 = reg_app(AppConfig, RegApps0),
+                State1#{apps => RegApps1};
+            true ->
+                State1
+        end
+    end,
+    lists:foldl(F, St0, AllApps).
+
+-spec get_overworld_config(atom()) -> map().
+get_overworld_config(App) ->
+    DefaultRouter = atom_to_list(App) ++ "_msg",
+    case application:get_env(App, overworld) of
+        undefined ->
+            % No config, deliver default config
+            #{
+                app => App,
+                router => DefaultRouter,
+                modules => auto
+            };
+        {ok, Config} ->
+            Default = #{
+                app => App,
+                router => DefaultRouter,
+                modules => auto
+            },
+            maps:merge(Default, Config)
+    end.

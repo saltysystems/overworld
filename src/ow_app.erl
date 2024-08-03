@@ -46,16 +46,7 @@ start(_StartType, StartArgs) ->
     Handler = {ow_enet, start, []},
     enet:start_host(EnetPort, Handler, Options),
     % Start the OW supervisor
-    SuperLink = ow_sup:start_link(),
-    % Now register the initial application and modules before returning
-    Application = #{
-        app => overworld,
-        prefix => ?OW_PREFIX,
-        router => ow_msg,
-        modules => [ow_session, ow_beacon]
-    },
-    ow_protocol:register(Application),
-    SuperLink.
+    ow_sup:start_link().
 
 -spec stop(term()) -> ok.
 stop(_State) ->

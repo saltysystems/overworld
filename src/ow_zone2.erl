@@ -52,7 +52,7 @@
 -define(INITIAL_ZONE_DATA, #{
     clients => [],
     disconnects => [],
-    mobs => [],
+    npcs => [],
     garbage => [],
     frame => 0,
     tick_ms => ?DEFAULT_TICK_MS,
