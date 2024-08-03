@@ -11,9 +11,14 @@
 	cowboy,
 	enet
    ]},
-  {env,[]},
+  {env,
+   [{overworld, 
+     #{ 
+        router => ow_msg,
+        prefix => 100
+      }}
+   ]},
   {modules, []},
-
   {licenses, ["MPL"]},
   {links, [{"GitHub", "https://github.com/saltysystems/overworld"}]}
  ]}.
