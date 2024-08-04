@@ -451,7 +451,7 @@ auto_register(St0) ->
 
 -spec get_overworld_config(atom()) -> map().
 get_overworld_config(App) ->
-    DefaultRouter = list_to_existing_atom(atom_to_list(App) ++ "_msg"),
+    DefaultRouter = list_to_atom(atom_to_list(App) ++ "_msg"),
     case application:get_env(App, overworld) of
         undefined ->
             % No config, deliver default config
