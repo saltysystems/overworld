@@ -36,7 +36,6 @@
     code_change/3
 ]).
 
--include_lib("kernel/include/logger.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
 %%=========================================================================
@@ -356,12 +355,12 @@ deep_propmap_test() ->
 inject_encoder(Module, PropMap) ->
     Attributes = erlang:apply(Module, module_info, [attributes]),
     % Try to guess the encoder module based on convention
-    ModuleString = erlang:atom_to_list(Module),
+    ModuleString = atom_to_list(Module),
     [Prefix | _Rest] = string:split(ModuleString, "_", trailing),
-    App = erlang:list_to_atom(Prefix),
+    App = list_to_atom(Prefix),
     % Make the best guess for lib and interface modules
-    EncoderLib = erlang:list_to_atom(Prefix ++ "_pb"),
-    EncoderInterface = erlang:list_to_atom(Prefix ++ "_msg"),
+    EncoderLib = list_to_atom(Prefix ++ "_pb"),
+    EncoderInterface = list_to_atom(Prefix ++ "_msg"),
     DefaultMap = #{
         app => App,
         lib => EncoderLib,
@@ -452,7 +451,7 @@ auto_register(St0) ->
 
 -spec get_overworld_config(atom()) -> map().
 get_overworld_config(App) ->
-    DefaultRouter = atom_to_list(App) ++ "_msg",
+    DefaultRouter = list_to_existing_atom(atom_to_list(App) ++ "_msg"),
     case application:get_env(App, overworld) of
         undefined ->
             % No config, deliver default config
