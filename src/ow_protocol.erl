@@ -36,7 +36,6 @@
     code_change/3
 ]).
 
--include_lib("kernel/include/logger.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
 %%=========================================================================
@@ -360,7 +359,7 @@ inject_encoder(Module, PropMap) ->
     [Prefix | _Rest] = string:split(ModuleString, "_", trailing),
     App = list_to_atom(Prefix),
     % Make the best guess for lib and interface modules
-    EncoderLib = erlang:list_to_atom(Prefix ++ "_pb"),
+    EncoderLib = list_to_atom(Prefix ++ "_pb"),
     EncoderInterface = list_to_atom(Prefix ++ "_msg"),
     DefaultMap = #{
         app => App,
