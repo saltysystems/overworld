@@ -117,6 +117,6 @@ websocket_info({_Pid, Type, Msg, _Options}, Session) when
     Type =:= 'broadcast'; Type =:= 'zone_msg'
 ->
     {reply, {binary, Msg}, Session};
-websocket_info(Info, State) ->
+websocket_info(Info, Session) ->
     logger:debug("Got a message from another process: ~p", [Info]),
-    {ok, State}.
+    {ok, Session}.
