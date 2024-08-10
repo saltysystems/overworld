@@ -288,7 +288,7 @@ handle_call(?TAG_I({join, Msg, Who}), From, St0) ->
     % Check the callback module for a handle_join function
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
-    NextState = 
+    NextState =
         case erlang:function_exported(CbMod, handle_join, 3) of
             true ->
                 {Notify, CbData1} = CbMod:handle_join(Msg, Who, CbData0),
@@ -307,11 +307,10 @@ handle_call(?TAG_I({join, Msg, Who}), From, St0) ->
     % Update the session with zone information
     ow_session:zone(From, Who),
     {reply, ok, NextState};
-
 handle_call(?TAG_I({part, Msg, Who}), _From, St0) ->
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
-    NextState = 
+    NextState =
         case erlang:function_exported(CbMod, handle_part, 3) of
             true ->
                 {Notify, CbData1} = CbMod:handle_part(Msg, Who, CbData0),
@@ -326,7 +325,6 @@ handle_call(?TAG_I({part, Msg, Who}), _From, St0) ->
         end,
     update_parted(Who, NextState),
     {reply, ok, NextState};
-
 handle_call(?TAG_I({Type, Msg, SessionID}), _From, St0) ->
     CbMod = St0#state.cb_mod,
     CbData = St0#state.cb_data,
@@ -345,16 +343,14 @@ handle_call(?TAG_I({Type, Msg, SessionID}), _From, St0) ->
     % Send any messages as needed - called for side effects
     handle_notify(Notify, St1),
     {reply, ok, St1};
-
 handle_call(_Call, _From, St0) ->
     %TODO : Allow fall-through ?
     {reply, ok, St0}.
 
-
 handle_cast(?TAG_I({disconnect, Who}), St0) ->
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
-    NextState = 
+    NextState =
         case erlang:function_exported(CbMod, handle_disconnect, 2) of
             true ->
                 {Notify, CbData1} = CbMod:handle_disconnect(Who, CbData0),
@@ -373,7 +369,7 @@ handle_cast(?TAG_I({disconnect, Who}), St0) ->
 handle_cast(?TAG_I({reconnect, Who}), St0) ->
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
-    NextState = 
+    NextState =
         case erlang:function_exported(CbMod, handle_reconnect, 2) of
             true ->
                 {Notify, CbData1} = CbMod:handle_reconnect(Who, CbData0),
@@ -438,13 +434,13 @@ info(Msg, St0) ->
     handle_notify(Notify, St1),
     St1.
 
-handle_notify({{'@', IDs}, {MsgType, Msg}}, #state{zone_data=ZD}) ->
-    #{ clients := #{ active := Active }} = ZD,
+handle_notify({{'@', IDs}, {MsgType, Msg}}, #state{zone_data = ZD}) ->
+    #{clients := #{active := Active}} = ZD,
     % Notify clients that are both in the list to be notified AND active
-    Players = [ P0 || P0 <- IDs, P1 <- Active, P0 =:= P1 ],
+    Players = [P0 || P0 <- IDs, P1 <- Active, P0 =:= P1],
     notify_players(MsgType, Msg, Players);
-handle_notify({'@zone', {MsgType, Msg}}, #state{zone_data=ZD}) ->
-    #{ clients := #{ active := Active }} = ZD,
+handle_notify({'@zone', {MsgType, Msg}}, #state{zone_data = ZD}) ->
+    #{clients := #{active := Active}} = ZD,
     % SEND MESSAGE: Send everyone the message
     notify_players(MsgType, Msg, Active);
 handle_notify(noreply, _St0) ->
@@ -453,39 +449,39 @@ handle_notify(noreply, _St0) ->
 
 notify_players(MsgType, Msg, Players) ->
     Send = fun(SessionID) ->
-            PID = ow_session:pid(SessionID),
-            Serializer = ow_session:serializer(SessionID),
-            case PID of
-                undefined ->
-                    ok;
-                Pid ->
-                    case Serializer of
-                        undefined ->
-                            Pid ! {self(), zone_msg, {MsgType, Msg}};
-                        protobuf ->
-                            #{
-                                channel := Channel,
-                                qos := QOS,
-                                encoder := Encoder
-                            } =
-                                ow_protocol:rpc(MsgType, client),
-                            #{
-                                interface := EncoderMod,
-                                app := App,
-                                lib := EncoderLib
-                            } = Encoder,
-                            EncodedMsg = erlang:apply(EncoderMod, encode, [
-                                Msg, MsgType, EncoderLib, App
-                            ]),
-                            Pid !
-                                {
-                                    self(),
-                                    zone_msg,
-                                    EncodedMsg,
-                                    {QOS, Channel}
-                                }
-                    end
-            end
+        PID = ow_session:pid(SessionID),
+        Serializer = ow_session:serializer(SessionID),
+        case PID of
+            undefined ->
+                ok;
+            Pid ->
+                case Serializer of
+                    undefined ->
+                        Pid ! {self(), zone_msg, {MsgType, Msg}};
+                    protobuf ->
+                        #{
+                            channel := Channel,
+                            qos := QOS,
+                            encoder := Encoder
+                        } =
+                            ow_protocol:rpc(MsgType, client),
+                        #{
+                            interface := EncoderMod,
+                            app := App,
+                            lib := EncoderLib
+                        } = Encoder,
+                        EncodedMsg = erlang:apply(EncoderMod, encode, [
+                            Msg, MsgType, EncoderLib, App
+                        ]),
+                        Pid !
+                            {
+                                self(),
+                                zone_msg,
+                                EncodedMsg,
+                                {QOS, Channel}
+                            }
+                end
+        end
     end,
     lists:foreach(Send, Players).
 
@@ -509,10 +505,10 @@ update_parted(SessionID, State) ->
 update_disconnected(SessionID, State) ->
     ZoneData = State#state.zone_data,
     #{
-      clients := #{
-                    active := Active, 
-                    disconnected := Disconnected
-                 }
+        clients := #{
+            active := Active,
+            disconnected := Disconnected
+        }
     } = ZoneData,
     Active1 = lists:delete(SessionID, Active),
     Disconnected1 = [SessionID | Disconnected],
@@ -521,30 +517,30 @@ update_disconnected(SessionID, State) ->
     % Update the zone data
     ZoneData1 = ZoneData#{
         client => #{
-                    active => Active1,
-                    disconnected => Disconnected1
-                   }
+            active => Active1,
+            disconnected => Disconnected1
+        }
     },
     State#state{zone_data = ZoneData1}.
 
 update_reconnected(SessionID, State) ->
     ZoneData = State#state.zone_data,
     #{
-      clients := #{
-                    active := Active, 
-                    disconnected := Disconnected
-                 }
+        clients := #{
+            active := Active,
+            disconnected := Disconnected
+        }
     } = ZoneData,
     Disconnected1 = lists:delete(SessionID, Disconnected),
-    Active1 = [ SessionID | Active ],
+    Active1 = [SessionID | Active],
     % Update the sesssion state
     ow_session:status(connected, SessionID),
     % Update the zone data
     ZoneData1 = ZoneData#{
         client => #{
-                    active => Active1,
-                    disconnected => Disconnected1
-                   }
+            active => Active1,
+            disconnected => Disconnected1
+        }
     },
     State#state{zone_data = ZoneData1}.
 
