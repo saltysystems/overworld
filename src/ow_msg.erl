@@ -12,20 +12,20 @@
 % Debugging decoder
 -export([raw_decode/1]).
 
--spec decode(binary(), ow_session:session()) -> any().
+-spec decode(binary(), ow_session:id()) -> any().
 %% @doc Decodes a message using the Overworld-specific application decoder.
-decode(Msg, Session) ->
+decode(Msg, SessionID) ->
     EncoderLib = overworld_pb,
     Application = overworld,
-    decode(Msg, Session, EncoderLib, Application).
+    decode(Msg, SessionID, EncoderLib, Application).
 
--spec decode(binary(), ow_session:session(), atom(), atom()) -> any().
+-spec decode(binary(), ow_session:id(), atom(), atom()) -> any().
 %% @doc Decodes a message using the specified encoder library and application.
 %% First, it decodes the larger message using the encoder library and application.
 %% Then, it looks up the appropriate server callback module based on the decoded call.
 %% Finally, it sends the sub-message to the sub-module for further processing and
 %% returns the result.
-decode(Msg, Session, EncoderLib, Application) ->
+decode(Msg, SessionID, EncoderLib, Application) ->
     % First decode the larger message
     Decoded = erlang:apply(EncoderLib, decode_msg, [Msg, Application]),
     #{msg := {Call, SubMsg}} = Decoded,
@@ -33,7 +33,7 @@ decode(Msg, Session, EncoderLib, Application) ->
     #{module := Module} = ow_protocol:rpc(Call, server),
     % Send the message to the submodule for further processing, and send a
     % reply if any
-    erlang:apply(Module, Call, [SubMsg, Session]).
+    erlang:apply(Module, Call, [SubMsg, SessionID]).
 
 -spec raw_decode(binary()) -> {atom(), map()}.
 %% @doc Decodes a raw message and returns the decoded call and sub-message.
