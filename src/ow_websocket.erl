@@ -2,13 +2,10 @@
 
 -behavior(cowboy_handler).
 
-%-export([init/2]).
 -export([init/2, terminate/3]).
 -export([websocket_init/1]).
 -export([websocket_handle/2]).
 -export([websocket_info/2]).
-
--include_lib("kernel/include/logger.hrl").
 
 -type ws_result() :: {ok, any()} | {reply, [binary(), ...], any()}.
 
@@ -26,90 +23,62 @@
 init(Req, _St0) ->
     #{peer := {RawIP, _Port}} = Req,
     IP = inet:ntoa(RawIP),
-    logger:notice("~p: client connected.", [IP]),
-    SessionID = erlang:unique_integer(),
-    St1 = ow_session:set_id(SessionID, ow_session:new()),
-    St2 = ow_session:set_pid(self(), St1),
-    St3 = ow_session:set_serializer(protobuf, St2),
-    {cowboy_websocket, Req, St3}.
+    logger:notice("Starting WebSocket session for ~p", [IP]),
+    SessionID = erlang:unique_integer([positive]),
+    ow_session:connect(SessionID),
+    logger:notice("~p: Pending SessionID: ~p", [IP, SessionID]),
+    {cowboy_websocket, Req, SessionID}.
 
 %%---------------------------------------------------------------------------
 %% @doc Terminate callback for cleanup processes
 %% @end
 %%---------------------------------------------------------------------------
 -spec terminate(any(), cowboy_req:req(), any()) -> ok.
-terminate(_Reason, Req, State) ->
+terminate(_Reason, Req, SessionID) ->
     #{peer := {IP, _Port}} = Req,
-    logger:notice("~p: client disconnected", [IP]),
-    logger:debug("Client state at disconnect: ~p", [State]),
-    % Check for a termination callback in the client state
-    case ow_session:get_termination_callback(State) of
-        {M, F, 1} ->
-            erlang:apply(M, F, [State]);
-        _ ->
-            ok
-    end,
+    logger:notice("~p: WebSocket client disconnected", [IP]),
+    logger:debug("Client session at disconnect: ~p", [SessionID]),
     ok.
 
 %%---------------------------------------------------------------------------
 %% @doc Set up the initial state of the websocket handler
-%%      The greeting handler is spawned, which can be helpful debug
-%%      information sent to the client to ensure that the connection
-%%      (preferably over TLS) is working correctly.
 %% @end
 %%---------------------------------------------------------------------------
--spec websocket_init(any()) -> {reply, {binary, binary()}, any()}.
+-spec websocket_init(any()) -> {ok, any()}.
 websocket_init(State) ->
-    gproc:reg({p, l, client_session}),
-    St1 = ow_session:set_pid(self(), State),
-    Msg = ow_session:encode_log("CONNECTION ESTABLISHED"),
-    {reply, {binary, Msg}, St1}.
+    {ok, State}.
 
 %%---------------------------------------------------------------------------
 %% @doc The websocket handler passes any binary message down to the protocol
 %%      decoder for further processing. All other messages are discarded.
 %% @end
 %%---------------------------------------------------------------------------
--spec websocket_handle(
-    {binary, [binary(), ...]}, ow_session:session()
-) -> ws_result().
-websocket_handle({binary, Msg}, Session) ->
+-spec websocket_handle({binary, [binary(), ...]}, pos_integer()) ->
+    ws_result().
+websocket_handle({binary, Msg}, SessionID) ->
     % protocol decoding will reply with an 'ok' for asynchronous messages or
     % will give us a binary to send back to the client
-    case ow_protocol:route(Msg, Session) of
-        % Table of possible returns
-        %   ok -> No reply, keep old session
-        %   {ok, Session1} -> No reply, update session
-        %   {Msg1, Session1} -> Reply message, update session (which may
-        %   ==Session)
+    case ow_protocol:route(Msg, {self(), SessionID}) of
         ok ->
-            {ok, Session};
-        {ok, Session1} ->
-            {ok, Session1};
-        {Msg1, Session1} ->
-            {reply, {binary, Msg1}, Session1};
-        {ok, Session1, _Options} ->
-            % Options only for ENet for the moment
-            {ok, Session1};
-        {Msg1, Session1, _Options} ->
-            % Options only for ENet for the moment
-            {reply, {binary, Msg1}, Session1}
+            {ok, SessionID};
+        {Msg1, _Options} ->
+            {reply, {binary, Msg1}, SessionID}
     end;
-websocket_handle(Frame, State) ->
+websocket_handle(Frame, SessionID) ->
     logger:debug("Received some other kind of frame: ~p", [Frame]),
-    {ok, State}.
+    {ok, SessionID}.
 
 %%--------------------------------------------------------------------------
 %% @doc websocket_info is triggered when a message from another erlang
 %%      process comes into this handler process.
 %% @end
 %%--------------------------------------------------------------------------
--spec websocket_info({Pid, Type, Msg, Options}, Session) -> Reply when
+-spec websocket_info({Pid, Type, Msg, Options}, SessionID) -> Reply when
     Pid :: pid(),
     Type :: broadcast | zone_msg,
     Msg :: binary(),
     Options :: any(),
-    Session :: ow_session:session(),
+    SessionID :: pos_integer(),
     Reply :: {reply, {binary, Msg1}, Session1},
     Msg1 :: binary(),
     Session1 :: ow_session:session().
@@ -117,6 +86,9 @@ websocket_info({_Pid, Type, Msg, _Options}, Session) when
     Type =:= 'broadcast'; Type =:= 'zone_msg'
 ->
     {reply, {binary, Msg}, Session};
+websocket_info({reconnect_session, SessionID1}, SessionID) ->
+    ow_session:reconnect(SessionID, SessionID1),
+    {ok, SessionID1};
 websocket_info(Info, Session) ->
     logger:debug("Got a message from another process: ~p", [Info]),
     {ok, Session}.
