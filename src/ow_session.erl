@@ -10,7 +10,6 @@
 -define(SERVER(SessionID),
     {via, gproc, {n, l, {?MODULE, SessionID}}}
 ).
--define(DEFAULT_CONNECTION_TIMEOUT, 60000). % ms
 
 % API
 -export([
@@ -20,28 +19,29 @@
     connect/1,
     reconnect/2,
     pid/2, pid/1,
-    serializer/2,serializer/1,
+    serializer/2, serializer/1,
     latency/2, latency/1,
     game_data/2, game_data/1,
     termination_callback/2, termination_callback/1,
     status/2, status/1,
-    token/2, token/1
+    token/2, token/1,
+    zone/2, zone/1
 ]).
 
 % RPC callbacks
--export([ 
-         session_ping/2,
-         session_request/2
+-export([
+    session_ping/2,
+    session_request/2
 ]).
 
 % gen_server required callbacks
 -export([
-         init/1,
-         handle_call/3,
-         handle_cast/2,
-         handle_info/2,
-         terminate/2,
-         code_change/3
+    init/1,
+    handle_call/3,
+    handle_cast/2,
+    handle_info/2,
+    terminate/2,
+    code_change/3
 ]).
 
 -include_lib("eunit/include/eunit.hrl").
@@ -50,18 +50,21 @@
 -type serializer() :: undefined | protobuf.
 -type id() :: pos_integer().
 -type status() :: undefined | connected | disconnected.
+-type time_ms() :: non_neg_integer().
 
 -record(session, {
     pid :: pid() | undefined,
     serializer :: serializer(),
-    latency :: non_neg_integer(), % in milliseconds
-    game_data :: any(), % it can be anything but we default to map
+    latency :: time_ms(),
+    game_data :: any(),
     termination_callback :: mfa() | undefined,
+    disconnect_timeout :: time_ms(),
     status :: status(),
-    token :: binary()
+    token :: binary() | undefined,
+    zone :: pid() | undefined
 }).
-
 -export_type([serializer/0]).
+-export_type([id/0]).
 
 %%----------------------------------------------------------------------------
 %% RPC annotation for Client library generation
@@ -102,15 +105,16 @@ session_request(Msg, SessionID) ->
     case Token of
         undefined ->
             % No session existing, start a new one
-            start(SessionID);
-        _ -> 
+            start(SessionID, [{pid, self()}]);
+        _ ->
             {SessionID1, NewToken} = ow_token_serv:exchange(Token),
             % Lookup the PID of the handler (Enet or Websocket) and ask it to
             % update its session ID
-            Pid = gproc:lookup_pid({n,l,SessionID}),
+            Pid = gproc:lookup_pid({n, l, SessionID}),
             Pid ! {reconnect_session, SessionID1},
-            % Set the connection state to active
-            {ok, connected} = status(connected, SessionID),
+            % Call the zone and let it know that the client has reconnected
+            ZonePid = zone(SessionID),
+            reconnect(ZonePid, SessionID),
             % Update the Session server with the new token
             {ok, NewToken} = token(NewToken, SessionID)
     end,
@@ -121,17 +125,17 @@ session_request(Msg, SessionID) ->
 %% @end
 %%----------------------------------------------------------------------------
 -spec start(id()) -> gen_server:start_ret().
-start(ID) -> 
+start(ID) ->
     start([], ID).
 -spec start([tuple()], id()) -> gen_server:start_ret().
 start(Config, ID) ->
     gen_server:start_link(?SERVER(ID), ?MODULE, [], [Config]).
 
 %%----------------------------------------------------------------------------
-%% @doc Stop the session server 
+%% @doc Stop the session server
 %% @end
 %%----------------------------------------------------------------------------
-stop(ID) -> 
+stop(ID) ->
     gen_server:stop(?SERVER(ID)).
 
 %%----------------------------------------------------------------------------
@@ -140,7 +144,7 @@ stop(ID) ->
 %%----------------------------------------------------------------------------
 -spec connect(pos_integer()) -> ok.
 connect(SessionID) ->
-    gproc:reg({n,l,SessionID}, ignored),
+    gproc:reg({n, l, SessionID}, ignored),
     ok.
 
 %%----------------------------------------------------------------------------
@@ -153,7 +157,7 @@ reconnect(SessionID, SessionID1) ->
     % Register the process by this SessionID in gproc
     gproc:reg({n, l, SessionID1}, ignored),
     % Unregister the old value in gproc
-    gproc:unreg({n,l,SessionID}),
+    gproc:unreg({n, l, SessionID}),
     ok.
 
 %%----------------------------------------------------------------------------
@@ -161,7 +165,7 @@ reconnect(SessionID, SessionID1) ->
 %% @end
 %%----------------------------------------------------------------------------
 -spec pid(pid(), id()) -> {ok, pid()}.
-pid(Pid,ID) -> 
+pid(Pid, ID) ->
     gen_server:call(?SERVER(ID), {set_pid, Pid}).
 
 %%----------------------------------------------------------------------------
@@ -169,7 +173,7 @@ pid(Pid,ID) ->
 %% @end
 %%----------------------------------------------------------------------------
 -spec pid(id()) -> pid().
-pid(ID) -> 
+pid(ID) ->
     gen_server:call(?SERVER(ID), get_pid).
 
 %%----------------------------------------------------------------------------
@@ -177,12 +181,12 @@ pid(ID) ->
 %%      within Erlang node(s), then there is no need to set a serializer.
 %% @end
 %%----------------------------------------------------------------------------
--spec serializer(serializer(),id()) -> {ok, serializer()}.
+-spec serializer(serializer(), id()) -> {ok, serializer()}.
 serializer(Serializer, ID) ->
     gen_server:call(?SERVER(ID), {set_serializer, Serializer}).
 
 %%----------------------------------------------------------------------------
-%% @doc Get the format for serializing data. 
+%% @doc Get the format for serializing data.
 %% @end
 %%----------------------------------------------------------------------------
 -spec serializer(id()) -> serializer().
@@ -271,64 +275,86 @@ token(Token, ID) ->
 token(ID) ->
     gen_server:call(?SERVER(ID), get_token).
 
+%%----------------------------------------------------------------------------
+%% @doc Sets the zone pid
+%% @end
+%%----------------------------------------------------------------------------
+-spec zone(pid(), id()) -> {ok, pid()}.
+zone(Zone, ID) ->
+    gen_server:call(?SERVER(ID), {set_zone, Zone}).
+
+%%----------------------------------------------------------------------------
+%% @doc Get the zone pid
+%% @end
+%%----------------------------------------------------------------------------
+-spec zone(id()) -> pid().
+zone(ID) ->
+    gen_server:call(?SERVER(ID), get_token).
+
 %%=========================================================================
 %% Callback handlers
 %%=========================================================================
 
 init([Config]) ->
-    Session = #session{ 
-       pid = proplists:get_value(pid, Config, undefined),
-       serializer = proplists:get_value(serializer, Config, undefined),
-       latency = proplists:get_value(latency, Config, 0),
-       game_data = proplists:get_value(game_data, Config, undefined),
-       termination_callback = proplists:get_value(termination_callback, Config, undefined),
-       status = proplists:get_value(status, Config, undefined)
-      },
+    Session = #session{
+        pid = proplists:get_value(pid, Config, undefined),
+        serializer = proplists:get_value(serializer, Config, undefined),
+        latency = proplists:get_value(latency, Config, 0),
+        game_data = proplists:get_value(game_data, Config, undefined),
+        termination_callback = proplists:get_value(
+            termination_callback, Config, undefined
+        ),
+        disconnect_timeout = proplists:get_value(
+            disconnect_timeout, Config, 30000
+        ),
+        status = proplists:get_value(status, Config, undefined),
+        token = proplists:get_value(token, Config, undefined),
+        zone = proplists:get_value(zone, Config, undefined)
+    },
     {ok, Session}.
 
 handle_call({set_pid, Pid}, _From, Session) ->
     {reply, {ok, Pid}, Session#session{pid = Pid}};
 handle_call(get_pid, _From, Session) ->
     {reply, Session#session.pid, Session};
-
 handle_call({set_serializer, Serializer}, _From, Session) ->
     {reply, {ok, Serializer}, Session#session{serializer = Serializer}};
 handle_call(get_serializer, _From, Session) ->
     {reply, Session#session.serializer, Session};
-
 handle_call({set_latency, Latency}, _From, Session) ->
     {reply, {ok, Latency}, Session#session{latency = Latency}};
 handle_call(get_latency, _From, Session) ->
     {reply, Session#session.latency, Session};
-
 handle_call({set_game_data, GameData}, _From, Session) ->
     {reply, {ok, GameData}, Session#session{game_data = GameData}};
 handle_call(get_game_data, _From, Session) ->
     {reply, Session#session.game_data, Session};
-
 handle_call({set_termination_callback, TCB}, _From, Session) ->
     {reply, {ok, TCB}, Session#session{termination_callback = TCB}};
 handle_call(get_termination_callback, _From, Session) ->
     {reply, Session#session.termination_callback, Session};
-
-handle_call({set_status, Status}, _From, Session) when Status =:= disconnected ->
+handle_call({set_status, Status}, _From, Session) when
+    Status =:= disconnected
+->
     % On a disconnected session, set a timer to terminate this session
-    erlang:send_after(?DEFAULT_CONNECTION_TIMEOUT, self(), maybe_terminate),
+    #{connection_timeout_ms := Timeout} = Session,
+    erlang:send_after(Timeout, self(), maybe_terminate),
     {reply, {ok, Status}, Session#session{status = Status}};
 handle_call({set_status, Status}, _From, Session) ->
     {reply, {ok, Status}, Session#session{status = Status}};
 handle_call(get_status, _From, Session) ->
     {reply, Session#session.status, Session};
-
 handle_call({set_token, Token}, _From, Session) ->
     {reply, {ok, Token}, Session#session{token = Token}};
 handle_call(get_token, _From, Session) ->
     {reply, Session#session.token, Session}.
-    
+
 handle_cast(_Msg, Session) ->
     {noreply, Session}.
 
-handle_info(maybe_terminate, Session) when Session#session.status =:= disconnected ->
+handle_info(maybe_terminate, Session) when
+    Session#session.status =:= disconnected
+->
     % Client is still disconnected, terminate.
     {stop, timeout, Session};
 handle_info(maybe_terminate, Session) ->
