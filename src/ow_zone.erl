@@ -16,8 +16,6 @@
     disconnect/2,
     reconnect/2,
     rpc/4,
-    who/1,
-    status/1,
     broadcast/2,
     send/3
 ]).
@@ -32,9 +30,39 @@
     code_change/3
 ]).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% types
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%=======================================================================
+%% Internal State, default configurations
+%%=======================================================================
+
+-define(TAG_I(Msg), {'$ow_zone_internal', Msg}).
+
+-record(state, {
+    cb_mod :: module(),
+    cb_data :: term(),
+    zone_data :: zone_data()
+}).
+
+% DEFAULT_LERP_MS/DEFAULT_TICK_MS = 4 packets buffered by default
+-define(DEFAULT_LERP_MS, 80).
+-define(DEFAULT_TICK_MS, 20).
+-define(DEFAULT_DC_TIMEOUT_MS, 3000).
+
+-define(INITIAL_ZONE_DATA, #{
+    clients => #{
+        joined => [],
+        active => [],
+        parted => [],
+        disconnected => []
+    },
+    frame => 0,
+    tick_ms => ?DEFAULT_TICK_MS,
+    lerp_period => ?DEFAULT_LERP_MS,
+    dc_timeout_ms => ?DEFAULT_DC_TIMEOUT_MS
+}).
+
+%%=======================================================================
+%% Types
+%%=======================================================================
 -type server_name() :: gen_server:server_name().
 -type server_ref() :: gen_server:server_ref().
 -type start_opt() :: gen_server:start_opt().
@@ -47,41 +75,29 @@
     | ignore
     | {error, term()}.
 -type from() :: gen_server:from().
--type session() :: ow_session:session().
--type session_id() :: integer().
 -type zone_msg() :: {atom(), map()}.
 -type ow_zone_resp() ::
     noreply
     | {'@zone', zone_msg()}
     | {{'@', list()}, zone_msg()}.
+-type zone_data() ::
+    #{
+        clients => #{
+            joined => [ow_session:id()],
+            active => [ow_session:id()],
+            parted => [ow_session:id()],
+            disconnected => [ow_session:id()]
+        },
+        frame => non_neg_integer(),
+        tick_ms => pos_integer(),
+        lerp_period => pos_integer(),
+        dc_timeout_ms => pos_integer()
+    }.
+-type state() :: #state{}.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% internal state
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
--define(TAG_I(Msg), {'$ow_zone_internal', Msg}).
-
--record(state, {
-    cb_mod :: module(),
-    cb_data :: term(),
-    tick_ms :: pos_integer(),
-    require_auth :: boolean(),
-    disconnects = [] :: [session()],
-    dc_timeout_ms :: pos_integer()
-}).
-%-type state() :: #state{}.
-
--define(DEFAULT_CONFIG, #{
-    % milliseconds between ticks
-    tick_ms => 20,
-    require_auth => false,
-    dc_timeout_ms => 3000
-}).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% ow_zone callbacks
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+%%=======================================================================
+%% ow_zone callbacks
+%%=======================================================================
 -callback init(Args) -> Result when
     Args :: term(),
     Result ::
@@ -93,53 +109,37 @@
     InitialData :: term(),
     Reason :: term().
 
--callback handle_join(Msg, Session, State) -> Result when
+-callback handle_join(Msg, From, State) -> Result when
+    From :: ow_session:id(),
     Msg :: term(),
-    Session :: session(),
-    State :: term(),
-    Result :: {Response, Status, State},
-    PlayerInfo :: any(),
-    Status :: atom() | {ok, Session} | {ok, Session, PlayerInfo},
-    Response :: ow_zone_resp().
-
--callback handle_part(Msg, Session, State) -> Result when
-    Msg :: term(),
-    Session :: session(),
-    State :: term(),
-    Result :: {Response, Status, State},
-    Status :: atom() | {ok, Session},
-    Response :: ow_zone_resp().
-
--callback handle_disconnect(Session, State) -> Result when
-    Session :: session(),
-    State :: term(),
-    Result :: {Response, Status, State},
-    Status :: atom() | {ok, Session},
-    Response :: ow_zone_resp().
-
--callback handle_rpc(Type, Msg, Session, State) -> Result when
-    Type :: atom(),
-    Msg :: term(),
-    Session :: session(),
-    State :: term(),
-    Result :: {Response, Status, State},
-    Status :: atom() | {ok, Session},
-    Response :: ow_zone_resp().
-
--callback handle_tick(TickMs, State) -> Result when
-    TickMs :: pos_integer(),
     State :: term(),
     Result :: {Response, State},
     Response :: ow_zone_resp().
 
--callback handle_status(State) -> Result when
+-callback handle_part(Msg, From, State) -> Result when
+    From :: ow_session:id(),
+    Msg :: term(),
     State :: term(),
-    Result :: term().
--optional_callbacks([handle_status/1]).
+    Result :: {Response, State},
+    Response :: ow_zone_resp().
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% gen_server api
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-callback handle_disconnect(From, State) -> Result when
+    From :: ow_session:id(),
+    State :: term(),
+    Result :: {Response, State},
+    Response :: ow_zone_resp().
+
+-callback handle_tick(ZoneData, State) -> Result when
+    ZoneData :: zone_data(),
+    State :: term(),
+    Result :: {Response, State},
+    Response :: ow_zone_resp().
+
+-optional_callbacks([handle_join/3, handle_part/3, handle_disconnect/2]).
+
+%%=======================================================================
+%% gen_server API functions
+%%=======================================================================
 
 -spec start(Module, Args, Opts) -> Result when
     Module :: module(),
@@ -232,43 +232,35 @@ stop(ServerRef) ->
 stop(ServerRef, Reason, Timeout) ->
     gen_server:stop(ServerRef, Reason, Timeout).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% public behavior API
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%=======================================================================
+%% Public API for ow_zone
+%%=======================================================================
 
--spec join(server_ref(), term(), session()) -> {ok, session()}.
-join(ServerRef, Msg, Session) ->
-    gen_server:call(ServerRef, ?TAG_I({join, Msg, Session})).
+-spec join(server_ref(), term(), ow_session:id()) -> ok.
+join(ServerRef, Msg, SessionID) ->
+    gen_server:call(ServerRef, ?TAG_I({join, Msg, SessionID})).
 
--spec part(server_ref(), term(), session()) -> {ok, session()}.
-part(ServerRef, Msg, Session) ->
-    gen_server:call(ServerRef, ?TAG_I({part, Msg, Session})).
+-spec part(server_ref(), term(), ow_session:id()) -> ok.
+part(ServerRef, Msg, SessionID) ->
+    gen_server:call(ServerRef, ?TAG_I({part, Msg, SessionID})).
 
--spec disconnect(server_ref(), session()) -> {ok, session()}.
-disconnect(ServerRef, Session) ->
-    gen_server:call(ServerRef, ?TAG_I({disconnect, Session})).
+-spec disconnect(server_ref(), ow_session:id()) -> ok.
+disconnect(ServerRef, SessionID) ->
+    gen_server:cast(ServerRef, ?TAG_I({disconnect, SessionID})).
 
--spec reconnect(server_ref(), session()) -> ok.
-reconnect(ServerRef, Session) ->
-    gen_server:cast(ServerRef, ?TAG_I({reconnect, Session})).
+-spec reconnect(server_ref(), ow_session:id()) -> ok.
+reconnect(ServerRef, SessionID) ->
+    gen_server:cast(ServerRef, ?TAG_I({reconnect, SessionID})).
 
--spec rpc(server_ref(), atom(), term(), session()) -> {ok, session()}.
-rpc(ServerRef, Type, Msg, Session) ->
-    gen_server:call(ServerRef, ?TAG_I({rpc, Type, Msg, Session})).
-
--spec who(server_ref()) -> list().
-who(ServerRef) ->
-    gen_server:call(ServerRef, ?TAG_I({who})).
-
--spec status(server_ref()) -> undefined | term().
-status(ServerRef) ->
-    gen_server:call(ServerRef, ?TAG_I({status})).
+-spec rpc(server_ref(), atom(), term(), ow_session:id()) -> ok.
+rpc(ServerRef, Type, Msg, SessionID) ->
+    gen_server:call(ServerRef, ?TAG_I({rpc, Type, Msg, SessionID})).
 
 -spec broadcast(server_ref(), term()) -> ok.
 broadcast(ServerRef, Msg) ->
     gen_server:cast(ServerRef, ?TAG_I({broadcast, Msg})).
 
--spec send(server_ref(), [session_id()], term()) -> ok.
+-spec send(server_ref(), [ow_session:id()], term()) -> ok.
 send(ServerRef, IDs, Msg) ->
     gen_server:cast(ServerRef, ?TAG_I({send, IDs, Msg})).
 
@@ -279,94 +271,124 @@ send(ServerRef, IDs, Msg) ->
 % @doc Initialize the internal state of the zone, with timer
 init({CbMod, CbArgs}) ->
     init(CbMod, CbMod:init(CbArgs)).
-init(CbMod, {ok, CbData, ConfigMap}) ->
-    Config = maps:merge(?DEFAULT_CONFIG, ConfigMap),
-    State = initialize_state(CbMod, CbData, Config),
-    {ok, State};
+init(CbMod, {ok, CbData, ZoneData}) ->
+    Config = maps:merge(?INITIAL_ZONE_DATA, ZoneData),
+    St0 = initialize_state(CbMod, CbData, Config),
+    {ok, St0};
 init(CbMod, {ok, CbData}) ->
-    Config = ?DEFAULT_CONFIG,
-    State = initialize_state(CbMod, CbData, Config),
-    {ok, State};
+    Config = ?INITIAL_ZONE_DATA,
+    St0 = initialize_state(CbMod, CbData, Config),
+    {ok, St0};
 init(_CbMod, ignore) ->
     ignore;
 init(_CbMod, Stop) ->
     Stop.
 
-initialize_state(
-    CbMod,
-    CbData,
-    Config = #{tick_ms := TickMs, dc_timeout_ms := DCTimeoutMs}
-) ->
-    % setup the timer
-    timer:send_interval(TickMs, self(), ?TAG_I(tick)),
-    % configure auth
-    RequireAuth = maps:get(require_auth, Config),
-    %RPCInfo =
-    %    case rpc_info(CbMod) of
-    %        [] ->
-    %            [];
-    %        RPCs ->
-    %            logger:debug("Registering ~p", [CbMod]),
-    %            ow_protocol:register_app(CbMod),
-    %            RPCs
-    %    end,
-    #state{
-        cb_mod = CbMod,
-        cb_data = CbData,
-        tick_ms = TickMs,
-        require_auth = RequireAuth,
-        dc_timeout_ms = DCTimeoutMs
-    }.
+handle_call(?TAG_I({join, Msg, Who}), From, St0) ->
+    % Check the callback module for a handle_join function
+    CbMod = St0#state.cb_mod,
+    CbData0 = St0#state.cb_data,
+    NextState = 
+        case erlang:function_exported(CbMod, handle_join, 3) of
+            true ->
+                {Notify, CbData1} = CbMod:handle_join(Msg, Who, CbData0),
+                St1 = St0#state{cb_data = CbData1},
+                % Notify the caller of any messages that the callback module
+                % wants to send as a response to the joint
+                handle_notify(Notify, St1),
+                % TODO: maybe set a termination callback?
+                St1;
+            false ->
+                % Assume the callback module does not want to take any
+                % additional action
+                St0
+        end,
+    update_joined(Who, NextState),
+    % Update the session with zone information
+    ow_session:zone(From, Who),
+    {reply, ok, NextState};
 
-handle_call(?TAG_I({Action, Msg, Session}), _From, St0) ->
-    % where Action = join or part.
-    {Session1, St1} = maybe_auth_do(Action, Msg, Session, St0),
-    % Get channel and QOS information
-    {reply, {ok, Session1, enet_msg_opts(Action)}, St1};
-handle_call(?TAG_I({who}), _From, St0) ->
-    Players = ow_player_reg:list(self()),
-    IDs = [ow_player_reg:get_id(P) || P <- Players],
-    {reply, IDs, St0};
-handle_call(?TAG_I({status}), _From, St0) ->
+handle_call(?TAG_I({part, Msg, Who}), _From, St0) ->
+    CbMod = St0#state.cb_mod,
+    CbData0 = St0#state.cb_data,
+    NextState = 
+        case erlang:function_exported(CbMod, handle_part, 3) of
+            true ->
+                {Notify, CbData1} = CbMod:handle_part(Msg, Who, CbData0),
+                St1 = St0#state{cb_data = CbData1},
+                % Send any messages as needed - called for side effects
+                handle_notify(Notify, St1),
+                St1;
+            false ->
+                % Assume the callback module does not want to take any
+                % additional action
+                St0
+        end,
+    update_parted(Who, NextState),
+    {reply, ok, NextState};
+
+handle_call(?TAG_I({Type, Msg, SessionID}), _From, St0) ->
     CbMod = St0#state.cb_mod,
     CbData = St0#state.cb_data,
-    {StatusMsg, CbData1} =
-        case erlang:function_exported(CbMod, handle_status, 1) of
-            true ->
-                CbMod:handle_status(CbData);
-            _ ->
-                {undefined, CbData}
+    % Overworld will confirm that the player is actually part of the zone to
+    % which they are sending RPCs
+    Handler = list_to_existing_atom("handler_" ++ atom_to_list(Type)),
+    {Notify, CbData1} =
+        maybe
+            true ?= erlang:function_exported(CbMod, Handler, 3),
+            CbMod:Handler(Msg, SessionID, CbData)
+        else
+            false ->
+                {noreply, ok, CbData}
         end,
     St1 = St0#state{cb_data = CbData1},
-    {reply, StatusMsg, St1};
-handle_call(?TAG_I({rpc, Type, Msg, Session}), _From, St0) ->
-    {Session1, St1} = maybe_auth_rpc(Type, Msg, Session, St0),
-    {reply, {ok, Session1, enet_msg_opts(Type)}, St1};
-handle_call(?TAG_I({disconnect, Session}), _From, St0) ->
-    Disconnects = St0#state.disconnects,
-    {Session1, State1} = notify_disconnect(Session, St0),
-    Now = erlang:monotonic_time(),
-    Disconnects1 = [{Session1, Now} | Disconnects],
-    {reply, {ok, Session1}, State1#state{disconnects = Disconnects1}};
+    % Send any messages as needed - called for side effects
+    handle_notify(Notify, St1),
+    {reply, ok, St1};
+
 handle_call(_Call, _From, St0) ->
+    %TODO : Allow fall-through ?
     {reply, ok, St0}.
 
-handle_cast(
-    ?TAG_I({reconnect, Session}), St0 = #state{disconnects = Disconnects}
-) ->
-    % Filter out the pending disconnect
-    ID = ow_session:get_id(Session),
-    F = fun({PendingSession, When}, Acc) ->
-        PendingID = ow_session:get_id(PendingSession),
-        case PendingID == ID of
+
+handle_cast(?TAG_I({disconnect, Who}), St0) ->
+    CbMod = St0#state.cb_mod,
+    CbData0 = St0#state.cb_data,
+    NextState = 
+        case erlang:function_exported(CbMod, handle_disconnect, 2) of
             true ->
-                Acc;
+                {Notify, CbData1} = CbMod:handle_disconnect(Who, CbData0),
+                St1 = St0#state{cb_data = CbData1},
+                % Notify the caller of any messages that the callback module
+                % wants to send as a response to the joint
+                handle_notify(Notify, St1),
+                St1;
             false ->
-                [{PendingSession, When} | Acc]
-        end
-    end,
-    Disconnects1 = lists:foldl(F, [], Disconnects),
-    {noreply, St0#state{disconnects = Disconnects1}};
+                % Assume the callback module does not want to take any
+                % additional action
+                St0
+        end,
+    update_disconnected(Who, NextState),
+    {noreply, NextState};
+handle_cast(?TAG_I({reconnect, Who}), St0) ->
+    CbMod = St0#state.cb_mod,
+    CbData0 = St0#state.cb_data,
+    NextState = 
+        case erlang:function_exported(CbMod, handle_reconnect, 2) of
+            true ->
+                {Notify, CbData1} = CbMod:handle_reconnect(Who, CbData0),
+                St1 = St0#state{cb_data = CbData1},
+                % Notify the caller of any messages that the callback module
+                % wants to send as a response to the joint
+                handle_notify(Notify, St1),
+                St1;
+            false ->
+                % Assume the callback module does not want to take any
+                % additional action
+                St0
+        end,
+    update_reconnected(Who, NextState),
+    {noreply, NextState};
 handle_cast(?TAG_I({broadcast, Msg}), St0) ->
     handle_notify({'@zone', Msg}, St0),
     {noreply, St0};
@@ -374,12 +396,12 @@ handle_cast(?TAG_I({send, IDs, Msg}), St0) ->
     handle_notify({{'@', IDs}, Msg}, St0),
     {noreply, St0};
 handle_cast(_Cast, St0) ->
+    %TODO : Allow fall-through ?
     {noreply, St0}.
 
 handle_info(?TAG_I(tick), St0) ->
     St1 = tick(St0),
-    St2 = timeout_disconnects(St1),
-    {noreply, St2};
+    {noreply, St1};
 handle_info(Msg, #state{cb_mod = CbMod} = St0) ->
     St1 =
         case erlang:function_exported(CbMod, handle_info, 2) of
@@ -393,90 +415,46 @@ handle_info(Msg, #state{cb_mod = CbMod} = St0) ->
 terminate(_Reason, _St0) -> ok.
 code_change(_OldVsn, St0, _Extra) -> {ok, St0}.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% internal functions
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%=======================================================================
+%% Internal functions
+%%=======================================================================
 
-tick(St0 = #state{cb_mod = CbMod, cb_data = CbData0, tick_ms = TickMs}) ->
+-spec tick(state()) -> state().
+tick(St0 = #state{cb_mod = CbMod, cb_data = CbData0, zone_data = ZoneData}) ->
+    #{tick_ms := TickMs} = ZoneData,
     {Notify, CbData1} = CbMod:handle_tick(TickMs, CbData0),
+    % Move all joined players to active
+    #{clients := #{active := Active, joined := Joined}} = ZoneData,
+    Active1 = Active ++ Joined,
+    ZD1 = ZoneData#{clients => #{active => Active1, joined => []}},
+    St1 = St0#state{cb_data = CbData1, zone_data = ZD1},
+    handle_notify(Notify, St1),
+    St1.
+
+info(Msg, St0) ->
+    #state{cb_mod = CbMod, cb_data = CbData} = St0,
+    {Notify, CbData1} = CbMod:handle_info(Msg, CbData),
     St1 = St0#state{cb_data = CbData1},
     handle_notify(Notify, St1),
     St1.
 
-timeout_disconnects(
-    #state{disconnects = Disconnects, dc_timeout_ms = DCTimeoutMs} = State
-) ->
-    Now = erlang:monotonic_time(),
-    F =
-        fun(P = {Session, When}, St0) ->
-            Delta = erlang:convert_time_unit(
-                (Now - When), native, millisecond
-            ),
-            case Delta > DCTimeoutMs of
-                true ->
-                    ID = ow_session:get_id(Session),
-                    logger:notice("Disconnecting ~p: timeout", [ID]),
-                    Disconnects1 = lists:delete(P, Disconnects),
-                    % The callback part handler MUST accept an empty message as a result
-                    {_Session1, St1} = actually_do(part, #{}, Session, St0),
-                    St1#state{
-                        disconnects = Disconnects1
-                    };
-                false ->
-                    St0
-            end
-        end,
-    lists:foldl(F, State, Disconnects).
-
-info(Msg, St0 = #state{cb_mod = CbMod, cb_data = CbData}) ->
-    {Notify, CbData1} = CbMod:handle_info(Msg, CbData),
-    St1 = St0#state{cb_data = CbData1},
-    handle_notify(Notify, CbData1),
-    St1.
-
-handle_notify({{'@', IDs}, {MsgType, Msg}}, _State) ->
-    % SEND MESSAGE: Filter just for the players we want to notify
-    Players = [ow_player_reg:get(ID) || ID <- IDs],
-    case Players of
-        [] ->
-            % Nothing to send
-            ok;
-        Players ->
-            notify_players(MsgType, Msg, Players)
-    end;
-handle_notify({'@zone', {MsgType, Msg}}, _State) ->
+handle_notify({{'@', IDs}, {MsgType, Msg}}, #state{zone_data=ZD}) ->
+    #{ clients := #{ active := Active }} = ZD,
+    % Notify clients that are both in the list to be notified AND active
+    Players = [ P0 || P0 <- IDs, P1 <- Active, P0 =:= P1 ],
+    notify_players(MsgType, Msg, Players);
+handle_notify({'@zone', {MsgType, Msg}}, #state{zone_data=ZD}) ->
+    #{ clients := #{ active := Active }} = ZD,
     % SEND MESSAGE: Send everyone the message
-    Players = ow_player_reg:list(self()),
-    case Players of
-        [] ->
-            % Nothing to send
-            ok;
-        Players ->
-            notify_players(MsgType, Msg, Players)
-    end;
-handle_notify(noreply, _State) ->
+    notify_players(MsgType, Msg, Active);
+handle_notify(noreply, _St0) ->
     % NO MESSAGE
     ok.
 
-player_add(PlayerInfo, Session) ->
-    % Add the player to the list of players.
-    ID = ow_session:get_id(Session),
-    PID = ow_session:get_pid(Session),
-    Serializer = ow_session:get_serializer(Session),
-    % Force a crash via failed match if player registration doesn't go well
-    ok = ow_player_reg:new(ID, PID, Serializer, self(), PlayerInfo).
-
-player_rm(Session) ->
-    ID = ow_session:get_id(Session),
-    ow_player_reg:delete(ID).
-
 notify_players(MsgType, Msg, Players) ->
-    Send = fun
-        ({error, _}) ->
-            ok;
-        (Player) ->
-            PID = ow_player_reg:get_pid(Player),
-            Serializer = ow_player_reg:get_serializer(Player),
+    Send = fun(SessionID) ->
+            PID = ow_session:pid(SessionID),
+            Serializer = ow_session:serializer(SessionID),
             case PID of
                 undefined ->
                     ok;
@@ -511,140 +489,77 @@ notify_players(MsgType, Msg, Players) ->
     end,
     lists:foreach(Send, Players).
 
-maybe_auth_do(Action, Msg, Session, St0 = #state{require_auth = RA}) when
-    RA =:= true
-->
-    case ow_session:is_authenticated(Session) of
-        true ->
-            actually_do(Action, Msg, Session, St0);
-        false ->
-            % Do not update session, do not update state.
-            {Session, St0}
-    end;
-maybe_auth_do(Action, Msg, Session, St0) ->
-    actually_do(Action, Msg, Session, St0).
+update_joined(SessionID, State) ->
+    ZoneData = State#state.zone_data,
+    #{clients := #{joined := Joined}} = ZoneData,
+    Joined1 = [SessionID | Joined],
+    ZoneData1 = ZoneData#{client => #{joined => Joined1}},
+    State#state{zone_data = ZoneData1}.
 
-actually_do(Action, Msg, Session, St0) ->
-    %DecodedMsg = decode_msg(Action, Msg, Session),
-    CbMod = St0#state.cb_mod,
-    CbData0 = St0#state.cb_data,
-    CbFun = list_to_existing_atom("handle_" ++ atom_to_list(Action)),
-    {Notify, Status, CbData1} = CbMod:CbFun(Msg, Session, CbData0),
-    case Action of
-        join ->
-            add_and_notify(Session, St0, Status, CbMod, CbData1, Notify);
-        part ->
-            rm_and_notify(Session, St0, Status, CbData1, Notify)
-    end.
+update_parted(SessionID, State) ->
+    ZoneData = State#state.zone_data,
+    #{clients := #{parted := Parted, active := Active}} = ZoneData,
+    Parted1 = [SessionID | Parted],
+    Active1 = lists:delete(SessionID, Active),
+    ZoneData1 = ZoneData#{
+        clients => #{parted => Parted1, active => Active1}
+    },
+    State#state{zone_data = ZoneData1}.
 
-add_and_notify(Session0, St0, Status, CbMod, CbData1, Notify) ->
-    Session1 =
-        case Status of
-            {ok, S1, PlayerInfo} ->
-                player_add(PlayerInfo, S1),
-                S1;
-            {ok, S1} ->
-                player_add(undefined, S1),
-                S1;
-            _ ->
-                player_add(undefined, Session0),
-                Session0
-        end,
-    St1 = St0#state{cb_data = CbData1},
-    handle_notify(Notify, St1),
-    % Set the player's termination callback
-    Session2 =
-        ow_session:set_termination_callback(
-            {CbMod, disconnect, 1}, Session1
-        ),
-    {Session2, St1}.
+update_disconnected(SessionID, State) ->
+    ZoneData = State#state.zone_data,
+    #{
+      clients := #{
+                    active := Active, 
+                    disconnected := Disconnected
+                 }
+    } = ZoneData,
+    Active1 = lists:delete(SessionID, Active),
+    Disconnected1 = [SessionID | Disconnected],
+    % Update the sesssion state
+    ow_session:status(disconnected, SessionID),
+    % Update the zone data
+    ZoneData1 = ZoneData#{
+        client => #{
+                    active => Active1,
+                    disconnected => Disconnected1
+                   }
+    },
+    State#state{zone_data = ZoneData1}.
 
-rm_and_notify(Session0, St0, Status, CbData1, Notify) ->
-    Session1 = update_session(Status, Session0),
-    player_rm(Session1),
-    % Send any messages as needed - called for side effects
-    St1 = St0#state{cb_data = CbData1},
-    handle_notify(Notify, St1),
-    {Session1, St1}.
+update_reconnected(SessionID, State) ->
+    ZoneData = State#state.zone_data,
+    #{
+      clients := #{
+                    active := Active, 
+                    disconnected := Disconnected
+                 }
+    } = ZoneData,
+    Disconnected1 = lists:delete(SessionID, Disconnected),
+    Active1 = [ SessionID | Active ],
+    % Update the sesssion state
+    ow_session:status(connected, SessionID),
+    % Update the zone data
+    ZoneData1 = ZoneData#{
+        client => #{
+                    active => Active1,
+                    disconnected => Disconnected1
+                   }
+    },
+    State#state{zone_data = ZoneData1}.
 
-maybe_auth_rpc(Type, Msg, Session, St0 = #state{require_auth = RA}) when
-    RA =:= true
-->
-    case ow_session:is_authenticated(Session) of
-        true ->
-            actually_rpc(Type, Msg, Session, St0);
-        false ->
-            {Session, St0}
-    end;
-maybe_auth_rpc(Type, Msg, Session, St0) ->
-    actually_rpc(Type, Msg, Session, St0).
+%%=======================================================================
+%% Internal functions
+%%=======================================================================
 
-actually_rpc(Type, Msg, Session, St0) ->
-    CbMod = St0#state.cb_mod,
-    CbData = St0#state.cb_data,
-    %DecodedMsg = decode_msg(Type, Msg, Session),
-    SessionID = ow_session:get_id(Session),
-    % Overworld will confirm that the player is actually part of the zone to
-    % which they are sending RPCs
-    {Notify, Status, CbData1} =
-        case is_player(SessionID) of
-            true ->
-                CbMod:handle_rpc(Type, Msg, Session, CbData);
-            false ->
-                {noreply, ok, CbData}
-        end,
-    Session1 = update_session(Status, Session),
-    St1 = St0#state{cb_data = CbData1},
-    % Send any messages as needed - called for side effects
-    handle_notify(Notify, St1),
-    {Session1, St1}.
-
--spec notify_disconnect(session(), term()) -> {session(), term()}.
-notify_disconnect(Session, St0) ->
-    CbMod = St0#state.cb_mod,
-    CbData = St0#state.cb_data,
-    ID = ow_session:get_id(Session),
-    case ow_player_reg:get(ID) of
-        {error, _} ->
-            % player is already disconnected
-            {Session, St0};
-        _ ->
-            {Notify, Status, CbData1} = CbMod:handle_disconnect(
-                Session, CbData
-            ),
-            Session1 = update_session(Status, Session),
-            St1 = St0#state{cb_data = CbData1},
-            handle_notify(Notify, St1),
-            {Session1, St1}
-    end.
-
--spec is_player(session_id()) -> boolean().
-is_player(ID) ->
-    PlayerList = ow_player_reg:list(self()),
-    PIDs = [ow_player_reg:get_id(P) || P <- PlayerList],
-    lists:member(ID, PIDs).
-
--spec update_player(term(), session_id()) -> ok.
-update_player(PlayerInfo, ID) ->
-    P = ow_player_reg:get(ID),
-    P1 = ow_player_reg:set_info(PlayerInfo, P),
-    ow_player_reg:update(P1).
-
--spec enet_msg_opts(atom()) ->
-    {atom(), non_neg_integer()}.
-enet_msg_opts(Action) ->
-    #{channel := Channel, qos := QOS} = ow_protocol:rpc(Action, server),
-    {QOS, Channel}.
-
--spec update_session(term(), session()) -> session().
-update_session({ok, S1, PlayerInfo}, _Session) ->
-    % Update player and the session info
-    ID = ow_session:get_id(S1),
-    update_player(PlayerInfo, ID),
-    S1;
-update_session({ok, S1}, _Session) ->
-    % Update session info
-    S1;
-update_session(_, Session) ->
-    % No change, return old session info
-    Session.
+initialize_state(CbMod, CbData, ZoneData) ->
+    #{tick_ms := TickMs} = ZoneData,
+    %#{tick_ms := TickMs, dc_timeout_ms := DCTimeoutMs} = Config,
+    %ZoneData = #{tick_ms => TickMs},
+    % setup the timer
+    timer:send_interval(TickMs, self(), ?TAG_I(tick)),
+    #state{
+        cb_mod = CbMod,
+        cb_data = CbData,
+        zone_data = ZoneData
+    }.
