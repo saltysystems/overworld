@@ -105,7 +105,7 @@ session_request(Msg, SessionID) ->
     case Token of
         undefined ->
             % No session existing, start a new one
-            start(SessionID, [{pid, self()}]);
+            ow_session_sup:start(SessionID, [{pid, self()}]);
         _ ->
             {SessionID1, NewToken} = ow_token_serv:exchange(Token),
             % Lookup the PID of the handler (Enet or Websocket) and ask it to

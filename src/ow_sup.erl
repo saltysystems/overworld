@@ -33,8 +33,8 @@ init([]) ->
             start => {ow_protocol, start, []}
         },
         #{
-            id => ow_player_reg,
-            start => {ow_player_reg, start_link, []}
+            id => ow_session_sup,
+            start => {ow_session_sup, start_link, []}
         },
         #{
             id => ow_token_serv,
