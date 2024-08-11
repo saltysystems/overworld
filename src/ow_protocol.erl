@@ -428,7 +428,6 @@ register_rpcs(#{app := App}, St0) ->
 auto_register(St0) ->
     % Get all loaded application modules
     AllApps = application:loaded_applications(),
-    logger:notice("All apps: ~p", [AllApps]),
     % For each app, attempt to register modules.
     % If registration is successful, register the app
     F = fun({App, _Descr, _Vers}, State0) ->
