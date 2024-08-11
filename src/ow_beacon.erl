@@ -77,7 +77,6 @@ handle_info(tick, {Window, OldTimer}) ->
     % Stop the old timer
     erlang:cancel_timer(OldTimer),
     % Create a new unique integer as the beacon ID
-    % TODO: SEED ME
     ID = erlang:unique_integer([positive]),
     % Push the beacon ID + current time to the stack
     Beacon = {ID, erlang:monotonic_time()},
@@ -91,7 +90,7 @@ handle_info(tick, {Window, OldTimer}) ->
     ),
     % use gproc to send ALL registered processes!
     Msg = {self(), broadcast, encode_beacon(ID), {QOS, Channel}},
-    gproc:send({p,l,client_sessino},Msg),
+    gproc:send({p, l, client_sessino}, Msg),
     NewTimer = erlang:send_after(?HEARTBEAT, self(), tick),
     {noreply, {push(Beacon, Window), NewTimer}};
 handle_info(_Info, State) ->
