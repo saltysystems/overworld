@@ -489,7 +489,7 @@ update_joined(SessionID, State) ->
     ZoneData = State#state.zone_data,
     #{clients := #{joined := Joined}} = ZoneData,
     Joined1 = [SessionID | Joined],
-    ZoneData1 = ZoneData#{client => #{joined => Joined1}},
+    ZoneData1 = ZoneData#{clients => #{joined => Joined1}},
     State#state{zone_data = ZoneData1}.
 
 update_parted(SessionID, State) ->
@@ -516,7 +516,7 @@ update_disconnected(SessionID, State) ->
     ow_session:status(disconnected, SessionID),
     % Update the zone data
     ZoneData1 = ZoneData#{
-        client => #{
+        clients => #{
             active => Active1,
             disconnected => Disconnected1
         }
@@ -537,7 +537,7 @@ update_reconnected(SessionID, State) ->
     ow_session:status(connected, SessionID),
     % Update the zone data
     ZoneData1 = ZoneData#{
-        client => #{
+        clients => #{
             active => Active1,
             disconnected => Disconnected1
         }

@@ -58,7 +58,7 @@ websocket_init(State) ->
 websocket_handle({binary, Msg}, SessionID) ->
     % protocol decoding will reply with an 'ok' for asynchronous messages or
     % will give us a binary to send back to the client
-    case ow_protocol:route(Msg, {self(), SessionID}) of
+    case ow_protocol:route(Msg, SessionID) of
         ok ->
             {ok, SessionID};
         {Msg1, _Options} ->
@@ -81,11 +81,11 @@ websocket_handle(Frame, SessionID) ->
     SessionID :: pos_integer(),
     Reply :: {reply, {binary, Msg1}, Session1},
     Msg1 :: binary(),
-    Session1 :: ow_session:session().
-websocket_info({_Pid, Type, Msg, _Options}, Session) when
+    Session1 :: ow_session:id().
+websocket_info({_Pid, Type, Msg, _Options}, SessionID) when
     Type =:= 'broadcast'; Type =:= 'zone_msg'
 ->
-    {reply, {binary, Msg}, Session};
+    {reply, {binary, Msg}, SessionID};
 websocket_info({reconnect_session, SessionID1}, SessionID) ->
     ow_session:reconnect(SessionID, SessionID1),
     {ok, SessionID1};

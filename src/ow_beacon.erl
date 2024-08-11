@@ -78,8 +78,7 @@ handle_info(tick, {Window, OldTimer}) ->
     erlang:cancel_timer(OldTimer),
     % Create a new unique integer as the beacon ID
     % TODO: SEED ME
-    % 32-bit unsigned max
-    ID = rand:uniform(4_294_967_295),
+    ID = erlang:unique_integer([positive]),
     % Push the beacon ID + current time to the stack
     Beacon = {ID, erlang:monotonic_time()},
     % Encode the beacon and broadcast it to all clients.
@@ -90,7 +89,9 @@ handle_info(tick, {Window, OldTimer}) ->
     #{channel := Channel, qos := QOS} = ow_protocol:rpc(
         session_beacon, client
     ),
-    ow_session:broadcast(encode_beacon(ID), {QOS, Channel}),
+    % use gproc to send ALL registered processes!
+    Msg = {self(), broadcast, encode_beacon(ID), {QOS, Channel}},
+    gproc:send({p,l,client_sessino},Msg),
     NewTimer = erlang:send_after(?HEARTBEAT, self(), tick),
     {noreply, {push(Beacon, Window), NewTimer}};
 handle_info(_Info, State) ->

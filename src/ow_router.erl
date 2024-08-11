@@ -14,11 +14,11 @@
     Result :: binary().
 -callback decode(BinMsg, Session) -> Result when
     BinMsg :: binary(),
-    Session :: ow_session:session(),
+    Session :: ow_session:id(),
     Result :: any().
 -callback decode(BinMsg, Session, Lib, App) -> Result when
     BinMsg :: binary(),
-    Session :: ow_session:session(),
+    Session :: ow_session:id(),
     Lib :: atom(),
     App :: atom(),
     Result :: any().

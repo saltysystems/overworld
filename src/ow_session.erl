@@ -83,7 +83,7 @@
 %% @doc Calculate the latency based on the RTT to the client
 %% @end
 %%----------------------------------------------------------------------------
--spec session_ping([binary(), ...], id()) -> binary().
+-spec session_ping(map(), id()) -> binary().
 session_ping(Msg, SessionID) ->
     BeaconID = maps:get(id, Msg),
     Last = ow_beacon:get_by_id(BeaconID),
@@ -99,7 +99,7 @@ session_ping(Msg, SessionID) ->
 %% @doc Request a new session, or rejoin an existing one
 %% @end
 %%----------------------------------------------------------------------------
--spec session_request([binary(), ...], id()) -> ok.
+-spec session_request(map(), id()) -> ok.
 session_request(Msg, SessionID) ->
     Token = maps:get(token, Msg, undefined),
     case Token of
@@ -114,7 +114,8 @@ session_request(Msg, SessionID) ->
             Pid ! {reconnect_session, SessionID1},
             % Call the zone and let it know that the client has reconnected
             ZonePid = zone(SessionID),
-            reconnect(ZonePid, SessionID),
+            ow_zone:reconnect(ZonePid, SessionID),
+            reconnect(SessionID, SessionID1),
             % Update the Session server with the new token
             {ok, NewToken} = token(NewToken, SessionID)
     end,
@@ -126,10 +127,10 @@ session_request(Msg, SessionID) ->
 %%----------------------------------------------------------------------------
 -spec start(id()) -> gen_server:start_ret().
 start(ID) ->
-    start([], ID).
--spec start([tuple()], id()) -> gen_server:start_ret().
-start(Config, ID) ->
-    gen_server:start_link(?SERVER(ID), ?MODULE, [], [Config]).
+    start(ID, []).
+-spec start(id(), [tuple()]) -> gen_server:start_ret().
+start(ID, Config) ->
+    gen_server:start_link(?SERVER(ID), ?MODULE, [Config], []).
 
 %%----------------------------------------------------------------------------
 %% @doc Stop the session server
@@ -142,7 +143,7 @@ stop(ID) ->
 %% @doc Register the caller's Pid in gproc with a key of SessionID
 %% @end
 %%----------------------------------------------------------------------------
--spec connect(pos_integer()) -> ok.
+-spec connect(id()) -> ok.
 connect(SessionID) ->
     gproc:reg({n, l, SessionID}, ignored),
     ok.
@@ -151,7 +152,7 @@ connect(SessionID) ->
 %% @doc Unregister an old SessionID and register a new SessionID for the caller
 %% @end
 %%----------------------------------------------------------------------------
--spec reconnect(pos_integer(), pos_integer()) -> ok.
+-spec reconnect(id(), id()) -> ok.
 reconnect(SessionID, SessionID1) ->
     logger:debug("Reconnecting session: ~p -> ~p", [SessionID, SessionID1]),
     % Register the process by this SessionID in gproc
@@ -172,7 +173,7 @@ pid(Pid, ID) ->
 %% @doc Get the process id of the websocket or enet handler
 %% @end
 %%----------------------------------------------------------------------------
--spec pid(id()) -> pid().
+-spec pid(id()) -> pid() | undefined.
 pid(ID) ->
     gen_server:call(?SERVER(ID), get_pid).
 
@@ -189,7 +190,7 @@ serializer(Serializer, ID) ->
 %% @doc Get the format for serializing data.
 %% @end
 %%----------------------------------------------------------------------------
--spec serializer(id()) -> serializer().
+-spec serializer(id()) -> serializer() | undefined.
 serializer(ID) ->
     gen_server:call(?SERVER(ID), get_serializer).
 
@@ -271,7 +272,7 @@ token(Token, ID) ->
 %% @doc Get the session token.
 %% @end
 %%----------------------------------------------------------------------------
--spec token(id()) -> binary().
+-spec token(id()) -> binary() | undefined.
 token(ID) ->
     gen_server:call(?SERVER(ID), get_token).
 
@@ -287,7 +288,7 @@ zone(Zone, ID) ->
 %% @doc Get the zone pid
 %% @end
 %%----------------------------------------------------------------------------
--spec zone(id()) -> pid().
+-spec zone(id()) -> pid() | undefined.
 zone(ID) ->
     gen_server:call(?SERVER(ID), get_token).
 
@@ -337,7 +338,7 @@ handle_call({set_status, Status}, _From, Session) when
     Status =:= disconnected
 ->
     % On a disconnected session, set a timer to terminate this session
-    #{connection_timeout_ms := Timeout} = Session,
+    Timeout = Session#session.disconnect_timeout,
     erlang:send_after(Timeout, self(), maybe_terminate),
     {reply, {ok, Status}, Session#session{status = Status}};
 handle_call({set_status, Status}, _From, Session) ->
