@@ -89,7 +89,7 @@ handle_info(
     {noreply, PeerInfo};
 handle_info({reconnect_session, SessionID1}, PeerInfo) ->
     #{session_id := SessionID} = PeerInfo,
-    ow_session:reconnect(SessionID, SessionID1),
+    ow_session_util:reconnect(SessionID, SessionID1),
     {noreply, PeerInfo#{session_id => SessionID1}};
 handle_info(_, PeerInfo) ->
     % Ignore all other messages

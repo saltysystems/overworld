@@ -1,7 +1,7 @@
 %%=========================================================================
 %% Overworld Session
 %%
-%% This module handles communication with game sessions.
+%% This module defines and holds a session's state
 %%
 %%=========================================================================
 -module(ow_session).
@@ -16,8 +16,6 @@
     start/2,
     start/1,
     stop/1,
-    connect/1,
-    reconnect/2,
     pid/2, pid/1,
     serializer/2, serializer/1,
     latency/2, latency/1,
@@ -26,12 +24,6 @@
     status/2, status/1,
     token/2, token/1,
     zone/2, zone/1
-]).
-
-% RPC callbacks
--export([
-    session_ping/2,
-    session_request/2
 ]).
 
 % gen_server required callbacks
@@ -66,60 +58,9 @@
 -export_type([serializer/0]).
 -export_type([id/0]).
 
-%%----------------------------------------------------------------------------
-%% RPC annotation for Client library generation
-%%
-%%----------------------------------------------------------------------------
-
--rpc_encoder(#{app => overworld, lib => overworld_pb, interface => ow_msg}).
--rpc_client([session_beacon, session_pong]).
--rpc_server([session_request, session_ping]).
-
 %%===========================================================================
 %% API
 %%===========================================================================
-
-%%----------------------------------------------------------------------------
-%% @doc Calculate the latency based on the RTT to the client
-%% @end
-%%----------------------------------------------------------------------------
--spec session_ping(map(), id()) -> binary().
-session_ping(Msg, SessionID) ->
-    BeaconID = maps:get(id, Msg),
-    Last = ow_beacon:get_by_id(BeaconID),
-    Now = erlang:monotonic_time(),
-    % NOTE: This change to RTT compared to ow_session (v1)
-    Latency = erlang:convert_time_unit(
-        round(Now - Last), native, millisecond
-    ),
-    {ok, Latency} = latency(Latency, SessionID),
-    ow_msg:encode(#{latency => Latency}, session_pong).
-
-%%----------------------------------------------------------------------------
-%% @doc Request a new session, or rejoin an existing one
-%% @end
-%%----------------------------------------------------------------------------
--spec session_request(map(), id()) -> ok.
-session_request(Msg, SessionID) ->
-    Token = maps:get(token, Msg, undefined),
-    case Token of
-        undefined ->
-            % No session existing, start a new one
-            ow_session_sup:new(SessionID, [{pid, self()}]);
-        _ ->
-            {SessionID1, NewToken} = ow_token_serv:exchange(Token),
-            % Lookup the PID of the handler (Enet or Websocket) and ask it to
-            % update its session ID
-            Pid = gproc:lookup_pid({n, l, SessionID}),
-            Pid ! {reconnect_session, SessionID1},
-            % Call the zone and let it know that the client has reconnected
-            ZonePid = zone(SessionID),
-            ow_zone:reconnect(ZonePid, SessionID),
-            reconnect(SessionID, SessionID1),
-            % Update the Session server with the new token
-            {ok, NewToken} = token(NewToken, SessionID)
-    end,
-    ok.
 
 %%----------------------------------------------------------------------------
 %% @doc Start the session server and create a new session with this ID
@@ -138,28 +79,6 @@ start(ID, Config) ->
 %%----------------------------------------------------------------------------
 stop(ID) ->
     gen_server:stop(?SERVER(ID)).
-
-%%----------------------------------------------------------------------------
-%% @doc Register the caller's Pid in gproc with a key of SessionID
-%% @end
-%%----------------------------------------------------------------------------
--spec connect(id()) -> ok.
-connect(SessionID) ->
-    gproc:reg({n, l, SessionID}, ignored),
-    ok.
-
-%%----------------------------------------------------------------------------
-%% @doc Unregister an old SessionID and register a new SessionID for the caller
-%% @end
-%%----------------------------------------------------------------------------
--spec reconnect(id(), id()) -> ok.
-reconnect(SessionID, SessionID1) ->
-    logger:debug("Reconnecting session: ~p -> ~p", [SessionID, SessionID1]),
-    % Register the process by this SessionID in gproc
-    gproc:reg({n, l, SessionID1}, ignored),
-    % Unregister the old value in gproc
-    gproc:unreg({n, l, SessionID}),
-    ok.
 
 %%----------------------------------------------------------------------------
 %% @doc Set the process id of the websocket or enet handler
@@ -312,6 +231,10 @@ init([Config]) ->
         token = proplists:get_value(token, Config, undefined),
         zone = proplists:get_value(zone, Config, undefined)
     },
+    % Set a timer to maybe terminate a stale session if it hasn't gone active
+    % within the default timeout period
+    Timeout = Session#session.disconnect_timeout,
+    erlang:send_after(Timeout, self(), maybe_terminate),
     {ok, Session}.
 
 handle_call({set_pid, Pid}, _From, Session) ->
@@ -353,10 +276,16 @@ handle_call(get_token, _From, Session) ->
 handle_cast(_Msg, Session) ->
     {noreply, Session}.
 
-handle_info(maybe_terminate, Session) when
-    Session#session.status =:= disconnected
+handle_info(maybe_terminate, Session = #session{status = S}) when
+    S =:= disconnected;
+    S =:= undefined
 ->
     % Client is still disconnected, terminate.
+    logger:notice(
+        "Disconnecting session ~p in state ~p after hitting timeout", [
+            self(), S
+        ]
+    ),
     {stop, timeout, Session};
 handle_info(maybe_terminate, Session) ->
     % Client is back into a connected state, continue on as normal.

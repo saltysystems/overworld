@@ -57,8 +57,8 @@ init([]) ->
 handle_call({get_by_id, ID}, _From, State = {Window, _Timer}) ->
     case lists:keyfind(ID, 1, Window) of
         false ->
-            io:format("Don't have this ID: ~p~n", [ID]),
-            io:format("Window is : ~p~n", [Window]),
+            logger:notice("Don't have this ID: ~p~n", [ID]),
+            logger:notice("Window is : ~p~n", [Window]),
             {reply, 0, State};
         {ID, Time} ->
             {reply, Time, State}
@@ -74,6 +74,8 @@ handle_cast(_Req, State) ->
     {noreply, State}.
 
 handle_info(tick, {Window, OldTimer}) ->
+    %[H|_] = Window,
+    %logger:notice("Beacon tick: ~p", [H]),
     % Stop the old timer
     erlang:cancel_timer(OldTimer),
     % Create a new unique integer as the beacon ID
@@ -90,7 +92,7 @@ handle_info(tick, {Window, OldTimer}) ->
     ),
     % use gproc to send ALL registered processes!
     Msg = {self(), broadcast, encode_beacon(ID), {QOS, Channel}},
-    gproc:send({p, l, client_sessino}, Msg),
+    gproc:send({p, l, client_session}, Msg),
     NewTimer = erlang:send_after(?HEARTBEAT, self(), tick),
     {noreply, {push(Beacon, Window), NewTimer}};
 handle_info(_Info, State) ->

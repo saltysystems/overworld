@@ -438,52 +438,14 @@ handle_notify({{'@', IDs}, {MsgType, Msg}}, #state{zone_data = ZD}) ->
     #{clients := #{active := Active}} = ZD,
     % Notify clients that are both in the list to be notified AND active
     Players = [P0 || P0 <- IDs, P1 <- Active, P0 =:= P1],
-    notify_players(MsgType, Msg, Players);
+    ow_session_util:notify_clients(MsgType, Msg, Players);
 handle_notify({'@zone', {MsgType, Msg}}, #state{zone_data = ZD}) ->
     #{clients := #{active := Active}} = ZD,
     % SEND MESSAGE: Send everyone the message
-    notify_players(MsgType, Msg, Active);
+    ow_session_util:notify_clients(MsgType, Msg, Active);
 handle_notify(noreply, _St0) ->
     % NO MESSAGE
     ok.
-
-notify_players(MsgType, Msg, Players) ->
-    Send = fun(SessionID) ->
-        PID = ow_session:pid(SessionID),
-        Serializer = ow_session:serializer(SessionID),
-        case PID of
-            undefined ->
-                ok;
-            Pid ->
-                case Serializer of
-                    undefined ->
-                        Pid ! {self(), zone_msg, {MsgType, Msg}};
-                    protobuf ->
-                        #{
-                            channel := Channel,
-                            qos := QOS,
-                            encoder := Encoder
-                        } =
-                            ow_protocol:rpc(MsgType, client),
-                        #{
-                            interface := EncoderMod,
-                            app := App,
-                            lib := EncoderLib
-                        } = Encoder,
-                        EncodedMsg = erlang:apply(EncoderMod, encode, [
-                            Msg, MsgType, EncoderLib, App
-                        ]),
-                        Pid !
-                            {
-                                self(),
-                                zone_msg,
-                                EncodedMsg,
-                                {QOS, Channel}
-                            }
-                end
-        end
-    end,
-    lists:foreach(Send, Players).
 
 update_joined(SessionID, State) ->
     ZoneData = State#state.zone_data,

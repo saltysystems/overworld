@@ -25,7 +25,7 @@ init(Req, _St0) ->
     IP = inet:ntoa(RawIP),
     logger:notice("Starting WebSocket session for ~p", [IP]),
     SessionID = erlang:unique_integer([positive]),
-    ow_session:connect(SessionID),
+    ow_session_util:connect(SessionID),
     logger:notice("~p: Pending SessionID: ~p", [IP, SessionID]),
     {cowboy_websocket, Req, SessionID}.
 
@@ -87,7 +87,7 @@ websocket_info({_Pid, Type, Msg, _Options}, SessionID) when
 ->
     {reply, {binary, Msg}, SessionID};
 websocket_info({reconnect_session, SessionID1}, SessionID) ->
-    ow_session:reconnect(SessionID, SessionID1),
+    ow_session_util:reconnect(SessionID, SessionID1),
     {ok, SessionID1};
 websocket_info(Info, Session) ->
     logger:debug("Got a message from another process: ~p", [Info]),

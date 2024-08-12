@@ -20,14 +20,14 @@ message overworld {
 // Session Messages                                    //
 /////////////////////////////////////////////////////////
 
-// server --> client
+// client --> server
 message session_request {
     optional bytes reconnect_token = 1; // secret
 }
 
-// client --> server
+// server --> client
 message session_new {
-    // initialize a sesison and send to the client. 
+    // initialize a session and send to the client. 
     required uint64 id              = 1; // public
     required bytes  reconnect_token = 2; // secret
 }
