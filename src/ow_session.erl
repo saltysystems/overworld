@@ -41,7 +41,7 @@
 %-type msg() :: nonempty_binary() | [binary(), ...].
 -type serializer() :: undefined | protobuf.
 -type id() :: pos_integer().
--type status() :: undefined | connected | disconnected.
+-type status() :: preconnect | connected | disconnected.
 -type time_ms() :: non_neg_integer().
 
 -record(session, {
@@ -227,7 +227,7 @@ init([Config]) ->
         disconnect_timeout = proplists:get_value(
             disconnect_timeout, Config, 30000
         ),
-        status = proplists:get_value(status, Config, undefined),
+        status = proplists:get_value(status, Config, preconnect),
         token = proplists:get_value(token, Config, undefined),
         zone = proplists:get_value(zone, Config, undefined)
     },
@@ -278,7 +278,7 @@ handle_cast(_Msg, Session) ->
 
 handle_info(maybe_terminate, Session = #session{status = S}) when
     S =:= disconnected;
-    S =:= undefined
+    S =:= preconnect
 ->
     % Client is still disconnected, terminate.
     logger:notice(
@@ -286,7 +286,7 @@ handle_info(maybe_terminate, Session = #session{status = S}) when
             self(), S
         ]
     ),
-    {stop, timeout, Session};
+    {stop, normal, Session};
 handle_info(maybe_terminate, Session) ->
     % Client is back into a connected state, continue on as normal.
     {noreply, Session};
