@@ -80,12 +80,10 @@ handle_info({enet, Channel, {unsequenced, _Group, Msg}}, PeerInfo) ->
     decode_and_reply(Msg, Channel, {enet, send_unsequenced}, PeerInfo),
     {noreply, PeerInfo};
 handle_info(
-    {_From, Type, Msg, Options}, PeerInfo = #{channels := Channels}
-) when
-    Type =:= 'broadcast'; Type =:= 'zone_msg'
-->
+    {_From, client_msg, {MsgType, Msg}}, PeerInfo = #{channels := Channels}
+) ->
     % Handle a message from another overworld process
-    channelize_msg(Msg, Channels, Options),
+    channelize_msg(MsgType, Msg, Channels),
     {noreply, PeerInfo};
 handle_info({reconnect_session, SessionID1}, PeerInfo) ->
     #{session_id := SessionID} = PeerInfo,
@@ -105,27 +103,30 @@ code_change(_OldVsn, PeerInfo, _Extra) -> {ok, PeerInfo}.
 %% Internal functions
 %%===========================================================================
 
-decode_and_reply(Msg, IncomingChannel, {Mod, Fun}, PeerInfo) ->
+% TODO: If we look up the channel/qos information from the module definition, I
+%       guess it's not necessary to pass a module/fun to this
+%       But I am a bit worried about chopping down this particular tree so far
+%       afield right now.
+decode_and_reply(Msg, _IncomingChannel, _MF, PeerInfo) ->
     #{channels := Channels, session_id := SessionID} = PeerInfo,
+    %TODO: Fix me
     case ow_protocol:route(Msg, SessionID) of
         ok ->
             ok;
-        {Msg1, {QOS, MsgChannel}} ->
-            channelize_msg(Msg1, Channels, {QOS, MsgChannel});
-        Msg1 ->
-            % Default to sending a reliable message on whatever channel the
-            % original message came in on
-            FlatMsg = iolist_to_binary(Msg1),
-            ChannelPid = maps:get(IncomingChannel, Channels),
-            erlang:apply(Mod, Fun, [ChannelPid, FlatMsg])
+        {MsgType, Msg} ->
+            channelize_msg(MsgType, Msg, Channels)
     end.
 
-channelize_msg(Msg, Channels, {QOS, Channel}) ->
-    % Not sure if it's worth implementing any fall-throughs here, better to
-    % crash early if someone fat-fingers the QOS or channel number rather than
-    % to unexpectedly send reliable,0 messages.
+channelize_msg(MsgType, Msg, Channels) ->
+    #{encoder := Encoder, channel := Channel, qos := QOS} = ow_protocol:rpc(
+        MsgType, client
+    ),
+    #{interface := EncoderMod, app := App, lib := EncoderLib} = Encoder,
+    EncodedMsg = erlang:apply(EncoderMod, encode, [
+        Msg, MsgType, EncoderLib, App
+    ]),
+    FlatMsg = iolist_to_binary(EncodedMsg),
     ChannelPID = maps:get(Channel, Channels),
-    FlatMsg = iolist_to_binary(Msg),
     case QOS of
         reliable ->
             enet:send_reliable(ChannelPID, FlatMsg);

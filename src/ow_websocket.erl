@@ -61,7 +61,7 @@ websocket_handle({binary, Msg}, SessionID) ->
     case ow_protocol:route(Msg, SessionID) of
         ok ->
             {ok, SessionID};
-        {Msg1, _Options} ->
+        Msg1 ->
             {reply, {binary, Msg1}, SessionID}
     end;
 websocket_handle(Frame, SessionID) ->
@@ -73,22 +73,25 @@ websocket_handle(Frame, SessionID) ->
 %%      process comes into this handler process.
 %% @end
 %%--------------------------------------------------------------------------
--spec websocket_info({Pid, Type, Msg, Options}, SessionID) -> Reply when
+-spec websocket_info({Pid, client_msg, Msg}, SessionID) -> Reply when
     Pid :: pid(),
-    Type :: broadcast | zone_msg,
     Msg :: binary(),
-    Options :: any(),
     SessionID :: pos_integer(),
     Reply :: {reply, {binary, Msg1}, Session1},
     Msg1 :: binary(),
     Session1 :: ow_session:id().
-websocket_info({_Pid, Type, Msg, _Options}, SessionID) when
-    Type =:= 'broadcast'; Type =:= 'zone_msg'
-->
-    {reply, {binary, Msg}, SessionID};
+websocket_info({_Pid, client_msg, {MsgType, Msg}}, SessionID) ->
+    % Encode the message into binary
+    Bin = to_binary(MsgType, Msg),
+    {reply, {binary, Bin}, SessionID};
 websocket_info({reconnect_session, SessionID1}, SessionID) ->
     ow_session_util:reconnect(SessionID, SessionID1),
     {ok, SessionID1};
 websocket_info(Info, Session) ->
-    logger:debug("Got a message from another process: ~p", [Info]),
+    logger:notice("Got a message from another process: ~p", [Info]),
     {ok, Session}.
+
+to_binary(MsgType, Msg) ->
+    #{encoder := Encoder} = ow_protocol:rpc(MsgType, client),
+    #{interface := EncoderMod, app := App, lib := EncoderLib} = Encoder,
+    erlang:apply(EncoderMod, encode, [Msg, MsgType, EncoderLib, App]).
