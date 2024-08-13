@@ -86,12 +86,8 @@ handle_info(tick, {Window, OldTimer}) ->
     % n.b., There's a very small race here. A client could conceivably respond
     % faster than the server has updated the list but I've never observed this
     % even on LAN
-    % Look up the QOS/Channel for the beacon
-    #{channel := Channel, qos := QOS} = ow_protocol:rpc(
-        session_beacon, client
-    ),
+    Msg = {self(), client_msg, {session_beacon, #{id => ID}}},
     % use gproc to send ALL registered processes!
-    Msg = {self(), broadcast, encode_beacon(ID), {QOS, Channel}},
     gproc:send({p, l, client_session}, Msg),
     NewTimer = erlang:send_after(?HEARTBEAT, self(), tick),
     {noreply, {push(Beacon, Window), NewTimer}};
@@ -115,7 +111,3 @@ new_state() ->
 push(Beacon, List) ->
     L1 = lists:sublist(List, ?WINDOW_SIZE - 1),
     [Beacon | L1].
-
--spec encode_beacon(integer()) -> binary().
-encode_beacon(ID) ->
-    ow_msg:encode(#{id => ID}, session_beacon).
