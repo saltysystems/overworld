@@ -16,7 +16,7 @@
 %% RPC API
 %%===========================================================================
 
-%-rpc_encoder(#{app => overworld, lib => overworld_pb, interface => ow_msg}).
+-rpc_encoder(#{app => overworld, lib => overworld_pb, interface => ow_msg}).
 -rpc_client([session_beacon, session_new, session_pong]).
 -rpc_server([session_request, session_ping]).
 
@@ -50,11 +50,11 @@ session_request(Msg, SessionID) ->
             logger:notice("No session, starting a new one for ~p", [
                 SessionID
             ]),
-            Ret = ow_session_sup:new(SessionID, [{pid, self()}]),
-            logger:notice("Started session: ~p", [Ret]),
+            {ok, Pid} = ow_session_sup:new(SessionID, [{pid, self()}]),
+            logger:notice("Started session: ~p:~p", [SessionID, Pid]),
             NewToken = ow_token_serv:new(SessionID),
-            Msg = #{id => SessionID, token => NewToken},
-            notify_clients(session_new, Msg, [SessionID]);
+            Reply = #{id => SessionID, reconnect_token => NewToken},
+            notify_clients(session_new, Reply, [SessionID]);
         _ ->
             {SessionID1, NewToken} = ow_token_serv:exchange(Token),
             % Lookup the PID of the handler (Enet or Websocket) and ask it to
@@ -68,6 +68,10 @@ session_request(Msg, SessionID) ->
             % Update the Session server with the new token
             {ok, NewToken} = ow_session:token(NewToken, SessionID)
     end,
+    % Set the status to connected
+    ow_session:status(connected, SessionID),
+    % Register the process
+    gproc:reg({p, l, client_session}),
     ok.
 
 %%===========================================================================
@@ -97,40 +101,16 @@ reconnect(SessionID, SessionID1) ->
     ok.
 
 -spec notify_clients(atom(), map(), [ow_session:id()]) -> ok.
-notify_clients(MsgType, Msg, Clients) ->
-    Send = fun(SessionID) ->
-        PID = ow_session:pid(SessionID),
-        Serializer = ow_session:serializer(SessionID),
-        case PID of
-            undefined ->
-                ok;
-            Pid ->
-                case Serializer of
-                    undefined ->
-                        Pid ! {self(), zone_msg, {MsgType, Msg}};
-                    protobuf ->
-                        #{
-                            channel := Channel,
-                            qos := QOS,
-                            encoder := Encoder
-                        } =
-                            ow_protocol:rpc(MsgType, client),
-                        #{
-                            interface := EncoderMod,
-                            app := App,
-                            lib := EncoderLib
-                        } = Encoder,
-                        EncodedMsg = erlang:apply(EncoderMod, encode, [
-                            Msg, MsgType, EncoderLib, App
-                        ]),
-                        Pid !
-                            {
-                                self(),
-                                zone_msg,
-                                EncodedMsg,
-                                {QOS, Channel}
-                            }
-                end
-        end
+notify_clients(_MsgType, _Msg, []) ->
+    ok;
+notify_clients(MsgType, Msg, [SessionID | Rest]) ->
+    Pid = ow_session:pid(SessionID),
+    case Pid of
+        undefined ->
+            ok;
+        _ ->
+            % Send a message to the client, let the connection handler figure
+            % out how to serialzie it further
+            Pid ! {self(), client_msg, {MsgType, Msg}}
     end,
-    lists:foreach(Send, Clients).
+    notify_clients(MsgType, Msg, Rest).
