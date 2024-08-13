@@ -22,11 +22,7 @@ start_link() ->
 
 -spec new(ow_session:id(), [tuple()]) -> supervisor:startchild_ret().
 new(SessionID, Config) ->
-    Spec = #{
-        id => SessionID,
-        start => {ow_session, start, [SessionID, Config]}
-    },
-    supervisor:start_child(?SERVER, Spec).
+    supervisor:start_child(?SERVER, [SessionID, Config]).
 
 -spec delete(ow_session:id()) -> ok | {error, _}.
 delete(SessionID) ->
@@ -35,8 +31,14 @@ delete(SessionID) ->
 
 init([]) ->
     SupFlags = #{
-        strategy => one_for_one
+        strategy => simple_one_for_one
     },
-    % Zone Options
-    ChildSpecs = [],
+    % Session
+    ChildSpecs = [
+        #{
+            id => session,
+            start => {ow_session, start, []},
+            restart => transient
+        }
+    ],
     {ok, {SupFlags, ChildSpecs}}.
