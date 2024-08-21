@@ -288,7 +288,7 @@ handle_call(?TAG_I({join, Msg, Who}), From, St0) ->
     % Check the callback module for a handle_join function
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
-    NextState =
+    State1 =
         case erlang:function_exported(CbMod, handle_join, 3) of
             true ->
                 {Notify, CbData1} = CbMod:handle_join(Msg, Who, CbData0),
@@ -303,14 +303,14 @@ handle_call(?TAG_I({join, Msg, Who}), From, St0) ->
                 % additional action
                 St0
         end,
-    update_joined(Who, NextState),
+    State2 = update_joined(Who, State1),
     % Update the session with zone information
     ow_session:zone(From, Who),
-    {reply, ok, NextState};
+    {reply, ok, State2};
 handle_call(?TAG_I({part, Msg, Who}), _From, St0) ->
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
-    NextState =
+    State1 =
         case erlang:function_exported(CbMod, handle_part, 3) of
             true ->
                 {Notify, CbData1} = CbMod:handle_part(Msg, Who, CbData0),
@@ -323,8 +323,8 @@ handle_call(?TAG_I({part, Msg, Who}), _From, St0) ->
                 % additional action
                 St0
         end,
-    update_parted(Who, NextState),
-    {reply, ok, NextState};
+    State2 = update_parted(Who, State1),
+    {reply, ok, State2};
 handle_call(?TAG_I({Type, Msg, SessionID}), _From, St0) ->
     CbMod = St0#state.cb_mod,
     CbData = St0#state.cb_data,
@@ -369,7 +369,7 @@ handle_cast(?TAG_I({disconnect, Who}), St0) ->
 handle_cast(?TAG_I({reconnect, Who}), St0) ->
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
-    NextState =
+    State1 =
         case erlang:function_exported(CbMod, handle_reconnect, 2) of
             true ->
                 {Notify, CbData1} = CbMod:handle_reconnect(Who, CbData0),
@@ -383,8 +383,8 @@ handle_cast(?TAG_I({reconnect, Who}), St0) ->
                 % additional action
                 St0
         end,
-    update_reconnected(Who, NextState),
-    {noreply, NextState};
+    State2 = update_reconnected(Who, State1),
+    {noreply, State2};
 handle_cast(?TAG_I({broadcast, Msg}), St0) ->
     handle_notify({'@zone', Msg}, St0),
     {noreply, St0};
@@ -417,12 +417,11 @@ code_change(_OldVsn, St0, _Extra) -> {ok, St0}.
 
 -spec tick(state()) -> state().
 tick(St0 = #state{cb_mod = CbMod, cb_data = CbData0, zone_data = ZoneData}) ->
-    #{tick_ms := TickMs} = ZoneData,
-    {Notify, CbData1} = CbMod:handle_tick(TickMs, CbData0),
+    {Notify, CbData1} = CbMod:handle_tick(ZoneData, CbData0),
     % Move all joined players to active
-    #{clients := #{active := Active, joined := Joined}} = ZoneData,
+    #{clients := Clients = #{active := Active, joined := Joined}} = ZoneData,
     Active1 = Active ++ Joined,
-    ZD1 = ZoneData#{clients => #{active => Active1, joined => []}},
+    ZD1 = ZoneData#{clients => Clients#{active => Active1, joined => []}},
     St1 = St0#state{cb_data = CbData1, zone_data = ZD1},
     handle_notify(Notify, St1),
     St1.
@@ -449,25 +448,25 @@ handle_notify(noreply, _St0) ->
 
 update_joined(SessionID, State) ->
     ZoneData = State#state.zone_data,
-    #{clients := #{joined := Joined}} = ZoneData,
+    #{clients := Clients = #{joined := Joined}} = ZoneData,
     Joined1 = [SessionID | Joined],
-    ZoneData1 = ZoneData#{clients => #{joined => Joined1}},
+    ZoneData1 = ZoneData#{clients := Clients#{joined := Joined1}},
     State#state{zone_data = ZoneData1}.
 
 update_parted(SessionID, State) ->
     ZoneData = State#state.zone_data,
-    #{clients := #{parted := Parted, active := Active}} = ZoneData,
+    #{clients := Clients = #{parted := Parted, active := Active}} = ZoneData,
     Parted1 = [SessionID | Parted],
     Active1 = lists:delete(SessionID, Active),
     ZoneData1 = ZoneData#{
-        clients => #{parted => Parted1, active => Active1}
+                  clients := Clients#{parted := Parted1, active := Active1}
     },
     State#state{zone_data = ZoneData1}.
 
 update_disconnected(SessionID, State) ->
     ZoneData = State#state.zone_data,
     #{
-        clients := #{
+        clients := Clients = #{
             active := Active,
             disconnected := Disconnected
         }
@@ -478,9 +477,9 @@ update_disconnected(SessionID, State) ->
     ow_session:status(disconnected, SessionID),
     % Update the zone data
     ZoneData1 = ZoneData#{
-        clients => #{
-            active => Active1,
-            disconnected => Disconnected1
+                  clients := Clients#{
+                               active := Active1,
+            disconnected := Disconnected1
         }
     },
     State#state{zone_data = ZoneData1}.
@@ -488,7 +487,7 @@ update_disconnected(SessionID, State) ->
 update_reconnected(SessionID, State) ->
     ZoneData = State#state.zone_data,
     #{
-        clients := #{
+        clients := Clients = #{
             active := Active,
             disconnected := Disconnected
         }
@@ -499,9 +498,9 @@ update_reconnected(SessionID, State) ->
     ow_session:status(connected, SessionID),
     % Update the zone data
     ZoneData1 = ZoneData#{
-        clients => #{
-            active => Active1,
-            disconnected => Disconnected1
+                  clients :=Clients#{
+                              active := Active1,
+            disconnected := Disconnected1
         }
     },
     State#state{zone_data = ZoneData1}.
