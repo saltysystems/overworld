@@ -38,6 +38,7 @@ terminate(_Reason, Req, SessionID) ->
     #{peer := {IP, _Port}} = Req,
     logger:notice("~p: WebSocket client disconnected", [IP]),
     logger:debug("Client session at disconnect: ~p", [SessionID]),
+    ow_session:status(disconnected, SessionID),
     ok.
 
 %%---------------------------------------------------------------------------
