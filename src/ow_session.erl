@@ -209,7 +209,7 @@ zone(Zone, ID) ->
 %%----------------------------------------------------------------------------
 -spec zone(id()) -> pid() | undefined.
 zone(ID) ->
-    gen_server:call(?SERVER(ID), get_token).
+    gen_server:call(?SERVER(ID), get_zone).
 
 %%=========================================================================
 %% Callback handlers
