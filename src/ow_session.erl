@@ -271,7 +271,11 @@ handle_call(get_status, _From, Session) ->
 handle_call({set_token, Token}, _From, Session) ->
     {reply, {ok, Token}, Session#session{token = Token}};
 handle_call(get_token, _From, Session) ->
-    {reply, Session#session.token, Session}.
+    {reply, Session#session.token, Session};
+handle_call({set_zone, Zone}, _From, Session) ->
+    {reply, {ok, Zone}, Session#session{zone = Zone}};
+handle_call(get_zone, _From, Session) ->
+    {reply, Session#session.zone, Session}.
 
 handle_cast(_Msg, Session) ->
     {noreply, Session}.
