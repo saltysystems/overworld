@@ -58,6 +58,8 @@
 -export_type([serializer/0]).
 -export_type([id/0]).
 
+-define(DEFAULT_DISCONNECT_TIMEOUT, 30000).
+
 %%===========================================================================
 %% API
 %%===========================================================================
@@ -225,7 +227,7 @@ init([Config]) ->
             termination_callback, Config, undefined
         ),
         disconnect_timeout = proplists:get_value(
-            disconnect_timeout, Config, 30000
+            disconnect_timeout, Config, ?DEFAULT_DISCONNECT_TIMEOUT
         ),
         status = proplists:get_value(status, Config, preconnect),
         token = proplists:get_value(token, Config, undefined),
