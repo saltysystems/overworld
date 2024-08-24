@@ -94,7 +94,7 @@
         | {ok, InitialData, ConfigMap}
         | ignore
         | {stop, Reason},
-    ConfigMap :: map(),
+    ConfigMap :: zone_data(),
     InitialData :: term(),
     Reason :: term().
 
@@ -241,15 +241,20 @@ part(ServerRef, Msg, SessionID) ->
 
 -spec disconnect(server_ref(), ow_session:id()) -> ok.
 disconnect(ServerRef, SessionID) ->
-    gen_server:cast(ServerRef, ?TAG_I({disconnect, SessionID})).
+    logger:notice(
+        "Calling disconnect handler for zone ~p and Session ~p", [
+            ServerRef, SessionID
+        ]
+    ),
+    gen_server:call(ServerRef, ?TAG_I({disconnect, SessionID})).
 
 -spec reconnect(server_ref(), ow_session:id()) -> ok.
 reconnect(ServerRef, SessionID) ->
-    gen_server:cast(ServerRef, ?TAG_I({reconnect, SessionID})).
+    gen_server:call(ServerRef, ?TAG_I({reconnect, SessionID})).
 
 -spec rpc(server_ref(), atom(), term(), ow_session:id()) -> ok.
 rpc(ServerRef, Type, Msg, SessionID) ->
-    gen_server:call(ServerRef, ?TAG_I({rpc, Type, Msg, SessionID})).
+    gen_server:call(ServerRef, ?TAG_I({Type, Msg, SessionID})).
 
 -spec broadcast(server_ref(), term()) -> ok.
 broadcast(ServerRef, Msg) ->
@@ -266,12 +271,10 @@ send(ServerRef, IDs, Msg) ->
 % @doc Initialize the internal state of the zone, with timer
 init({CbMod, CbArgs}) ->
     init(CbMod, CbMod:init(CbArgs)).
+init(CbMod, {ok, CbData}) ->
+    init(CbMod, {ok, CbData, #{}});
 init(CbMod, {ok, CbData, ZoneData}) ->
     Config = maps:merge(?INITIAL_ZONE_DATA, ZoneData),
-    St0 = initialize_state(CbMod, CbData, Config),
-    {ok, St0};
-init(CbMod, {ok, CbData}) ->
-    Config = ?INITIAL_ZONE_DATA,
     St0 = initialize_state(CbMod, CbData, Config),
     {ok, St0};
 init(_CbMod, ignore) ->
@@ -279,7 +282,12 @@ init(_CbMod, ignore) ->
 init(_CbMod, Stop) ->
     Stop.
 
-handle_call(?TAG_I({join, Msg, Who}), From, #state{zone_data = ZD} = St0) ->
+handle_call(
+    ?TAG_I({join, Msg, Who}),
+    _From,
+    #state{zone_data = ZD} = St0
+) ->
+    logger:notice("Who: ~p", [Who]),
     % Check the callback module for a handle_join function
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
@@ -301,40 +309,26 @@ handle_call(?TAG_I({join, Msg, Who}), From, #state{zone_data = ZD} = St0) ->
     #{clients := Clients} = ZD,
     ZD1 = ZD#{clients := [Who | Clients]},
     % Update the session with zone information
-    ow_session:zone(From, Who),
+    ZonePid = self(),
+    {ok, ZonePid} = ow_session:zone(ZonePid, Who),
+    % Update the session with a termination callback
+    Callback = {CbMod, disconnect, [ZonePid, Who]},
+    {ok, Callback} = ow_session:disconnect_callback(Callback, Who),
     {reply, ok, State1#state{zone_data = ZD1}};
 handle_call(?TAG_I({part, Msg, Who}), _From, St0) ->
     St1 = handle_part_inner(Msg, Who, St0),
     {reply, ok, St1};
-handle_call(?TAG_I({Type, Msg, SessionID}), _From, St0) ->
-    CbMod = St0#state.cb_mod,
-    CbData = St0#state.cb_data,
-    Handler = list_to_existing_atom("handler_" ++ atom_to_list(Type)),
-    {Notify, CbData1} =
-        maybe
-            true ?= erlang:function_exported(CbMod, Handler, 3),
-            CbMod:Handler(Msg, SessionID, CbData)
-        else
-            false ->
-                {noreply, ok, CbData}
-        end,
-    St1 = St0#state{cb_data = CbData1},
-    % Send any messages as needed - called for side effects
-    handle_notify(Notify, St1),
-    {reply, ok, St1};
-handle_call(_Call, _From, St0) ->
-    %TODO : Allow fall-through ?
-    {reply, ok, St0}.
-
-handle_cast(
+handle_call(
     ?TAG_I({disconnect, Who}),
+    _From,
     St0 = #state{zone_data = #{disconnect := hard}}
 ) ->
     % Run the part handler instead of disconnect
     St1 = handle_part_inner(#{}, Who, St0),
-    {noreply, ok, St1};
-handle_cast(
+    {reply, ok, St1};
+handle_call(
     ?TAG_I({disconnect, Who}),
+    _From,
     St0 = #state{zone_data = #{disconnect := soft}}
 ) ->
     CbMod = St0#state.cb_mod,
@@ -353,9 +347,52 @@ handle_cast(
                 % additional action
                 St0
         end,
-    {noreply, NextState};
-% Note: We guard for only the soft disconnect because reconnecting with a hard
-% disconnect is considered an error.
+    {reply, ok, NextState};
+handle_call(?TAG_I({Type, Msg, SessionID}), _From, St0) ->
+    CbMod = St0#state.cb_mod,
+    CbData = St0#state.cb_data,
+    Handler = list_to_existing_atom("handler_" ++ atom_to_list(Type)),
+    {Notify, CbData1} =
+        maybe
+            true ?= erlang:function_exported(CbMod, Handler, 3),
+            CbMod:Handler(Msg, SessionID, CbData)
+        else
+            false ->
+                {reply, ok, CbData}
+        end,
+    St1 = St0#state{cb_data = CbData1},
+    % Send any messages as needed - called for side effects
+    handle_notify(Notify, St1),
+    {reply, ok, St1};
+handle_call(
+    ?TAG_I({reconnect, Who}),
+    _From,
+    St0 = #state{zone_data = #{disconnect := soft}}
+) ->
+    CbMod = St0#state.cb_mod,
+    CbData0 = St0#state.cb_data,
+    NextState =
+        case erlang:function_exported(CbMod, handle_reconnect, 2) of
+            true ->
+                {Notify, CbData1} = CbMod:handle_reconnect(Who, CbData0),
+                St1 = St0#state{cb_data = CbData1},
+                % Notify the caller of any messages that the callback module
+                % wants to send as a response to the joint
+                handle_notify(Notify, St1),
+                St1;
+            false ->
+                % Assume the callback module does not want to take any
+                % additional action
+                St0
+        end,
+    {reply, ok, NextState};
+handle_call(Call, _From, St0) ->
+    %TODO : Allow fall-through ?
+    logger:debug(
+        "Zone was called with a message it does not understand: ~p", [Call]
+    ),
+    {reply, ok, St0}.
+
 handle_cast(
     ?TAG_I({reconnect, Who}),
     St0 = #state{zone_data = #{disconnect := soft}}
@@ -383,8 +420,11 @@ handle_cast(?TAG_I({broadcast, Msg}), St0) ->
 handle_cast(?TAG_I({send, IDs, Msg}), St0) ->
     handle_notify({{'@', IDs}, Msg}, St0),
     {noreply, St0};
-handle_cast(_Cast, St0) ->
+handle_cast(Cast, St0) ->
     %TODO : Allow fall-through ?
+    logger:debug(
+        "Zone was casted with a message it does not understand: ~p", [Cast]
+    ),
     {noreply, St0}.
 
 handle_info(?TAG_I(tick), St0) ->
