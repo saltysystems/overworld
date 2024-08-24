@@ -41,13 +41,14 @@
 -type id() :: pos_integer().
 -type status() :: preconnect | connected | disconnected.
 -type time_ms() :: non_neg_integer().
+-type mfargs() :: {atom(), atom(), list()}.
 
 -record(session, {
     pid :: pid() | undefined,
     serializer :: serializer(),
     latency :: time_ms(),
     game_data :: any(),
-    disconnect_callback :: mfa() | undefined,
+    disconnect_callback :: mfargs() | undefined,
     disconnect_timeout :: time_ms(),
     status :: status(),
     token :: binary() | undefined,
@@ -149,7 +150,7 @@ game_data(ID) ->
 %% @doc Set the termination callback
 %% @end
 %%----------------------------------------------------------------------------
--spec disconnect_callback(mfa(), id()) -> {ok, mfa()}.
+-spec disconnect_callback(mfargs(), id()) -> {ok, mfargs()}.
 disconnect_callback(Callback, ID) ->
     gen_server:call(?SERVER(ID), {set_disconnect_callback, Callback}).
 
@@ -157,7 +158,7 @@ disconnect_callback(Callback, ID) ->
 %% @doc Get the termination callback
 %% @end
 %%----------------------------------------------------------------------------
--spec disconnect_callback(id()) -> undefined | mfa().
+-spec disconnect_callback(id()) -> undefined | mfargs().
 disconnect_callback(ID) ->
     gen_server:call(?SERVER(ID), get_disconnect_callback).
 
