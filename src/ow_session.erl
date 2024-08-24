@@ -20,7 +20,7 @@
     serializer/2, serializer/1,
     latency/2, latency/1,
     game_data/2, game_data/1,
-    termination_callback/2, termination_callback/1,
+    disconnect_callback/2, disconnect_callback/1,
     status/2, status/1,
     token/2, token/1,
     zone/2, zone/1
@@ -36,8 +36,6 @@
     code_change/3
 ]).
 
--include_lib("eunit/include/eunit.hrl").
-
 %-type msg() :: nonempty_binary() | [binary(), ...].
 -type serializer() :: undefined | protobuf.
 -type id() :: pos_integer().
@@ -49,7 +47,7 @@
     serializer :: serializer(),
     latency :: time_ms(),
     game_data :: any(),
-    termination_callback :: mfa() | undefined,
+    disconnect_callback :: mfa() | undefined,
     disconnect_timeout :: time_ms(),
     status :: status(),
     token :: binary() | undefined,
@@ -151,17 +149,17 @@ game_data(ID) ->
 %% @doc Set the termination callback
 %% @end
 %%----------------------------------------------------------------------------
--spec termination_callback(mfa(), id()) -> {ok, mfa()}.
-termination_callback(Callback, ID) ->
-    gen_server:call(?SERVER(ID), {set_termination_callback, Callback}).
+-spec disconnect_callback(mfa(), id()) -> {ok, mfa()}.
+disconnect_callback(Callback, ID) ->
+    gen_server:call(?SERVER(ID), {set_disconnect_callback, Callback}).
 
 %%----------------------------------------------------------------------------
 %% @doc Get the termination callback
 %% @end
 %%----------------------------------------------------------------------------
--spec termination_callback(id()) -> undefined | mfa().
-termination_callback(ID) ->
-    gen_server:call(?SERVER(ID), get_termination_callback).
+-spec disconnect_callback(id()) -> undefined | mfa().
+disconnect_callback(ID) ->
+    gen_server:call(?SERVER(ID), get_disconnect_callback).
 
 %%----------------------------------------------------------------------------
 %% @doc Set the connection status. Disconnected sessions will be periodically
@@ -223,8 +221,8 @@ init([Config]) ->
         serializer = proplists:get_value(serializer, Config, undefined),
         latency = proplists:get_value(latency, Config, 0),
         game_data = proplists:get_value(game_data, Config, undefined),
-        termination_callback = proplists:get_value(
-            termination_callback, Config, undefined
+        disconnect_callback = proplists:get_value(
+            disconnect_callback, Config, undefined
         ),
         disconnect_timeout = proplists:get_value(
             disconnect_timeout, Config, ?DEFAULT_DISCONNECT_TIMEOUT
@@ -255,10 +253,10 @@ handle_call({set_game_data, GameData}, _From, Session) ->
     {reply, {ok, GameData}, Session#session{game_data = GameData}};
 handle_call(get_game_data, _From, Session) ->
     {reply, Session#session.game_data, Session};
-handle_call({set_termination_callback, TCB}, _From, Session) ->
-    {reply, {ok, TCB}, Session#session{termination_callback = TCB}};
-handle_call(get_termination_callback, _From, Session) ->
-    {reply, Session#session.termination_callback, Session};
+handle_call({set_disconnect_callback, TCB}, _From, Session) ->
+    {reply, {ok, TCB}, Session#session{disconnect_callback = TCB}};
+handle_call(get_disconnect_callback, _From, Session) ->
+    {reply, Session#session.disconnect_callback, Session};
 handle_call({set_status, Status}, _From, Session) when
     Status =:= disconnected
 ->
@@ -288,7 +286,7 @@ handle_info(maybe_terminate, Session = #session{status = S}) when
 ->
     % Client is still disconnected, terminate.
     logger:notice(
-        "Disconnecting session ~p in state ~p after hitting timeout", [
+        "Terminating session ~p in state ~p after hitting timeout", [
             self(), S
         ]
     ),
