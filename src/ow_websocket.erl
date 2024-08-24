@@ -25,8 +25,8 @@ init(Req, _St0) ->
     IP = inet:ntoa(RawIP),
     logger:notice("Starting WebSocket session for ~p", [IP]),
     SessionID = erlang:unique_integer([positive]),
-    ow_session_util:connect(SessionID),
-    logger:notice("~p: Pending SessionID: ~p", [IP, SessionID]),
+    ok = ow_session_util:connect(SessionID),
+    logger:debug("~p: Pending SessionID: ~p", [IP, SessionID]),
     {cowboy_websocket, Req, SessionID}.
 
 %%---------------------------------------------------------------------------
@@ -37,8 +37,14 @@ init(Req, _St0) ->
 terminate(_Reason, Req, SessionID) ->
     #{peer := {IP, _Port}} = Req,
     logger:notice("~p: WebSocket client disconnected", [IP]),
-    logger:debug("Client session at disconnect: ~p", [SessionID]),
-    ow_session:status(disconnected, SessionID),
+    case ow_session:disconnect_callback(SessionID) of
+        {Module, Fun, Args} ->
+            logger:notice("Calling: ~p:~p(~p)", [Module, Fun, Args]),
+            erlang:apply(Module, Fun, Args);
+        undefined ->
+            ok
+    end,
+    {ok, disconnected} = ow_session:status(disconnected, SessionID),
     ok.
 
 %%---------------------------------------------------------------------------
