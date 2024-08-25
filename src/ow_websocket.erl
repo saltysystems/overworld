@@ -68,8 +68,8 @@ websocket_handle({binary, Msg}, SessionID) ->
     case ow_protocol:route(Msg, SessionID) of
         ok ->
             {ok, SessionID};
-        Msg1 ->
-            {reply, {binary, Msg1}, SessionID}
+        {MsgType, Msg1} ->
+            {reply, {binary, to_binary(MsgType, Msg1)}, SessionID}
     end;
 websocket_handle(Frame, SessionID) ->
     logger:debug("Received some other kind of frame: ~p", [Frame]),

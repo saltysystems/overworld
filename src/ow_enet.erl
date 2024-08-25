@@ -16,6 +16,7 @@
     code_change/3
 ]).
 
+-type peerinfo() :: map().
 -type qos() :: {
     reliable | unreliable | unsequenced | undefined,
     non_neg_integer() | undefined
@@ -42,7 +43,7 @@ start(PeerInfo) ->
 %% @doc Handler is initialized for any new connection and logs the foreign IP
 %% @end
 %%---------------------------------------------------------------------------
--spec init([map()]) -> {ok, map()}.
+-spec init([peerinfo()]) -> {ok, peerinfo()}.
 init([PeerInfo]) ->
     IP = inet:ntoa(maps:get(ip, PeerInfo)),
     logger:notice("Starting ENet session for ~p", [IP]),
@@ -69,6 +70,7 @@ handle_info({enet, disconnected, remote, _Pid, _When}, PeerInfo) ->
     logger:notice("~p: ENet client disconnected", [IP]),
     {stop, normal, PeerInfo};
 handle_info({enet, Channel, {reliable, Msg}}, PeerInfo) ->
+    logger:notice("Got a reliable msg"),
     decode_and_reply(
         Msg, Channel, {enet, send_reliable}, PeerInfo
     ),
@@ -93,8 +95,21 @@ handle_info(_, PeerInfo) ->
     % Ignore all other messages
     {noreply, PeerInfo}.
 
-terminate(_Reason, _PeerInfo) ->
+%%---------------------------------------------------------------------------
+%% @doc Clean up the ENet handler by calling the session's disconnect callback
+%% @end
+%%---------------------------------------------------------------------------
+-spec terminate(any(), peerinfo()) -> ok.
+terminate(_Reason, #{session_id := SessionID}) ->
     % We've caught an error or otherwise asked to stop, clean up the session
+    case ow_session:disconnect_callback(SessionID) of
+        {Module, Fun, Args} ->
+            logger:notice("Calling: ~p:~p(~p)", [Module, Fun, Args]),
+            erlang:apply(Module, Fun, Args);
+        undefined ->
+            ok
+    end,
+    {ok, disconnected} = ow_session:status(disconnected, SessionID),
     ok.
 
 code_change(_OldVsn, PeerInfo, _Extra) -> {ok, PeerInfo}.
@@ -113,8 +128,8 @@ decode_and_reply(Msg, _IncomingChannel, _MF, PeerInfo) ->
     case ow_protocol:route(Msg, SessionID) of
         ok ->
             ok;
-        {MsgType, Msg} ->
-            channelize_msg(MsgType, Msg, Channels)
+        {MsgType, Msg1} ->
+            channelize_msg(MsgType, Msg1, Channels)
     end.
 
 channelize_msg(MsgType, Msg, Channels) ->

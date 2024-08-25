@@ -24,7 +24,7 @@
 %% @doc Calculate the latency based on the RTT to the client
 %% @end
 %%----------------------------------------------------------------------------
--spec session_ping(map(), ow_session:id()) -> binary().
+-spec session_ping(map(), ow_session:id()) -> {atom(), map()}.
 session_ping(Msg, SessionID) ->
     BeaconID = maps:get(id, Msg),
     Last = ow_beacon:get_by_id(BeaconID),
@@ -34,7 +34,7 @@ session_ping(Msg, SessionID) ->
         round(Now - Last), native, millisecond
     ),
     {ok, Latency} = ow_session:latency(Latency, SessionID),
-    ow_msg:encode(#{latency => Latency}, session_pong).
+    {session_pong, #{latency => Latency}}.
 
 %%----------------------------------------------------------------------------
 %% @doc Request a new session, or rejoin an existing one
