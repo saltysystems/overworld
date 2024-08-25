@@ -100,7 +100,7 @@ handle_info(_, PeerInfo) ->
 %% @end
 %%---------------------------------------------------------------------------
 -spec terminate(any(), peerinfo()) -> ok.
-terminate(_Reason, #{ session_id := SessionID }) ->
+terminate(_Reason, #{session_id := SessionID}) ->
     % We've caught an error or otherwise asked to stop, clean up the session
     case ow_session:disconnect_callback(SessionID) of
         {Module, Fun, Args} ->
