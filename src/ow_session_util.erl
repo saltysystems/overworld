@@ -34,7 +34,7 @@ session_ping(Msg, SessionID) ->
         round(Now - Last), native, millisecond
     ),
     {ok, Latency} = ow_session:latency(Latency, SessionID),
-    ow_msg:encode(#{latency => Latency}, session_pong).
+    {session_pong, #{latency => Latency}}.
 
 %%----------------------------------------------------------------------------
 %% @doc Request a new session, or rejoin an existing one
