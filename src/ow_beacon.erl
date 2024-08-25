@@ -57,8 +57,8 @@ init([]) ->
 handle_call({get_by_id, ID}, _From, State = {Window, _Timer}) ->
     case lists:keyfind(ID, 1, Window) of
         false ->
-            io:format("Don't have this ID: ~p~n", [ID]),
-            io:format("Window is : ~p~n", [Window]),
+            logger:notice("Don't have this ID: ~p~n", [ID]),
+            logger:notice("Window is : ~p~n", [Window]),
             {reply, 0, State};
         {ID, Time} ->
             {reply, Time, State}
@@ -74,23 +74,21 @@ handle_cast(_Req, State) ->
     {noreply, State}.
 
 handle_info(tick, {Window, OldTimer}) ->
+    %[H|_] = Window,
+    %logger:notice("Beacon tick: ~p", [H]),
     % Stop the old timer
     erlang:cancel_timer(OldTimer),
     % Create a new unique integer as the beacon ID
-    % TODO: SEED ME
-    % 32-bit unsigned max
-    ID = rand:uniform(4_294_967_295),
+    ID = erlang:unique_integer([positive]),
     % Push the beacon ID + current time to the stack
     Beacon = {ID, erlang:monotonic_time()},
     % Encode the beacon and broadcast it to all clients.
     % n.b., There's a very small race here. A client could conceivably respond
     % faster than the server has updated the list but I've never observed this
     % even on LAN
-    % Look up the QOS/Channel for the beacon
-    #{channel := Channel, qos := QOS} = ow_protocol:rpc(
-        session_beacon, client
-    ),
-    ow_session:broadcast(encode_beacon(ID), {QOS, Channel}),
+    Msg = {self(), client_msg, {session_beacon, #{id => ID}}},
+    % use gproc to send ALL registered processes!
+    gproc:send({p, l, client_session}, Msg),
     NewTimer = erlang:send_after(?HEARTBEAT, self(), tick),
     {noreply, {push(Beacon, Window), NewTimer}};
 handle_info(_Info, State) ->
@@ -113,7 +111,3 @@ new_state() ->
 push(Beacon, List) ->
     L1 = lists:sublist(List, ?WINDOW_SIZE - 1),
     [Beacon | L1].
-
--spec encode_beacon(integer()) -> binary().
-encode_beacon(ID) ->
-    ow_msg:encode(#{id => ID}, session_beacon).

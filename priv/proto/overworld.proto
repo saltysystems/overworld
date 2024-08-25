@@ -8,53 +8,42 @@ package overworld;
 /////////////////////////////////////////////////////////
 message overworld {
     oneof msg {
-        session_log    session_log    = 1;
-        session_beacon session_beacon = 2;
-        session_ping   session_ping   = 3;
-        session_pong   session_pong   = 4;
-        session_new    session_new    = 5;
-        session_id     session_id     = 6;
-        session_id_req session_id_req = 7;
+        session_request session_request = 1;
+        session_new     session_new     = 2;
+        session_beacon  session_beacon  = 3;
+        session_ping    session_ping    = 4;
+        session_pong    session_pong    = 5;
     }
 }
-
 
 /////////////////////////////////////////////////////////
 // Session Messages                                    //
 /////////////////////////////////////////////////////////
-message session_log {
-	required string msg = 1;
-    required bytes color = 2;
+
+// client --> server
+message session_request {
+    optional bytes reconnect_token = 1; // secret
 }
 
-// server -> client
-message session_id_req {
+// server --> client
+message session_new {
+    // initialize a session and send to the client. 
+    required uint64 id              = 1; // public
+    required bytes  reconnect_token = 2; // secret
 }
 
-// server -> client
-message session_id {
-    required sint32 id = 1;
-}
-
-// server --> all clients
+// server --> client
 message session_beacon {
-    required uint32 id = 1;
+    required uint64 id = 1;
 }
 
 // client --> server
 message session_ping {
-    required uint32 id = 1;
+    required uint64 id = 1;
 }
 
 // server -> client
 message session_pong {
-    // send the most recent estimate for latency
-    required uint32 latency = 1;
-}
-
-// server -> client
-message session_new {
-    // initialize a sesison and send to the client. 
-    required int64 id = 1; // public
-    required bytes reconnect_token = 2; // secret
+    // send the most recent estimate for latency back to the client
+    required uint64 latency = 1;
 }
