@@ -16,12 +16,13 @@ Overworld is Free Software, available under the MPL.
 Getting started
 -------------------------------------------------
 First, install OTP from the Erlang website or your local package repository.
-The framework has mostly been developed with OTP 21+. It has not been tested
-with older versions.
+This framework tracks the latest release of Erlang, and is not tested on older 
+versions. Notably, it makes heavy use of the `maybe` construct which requires
+Erlang OTP 26 or greater.
 
 You will also need the `rebar3` build tool in order to build, test and deploy
 the server.
 
-You can consult the [documentation](doc) directory for some examples on using
-Overworld. The [Chat application demo](doc/demo.md) is a good place to get
-started.
+The documentation is sorely lacking at the moment, so feel free to open an
+issue or email me at cmdrk@protonmail.com if you'd like to chat about this 
+project.
