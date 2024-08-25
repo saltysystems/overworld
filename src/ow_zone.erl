@@ -170,7 +170,6 @@ start_link(Module, Args, Opts) ->
     Opts :: [start_opt()],
     Result :: start_ret().
 start_link(ServerName, Module, Args, Opts) ->
-    % TODO: Check for configuration options in Opts
     gen_server:start_link(ServerName, ?MODULE, {Module, Args}, Opts).
 
 -spec start_monitor(Module, Args, Opts) -> Result when
@@ -301,7 +300,6 @@ handle_call(
                 % Notify the caller of any messages that the callback module
                 % wants to send as a response to the joint
                 handle_notify(Notify, St1),
-                % TODO: maybe set a termination callback?
                 St1;
             false ->
                 % Assume the callback module does not want to take any
