@@ -75,11 +75,11 @@
     {noreply, state()}
     | {reply, zone_msg(), state()}
     | {broadcast, zone_msg(), state()}
-    | {{at, list()}, zone_msg(), state()}.
+    | {{send, [ow_session:id()]}, zone_msg(), state()}.
 -type ow_zone_cast_resp() ::
     {noreply, state()}
     | {broadcast, zone_msg(), state()}
-    | {{at, list()}, zone_msg(), state()}.
+    | {{send, [ow_session:id()]}, zone_msg(), state()}.
 -type zone_data() ::
     #{
         clients => [ow_session:id()],
