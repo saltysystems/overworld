@@ -130,7 +130,9 @@
     Result :: {Response, State},
     Response :: ow_zone_resp().
 
--optional_callbacks([handle_join/3, handle_part/3, handle_disconnect/2]).
+-optional_callbacks([
+    handle_join/3, handle_part/3, handle_disconnect/2, handle_reconnect/2
+]).
 
 %%=======================================================================
 %% gen_server API functions
