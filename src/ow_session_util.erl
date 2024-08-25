@@ -24,7 +24,7 @@
 %% @doc Calculate the latency based on the RTT to the client
 %% @end
 %%----------------------------------------------------------------------------
--spec session_ping(map(), ow_session:id()) -> binary().
+-spec session_ping(map(), ow_session:id()) -> {atom(), map()}.
 session_ping(Msg, SessionID) ->
     BeaconID = maps:get(id, Msg),
     Last = ow_beacon:get_by_id(BeaconID),
