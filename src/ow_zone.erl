@@ -47,7 +47,9 @@
 -define(DEFAULT_TICK_MS, 20).
 
 -define(INITIAL_ZONE_DATA, #{
-    clients => [],
+    joined => [],
+    active => [],
+    parted => [],
     frame => 0,
     tick_ms => ?DEFAULT_TICK_MS,
     lerp_period => ?DEFAULT_LERP_MS,
@@ -82,7 +84,9 @@
     | {{send, [ow_session:id()]}, zone_msg(), state()}.
 -type zone_data() ::
     #{
-        clients => [ow_session:id()],
+        joined => [ow_session:id()],
+        active => [ow_session:id()],
+        parted => [ow_session:id()],
         frame => non_neg_integer(),
         tick_ms => pos_integer(),
         lerp_period => pos_integer(),
@@ -300,9 +304,9 @@ handle_call(?TAG_I({join, Msg, Who}), _ConnectionHandler, St0) ->
     % Update the session with a termination callback
     Callback = {CbMod, disconnect, [ZonePid, Who]},
     {ok, Callback} = ow_session:disconnect_callback(Callback, Who),
-    % Add the client to the client list in the zone data
-    #{clients := Clients} = ZD = St0#state.zone_data,
-    ZD1 = ZD#{clients := [Who | Clients]},
+    % Add the client to the recently joined list in the zone data
+    #{joined := Joined} = ZD = St0#state.zone_data,
+    ZD1 = ZD#{joined := [Who | Joined]},
     St1 = St0#state{zone_data = ZD1},
     % Run the callback handler, if exported
     maybe
@@ -322,10 +326,9 @@ handle_call(?TAG_I({part, Msg, Who}), _ConnectionHandler, St0) ->
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
     ZD = St0#state.zone_data,
-    % Remove the client from the client list in the zone data
-    #{clients := Clients} = ZD,
-    Clients1 = lists:delete(Who, Clients),
-    ZD1 = ZD#{clients := Clients1},
+    % Add the client to the list of recently parted clients
+    #{parted := Parted} = ZD,
+    ZD1 = ZD#{parted := [Who | Parted]},
     St1 = St0#state{zone_data = ZD1},
     % Run the callback handler, if exported
     maybe
@@ -391,10 +394,9 @@ handle_cast(?TAG_I({disconnect, Who}), St0 = #state{zone_data = #{disconnect := 
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
     ZD = St0#state.zone_data,
-    % Remove the client from the client list in the zone data
-    #{clients := Clients} = ZD,
-    Clients1 = lists:delete(Who, Clients),
-    ZD1 = ZD#{clients := Clients1},
+    % Add the client to the list of parted users
+    #{parted := Parted} = ZD,
+    ZD1 = ZD#{parted := [Who | Parted]},
     St1 = St0#state{zone_data = ZD1},
     % Run the callback handler, if exported
     maybe
@@ -442,12 +444,16 @@ handle_info(?TAG_I(tick), St0) ->
         cb_data = CbData0,
         zone_data = ZoneData
     } = St0,
-    case CbMod:handle_tick(ZoneData, CbData0) of
+    % Run the callback handler
+    Result = CbMod:handle_tick(ZoneData, CbData0),
+    % Move all joined to active and remove all parted from active
+    St1 = shift_clients(St0),
+    case Result of
         {noreply, CbData1} ->
-            {noreply, St0#state{cb_data = CbData1}};
+            {noreply, St1#state{cb_data = CbData1}};
         {ReplyType, Msg, CbData1} ->
             ok = handle_notify(ReplyType, Msg, St0),
-            {noreply, St0#state{cb_data = CbData1}}
+            {noreply, St1#state{cb_data = CbData1}}
     end.
 
 % Undocumented handle_info fall-through. TBD if useful, so commented for now.
@@ -476,14 +482,14 @@ code_change(_OldVsn, St0, _Extra) -> {ok, St0}.
 %%=======================================================================
 
 handle_notify({send, IDs}, {MsgType, Msg}, St0) ->
-    #{clients := Clients} = St0#state.zone_data,
+    #{active := Active} = St0#state.zone_data,
     % Filter down to only the active clients specified
-    Players = [P0 || P0 <- IDs, P1 <- Clients, P0 =:= P1],
+    Players = [P0 || P0 <- IDs, P1 <- Active, P0 =:= P1],
     ok = ow_session_util:notify_clients(MsgType, Msg, Players),
     ok;
 handle_notify(broadcast, {MsgType, Msg}, St0) ->
-    #{clients := Clients} = St0#state.zone_data,
-    ok = ow_session_util:notify_clients(MsgType, Msg, Clients),
+    #{active := Active} = St0#state.zone_data,
+    ok = ow_session_util:notify_clients(MsgType, Msg, Active),
     ok;
 handle_notify(reply, {MsgType, Msg}, _St0) ->
     {MsgType, Msg}.
@@ -497,3 +503,14 @@ initialize_state(CbMod, CbData, ZoneData) ->
         cb_data = CbData,
         zone_data = ZoneData
     }.
+
+shift_clients(#state{zone_data = ZoneData} = St0) ->
+    #{
+        joined := Joined,
+        parted := Parted,
+        active := Active
+    } = ZoneData,
+    % Move all joined to active
+    Active1 = (Active ++ Joined) -- Parted,
+    ZoneData1 = ZoneData#{joined := [], parted := [], active := Active1},
+    St0#state{zone_data = ZoneData1}.
