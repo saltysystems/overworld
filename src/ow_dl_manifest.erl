@@ -79,8 +79,7 @@ send_file([{<<"file">>, BinFile}], Req) ->
                 #{
                     <<"content-type">> => <<"text/plain">>,
                     <<"content-disposition">> =>
-                        <<<<"attachment; filename=">>/binary,
-                            BinFile/binary>>
+                        <<<<"attachment; filename=">>/binary, BinFile/binary>>
                 },
                 F,
                 Req
