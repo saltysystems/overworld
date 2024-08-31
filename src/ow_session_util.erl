@@ -104,13 +104,18 @@ reconnect(SessionID, SessionID1) ->
 notify_clients(_MsgType, _Msg, []) ->
     ok;
 notify_clients(MsgType, Msg, [SessionID | Rest]) ->
-    Pid = ow_session:pid(SessionID),
-    case Pid of
-        undefined ->
-            ok;
-        _ ->
-            % Send a message to the client, let the connection handler figure
-            % out how to serialzie it further
-            Pid ! {self(), client_msg, {MsgType, Msg}}
+    try
+        Pid = ow_session:pid(SessionID),
+        case Pid of
+            undefined ->
+                ok;
+            _ ->
+                % Send a message to the client, let the connection handler figure
+                % out how to serialzie it further
+                Pid ! {self(), client_msg, {MsgType, Msg}}
+        end
+    catch
+        exit:{noproc, _} ->
+            ok
     end,
     notify_clients(MsgType, Msg, Rest).
