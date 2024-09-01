@@ -368,7 +368,7 @@ handle_call(
 handle_call(?TAG_I({Type, Msg, Who}), _ConnectionHandler, St0) ->
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
-    Handler = list_to_existing_atom("handler_" ++ atom_to_list(Type)),
+    Handler = list_to_existing_atom("handle_" ++ atom_to_list(Type)),
     maybe
         true ?= erlang:function_exported(CbMod, Handler, 2),
         {ReplyType, ReplyMsg, CbData1} ?= CbMod:Handler(Msg, Who, CbData0),
