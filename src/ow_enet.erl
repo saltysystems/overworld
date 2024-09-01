@@ -48,7 +48,7 @@ init([PeerInfo]) ->
     IP = inet:ntoa(maps:get(ip, PeerInfo)),
     logger:notice("Starting ENet session for ~p", [IP]),
     SessionID = erlang:unique_integer([positive]),
-    logger:notice("~p: Pending session ID: ~p", [SessionID]),
+    logger:notice("Pending session ID: ~p", [SessionID]),
     % Register the process by this SessionID in gproc
     gproc:reg({n, l, SessionID}, ignored),
     % Trap exits from the enet child processes
