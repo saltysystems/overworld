@@ -326,9 +326,9 @@ handle_call(?TAG_I({part, Msg, Who}), _ConnectionHandler, St0) ->
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
     ZD = St0#state.zone_data,
-    % Add the client to the list of recently parted clients
-    #{parted := Parted} = ZD,
-    ZD1 = ZD#{parted := [Who | Parted]},
+    % Add the client to the list of parted users
+    #{parted := Parted, active := Active } = ZD,
+    ZD1 = ZD#{parted := [Who | Parted], active := lists:delete(Who, Active)},
     St1 = St0#state{zone_data = ZD1},
     % Run the callback handler, if exported
     maybe
@@ -396,8 +396,8 @@ handle_cast(?TAG_I({disconnect_timeout, Who}), St0) ->
     CbData0 = St0#state.cb_data,
     ZD = St0#state.zone_data,
     % Add the client to the list of parted users
-    #{parted := Parted} = ZD,
-    ZD1 = ZD#{parted := [Who | Parted]},
+    #{parted := Parted, active := Active } = ZD,
+    ZD1 = ZD#{parted := [Who | Parted], active := lists:delete(Who, Active)},
     St1 = St0#state{zone_data = ZD1},
     % Run the callback handler, if exported
     maybe
@@ -420,7 +420,7 @@ handle_cast(?TAG_I({disconnect, Who}), St0) ->
     CbData0 = St0#state.cb_data,
     maybe
         true ?= erlang:function_exported(CbMod, handle_disconnect, 2),
-        {ReplyType, ReplyMsg, CbData1} ?= CbMod:handle_part(Who, CbData0),
+        {ReplyType, ReplyMsg, CbData1} ?= CbMod:handle_disconnect(Who, CbData0),
         ok = handle_notify(ReplyType, ReplyMsg, St0),
         {noreply, St0#state{cb_data = CbData1}}
     else
