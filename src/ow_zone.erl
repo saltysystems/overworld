@@ -448,16 +448,20 @@ handle_info(?TAG_I(tick), St0) ->
         cb_data = CbData0,
         zone_data = ZoneData
     } = St0,
+    #{frame := Frame} = ZoneData,
+    % Increment the frame counter
+    ZoneData1 = ZoneData#{frame := Frame + 1},
+    St1 = St0#state{zone_data = ZoneData1},
     % Run the callback handler
-    Result = CbMod:handle_tick(ZoneData, CbData0),
+    Result = CbMod:handle_tick(ZoneData1, CbData0),
     % Move all joined to active and remove all parted from active
-    St1 = shift_clients(St0),
+    St2 = shift_clients(St1),
     case Result of
         {noreply, CbData1} ->
-            {noreply, St1#state{cb_data = CbData1}};
+            {noreply, St2#state{cb_data = CbData1}};
         {ReplyType, Msg, CbData1} ->
-            ok = handle_notify(ReplyType, Msg, St0),
-            {noreply, St1#state{cb_data = CbData1}}
+            ok = handle_notify(ReplyType, Msg, St2),
+            {noreply, St2#state{cb_data = CbData1}}
     end.
 
 % Undocumented handle_info fall-through. TBD if useful, so commented for now.
