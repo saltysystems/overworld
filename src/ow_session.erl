@@ -74,7 +74,7 @@ start(ID) ->
     start(ID, []).
 -spec start(id(), [tuple()]) -> gen_server:start_ret().
 start(ID, Config) ->
-    gen_server:start_link(?SERVER(ID), ?MODULE, [ID, Config], []).
+    gen_server:start(?SERVER(ID), ?MODULE, [ID, Config], []).
 
 %%----------------------------------------------------------------------------
 %% @doc Stop the session server
