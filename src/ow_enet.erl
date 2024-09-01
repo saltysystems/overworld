@@ -70,7 +70,6 @@ handle_info({enet, disconnected, remote, _Pid, _When}, PeerInfo) ->
     logger:notice("~p: ENet client disconnected", [IP]),
     {stop, normal, PeerInfo};
 handle_info({enet, Channel, {reliable, Msg}}, PeerInfo) ->
-    logger:notice("Got a reliable msg"),
     decode_and_reply(
         Msg, Channel, {enet, send_reliable}, PeerInfo
     ),
