@@ -14,6 +14,7 @@
     join/3,
     part/3,
     disconnect/2,
+    disconnect_timeout/2,
     reconnect/2,
     rpc/4,
     broadcast/2,
@@ -47,7 +48,9 @@
 -define(DEFAULT_TICK_MS, 20).
 
 -define(INITIAL_ZONE_DATA, #{
-    clients => [],
+    joined => [],
+    active => [],
+    parted => [],
     frame => 0,
     tick_ms => ?DEFAULT_TICK_MS,
     lerp_period => ?DEFAULT_LERP_MS,
@@ -82,7 +85,9 @@
     | {{send, [ow_session:id()]}, zone_msg(), state()}.
 -type zone_data() ::
     #{
-        clients => [ow_session:id()],
+        joined => [ow_session:id()],
+        active => [ow_session:id()],
+        parted => [ow_session:id()],
         frame => non_neg_integer(),
         tick_ms => pos_integer(),
         lerp_period => pos_integer(),
@@ -153,7 +158,9 @@ start(Module, Args, Opts) ->
     Opts :: [start_opt()],
     Result :: start_ret().
 start(ServerName, Module, Args, Opts) ->
-    gen_server:start(ServerName, ?MODULE, {Module, Args}, Opts).
+    Resp = gen_server:start(ServerName, ?MODULE, {Module, Args}, Opts),
+    logger:notice("Zone server started: ~p", [Resp]),
+    Resp.
 
 -spec start_link(Module, Args, Opts) -> Result when
     Module :: module(),
@@ -170,7 +177,9 @@ start_link(Module, Args, Opts) ->
     Opts :: [start_opt()],
     Result :: start_ret().
 start_link(ServerName, Module, Args, Opts) ->
-    gen_server:start_link(ServerName, ?MODULE, {Module, Args}, Opts).
+    Resp = gen_server:start_link(ServerName, ?MODULE, {Module, Args}, Opts),
+    logger:notice("Zone server started: ~p", [Resp]),
+    Resp.
 
 -spec start_monitor(Module, Args, Opts) -> Result when
     Module :: module(),
@@ -242,12 +251,11 @@ part(ServerRef, Msg, SessionID) ->
 
 -spec disconnect(server_ref(), ow_session:id()) -> ok.
 disconnect(ServerRef, SessionID) ->
-    logger:notice(
-        "Calling disconnect handler for zone ~p and Session ~p", [
-            ServerRef, SessionID
-        ]
-    ),
-    gen_server:call(ServerRef, ?TAG_I({disconnect, SessionID})).
+    gen_server:cast(ServerRef, ?TAG_I({disconnect, SessionID})).
+
+-spec disconnect_timeout(server_ref(), ow_session:id()) -> ok.
+disconnect_timeout(ServerRef, SessionID) ->
+    gen_server:cast(ServerRef, ?TAG_I({disconnect_timeout, SessionID})).
 
 -spec reconnect(server_ref(), ow_session:id()) -> ok.
 reconnect(ServerRef, SessionID) ->
@@ -300,9 +308,9 @@ handle_call(?TAG_I({join, Msg, Who}), _ConnectionHandler, St0) ->
     % Update the session with a termination callback
     Callback = {CbMod, disconnect, [ZonePid, Who]},
     {ok, Callback} = ow_session:disconnect_callback(Callback, Who),
-    % Add the client to the client list in the zone data
-    #{clients := Clients} = ZD = St0#state.zone_data,
-    ZD1 = ZD#{clients := [Who | Clients]},
+    % Add the client to the recently joined list in the zone data
+    #{joined := Joined} = ZD = St0#state.zone_data,
+    ZD1 = ZD#{joined := [Who | Joined]},
     St1 = St0#state{zone_data = ZD1},
     % Run the callback handler, if exported
     maybe
@@ -322,10 +330,9 @@ handle_call(?TAG_I({part, Msg, Who}), _ConnectionHandler, St0) ->
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
     ZD = St0#state.zone_data,
-    % Remove the client from the client list in the zone data
-    #{clients := Clients} = ZD,
-    Clients1 = lists:delete(Who, Clients),
-    ZD1 = ZD#{clients := Clients1},
+    % Add the client to the list of parted users
+    #{parted := Parted, active := Active} = ZD,
+    ZD1 = ZD#{parted := [Who | Parted], active := lists:delete(Who, Active)},
     St1 = St0#state{zone_data = ZD1},
     % Run the callback handler, if exported
     maybe
@@ -365,7 +372,7 @@ handle_call(
 handle_call(?TAG_I({Type, Msg, Who}), _ConnectionHandler, St0) ->
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
-    Handler = list_to_existing_atom("handler_" ++ atom_to_list(Type)),
+    Handler = list_to_existing_atom("handle_" ++ atom_to_list(Type)),
     maybe
         true ?= erlang:function_exported(CbMod, Handler, 2),
         {ReplyType, ReplyMsg, CbData1} ?= CbMod:Handler(Msg, Who, CbData0),
@@ -387,14 +394,15 @@ handle_call(Call, _From, St0) ->
     ),
     {reply, ok, St0}.
 
-handle_cast(?TAG_I({disconnect, Who}), St0 = #state{zone_data = #{disconnect := hard}}) ->
+handle_cast(?TAG_I({disconnect_timeout, Who}), St0) ->
+    logger:notice("Got disconnect timeout from session ~p. My state: ~p", [Who, St0]),
+    % Player has completely timed out, go ahead and clean up by removing them
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
     ZD = St0#state.zone_data,
-    % Remove the client from the client list in the zone data
-    #{clients := Clients} = ZD,
-    Clients1 = lists:delete(Who, Clients),
-    ZD1 = ZD#{clients := Clients1},
+    % Add the client to the list of parted users
+    #{parted := Parted, active := Active} = ZD,
+    ZD1 = ZD#{parted := [Who | Parted], active := lists:delete(Who, Active)},
     St1 = St0#state{zone_data = ZD1},
     % Run the callback handler, if exported
     maybe
@@ -408,13 +416,17 @@ handle_cast(?TAG_I({disconnect, Who}), St0 = #state{zone_data = #{disconnect := 
         {noreply, CbData2} ->
             {noreply, St1#state{cb_data = CbData2}}
     end;
+handle_cast(?TAG_I({disconnect, Who}), St0 = #state{zone_data = #{disconnect := hard}}) ->
+    logger:notice("Got regular disconnect from session ~p", [Who]),
+    % If disconnect is hard, just disconnect as if we immediately timed out
+    handle_cast(?TAG_I({disconnect_timeout, Who}), St0);
 handle_cast(?TAG_I({disconnect, Who}), St0) ->
     % For soft disconnects, we don't immediately clean up the player
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
     maybe
         true ?= erlang:function_exported(CbMod, handle_disconnect, 2),
-        {ReplyType, ReplyMsg, CbData1} ?= CbMod:handle_part(Who, CbData0),
+        {ReplyType, ReplyMsg, CbData1} ?= CbMod:handle_disconnect(Who, CbData0),
         ok = handle_notify(ReplyType, ReplyMsg, St0),
         {noreply, St0#state{cb_data = CbData1}}
     else
@@ -442,12 +454,20 @@ handle_info(?TAG_I(tick), St0) ->
         cb_data = CbData0,
         zone_data = ZoneData
     } = St0,
-    case CbMod:handle_tick(ZoneData, CbData0) of
+    #{frame := Frame} = ZoneData,
+    % Increment the frame counter
+    ZoneData1 = ZoneData#{frame := Frame + 1},
+    St1 = St0#state{zone_data = ZoneData1},
+    % Run the callback handler
+    Result = CbMod:handle_tick(ZoneData1, CbData0),
+    % Move all joined to active and remove all parted from active
+    St2 = shift_clients(St1),
+    case Result of
         {noreply, CbData1} ->
-            {noreply, St0#state{cb_data = CbData1}};
+            {noreply, St2#state{cb_data = CbData1}};
         {ReplyType, Msg, CbData1} ->
-            ok = handle_notify(ReplyType, Msg, St0),
-            {noreply, St0#state{cb_data = CbData1}}
+            ok = handle_notify(ReplyType, Msg, St2),
+            {noreply, St2#state{cb_data = CbData1}}
     end.
 
 % Undocumented handle_info fall-through. TBD if useful, so commented for now.
@@ -476,14 +496,14 @@ code_change(_OldVsn, St0, _Extra) -> {ok, St0}.
 %%=======================================================================
 
 handle_notify({send, IDs}, {MsgType, Msg}, St0) ->
-    #{clients := Clients} = St0#state.zone_data,
+    #{active := Active} = St0#state.zone_data,
     % Filter down to only the active clients specified
-    Players = [P0 || P0 <- IDs, P1 <- Clients, P0 =:= P1],
+    Players = [P0 || P0 <- IDs, P1 <- Active, P0 =:= P1],
     ok = ow_session_util:notify_clients(MsgType, Msg, Players),
     ok;
 handle_notify(broadcast, {MsgType, Msg}, St0) ->
-    #{clients := Clients} = St0#state.zone_data,
-    ok = ow_session_util:notify_clients(MsgType, Msg, Clients),
+    #{active := Active} = St0#state.zone_data,
+    ok = ow_session_util:notify_clients(MsgType, Msg, Active),
     ok;
 handle_notify(reply, {MsgType, Msg}, _St0) ->
     {MsgType, Msg}.
@@ -497,3 +517,14 @@ initialize_state(CbMod, CbData, ZoneData) ->
         cb_data = CbData,
         zone_data = ZoneData
     }.
+
+shift_clients(#state{zone_data = ZoneData} = St0) ->
+    #{
+        joined := Joined,
+        parted := Parted,
+        active := Active
+    } = ZoneData,
+    % Move all joined to active
+    Active1 = (Active ++ Joined) -- Parted,
+    ZoneData1 = ZoneData#{joined := [], parted := [], active := Active1},
+    St0#state{zone_data = ZoneData1}.

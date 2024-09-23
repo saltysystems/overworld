@@ -44,6 +44,8 @@
 -type mfargs() :: {atom(), atom(), list()}.
 
 -record(session, {
+    % internal use only
+    id :: id(),
     pid :: pid() | undefined,
     serializer :: serializer(),
     latency :: time_ms(),
@@ -57,7 +59,7 @@
 -export_type([serializer/0]).
 -export_type([id/0]).
 
--define(DEFAULT_DISCONNECT_TIMEOUT, 30000).
+-define(DEFAULT_DISCONNECT_TIMEOUT, 5000).
 
 %%===========================================================================
 %% API
@@ -72,7 +74,7 @@ start(ID) ->
     start(ID, []).
 -spec start(id(), [tuple()]) -> gen_server:start_ret().
 start(ID, Config) ->
-    gen_server:start_link(?SERVER(ID), ?MODULE, [Config], []).
+    gen_server:start(?SERVER(ID), ?MODULE, [ID, Config], []).
 
 %%----------------------------------------------------------------------------
 %% @doc Stop the session server
@@ -216,8 +218,9 @@ zone(ID) ->
 %% Callback handlers
 %%=========================================================================
 
-init([Config]) ->
+init([SessionID, Config]) ->
     Session = #session{
+        id = SessionID,
         pid = proplists:get_value(pid, Config, undefined),
         serializer = proplists:get_value(serializer, Config, undefined),
         latency = proplists:get_value(latency, Config, 0),
@@ -285,7 +288,10 @@ handle_info(maybe_terminate, Session = #session{status = S}) when
     S =:= disconnected;
     S =:= preconnect
 ->
+    #session{zone = ZonePID, id = SessionID} = Session,
     % Client is still disconnected, terminate.
+    logger:notice("Calling disconnect timeout: ~p -> ~p", [SessionID, ZonePID]),
+    ow_zone:disconnect_timeout(ZonePID, SessionID),
     logger:notice(
         "Terminating session ~p in state ~p after hitting timeout", [
             self(), S
