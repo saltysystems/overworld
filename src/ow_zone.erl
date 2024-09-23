@@ -158,7 +158,9 @@ start(Module, Args, Opts) ->
     Opts :: [start_opt()],
     Result :: start_ret().
 start(ServerName, Module, Args, Opts) ->
-    gen_server:start(ServerName, ?MODULE, {Module, Args}, Opts).
+    Resp = gen_server:start(ServerName, ?MODULE, {Module, Args}, Opts),
+    logger:notice("Zone server started: ~p", [Resp]),
+    Resp.
 
 -spec start_link(Module, Args, Opts) -> Result when
     Module :: module(),
@@ -175,7 +177,9 @@ start_link(Module, Args, Opts) ->
     Opts :: [start_opt()],
     Result :: start_ret().
 start_link(ServerName, Module, Args, Opts) ->
-    gen_server:start_link(ServerName, ?MODULE, {Module, Args}, Opts).
+    Resp = gen_server:start_link(ServerName, ?MODULE, {Module, Args}, Opts),
+    logger:notice("Zone server started: ~p", [Resp]),
+    Resp.
 
 -spec start_monitor(Module, Args, Opts) -> Result when
     Module :: module(),
@@ -247,11 +251,11 @@ part(ServerRef, Msg, SessionID) ->
 
 -spec disconnect(server_ref(), ow_session:id()) -> ok.
 disconnect(ServerRef, SessionID) ->
-    gen_server:call(ServerRef, ?TAG_I({disconnect, SessionID})).
+    gen_server:cast(ServerRef, ?TAG_I({disconnect, SessionID})).
 
 -spec disconnect_timeout(server_ref(), ow_session:id()) -> ok.
 disconnect_timeout(ServerRef, SessionID) ->
-    gen_server:call(ServerRef, ?TAG_I({disconnect_timeout, SessionID})).
+    gen_server:cast(ServerRef, ?TAG_I({disconnect_timeout, SessionID})).
 
 -spec reconnect(server_ref(), ow_session:id()) -> ok.
 reconnect(ServerRef, SessionID) ->
@@ -327,7 +331,7 @@ handle_call(?TAG_I({part, Msg, Who}), _ConnectionHandler, St0) ->
     CbData0 = St0#state.cb_data,
     ZD = St0#state.zone_data,
     % Add the client to the list of parted users
-    #{parted := Parted, active := Active } = ZD,
+    #{parted := Parted, active := Active} = ZD,
     ZD1 = ZD#{parted := [Who | Parted], active := lists:delete(Who, Active)},
     St1 = St0#state{zone_data = ZD1},
     % Run the callback handler, if exported
@@ -391,12 +395,13 @@ handle_call(Call, _From, St0) ->
     {reply, ok, St0}.
 
 handle_cast(?TAG_I({disconnect_timeout, Who}), St0) ->
+    logger:notice("Got disconnect timeout from session ~p. My state: ~p", [Who, St0]),
     % Player has completely timed out, go ahead and clean up by removing them
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
     ZD = St0#state.zone_data,
     % Add the client to the list of parted users
-    #{parted := Parted, active := Active } = ZD,
+    #{parted := Parted, active := Active} = ZD,
     ZD1 = ZD#{parted := [Who | Parted], active := lists:delete(Who, Active)},
     St1 = St0#state{zone_data = ZD1},
     % Run the callback handler, if exported
@@ -412,6 +417,7 @@ handle_cast(?TAG_I({disconnect_timeout, Who}), St0) ->
             {noreply, St1#state{cb_data = CbData2}}
     end;
 handle_cast(?TAG_I({disconnect, Who}), St0 = #state{zone_data = #{disconnect := hard}}) ->
+    logger:notice("Got regular disconnect from session ~p", [Who]),
     % If disconnect is hard, just disconnect as if we immediately timed out
     handle_cast(?TAG_I({disconnect_timeout, Who}), St0);
 handle_cast(?TAG_I({disconnect, Who}), St0) ->
