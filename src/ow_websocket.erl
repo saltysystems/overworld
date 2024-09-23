@@ -37,15 +37,7 @@ init(Req, _St0) ->
 terminate(_Reason, Req, SessionID) ->
     #{peer := {IP, _Port}} = Req,
     logger:notice("~p: WebSocket client disconnected", [IP]),
-    case ow_session:disconnect_callback(SessionID) of
-        {Module, Fun, Args} ->
-            logger:notice("Calling: ~p:~p(~p)", [Module, Fun, Args]),
-            erlang:apply(Module, Fun, Args);
-        undefined ->
-            ok
-    end,
-    {ok, disconnected} = ow_session:status(disconnected, SessionID),
-    ok.
+    ok = ow_session_util:disconnect(SessionID).
 
 %%---------------------------------------------------------------------------
 %% @doc Set up the initial state of the websocket handler

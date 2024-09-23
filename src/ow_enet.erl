@@ -100,16 +100,7 @@ handle_info(_, PeerInfo) ->
 %%---------------------------------------------------------------------------
 -spec terminate(any(), peerinfo()) -> ok.
 terminate(_Reason, #{session_id := SessionID}) ->
-    % We've caught an error or otherwise asked to stop, clean up the session
-    case ow_session:disconnect_callback(SessionID) of
-        {Module, Fun, Args} ->
-            logger:notice("Calling: ~p:~p(~p)", [Module, Fun, Args]),
-            erlang:apply(Module, Fun, Args);
-        undefined ->
-            ok
-    end,
-    {ok, disconnected} = ow_session:status(disconnected, SessionID),
-    ok.
+    ok = ow_session_util:disconnect(SessionID).
 
 code_change(_OldVsn, PeerInfo, _Extra) -> {ok, PeerInfo}.
 
