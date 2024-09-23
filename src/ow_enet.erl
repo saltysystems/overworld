@@ -48,7 +48,7 @@ start(PeerInfo) ->
 init([PeerInfo]) ->
     IP = inet:ntoa(maps:get(ip, PeerInfo)),
     logger:notice("Starting ENet session for ~p", [IP]),
-    {ok, SessionID} = ow_session_util:connect(),
+    {ok, SessionID} = ow_session_util:preconnect(),
     % Trap exits from the enet child processes
     process_flag(trap_exit, true),
     % Add a new key to the peerInfo map containing Overworld session
