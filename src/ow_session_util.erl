@@ -10,7 +10,7 @@
 % RPC functions
 -export([session_ping/2, session_request/2]).
 % Utility functions
--export([connect/1, disconnect/1, reconnect/2, notify_clients/3]).
+-export([connect/0, disconnect/1, reconnect/2, notify_clients/3]).
 
 %%===========================================================================
 %% RPC API
@@ -79,13 +79,15 @@ session_request(Msg, SessionID) ->
 %%===========================================================================
 
 %%----------------------------------------------------------------------------
-%% @doc Register the caller's Pid in gproc with a key of SessionID
+%% @doc Create a session and register it with gproc
 %% @end
 %%----------------------------------------------------------------------------
--spec connect(ow_session:id()) -> ok.
-connect(SessionID) ->
+-spec connect() -> {ok, ow_session:id()}.
+connect() ->
+    SessionID = erlang:unique_integer([positive]),
+    logger:notice("Pending session ID: ~p", [SessionID]),
     gproc:reg({n, l, SessionID}, ignored),
-    ok.
+    {ok, SessionID}.
 
 %%----------------------------------------------------------------------------
 %% @doc Set the session to disconnected state and run the appropriate callback
