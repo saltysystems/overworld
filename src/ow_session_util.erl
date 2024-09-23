@@ -94,7 +94,7 @@ connect(SessionID) ->
 %%----------------------------------------------------------------------------
 -spec disconnect(ow_session:id()) -> ok.
 disconnect(SessionID) ->
-  % We've caught an error or otherwise asked to stop, clean up the session
+    % We've caught an error or otherwise asked to stop, clean up the session
     case ow_session:disconnect_callback(SessionID) of
         {Module, Fun, Args} ->
             logger:notice("Calling: ~p:~p(~p)", [Module, Fun, Args]),
@@ -103,7 +103,6 @@ disconnect(SessionID) ->
             ok
     end,
     ow_session:status(disconnected, SessionID).
-  
 
 %%----------------------------------------------------------------------------
 %% @doc Unregister an old SessionID and register a new SessionID for the caller
