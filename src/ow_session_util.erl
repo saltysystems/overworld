@@ -102,7 +102,8 @@ disconnect(SessionID) ->
         undefined ->
             ok
     end,
-    ow_session:status(disconnected, SessionID).
+    {ok, disconnected} = ow_session:status(disconnected, SessionID),
+    ok.
 
 %%----------------------------------------------------------------------------
 %% @doc Unregister an old SessionID and register a new SessionID for the caller

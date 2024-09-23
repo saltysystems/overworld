@@ -100,8 +100,7 @@ handle_info(_, PeerInfo) ->
 %%---------------------------------------------------------------------------
 -spec terminate(any(), peerinfo()) -> ok.
 terminate(_Reason, #{session_id := SessionID}) ->
-    {ok, disconnected} = ow_session_util:disconnect(SessionID),
-    ok.
+    ok = ow_session_util:disconnect(SessionID).
 
 code_change(_OldVsn, PeerInfo, _Extra) -> {ok, PeerInfo}.
 
