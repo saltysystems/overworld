@@ -10,7 +10,7 @@
 % RPC functions
 -export([session_ping/2, session_request/2]).
 % Utility functions
--export([connect/1, reconnect/2, notify_clients/3]).
+-export([connect/1, disconnect/1, reconnect/2, notify_clients/3]).
 
 %%===========================================================================
 %% RPC API
@@ -86,6 +86,24 @@ session_request(Msg, SessionID) ->
 connect(SessionID) ->
     gproc:reg({n, l, SessionID}, ignored),
     ok.
+
+%%----------------------------------------------------------------------------
+%% @doc Set the session to disconnected state and run the appropriate callback
+%%      handler
+%% @end
+%%----------------------------------------------------------------------------
+-spec disconnect(ow_session:id()) -> ok.
+disconnect(SessionID) ->
+  % We've caught an error or otherwise asked to stop, clean up the session
+    case ow_session:disconnect_callback(SessionID) of
+        {Module, Fun, Args} ->
+            logger:notice("Calling: ~p:~p(~p)", [Module, Fun, Args]),
+            erlang:apply(Module, Fun, Args);
+        undefined ->
+            ok
+    end,
+    ow_session:status(disconnected, SessionID).
+  
 
 %%----------------------------------------------------------------------------
 %% @doc Unregister an old SessionID and register a new SessionID for the caller
