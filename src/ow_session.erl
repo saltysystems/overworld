@@ -59,7 +59,7 @@
 -export_type([serializer/0]).
 -export_type([id/0]).
 
--define(DEFAULT_DISCONNECT_TIMEOUT, 30000).
+-define(DEFAULT_DISCONNECT_TIMEOUT, 5000).
 
 %%===========================================================================
 %% API
@@ -290,12 +290,13 @@ handle_info(maybe_terminate, Session = #session{status = S}) when
 ->
     #session{zone = ZonePID, id = SessionID} = Session,
     % Client is still disconnected, terminate.
+    logger:notice("Calling disconnect timeout: ~p -> ~p", [SessionID, ZonePID]),
+    ow_zone:disconnect_timeout(ZonePID, SessionID),
     logger:notice(
         "Terminating session ~p in state ~p after hitting timeout", [
             self(), S
         ]
     ),
-    ow_zone:disconnect_timeout(ZonePID, SessionID),
     {stop, normal, Session};
 handle_info(maybe_terminate, Session) ->
     % Client is back into a connected state, continue on as normal.
