@@ -24,7 +24,7 @@ init(Req, _St0) ->
     #{peer := {RawIP, _Port}} = Req,
     IP = inet:ntoa(RawIP),
     logger:notice("Starting WebSocket session for ~p", [IP]),
-    SessionID = ow_session_util:connect(),
+    {ok, SessionID} = ow_session_util:connect(),
     logger:debug("~p: Pending SessionID: ~p", [IP, SessionID]),
     {cowboy_websocket, Req, SessionID}.
 

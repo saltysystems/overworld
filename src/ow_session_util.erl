@@ -82,12 +82,12 @@ session_request(Msg, SessionID) ->
 %% @doc Create a session and register it with gproc
 %% @end
 %%----------------------------------------------------------------------------
--spec connect() -> ow_session:id().
+-spec connect() -> {ok, ow_session:id()}.
 connect() ->
     SessionID = erlang:unique_integer([positive]),
     logger:notice("Pending session ID: ~p", [SessionID]),
     gproc:reg({n, l, SessionID}, ignored),
-    ok.
+    {ok, SessionID}.
 
 %%----------------------------------------------------------------------------
 %% @doc Set the session to disconnected state and run the appropriate callback
