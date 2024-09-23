@@ -1,4 +1,5 @@
 -module(ow_enet).
+
 -behaviour(gen_server).
 
 % API
@@ -47,10 +48,7 @@ start(PeerInfo) ->
 init([PeerInfo]) ->
     IP = inet:ntoa(maps:get(ip, PeerInfo)),
     logger:notice("Starting ENet session for ~p", [IP]),
-    SessionID = erlang:unique_integer([positive]),
-    logger:notice("Pending session ID: ~p", [SessionID]),
-    % Register the process by this SessionID in gproc
-    gproc:reg({n, l, SessionID}, ignored),
+    SessionID = ow_session_util:connect(),
     % Trap exits from the enet child processes
     process_flag(trap_exit, true),
     % Add a new key to the peerInfo map containing Overworld session
