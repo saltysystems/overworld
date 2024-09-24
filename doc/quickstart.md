@@ -104,7 +104,7 @@ that is continuously updated based on some periodic processing interval which
 we call a 'tick'. For the chat zone, we'll start by building the skeleton of
 this behavior with its required callbacks. Start a new file in the `src/`
 directory, called `chat_zone.erl`. We'll include the entire file here, and then
-go through it line by line:
+go through the gist of it:
 
 ```erlang
 -module(chat_zone).
@@ -154,6 +154,17 @@ go through it line by line:
       {noreply, State}.
 ```
 
+We first implement API functions for starting and stopping the server, as well
+as joining and parting. You can add any additional logic here that you like, as
+well as during the callback handler (e.g. `handle_join/3` or `handle_part/3`).
+
+The behavior requires the callbacks `handle_join/3`, `handle_part/3`, and
+`handle_tick/2`. These correspond to handling when new clients join the zone,
+when clients part (leave) the zone, and when the server is supposed to process
+a tick that updates its internal state. You can also implement the optinal
+`handle_disconnect/2` behavior which is triggered depending on zone
+configuration.
+
 At this point we have a working zone, although it doesn't do much aside from
 log when a player joins or leaves.
 
@@ -163,7 +174,6 @@ test it out on the shell, via `rebar3 shell` in the `chat` directory:
 ```
  $ rebar3 shell
 ===> Verifying dependencies...
-===> App overworld is a checkout dependency and cannot be locked.
 ===> Analyzing applications...
 ===> Compiling overworld
 ===> Analyzing applications...
@@ -218,4 +228,56 @@ Player 3 has left the chat.
 *Note*: Overworld SessionIDs are generated as monotonically increasing positive
 integers. 
 
-### Adding RPCs and 
+### Adding a serialization schema
+
+In order to transport Overworld messages across the network to client machines,
+we will use Protocol Buffers to define a schema for serialization. Right now,
+we only have the ability to join and leave the server. Let's have the player
+identify themselves in the join message, and define an IRC-like parting
+message as well.
+
+You'll need to make the directory `chat/priv/` and `chat/priv/proto`, like so:
+
+```
+mkdir -p priv/proto # run this from the chat directory
+```
+
+Then start a new file called `chat.proto` in that directory, with the following content:
+
+```protobuf
+syntax = "proto2";
+
+package chat;
+
+message chat {
+    oneof msg {
+        join join = 1;
+        part part = 2;
+    }
+}
+
+message join {
+    optional string handle = 1;
+}
+
+message part {
+    optional string parting_wisdom = 1;
+}
+```
+
+This will allow clients to specify a handle when joining, and leave nuggets of
+wisdom when they depart.
+
+### Adding the client/server annotations
+
+One last piece we need to add is client and server RPC annotations to the
+`chat_zone` module. This will inform Overworld that it should generate client
+bindings for these RPCs.
+
+In the `chat_zone.erl` module, add the following near the top:
+
+```erlang
+-rpc_client([]). % Server -> Client
+-rpc_server([join, part]). % Client -> Server
+```
+
