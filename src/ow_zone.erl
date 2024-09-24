@@ -304,6 +304,7 @@ handle_call(?TAG_I({join, Msg, Who}), _ConnectionHandler, St0) ->
     CbData0 = St0#state.cb_data,
     % Update the sessions ZonePid
     ZonePid = self(),
+    % Could crash with noproc if the player has timed out meanwhile
     {ok, ZonePid} = ow_session:zone(ZonePid, Who),
     % Update the session with a termination callback
     Callback = {CbMod, disconnect, [ZonePid, Who]},

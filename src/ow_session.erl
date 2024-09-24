@@ -13,8 +13,8 @@
 
 % API
 -export([
-    start/2,
     start/1,
+    start/0,
     stop/1,
     pid/2, pid/1,
     serializer/2, serializer/1,
@@ -69,12 +69,15 @@
 %% @doc Start the session server and create a new session with this ID
 %% @end
 %%----------------------------------------------------------------------------
--spec start(id()) -> gen_server:start_ret().
-start(ID) ->
-    start(ID, []).
--spec start(id(), [tuple()]) -> gen_server:start_ret().
-start(ID, Config) ->
-    gen_server:start(?SERVER(ID), ?MODULE, [ID, Config], []).
+-spec start() -> {ok, id()}.
+start() ->
+    start([]).
+-spec start([tuple()]) -> {ok, id()}.
+start(Config) ->
+    SessionID = erlang:unique_integer([positive]),
+    true = gproc:reg({n, l, SessionID}, ignored),
+    {ok, _Pid} = gen_server:start(?SERVER(SessionID), ?MODULE, [SessionID, Config], []),
+    {ok, SessionID}.
 
 %%----------------------------------------------------------------------------
 %% @doc Stop the session server
