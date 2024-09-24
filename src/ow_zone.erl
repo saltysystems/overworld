@@ -263,6 +263,7 @@ reconnect(ServerRef, SessionID) ->
 
 -spec rpc(server_ref(), atom(), term(), ow_session:id()) -> ok.
 rpc(ServerRef, Type, Msg, SessionID) ->
+    logger:notice("Got RPC: ~p", [Msg]),
     gen_server:call(ServerRef, ?TAG_I({Type, Msg, SessionID})).
 
 -spec broadcast(server_ref(), term()) -> ok.
@@ -375,7 +376,7 @@ handle_call(?TAG_I({Type, Msg, Who}), _ConnectionHandler, St0) ->
     CbData0 = St0#state.cb_data,
     Handler = list_to_existing_atom("handle_" ++ atom_to_list(Type)),
     maybe
-        true ?= erlang:function_exported(CbMod, Handler, 2),
+        true ?= erlang:function_exported(CbMod, Handler, 3),
         {ReplyType, ReplyMsg, CbData1} ?= CbMod:Handler(Msg, Who, CbData0),
         CallMsg = handle_notify(ReplyType, ReplyMsg, St0),
         % Replies other than noreply will probably not be sent anywhere useful
