@@ -67,16 +67,14 @@ handle_info({enet, disconnected, remote, _Pid, _When}, PeerInfo) ->
     IP = inet:ntoa(RawIP),
     logger:notice("~p: ENet client disconnected", [IP]),
     {stop, normal, PeerInfo};
-handle_info({enet, Channel, {reliable, Msg}}, PeerInfo) ->
-    decode_and_reply(
-        Msg, Channel, {enet, send_reliable}, PeerInfo
-    ),
+handle_info({enet, _Channel, {reliable, Msg}}, PeerInfo) ->
+    decode_and_reply(Msg, PeerInfo),
     {noreply, PeerInfo};
-handle_info({enet, Channel, {unreliable, _Seq, Msg}}, PeerInfo) ->
-    decode_and_reply(Msg, Channel, {enet, send_unreliable}, PeerInfo),
+handle_info({enet, _Channel, {unreliable, _Seq, Msg}}, PeerInfo) ->
+    decode_and_reply(Msg, PeerInfo),
     {noreply, PeerInfo};
-handle_info({enet, Channel, {unsequenced, _Group, Msg}}, PeerInfo) ->
-    decode_and_reply(Msg, Channel, {enet, send_unsequenced}, PeerInfo),
+handle_info({enet, _Channel, {unsequenced, _Group, Msg}}, PeerInfo) ->
+    decode_and_reply(Msg, PeerInfo),
     {noreply, PeerInfo};
 handle_info(
     {_From, client_msg, {MsgType, Msg}}, PeerInfo = #{channels := Channels}
@@ -106,11 +104,7 @@ code_change(_OldVsn, PeerInfo, _Extra) -> {ok, PeerInfo}.
 %% Internal functions
 %%===========================================================================
 
-% TODO: If we look up the channel/qos information from the module definition, I
-%       guess it's not necessary to pass a module/fun to this
-%       But I am a bit worried about chopping down this particular tree so far
-%       afield right now.
-decode_and_reply(Msg, _IncomingChannel, _MF, PeerInfo) ->
+decode_and_reply(Msg, PeerInfo) ->
     #{channels := Channels, session_id := SessionID} = PeerInfo,
     %TODO: Fix me
     case ow_protocol:route(Msg, SessionID) of
