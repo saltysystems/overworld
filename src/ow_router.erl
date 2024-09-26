@@ -25,6 +25,7 @@
     App :: atom(),
     Result :: any().
 -optional_callbacks([encode/2, decode/4]).
+-hank([{unused_callbacks, [all]}]).
 
 defaults() ->
     ?DEFAULT_RPC.
