@@ -291,15 +291,6 @@ handle_info(maybe_terminate, Session = #session{status = S}) when
     S =:= disconnected;
     S =:= preconnect
 ->
-    #session{zone = ZonePID, id = SessionID} = Session,
-    % Client is still disconnected, terminate.
-    logger:notice("Calling disconnect timeout: ~p -> ~p", [SessionID, ZonePID]),
-    ow_zone:disconnect_timeout(ZonePID, SessionID),
-    logger:notice(
-        "Terminating session ~p in state ~p after hitting timeout", [
-            self(), S
-        ]
-    ),
     {stop, normal, Session};
 handle_info(maybe_terminate, Session) ->
     % Client is back into a connected state, continue on as normal.
@@ -307,6 +298,15 @@ handle_info(maybe_terminate, Session) ->
 handle_info(_Info, Session) ->
     {noreply, Session}.
 
+terminate(_Reason, #session{zone = ZonePID, id = SessionID}) ->
+    % Client is still disconnected, terminate.
+    logger:notice("Calling session termination callback: ~p -> ~p", [
+        SessionID,
+        ZonePID
+    ]),
+    ow_zone:disconnect(ZonePID, SessionID),
+    logger:notice("Terminating session ~p", [self()]),
+    ok;
 terminate(_Reason, _Session) ->
     ok.
 
