@@ -2,6 +2,8 @@
 
 -export([defaults/0]).
 
+-define(DEFAULT_RPC, #{qos => reliable, channel => 0}).
+
 -callback encode(Msg, Type) -> Result when
     Msg :: map(),
     Type :: atom(),
@@ -23,7 +25,7 @@
     App :: atom(),
     Result :: any().
 -optional_callbacks([encode/2, decode/4]).
--include("rpc/defaults.hrl").
+-hank([{unused_callbacks, [all]}]).
 
 defaults() ->
     ?DEFAULT_RPC.
