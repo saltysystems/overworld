@@ -14,7 +14,6 @@
     join/3,
     part/3,
     disconnect/2,
-    disconnect_timeout/2,
     reconnect/2,
     rpc/4,
     broadcast/2,
@@ -138,6 +137,7 @@
 -optional_callbacks([
     handle_join/3, handle_part/3, handle_disconnect/2, handle_reconnect/2
 ]).
+-hank([{unused_callbacks, [all]}]).
 
 %%=======================================================================
 %% gen_server API functions
@@ -253,17 +253,12 @@ part(ServerRef, Msg, SessionID) ->
 disconnect(ServerRef, SessionID) ->
     gen_server:cast(ServerRef, ?TAG_I({disconnect, SessionID})).
 
--spec disconnect_timeout(server_ref(), ow_session:id()) -> ok.
-disconnect_timeout(ServerRef, SessionID) ->
-    gen_server:cast(ServerRef, ?TAG_I({disconnect_timeout, SessionID})).
-
 -spec reconnect(server_ref(), ow_session:id()) -> ok.
 reconnect(ServerRef, SessionID) ->
     gen_server:call(ServerRef, ?TAG_I({reconnect, SessionID})).
 
 -spec rpc(server_ref(), atom(), term(), ow_session:id()) -> ok.
 rpc(ServerRef, Type, Msg, SessionID) ->
-    logger:notice("Got RPC: ~p", [Msg]),
     gen_server:call(ServerRef, ?TAG_I({Type, Msg, SessionID})).
 
 -spec broadcast(server_ref(), term()) -> ok.
@@ -396,8 +391,8 @@ handle_call(Call, _From, St0) ->
     ),
     {reply, ok, St0}.
 
-handle_cast(?TAG_I({disconnect_timeout, Who}), St0) ->
-    logger:notice("Got disconnect timeout from session ~p. My state: ~p", [Who, St0]),
+handle_cast(?TAG_I({disconnect, Who}), St0 = #state{zone_data = #{disconnect := hard}}) ->
+    logger:notice("Received (hard) disconnect from session ~p. My state: ~p", [Who, St0]),
     % Player has completely timed out, go ahead and clean up by removing them
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
@@ -418,11 +413,8 @@ handle_cast(?TAG_I({disconnect_timeout, Who}), St0) ->
         {noreply, CbData2} ->
             {noreply, St1#state{cb_data = CbData2}}
     end;
-handle_cast(?TAG_I({disconnect, Who}), St0 = #state{zone_data = #{disconnect := hard}}) ->
-    logger:notice("Got regular disconnect from session ~p", [Who]),
-    % If disconnect is hard, just disconnect as if we immediately timed out
-    handle_cast(?TAG_I({disconnect_timeout, Who}), St0);
 handle_cast(?TAG_I({disconnect, Who}), St0) ->
+    logger:notice("Received (soft) disconnect from session ~p. My state: ~p", [Who, St0]),
     % For soft disconnects, we don't immediately clean up the player
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
