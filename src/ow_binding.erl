@@ -22,7 +22,6 @@
 -define(TAB(N),
     lists:foldl(fun(_N, Acc0) -> [9] ++ Acc0 end, [], lists:seq(0, N - 1))
 ).
--define(DEFAULT_ENCODER, overworld_pb).
 -define(DEFAULT_TEMPLATE_4, "templates/libow4.mustache").
 
 -spec write() -> ok | {error, Reason} when

@@ -12,7 +12,6 @@
 -define(ENET_PORT, "4483").
 -define(WS_PORT, "4433").
 -define(WSS_PORT, "4434").
--define(OW_PREFIX, 100).
 
 -spec start(application:start_type(), map()) -> supervisor:startlink_ret().
 start(StartType, []) ->

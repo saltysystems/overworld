@@ -24,3 +24,5 @@ jobs:
       run: rebar3 compile
     - name: Run dialyzer
       run: rebar3 dialyzer
+    - name: Run hank
+      run: rebar3 hank
