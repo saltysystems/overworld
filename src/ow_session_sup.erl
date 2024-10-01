@@ -9,7 +9,7 @@
 
 -export([
     start_link/0,
-    new/2,
+    new/1,
     delete/1
 ]).
 
@@ -20,9 +20,9 @@
 start_link() ->
     supervisor:start_link({local, ?SERVER}, ?MODULE, []).
 
--spec new(ow_session:id(), [tuple()]) -> supervisor:startchild_ret().
-new(SessionID, Config) ->
-    supervisor:start_child(?SERVER, [SessionID, Config]).
+-spec new([tuple()]) -> supervisor:startchild_ret().
+new(Config) ->
+    supervisor:start_child(?SERVER, [Config]).
 
 -spec delete(ow_session:id()) -> ok | {error, _}.
 delete(SessionID) ->

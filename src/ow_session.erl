@@ -76,8 +76,9 @@ start() ->
 start(Config) ->
     SessionID = erlang:unique_integer([positive]),
     true = gproc:reg({n, l, SessionID}, ignored),
-    {ok, _Pid} = gen_server:start(?SERVER(SessionID), ?MODULE, [SessionID, Config], []),
-    {ok, SessionID}.
+    {ok, Pid} = gen_server:start(?SERVER(SessionID), ?MODULE, [SessionID, Config], []),
+    % compliant with OTP
+    {ok, Pid, SessionID}.
 
 %%----------------------------------------------------------------------------
 %% @doc Stop the session server

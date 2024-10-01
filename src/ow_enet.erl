@@ -47,7 +47,8 @@ start(PeerInfo) ->
 -spec init([peerinfo()]) -> {ok, peerinfo()}.
 init([PeerInfo]) ->
     IP = inet:ntoa(maps:get(ip, PeerInfo)),
-    {ok, SessionID} = ow_session:start(),
+    %{ok, SessionID} = ow_session:start(),
+    {ok, _Pid, SessionID} = ow_session_sup:new([{pid, self()}]),
     logger:debug("Pending session: ~p: for ENet connection ~p", [SessionID, IP]),
     % Trap exits from the enet child processes
     process_flag(trap_exit, true),

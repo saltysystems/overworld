@@ -47,11 +47,6 @@ session_request(Msg, SessionID) ->
     case Token of
         undefined ->
             % No session existing, start a new one
-            logger:notice("No session, starting a new one for ~p", [
-                SessionID
-            ]),
-            {ok, Pid} = ow_session_sup:new(SessionID, [{pid, self()}]),
-            logger:notice("Started session: ~p:~p", [SessionID, Pid]),
             NewToken = ow_token_serv:new(SessionID),
             Reply = #{id => SessionID, reconnect_token => NewToken},
             notify_clients(session_new, Reply, [SessionID]);
@@ -120,7 +115,7 @@ notify_clients(MsgType, Msg, [SessionID | Rest]) ->
                 ok;
             _ ->
                 % Send a message to the client, let the connection handler figure
-                % out how to serialzie it further
+                % out how to serialize it further
                 Pid ! {self(), client_msg, {MsgType, Msg}}
         end
     catch
