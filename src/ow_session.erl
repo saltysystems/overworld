@@ -69,15 +69,16 @@
 %% @doc Start the session server and create a new session with this ID
 %% @end
 %%----------------------------------------------------------------------------
--spec start() -> {ok, id()}.
+-spec start() -> {ok, pid(), id()}.
 start() ->
     start([]).
--spec start([tuple()]) -> {ok, id()}.
+-spec start([tuple()]) -> {ok, pid(), id()}.
 start(Config) ->
     SessionID = erlang:unique_integer([positive]),
     true = gproc:reg({n, l, SessionID}, ignored),
-    {ok, _Pid} = gen_server:start(?SERVER(SessionID), ?MODULE, [SessionID, Config], []),
-    {ok, SessionID}.
+    {ok, Pid} = gen_server:start(?SERVER(SessionID), ?MODULE, [SessionID, Config], []),
+    % compliant with OTP
+    {ok, Pid, SessionID}.
 
 %%----------------------------------------------------------------------------
 %% @doc Stop the session server
