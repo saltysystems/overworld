@@ -73,20 +73,21 @@
 -type state() :: #state{}.
 -type from() :: gen_server:from().
 -type zone_msg() :: {atom(), map()}.
+-type session_pid() :: pid().
 -type ow_zone_call_resp() ::
     {noreply, state()}
     | {reply, zone_msg(), state()}
     | {broadcast, zone_msg(), state()}
-    | {{send, [ow_session:id()]}, zone_msg(), state()}.
+    | {{send, [session_pid()]}, zone_msg(), state()}.
 -type ow_zone_cast_resp() ::
     {noreply, state()}
     | {broadcast, zone_msg(), state()}
-    | {{send, [ow_session:id()]}, zone_msg(), state()}.
+    | {{send, [session_pid()]}, zone_msg(), state()}.
 -type zone_data() ::
     #{
-        joined => [ow_session:id()],
-        active => [ow_session:id()],
-        parted => [ow_session:id()],
+        joined => [session_pid()],
+        active => [session_pid()],
+        parted => [session_pid()],
         frame => non_neg_integer(),
         tick_ms => pos_integer(),
         lerp_period => pos_integer(),
@@ -108,24 +109,24 @@
     Reason :: term().
 
 -callback handle_join(Msg, From, State) -> Result when
-    From :: ow_session:id(),
+    From :: session_pid(),
     Msg :: term(),
     State :: term(),
     Result :: ow_zone_call_resp().
 
 -callback handle_part(Msg, From, State) -> Result when
-    From :: ow_session:id(),
+    From :: session_pid(),
     Msg :: term(),
     State :: term(),
     Result :: ow_zone_call_resp().
 
 -callback handle_reconnect(From, State) -> Result when
-    From :: ow_session:id(),
+    From :: session_pid(),
     State :: term(),
     Result :: ow_zone_call_resp().
 
 -callback handle_disconnect(From, State) -> Result when
-    From :: ow_session:id(),
+    From :: session_pid(),
     State :: term(),
     Result :: ow_zone_cast_resp().
 
@@ -241,33 +242,33 @@ stop(ServerRef, Reason, Timeout) ->
 %% Public API for ow_zone
 %%=======================================================================
 
--spec join(server_ref(), term(), ow_session:id()) -> ok.
-join(ServerRef, Msg, SessionID) ->
-    gen_server:call(ServerRef, ?TAG_I({join, Msg, SessionID})).
+-spec join(server_ref(), term(), session_pid()) -> ok.
+join(ServerRef, Msg, SessionPID) ->
+    gen_server:call(ServerRef, ?TAG_I({join, Msg, SessionPID})).
 
--spec part(server_ref(), term(), ow_session:id()) -> ok.
-part(ServerRef, Msg, SessionID) ->
-    gen_server:call(ServerRef, ?TAG_I({part, Msg, SessionID})).
+-spec part(server_ref(), term(), session_pid()) -> ok.
+part(ServerRef, Msg, SessionPID) ->
+    gen_server:call(ServerRef, ?TAG_I({part, Msg, SessionPID})).
 
--spec disconnect(server_ref(), ow_session:id()) -> ok.
-disconnect(ServerRef, SessionID) ->
-    gen_server:cast(ServerRef, ?TAG_I({disconnect, SessionID})).
+-spec disconnect(server_ref(), session_pid()) -> ok.
+disconnect(ServerRef, SessionPID) ->
+    gen_server:cast(ServerRef, ?TAG_I({disconnect, SessionPID})).
 
--spec reconnect(server_ref(), ow_session:id()) -> ok.
-reconnect(ServerRef, SessionID) ->
-    gen_server:call(ServerRef, ?TAG_I({reconnect, SessionID})).
+-spec reconnect(server_ref(), session_pid()) -> ok.
+reconnect(ServerRef, SessionPID) ->
+    gen_server:call(ServerRef, ?TAG_I({reconnect, SessionPID})).
 
--spec rpc(server_ref(), atom(), term(), ow_session:id()) -> ok.
-rpc(ServerRef, Type, Msg, SessionID) ->
-    gen_server:call(ServerRef, ?TAG_I({Type, Msg, SessionID})).
+-spec rpc(server_ref(), atom(), term(), session_pid()) -> ok.
+rpc(ServerRef, Type, Msg, SessionPID) ->
+    gen_server:call(ServerRef, ?TAG_I({Type, Msg, SessionPID})).
 
 -spec broadcast(server_ref(), term()) -> ok.
 broadcast(ServerRef, Msg) ->
     gen_server:cast(ServerRef, ?TAG_I({broadcast, Msg})).
 
--spec send(server_ref(), [ow_session:id()], term()) -> ok.
-send(ServerRef, IDs, Msg) ->
-    gen_server:cast(ServerRef, ?TAG_I({send, IDs, Msg})).
+-spec send(server_ref(), [session_pid()], term()) -> ok.
+send(ServerRef, SessionPIDs, Msg) ->
+    gen_server:cast(ServerRef, ?TAG_I({send, SessionPIDs, Msg})).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% gen_server callback functions for internal state

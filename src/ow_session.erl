@@ -7,16 +7,13 @@
 -module(ow_session).
 -behaviour(gen_server).
 
--define(SERVER(SessionID),
-    {via, gproc, {n, l, {?MODULE, SessionID}}}
-).
-
 % API
 -export([
     start/1,
     start/0,
     stop/1,
-    pid/2, pid/1,
+    id/2, id/1,
+    proxy/2, proxy/1,
     serializer/2, serializer/1,
     latency/2, latency/1,
     game_data/2, game_data/1,
@@ -46,7 +43,7 @@
 -record(session, {
     % internal use only
     id :: id(),
-    pid :: pid() | undefined,
+    proxy :: pid() | undefined,
     serializer :: serializer(),
     latency :: time_ms(),
     game_data :: any(),
@@ -69,163 +66,176 @@
 %% @doc Start the session server and create a new session with this ID
 %% @end
 %%----------------------------------------------------------------------------
--spec start() -> {ok, pid(), id()}.
+-spec start() -> {ok, pid()}.
 start() ->
     start([]).
--spec start([tuple()]) -> {ok, pid(), id()}.
+-spec start([tuple()]) -> {ok, pid()}.
 start(Config) ->
-    SessionID = erlang:unique_integer([positive]),
-    true = gproc:reg({n, l, SessionID}, ignored),
-    {ok, Pid} = gen_server:start(?SERVER(SessionID), ?MODULE, [SessionID, Config], []),
-    % compliant with OTP
-    {ok, Pid, SessionID}.
+    gen_server:start(?MODULE, [Config], []).
 
 %%----------------------------------------------------------------------------
 %% @doc Stop the session server
 %% @end
 %%----------------------------------------------------------------------------
-stop(ID) ->
-    gen_server:stop(?SERVER(ID)).
+-spec stop(pid()) -> ok.
+stop(Pid) ->
+    gen_server:stop(Pid).
 
 %%----------------------------------------------------------------------------
-%% @doc Set the process id of the websocket or enet handler
+%% @doc Set the session ID for this session (network serializable)
 %% @end
 %%----------------------------------------------------------------------------
--spec pid(pid(), id()) -> {ok, pid()}.
-pid(Pid, ID) ->
-    gen_server:call(?SERVER(ID), {set_pid, Pid}).
+-spec id(pid(), id()) -> {ok, id()}.
+id(PID, SessionID) ->
+    gen_server:call(PID, {set_id, SessionID}).
 
 %%----------------------------------------------------------------------------
-%% @doc Get the process id of the websocket or enet handler
+%% @doc Get the session id of this session (network serializable)
 %% @end
 %%----------------------------------------------------------------------------
--spec pid(id()) -> pid() | undefined.
-pid(ID) ->
-    gen_server:call(?SERVER(ID), get_pid).
+-spec id(pid()) -> id() | undefined.
+id(PID) ->
+    gen_server:call(PID, get_id).
+
+%%----------------------------------------------------------------------------
+%% @doc Set the pid of the session's proxy process, including ENet, WebSocket
+%%      and internal handlers.
+%% @end
+%%----------------------------------------------------------------------------
+-spec proxy(pid(), pid()) -> {ok, pid()}.
+proxy(PID, ProxyPID) ->
+    gen_server:call(PID, {set_proxy, ProxyPID}).
+
+%%----------------------------------------------------------------------------
+%% @doc Get the pid of the session's proxy process.
+%% @end
+%%----------------------------------------------------------------------------
+-spec proxy(pid()) -> pid() | undefined.
+proxy(PID) ->
+    gen_server:call(PID, get_proxy).
 
 %%----------------------------------------------------------------------------
 %% @doc Set the format for serializing data. If communication happens all
 %%      within Erlang node(s), then there is no need to set a serializer.
 %% @end
 %%----------------------------------------------------------------------------
--spec serializer(serializer(), id()) -> {ok, serializer()}.
-serializer(Serializer, ID) ->
-    gen_server:call(?SERVER(ID), {set_serializer, Serializer}).
+-spec serializer(serializer(), pid()) -> {ok, serializer()}.
+serializer(Serializer, PID) ->
+    gen_server:call(PID, {set_serializer, Serializer}).
 
 %%----------------------------------------------------------------------------
 %% @doc Get the format for serializing data.
 %% @end
 %%----------------------------------------------------------------------------
--spec serializer(id()) -> serializer() | undefined.
-serializer(ID) ->
-    gen_server:call(?SERVER(ID), get_serializer).
+-spec serializer(pid()) -> serializer() | undefined.
+serializer(PID) ->
+    gen_server:call(PID, get_serializer).
 
 %%----------------------------------------------------------------------------
 %% @doc Set the session latency
 %% @end
 %%----------------------------------------------------------------------------
--spec latency(pos_integer(), id()) -> {ok, pos_integer()}.
-latency(Latency, ID) ->
-    gen_server:call(?SERVER(ID), {set_latency, Latency}).
+-spec latency(pos_integer(), pid()) -> {ok, pos_integer()}.
+latency(Latency, PID) ->
+    gen_server:call(PID, {set_latency, Latency}).
 
 %%----------------------------------------------------------------------------
 %% @doc Get the session latency
 %% @end
 %%----------------------------------------------------------------------------
--spec latency(id()) -> non_neg_integer().
-latency(ID) ->
-    gen_server:call(?SERVER(ID), get_latency).
+-spec latency(pid()) -> non_neg_integer().
+latency(PID) ->
+    gen_server:call(PID, get_latency).
 
 %%----------------------------------------------------------------------------
 %% @doc Set the game data
 %% @end
 %%----------------------------------------------------------------------------
--spec game_data(any(), id()) -> {ok, any()}.
-game_data(Data, ID) ->
-    gen_server:call(?SERVER(ID), {set_game_data, Data}).
+-spec game_data(any(), pid()) -> {ok, any()}.
+game_data(Data, PID) ->
+    gen_server:call(PID, {set_game_data, Data}).
 
 %%----------------------------------------------------------------------------
 %% @doc Get the game data
 %% @end
 %%----------------------------------------------------------------------------
--spec game_data(id()) -> any().
-game_data(ID) ->
-    gen_server:call(?SERVER(ID), get_game_info).
+-spec game_data(pid()) -> any().
+game_data(PID) ->
+    gen_server:call(PID, get_game_info).
 
 %%----------------------------------------------------------------------------
 %% @doc Set the termination callback
 %% @end
 %%----------------------------------------------------------------------------
--spec disconnect_callback(mfargs(), id()) -> {ok, mfargs()}.
-disconnect_callback(Callback, ID) ->
-    gen_server:call(?SERVER(ID), {set_disconnect_callback, Callback}).
+-spec disconnect_callback(mfargs(), pid()) -> {ok, mfargs()}.
+disconnect_callback(Callback, PID) ->
+    gen_server:call(PID, {set_disconnect_callback, Callback}).
 
 %%----------------------------------------------------------------------------
 %% @doc Get the termination callback
 %% @end
 %%----------------------------------------------------------------------------
--spec disconnect_callback(id()) -> undefined | mfargs().
-disconnect_callback(ID) ->
-    gen_server:call(?SERVER(ID), get_disconnect_callback).
+-spec disconnect_callback(pid()) -> undefined | mfargs().
+disconnect_callback(PID) ->
+    gen_server:call(PID, get_disconnect_callback).
 
 %%----------------------------------------------------------------------------
 %% @doc Set the connection status. Disconnected sessions will be periodically
 %%      culled.
 %% @end
 %%----------------------------------------------------------------------------
--spec status(status(), id()) -> {ok, status()}.
-status(Status, ID) ->
-    gen_server:call(?SERVER(ID), {set_status, Status}).
+-spec status(status(), pid()) -> {ok, status()}.
+status(Status, PID) ->
+    gen_server:call(PID, {set_status, Status}).
 
 %%----------------------------------------------------------------------------
 %% @doc Get the connection status. Disconnected sessions will be periodically
 %%      culled.
 %% @end
 %%----------------------------------------------------------------------------
--spec status(id()) -> status().
-status(ID) ->
-    gen_server:call(?SERVER(ID), get_status).
+-spec status(pid()) -> status().
+status(PID) ->
+    gen_server:call(PID, get_status).
 
 %%----------------------------------------------------------------------------
 %% @doc Sets the session token
 %% @end
 %%----------------------------------------------------------------------------
--spec token(binary(), id()) -> {ok, binary()}.
-token(Token, ID) ->
-    gen_server:call(?SERVER(ID), {set_token, Token}).
+-spec token(binary(), pid()) -> {ok, binary()}.
+token(Token, PID) ->
+    gen_server:call(PID, {set_token, Token}).
 
 %%----------------------------------------------------------------------------
 %% @doc Get the session token.
 %% @end
 %%----------------------------------------------------------------------------
--spec token(id()) -> binary() | undefined.
-token(ID) ->
-    gen_server:call(?SERVER(ID), get_token).
+-spec token(pid()) -> binary() | undefined.
+token(PID) ->
+    gen_server:call(PID, get_token).
 
 %%----------------------------------------------------------------------------
 %% @doc Sets the zone pid
 %% @end
 %%----------------------------------------------------------------------------
--spec zone(pid(), id()) -> {ok, pid()}.
-zone(Zone, ID) ->
-    gen_server:call(?SERVER(ID), {set_zone, Zone}).
+-spec zone(pid(), pid()) -> {ok, pid()}.
+zone(ZonePID, PID) ->
+    gen_server:call(PID, {set_zone, ZonePID}).
 
 %%----------------------------------------------------------------------------
 %% @doc Get the zone pid
 %% @end
 %%----------------------------------------------------------------------------
--spec zone(id()) -> pid() | undefined.
-zone(ID) ->
-    gen_server:call(?SERVER(ID), get_zone).
+-spec zone(pid()) -> pid() | undefined.
+zone(PID) ->
+    gen_server:call(PID, get_zone).
 
 %%=========================================================================
 %% Callback handlers
 %%=========================================================================
 
-init([SessionID, Config]) ->
+init([Config]) ->
     Session = #session{
-        id = SessionID,
-        pid = proplists:get_value(pid, Config, undefined),
+        id = proplists:get_value(id, Config, erlang:unique_integer([positive])),
         serializer = proplists:get_value(serializer, Config, undefined),
         latency = proplists:get_value(latency, Config, 0),
         game_data = proplists:get_value(game_data, Config, undefined),
@@ -239,16 +249,22 @@ init([SessionID, Config]) ->
         token = proplists:get_value(token, Config, undefined),
         zone = proplists:get_value(zone, Config, undefined)
     },
+    % Register with gproc 
+    true = gproc:reg({n, l, Session#session.id}, ignored),
     % Set a timer to maybe terminate a stale session if it hasn't gone active
     % within the default timeout period
     Timeout = Session#session.disconnect_timeout,
     erlang:send_after(Timeout, self(), maybe_terminate),
     {ok, Session}.
 
-handle_call({set_pid, Pid}, _From, Session) ->
-    {reply, {ok, Pid}, Session#session{pid = Pid}};
-handle_call(get_pid, _From, Session) ->
-    {reply, Session#session.pid, Session};
+handle_call({set_id, SessionID}, _From, Session) ->
+    {reply, {ok, SessionID}, Session#session{id = SessionID}};
+handle_call(get_id, _From, Session) ->
+    {reply, Session#session.id, Session};
+handle_call({set_proxy, ProxyPID}, _From, Session) ->
+    {reply, {ok, ProxyPID}, Session#session{proxy = ProxyPID}};
+handle_call(get_proxy, _From, Session) ->
+    {reply, Session#session.proxy, Session};
 handle_call({set_serializer, Serializer}, _From, Session) ->
     {reply, {ok, Serializer}, Session#session{serializer = Serializer}};
 handle_call(get_serializer, _From, Session) ->
@@ -299,13 +315,10 @@ handle_info(maybe_terminate, Session) ->
 handle_info(_Info, Session) ->
     {noreply, Session}.
 
-terminate(_Reason, #session{zone = ZonePID, id = SessionID}) ->
+terminate(_Reason, #session{zone = ZonePID}) ->
     % Client is still disconnected, terminate.
-    logger:notice("Calling session termination callback: ~p -> ~p", [
-        SessionID,
-        ZonePID
-    ]),
-    ow_zone:disconnect(ZonePID, SessionID),
+    logger:notice("Notifying zone ~p of session termination for ~p", [ZonePID, self()]),
+    ow_zone:disconnect(ZonePID, self()),
     logger:notice("Terminating session ~p", [self()]),
     ok;
 terminate(_Reason, _Session) ->

@@ -14,13 +14,13 @@
     Lib :: atom(),
     App :: atom(),
     Result :: binary().
--callback decode(BinMsg, Session) -> Result when
+-callback decode(BinMsg, SessionPID) -> Result when
     BinMsg :: binary(),
-    Session :: ow_session:id(),
+    SessionPID :: pid(),
     Result :: any().
--callback decode(BinMsg, Session, Lib, App) -> Result when
+-callback decode(BinMsg, SessionPID, Lib, App) -> Result when
     BinMsg :: binary(),
-    Session :: ow_session:id(),
+    SessionPID :: pid(),
     Lib :: atom(),
     App :: atom(),
     Result :: any().
