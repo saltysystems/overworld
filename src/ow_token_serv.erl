@@ -49,7 +49,6 @@ new(SessionPID) ->
 exchange(Token) ->
     gen_server:call(?MODULE, {exchange, Token}).
 
-
 %%===========================================================================
 %% Callback implementation
 %%===========================================================================
@@ -87,7 +86,6 @@ terminate(_Reason, _State) ->
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
-
 
 %%===========================================================================
 %% Internal functions

@@ -372,6 +372,7 @@ handle_call(?TAG_I({Type, Msg, Who}), _ConnectionHandler, St0) ->
     CbData0 = St0#state.cb_data,
     Handler = list_to_existing_atom("handle_" ++ atom_to_list(Type)),
     maybe
+        true ?= session_active(Who, St0),
         true ?= erlang:function_exported(CbMod, Handler, 3),
         {ReplyType, ReplyMsg, CbData1} ?= CbMod:Handler(Msg, Who, CbData0),
         CallMsg = handle_notify(ReplyType, ReplyMsg, St0),
@@ -523,3 +524,7 @@ shift_clients(#state{zone_data = ZoneData} = St0) ->
     Active1 = (Active ++ Joined) -- Parted,
     ZoneData1 = ZoneData#{joined := [], parted := [], active := Active1},
     St0#state{zone_data = ZoneData1}.
+
+session_active(Who, St0) ->
+    #{active := Active} = St0#state.zone_data,
+    lists:member(Who, Active).
