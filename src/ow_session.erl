@@ -61,7 +61,7 @@
 
 -define(DEFAULT_DISCONNECT_TIMEOUT, 5000).
 % A bit hackish, but gives the zone some time to deal with shutdowns
--define(DEFAULT_SHUTDOWN_DELAY, 1000). 
+-define(DEFAULT_SHUTDOWN_DELAY, 1000).
 
 %%===========================================================================
 %% API
@@ -293,8 +293,9 @@ handle_call({set_disconnect_callback, TCB}, _From, Session) ->
     {reply, {ok, TCB}, Session#session{disconnect_callback = TCB}};
 handle_call(get_disconnect_callback, _From, Session) ->
     {reply, Session#session.disconnect_callback, Session};
-handle_call({set_status, Status}, _From, Session) 
-    when Status =:= disconnected ->
+handle_call({set_status, Status}, _From, Session) when
+    Status =:= disconnected
+->
     % On a disconnected session, set a timer to terminate this session
     Timeout = Session#session.disconnect_timeout,
     erlang:send_after(Timeout, self(), maybe_terminate),
@@ -319,10 +320,10 @@ handle_info(maybe_terminate, Session = #session{status = S, zone = Z}) when
     S =:= disconnected;
     S =:= preconnect
 ->
-    case Z of 
-        undefined -> 
+    case Z of
+        undefined ->
             {stop, normal, Session};
-        _ -> 
+        _ ->
             erlang:send_after(?DEFAULT_SHUTDOWN_DELAY, self(), terminate)
     end;
 handle_info(maybe_terminate, Session) ->
