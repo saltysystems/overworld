@@ -52,11 +52,45 @@ that implements either the `gen_server` or `gen_statem` behaviour and creates a
 new session as part of its `init/1` callback, handles events (i.e. via
 `handle_info/2`), and responds appropriately.
 
-## Session discnnects
-Given that network connections cannot be assumed to be perfectly stable,
-sessions in Overworld persist independent of the connection handler (or
+## Client session requests
+Once a connection is established and a session has been initiated, a client
+still needs to request the relevant session information from the server. From
+the [protobuf schema](../../priv/proto/overworld.proto):
+
+```protobuf
+// client --> server
+message session_request {
+    optional bytes reconnect_token = 1; // secret
+}
+```
+
+As can be seen above, the client needs to send a message of type
+`session_request`. The first time a client connects, it will not have a
+reconnect token to send, as there will be no session previously
+established. 
+
+Now let's take a look at the response:
+
+
+```protobuf
+// server --> client
+message session_new {
+    // initialize a session and send to the client.
+    required uint64 id              = 1; // public
+    required bytes  reconnect_token = 2; // secret
+}
+```
+
+The server will then respond with a `session_new` message, containing the
+unsigned integer ID of the session and a reconnect token should the client need
+to reconnect at a later time.
+
+## Session disconnects
+Given that network connections in the real world are not always perfectly
+stable, sessions in Overworld persist independent of the connection handler (or
 _proxy_) to potentially give clients an opportunity to reconnect to an existing
-session. The Overworld [Zone](../zone/zone.md) behaviour allows for two types of disconnects:
+session. The Overworld [Zone](../zone/zone.md) behaviour allows for two types
+of disconnects:
 * **soft**: The `handle_disconnect/2` function is called on the game module
   implementing the Zone behaviour. The implementor may choose to forward this
   information to other clients, update some internal state, or do nothing at
