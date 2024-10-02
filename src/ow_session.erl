@@ -18,7 +18,9 @@
     latency/2, latency/1,
     game_data/2, game_data/1,
     disconnect_callback/2, disconnect_callback/1,
-    status/2, status/1,
+    status/1,
+    connected/1,
+    disconnected/1,
     token/2, token/1,
     zone/2, zone/1
 ]).
@@ -180,13 +182,20 @@ disconnect_callback(PID) ->
     gen_server:call(PID, get_disconnect_callback).
 
 %%----------------------------------------------------------------------------
-%% @doc Set the connection status. Disconnected sessions will be periodically
-%%      culled.
+%% @doc Set the current session to disconnected state
 %% @end
 %%----------------------------------------------------------------------------
--spec status(status(), pid()) -> {ok, status()}.
-status(Status, PID) ->
-    gen_server:call(PID, {set_status, Status}).
+-spec disconnected(pid()) -> {ok, status()}.
+disconnected(PID) ->
+    gen_server:call(PID, {set_status, disconnected}).
+
+%%----------------------------------------------------------------------------
+%% @doc Set the current session to connected state
+%% @end
+%%----------------------------------------------------------------------------
+-spec connected(pid()) -> {ok, status()}.
+connected(PID) ->
+    gen_server:call(PID, {set_status, connected}).
 
 %%----------------------------------------------------------------------------
 %% @doc Get the connection status. Disconnected sessions will be periodically
