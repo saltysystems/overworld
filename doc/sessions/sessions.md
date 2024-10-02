@@ -27,11 +27,7 @@ Sessions have the following properties:
 ## Starting a session
 Sessions are usually started automatically by WebSocket or ENet handlers, but
 in some cases it may be desireable to start a session manually and join it to a
-zone. For example, if you wanted to create a non-player character (NPC) that
-acts as an autonomous agent in a zone, you start a session for that NPC and
-implement all of the relevant message handlers.
-
-To start a session, you will need to call the session supervisor via
+zone. To start a session, you will need to call the session supervisor via
 `ow_session_sup:new/1` and give it some
 [proplist](https://www.erlang.org/docs/26/man/proplists) corresponding to the
 properties of the session process listed in the previous section. For example,
@@ -48,6 +44,24 @@ you could create a session and connect it back to your shell:
 ```
 
 This session would then be able to join any running zone and send/receive
-messages as normal. An NPC could be implemented by creating a `gen_server` or
-`gen_statem` that creates a new session as part of its `init/1` callback and
-then handles events (i.e. via `handle_info/2`) and responds appropriately.
+messages as normal.
+
+This sort of functionality is useful when implementing server-side agents
+(i.e., non-player characters or NPCs). For example, one could to write a module
+that implements either the `gen_server` or `gen_statem` behaviour and creates a
+new session as part of its `init/1` callback, handles events (i.e. via
+`handle_info/2`), and responds appropriately.
+
+## Session discnnects
+Given that network connections cannot be assumed to be perfectly stable,
+sessions in Overworld persist independent of the connection handler (or
+_proxy_) to potentially give clients an opportunity to reconnect to an existing
+session. The Overworld [Zone](../zone/zone.md) behaviour allows for two types of disconnects:
+* **soft**: The `handle_disconnect/2` function is called on the game module
+  implementing the Zone behaviour. The implementor may choose to forward this
+  information to other clients, update some internal state, or do nothing at
+  all. The client is removed from the zone after the `disconnect_timeout` is
+  reached.
+* **hard**: The `handle_part/3` function is called on the game module and the
+  client is immediately removed from the zone. The session persists for
+  `disconnect_timeout` milliseconds and then shuts down.
