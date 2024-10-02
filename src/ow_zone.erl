@@ -296,7 +296,7 @@ init(_CbMod, Stop) ->
 %    4a. If there is no reply, we're done
 %    4b. If there is a reply, we need to handle it
 
-handle_call(?TAG_I({join, Msg, Who}), _ConnectionHandler, St0) ->
+handle_call(?TAG_I({join, Msg, Who}), _From, St0) ->
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
     % Update the sessions ZonePid
@@ -324,7 +324,7 @@ handle_call(?TAG_I({join, Msg, Who}), _ConnectionHandler, St0) ->
             % State internal update, but no reply
             {reply, ok, St1#state{cb_data = CbData2}}
     end;
-handle_call(?TAG_I({part, Msg, Who}), _ConnectionHandler, St0) ->
+handle_call(?TAG_I({part, Msg, Who}), _From, St0) ->
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
     ZD = St0#state.zone_data,
@@ -348,7 +348,7 @@ handle_call(?TAG_I({part, Msg, Who}), _ConnectionHandler, St0) ->
     end;
 handle_call(
     ?TAG_I({reconnect, Msg, Who}),
-    _ConnectionHandler,
+    _From,
     St0 = #state{zone_data = #{disconnect := soft}}
 ) ->
     CbMod = St0#state.cb_mod,
@@ -367,7 +367,7 @@ handle_call(
             % State internal update, but no reply
             {reply, ok, St0#state{cb_data = CbData2}}
     end;
-handle_call(?TAG_I({Type, Msg, Who}), _ConnectionHandler, St0) ->
+handle_call(?TAG_I({Type, Msg, Who}), _From, St0) ->
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
     Handler = list_to_existing_atom("handle_" ++ atom_to_list(Type)),
