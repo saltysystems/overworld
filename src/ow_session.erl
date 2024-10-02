@@ -18,7 +18,9 @@
     latency/2, latency/1,
     game_data/2, game_data/1,
     disconnect_callback/2, disconnect_callback/1,
-    status/2, status/1,
+    status/1,
+    connected/1,
+    disconnected/1,
     token/2, token/1,
     zone/2, zone/1
 ]).
@@ -36,6 +38,7 @@
 %-type msg() :: nonempty_binary() | [binary(), ...].
 -type serializer() :: undefined | protobuf.
 -type id() :: pos_integer().
+-type token() :: binary() | undefined.
 -type status() :: preconnect | connected | disconnected.
 -type time_ms() :: non_neg_integer().
 -type mfargs() :: {atom(), atom(), list()}.
@@ -50,13 +53,15 @@
     disconnect_callback :: mfargs() | undefined,
     disconnect_timeout :: time_ms(),
     status :: status(),
-    token :: binary() | undefined,
+    token :: token(),
     zone :: pid() | undefined
 }).
 -export_type([serializer/0]).
 -export_type([id/0]).
 
 -define(DEFAULT_DISCONNECT_TIMEOUT, 5000).
+% A bit hackish, but gives the zone some time to deal with shutdowns
+-define(DEFAULT_SHUTDOWN_DELAY, 1000).
 
 %%===========================================================================
 %% API
@@ -180,13 +185,20 @@ disconnect_callback(PID) ->
     gen_server:call(PID, get_disconnect_callback).
 
 %%----------------------------------------------------------------------------
-%% @doc Set the connection status. Disconnected sessions will be periodically
-%%      culled.
+%% @doc Set the current session to disconnected state
 %% @end
 %%----------------------------------------------------------------------------
--spec status(status(), pid()) -> {ok, status()}.
-status(Status, PID) ->
-    gen_server:call(PID, {set_status, Status}).
+-spec disconnected(pid()) -> {ok, status()}.
+disconnected(PID) ->
+    gen_server:call(PID, {set_status, disconnected}).
+
+%%----------------------------------------------------------------------------
+%% @doc Set the current session to connected state
+%% @end
+%%----------------------------------------------------------------------------
+-spec connected(pid()) -> {ok, status()}.
+connected(PID) ->
+    gen_server:call(PID, {set_status, connected}).
 
 %%----------------------------------------------------------------------------
 %% @doc Get the connection status. Disconnected sessions will be periodically
@@ -201,7 +213,7 @@ status(PID) ->
 %% @doc Sets the session token
 %% @end
 %%----------------------------------------------------------------------------
--spec token(binary(), pid()) -> {ok, binary()}.
+-spec token(token(), pid()) -> {ok, token()}.
 token(Token, PID) ->
     gen_server:call(PID, {set_token, Token}).
 
@@ -209,7 +221,7 @@ token(Token, PID) ->
 %% @doc Get the session token.
 %% @end
 %%----------------------------------------------------------------------------
--spec token(pid()) -> binary() | undefined.
+-spec token(pid()) -> token().
 token(PID) ->
     gen_server:call(PID, get_token).
 
@@ -304,29 +316,27 @@ handle_call(get_zone, _From, Session) ->
 handle_cast(_Msg, Session) ->
     {noreply, Session}.
 
-handle_info(maybe_terminate, Session = #session{status = S}) when
+handle_info(maybe_terminate, Session = #session{status = S, zone = Z}) when
     S =:= disconnected;
     S =:= preconnect
 ->
-    {stop, normal, Session};
+    case Z of
+        undefined ->
+            {stop, normal, Session};
+        _ ->
+            erlang:send_after(?DEFAULT_SHUTDOWN_DELAY, self(), terminate)
+    end;
 handle_info(maybe_terminate, Session) ->
     % Client is back into a connected state, continue on as normal.
     {noreply, Session};
+handle_info(terminate, Session) ->
+    {stop, normal, Session};
 handle_info(_Info, Session) ->
     {noreply, Session}.
 
-terminate(_Reason, #session{zone = ZonePID}) ->
-    % Client is still disconnected, terminate.
-    logger:notice("Notifying zone ~p of session termination for ~p", [ZonePID, self()]),
-    ow_zone:disconnect(ZonePID, self()),
-    logger:notice("Terminating session ~p", [self()]),
-    ok;
-terminate(_Reason, _Session) ->
+terminate(Reason, _Session) ->
+    logger:notice("Terminating session ~p for reason ~p", [self(), Reason]),
     ok.
 
 code_change(_OldVsn, Session, _Extra) ->
     {ok, Session}.
-
-%%=========================================================================
-%% Internal functions
-%%=========================================================================

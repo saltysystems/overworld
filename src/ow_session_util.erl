@@ -64,13 +64,11 @@ session_request(Msg, SessionPID) ->
             ow_zone:reconnect(ZonePid, PrevSessionPID),
             % Update the session server with the new token
             {ok, NewToken} = ow_session:token(NewToken, PrevSessionPID),
-            % Update the session server with the connected status
-            {ok, connected} = ow_session:status(connected, SessionPID),
             % Stop the temporary session
             ok = ow_session_sup:delete(SessionPID)
     end,
     % Set the status to connected
-    ow_session:status(connected, SessionPID),
+    ow_session:connected(SessionPID),
     % Register the process of the caller
     gproc:reg({p, l, client_session}),
     ok.
@@ -94,7 +92,7 @@ disconnect(SessionPID) ->
         undefined ->
             ok
     end,
-    {ok, disconnected} = ow_session:status(disconnected, SessionPID),
+    {ok, disconnected} = ow_session:disconnected(SessionPID),
     ok.
 
 %%----------------------------------------------------------------------------
