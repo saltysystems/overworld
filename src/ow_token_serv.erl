@@ -20,26 +20,38 @@
 -define(MAX_BYTES, 16).
 
 -type token() :: binary().
--type user_id() :: term().
 
 -record(state, {
-    tokens = [] :: [{user_id(), token()}]
+    tokens = [] :: [{pid(), token()}]
 }).
 
--spec start_link() -> {ok, pid()} | {error, term()}.
+%%----------------------------------------------------------------------------
 %% @doc Starts the token server.
+%% @end
+%%----------------------------------------------------------------------------
+-spec start_link() -> {ok, pid()} | {error, term()}.
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec new(user_id()) -> token().
-%% @doc Generates a new token for the given user ID.
-new(ID) ->
-    gen_server:call(?MODULE, {new, ID}).
+%%----------------------------------------------------------------------------
+%% @doc Generates a new token for the given session PID.
+%% @end
+%%----------------------------------------------------------------------------
+-spec new(pid()) -> token().
+new(SessionPID) ->
+    gen_server:call(?MODULE, {new, SessionPID}).
 
--spec exchange(token()) -> {user_id(), token()} | false | denied.
-%% @doc Exchanges a token for a new one if it matches an existing user ID.
+%%----------------------------------------------------------------------------
+%% @doc Exchanges a token for a new one if it matches an existing Session PID.
+%% @end
+%%----------------------------------------------------------------------------
+-spec exchange(token()) -> {pid(), token()} | false | denied.
 exchange(Token) ->
     gen_server:call(?MODULE, {exchange, Token}).
+
+%%===========================================================================
+%% Callback implementation
+%%===========================================================================
 
 init([]) ->
     {ok, #state{}}.
@@ -75,7 +87,10 @@ terminate(_Reason, _State) ->
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
+%%===========================================================================
 %% Internal functions
+%%===========================================================================
+
 -spec create_token() -> token().
 create_token() ->
     crypto:strong_rand_bytes(?MAX_BYTES).

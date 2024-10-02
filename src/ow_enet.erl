@@ -47,14 +47,13 @@ start(PeerInfo) ->
 -spec init([peerinfo()]) -> {ok, peerinfo()}.
 init([PeerInfo]) ->
     IP = inet:ntoa(maps:get(ip, PeerInfo)),
-    %{ok, SessionID} = ow_session:start(),
-    {ok, _Pid, SessionID} = ow_session_sup:new([{pid, self()}]),
-    logger:debug("Pending session: ~p: for ENet connection ~p", [SessionID, IP]),
+    {ok, SessionPid} = ow_session_sup:new([{proxy, self()}]),
+    logger:debug("Started session ~p for ENet conn. ~p", [SessionPid, IP]),
     % Trap exits from the enet child processes
     process_flag(trap_exit, true),
     % Add a new key to the peerInfo map containing Overworld session
     % information
-    {ok, PeerInfo#{session_id => SessionID}}.
+    {ok, PeerInfo#{session_pid => SessionPid}}.
 
 % Required ballbacks
 handle_call({call, Msg}, _From, PeerInfo) ->
@@ -83,11 +82,10 @@ handle_info(
     % Handle a message from another overworld process
     channelize_msg(MsgType, Msg, Channels),
     {noreply, PeerInfo};
-handle_info({reconnect_session, SessionID1}, PeerInfo) ->
-    #{session_id := SessionID} = PeerInfo,
-    ow_session_util:reconnect(SessionID, SessionID1),
-    {noreply, PeerInfo#{session_id => SessionID1}};
-handle_info(_, PeerInfo) ->
+handle_info({reconnect_session, SessionPID}, PeerInfo) ->
+    {noreply, PeerInfo#{session_pid := SessionPID}};
+handle_info(Msg, PeerInfo) ->
+    logger:warning("Unimplemented response for message: ~p", [Msg]),
     % Ignore all other messages
     {noreply, PeerInfo}.
 
@@ -96,8 +94,8 @@ handle_info(_, PeerInfo) ->
 %% @end
 %%---------------------------------------------------------------------------
 -spec terminate(any(), peerinfo()) -> ok.
-terminate(_Reason, #{session_id := SessionID}) ->
-    ok = ow_session_util:disconnect(SessionID).
+terminate(_Reason, #{session_pid := SessionPID}) ->
+    ok = ow_session_util:disconnect(SessionPID).
 
 code_change(_OldVsn, PeerInfo, _Extra) -> {ok, PeerInfo}.
 
@@ -106,9 +104,9 @@ code_change(_OldVsn, PeerInfo, _Extra) -> {ok, PeerInfo}.
 %%===========================================================================
 
 decode_and_reply(Msg, PeerInfo) ->
-    #{channels := Channels, session_id := SessionID} = PeerInfo,
+    #{channels := Channels, session_pid := SessionPID} = PeerInfo,
     %TODO: Fix me
-    case ow_protocol:route(Msg, SessionID) of
+    case ow_protocol:route(Msg, SessionPID) of
         ok ->
             ok;
         {MsgType, Msg1} ->

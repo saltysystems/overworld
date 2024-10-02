@@ -24,10 +24,10 @@ start_link() ->
 new(Config) ->
     supervisor:start_child(?SERVER, [Config]).
 
--spec delete(ow_session:id()) -> ok | {error, _}.
-delete(SessionID) ->
-    supervisor:terminate_child(?SERVER, SessionID),
-    supervisor:delete_child(?SERVER, SessionID).
+-spec delete(pid()) -> ok | {error, _}.
+delete(SessionPID) ->
+    supervisor:terminate_child(?SERVER, SessionPID),
+    supervisor:delete_child(?SERVER, SessionPID).
 
 init([]) ->
     SupFlags = #{

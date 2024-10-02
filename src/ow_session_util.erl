@@ -10,7 +10,7 @@
 % RPC functions
 -export([session_ping/2, session_request/2]).
 % Utility functions
--export([disconnect/1, reconnect/2, notify_clients/3]).
+-export([disconnect/1, notify_clients/3]).
 
 %%===========================================================================
 %% RPC API
@@ -24,8 +24,8 @@
 %% @doc Calculate the latency based on the RTT to the client
 %% @end
 %%----------------------------------------------------------------------------
--spec session_ping(map(), ow_session:id()) -> {atom(), map()}.
-session_ping(Msg, SessionID) ->
+-spec session_ping(map(), pid()) -> {atom(), map()}.
+session_ping(Msg, SessionPID) ->
     BeaconID = maps:get(id, Msg),
     Last = ow_beacon:get_by_id(BeaconID),
     Now = erlang:monotonic_time(),
@@ -33,39 +33,45 @@ session_ping(Msg, SessionID) ->
     Latency = erlang:convert_time_unit(
         round(Now - Last), native, millisecond
     ),
-    {ok, Latency} = ow_session:latency(Latency, SessionID),
+    {ok, Latency} = ow_session:latency(Latency, SessionPID),
     {session_pong, #{latency => Latency}}.
 
 %%----------------------------------------------------------------------------
 %% @doc Request a new session, or rejoin an existing one
 %% @end
 %%----------------------------------------------------------------------------
--spec session_request(map(), ow_session:id()) -> ok.
-session_request(Msg, SessionID) ->
+-spec session_request(map(), pid()) -> ok.
+session_request(Msg, SessionPID) ->
     logger:notice("Got session request: ~p", [Msg]),
     Token = maps:get(token, Msg, undefined),
+    ProxyPID = ow_session:proxy(SessionPID),
     case Token of
         undefined ->
             % No session existing, start a new one
-            NewToken = ow_token_serv:new(SessionID),
-            Reply = #{id => SessionID, reconnect_token => NewToken},
-            notify_clients(session_new, Reply, [SessionID]);
+            NewToken = ow_token_serv:new(SessionPID),
+            ID = ow_session:id(SessionPID),
+            Reply = #{id => ID, reconnect_token => NewToken},
+            % Send the reply back through the proxy
+            notify_clients(session_new, Reply, [ProxyPID]);
         _ ->
-            {SessionID1, NewToken} = ow_token_serv:exchange(Token),
-            % Lookup the PID of the handler (Enet or Websocket) and ask it to
-            % update its session ID
-            Pid = gproc:lookup_pid({n, l, SessionID}),
-            Pid ! {reconnect_session, SessionID1},
-            % Call the zone and let it know that the client has reconnected
-            ZonePid = ow_session:zone(SessionID),
-            ow_zone:reconnect(ZonePid, SessionID),
-            reconnect(SessionID, SessionID1),
-            % Update the Session server with the new token
-            {ok, NewToken} = ow_session:token(NewToken, SessionID)
+            {PrevSessionPID, NewToken} = ow_token_serv:exchange(Token),
+            % Inform the proxy process to update its session ID to refer to the
+            % previous, existing one. Internal clients will probably(?) never
+            % need to do this
+            ProxyPID ! {reconnect_session, PrevSessionPID},
+            % Inform the zone that the client has reconnected
+            ZonePid = ow_session:zone(PrevSessionPID),
+            ow_zone:reconnect(ZonePid, PrevSessionPID),
+            % Update the session server with the new token
+            {ok, NewToken} = ow_session:token(NewToken, PrevSessionPID),
+            % Update the session server with the connected status
+            {ok, connected} = ow_session:status(connected, SessionPID),
+            % Stop the temporary session
+            ok = ow_session_sup:delete(SessionPID)
     end,
     % Set the status to connected
-    ow_session:status(connected, SessionID),
-    % Register the process
+    ow_session:status(connected, SessionPID),
+    % Register the process of the caller
     gproc:reg({p, l, client_session}),
     ok.
 
@@ -78,45 +84,36 @@ session_request(Msg, SessionID) ->
 %%      handler
 %% @end
 %%----------------------------------------------------------------------------
--spec disconnect(ow_session:id()) -> ok.
-disconnect(SessionID) ->
+-spec disconnect(pid()) -> ok.
+disconnect(SessionPID) ->
     % We've caught an error or otherwise asked to stop, clean up the session
-    case ow_session:disconnect_callback(SessionID) of
+    case ow_session:disconnect_callback(SessionPID) of
         {Module, Fun, Args} ->
             logger:notice("Calling: ~p:~p(~p)", [Module, Fun, Args]),
             erlang:apply(Module, Fun, Args);
         undefined ->
             ok
     end,
-    {ok, disconnected} = ow_session:status(disconnected, SessionID),
+    {ok, disconnected} = ow_session:status(disconnected, SessionPID),
     ok.
 
 %%----------------------------------------------------------------------------
-%% @doc Unregister an old SessionID and register a new SessionID for the caller
+%% @doc Send a message to a list of clients
 %% @end
 %%----------------------------------------------------------------------------
--spec reconnect(ow_session:id(), ow_session:id()) -> ok.
-reconnect(SessionID, SessionID1) ->
-    logger:debug("Reconnecting session: ~p -> ~p", [SessionID, SessionID1]),
-    % Register the process by this SessionID in gproc
-    gproc:reg({n, l, SessionID1}, ignored),
-    % Unregister the old value in gproc
-    gproc:unreg({n, l, SessionID}),
-    ok.
-
--spec notify_clients(atom(), map(), [ow_session:id()]) -> ok.
+-spec notify_clients(atom(), map(), [pid()]) -> ok.
 notify_clients(_MsgType, _Msg, []) ->
     ok;
-notify_clients(MsgType, Msg, [SessionID | Rest]) ->
+notify_clients(MsgType, Msg, [SessionPID | Rest]) ->
     try
-        Pid = ow_session:pid(SessionID),
-        case Pid of
+        ProxyPID = ow_session:proxy(SessionPID),
+        case ProxyPID of
             undefined ->
                 ok;
             _ ->
                 % Send a message to the client, let the connection handler figure
                 % out how to serialize it further
-                Pid ! {self(), client_msg, {MsgType, Msg}}
+                ProxyPID ! {self(), client_msg, {MsgType, Msg}}
         end
     catch
         exit:{noproc, _} ->

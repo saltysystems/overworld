@@ -119,9 +119,9 @@ rpc(RPC, Type) ->
 %%      application prefix
 %% @end
 %%-------------------------------------------------------------------------
--spec route(<<_:16, _:_*8>>, ow_session:id()) ->
+-spec route(<<_:16, _:_*8>>, pid()) ->
     term().
-route(<<Prefix:16, Msg/binary>>, SessionID) ->
+route(<<Prefix:16, Msg/binary>>, SessionPID) ->
     % Get the decoder M/F for a given Overworld application
     case ow_protocol:router(Prefix) of
         false ->
@@ -130,7 +130,7 @@ route(<<Prefix:16, Msg/binary>>, SessionID) ->
             ok;
         Mod ->
             % Assume this app implements the ow_router behaviour
-            erlang:apply(Mod, decode, [Msg, SessionID])
+            erlang:apply(Mod, decode, [Msg, SessionPID])
     end.
 
 %%-------------------------------------------------------------------------
