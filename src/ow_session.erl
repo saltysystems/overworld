@@ -38,6 +38,7 @@
 %-type msg() :: nonempty_binary() | [binary(), ...].
 -type serializer() :: undefined | protobuf.
 -type id() :: pos_integer().
+-type token() :: binary() | undefined.
 -type status() :: preconnect | connected | disconnected.
 -type time_ms() :: non_neg_integer().
 -type mfargs() :: {atom(), atom(), list()}.
@@ -52,13 +53,15 @@
     disconnect_callback :: mfargs() | undefined,
     disconnect_timeout :: time_ms(),
     status :: status(),
-    token :: binary() | undefined,
+    token :: token(),
     zone :: pid() | undefined
 }).
 -export_type([serializer/0]).
 -export_type([id/0]).
 
 -define(DEFAULT_DISCONNECT_TIMEOUT, 5000).
+% A bit hackish, but gives the zone some time to deal with shutdowns
+-define(DEFAULT_SHUTDOWN_DELAY, 1000). 
 
 %%===========================================================================
 %% API
@@ -210,7 +213,7 @@ status(PID) ->
 %% @doc Sets the session token
 %% @end
 %%----------------------------------------------------------------------------
--spec token(binary(), pid()) -> {ok, binary()}.
+-spec token(token(), pid()) -> {ok, token()}.
 token(Token, PID) ->
     gen_server:call(PID, {set_token, Token}).
 
@@ -218,7 +221,7 @@ token(Token, PID) ->
 %% @doc Get the session token.
 %% @end
 %%----------------------------------------------------------------------------
--spec token(pid()) -> binary() | undefined.
+-spec token(pid()) -> token().
 token(PID) ->
     gen_server:call(PID, get_token).
 
@@ -290,9 +293,8 @@ handle_call({set_disconnect_callback, TCB}, _From, Session) ->
     {reply, {ok, TCB}, Session#session{disconnect_callback = TCB}};
 handle_call(get_disconnect_callback, _From, Session) ->
     {reply, Session#session.disconnect_callback, Session};
-handle_call({set_status, Status}, _From, Session) when
-    Status =:= disconnected
-->
+handle_call({set_status, Status}, _From, Session) 
+    when Status =:= disconnected ->
     % On a disconnected session, set a timer to terminate this session
     Timeout = Session#session.disconnect_timeout,
     erlang:send_after(Timeout, self(), maybe_terminate),
@@ -313,29 +315,27 @@ handle_call(get_zone, _From, Session) ->
 handle_cast(_Msg, Session) ->
     {noreply, Session}.
 
-handle_info(maybe_terminate, Session = #session{status = S}) when
+handle_info(maybe_terminate, Session = #session{status = S, zone = Z}) when
     S =:= disconnected;
     S =:= preconnect
 ->
-    {stop, normal, Session};
+    case Z of 
+        undefined -> 
+            {stop, normal, Session};
+        _ -> 
+            erlang:send_after(?DEFAULT_SHUTDOWN_DELAY, self(), terminate)
+    end;
 handle_info(maybe_terminate, Session) ->
     % Client is back into a connected state, continue on as normal.
     {noreply, Session};
+handle_info(terminate, Session) ->
+    {stop, normal, Session};
 handle_info(_Info, Session) ->
     {noreply, Session}.
 
-terminate(_Reason, #session{zone = ZonePID}) ->
-    % Client is still disconnected, terminate.
-    logger:notice("Notifying zone ~p of session termination for ~p", [ZonePID, self()]),
-    ow_zone:disconnect(ZonePID, self()),
-    logger:notice("Terminating session ~p", [self()]),
-    ok;
-terminate(_Reason, _Session) ->
+terminate(Reason, _Session) ->
+    logger:notice("Terminating session ~p for reason ~p", [self(), Reason]),
     ok.
 
 code_change(_OldVsn, Session, _Extra) ->
     {ok, Session}.
-
-%%=========================================================================
-%% Internal functions
-%%=========================================================================
