@@ -320,7 +320,7 @@ handle_call(?TAG_I({join, Msg, Who}), _From, St0) ->
     maybe
         true ?= erlang:function_exported(CbMod, handle_join, 4),
         {ReplyType, ReplyMsg, CbData1} ?= CbMod:handle_join(Msg, Who, ZD, CbData0),
-        CallReply = handle_notify(ReplyType, ReplyMsg, St0),
+        CallReply = handle_notify(ReplyType, ReplyMsg, St1),
         {reply, CallReply, St1#state{cb_data = CbData1}}
     else
         false ->
@@ -352,7 +352,7 @@ handle_call(?TAG_I({part, Msg, Who}), _From, St0) ->
         true ?= is_client(Who, St0),
         true ?= erlang:function_exported(CbMod, handle_part, 4),
         {ReplyType, ReplyMsg, CbData1} ?= CbMod:handle_part(Msg, Who, ZD, CbData0),
-        CallMsg = handle_notify(ReplyType, ReplyMsg, St0),
+        CallMsg = handle_notify(ReplyType, ReplyMsg, St1),
         {reply, CallMsg, St1#state{cb_data = CbData1}}
     else
         false ->
