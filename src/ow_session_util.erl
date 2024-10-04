@@ -42,22 +42,23 @@ session_ping(Msg, SessionPID) ->
 %%----------------------------------------------------------------------------
 -spec session_request(map(), pid()) -> ok.
 session_request(Msg, SessionPID) ->
-    logger:notice("Got session request: ~p", [Msg]),
+    logger:debug("Got session request: ~p", [Msg]),
     Token = maps:get(token, Msg, undefined),
-    ProxyPID = ow_session:proxy(SessionPID),
     case Token of
         undefined ->
+            logger:debug("No token defined, starting a new session"),
             % No session existing, start a new one
             NewToken = ow_token_serv:new(SessionPID),
             ID = ow_session:id(SessionPID),
             Reply = #{id => ID, reconnect_token => NewToken},
             % Send the reply back through the proxy
-            notify_clients(session_new, Reply, [ProxyPID]);
+            notify_clients(session_new, Reply, [SessionPID]);
         _ ->
             {PrevSessionPID, NewToken} = ow_token_serv:exchange(Token),
             % Inform the proxy process to update its session ID to refer to the
             % previous, existing one. Internal clients will probably(?) never
             % need to do this
+            ProxyPID = ow_session:proxy(SessionPID),
             ProxyPID ! {reconnect_session, PrevSessionPID},
             % Inform the zone that the client has reconnected
             ZonePid = ow_session:zone(PrevSessionPID),
@@ -67,8 +68,6 @@ session_request(Msg, SessionPID) ->
             % Stop the temporary session
             ok = ow_session_sup:delete(SessionPID)
     end,
-    % Set the status to connected
-    ow_session:connected(SessionPID),
     % Register the process of the caller
     gproc:reg({p, l, client_session}),
     ok.
@@ -92,7 +91,8 @@ disconnect(SessionPID) ->
         undefined ->
             ok
     end,
-    {ok, disconnected} = ow_session:disconnected(SessionPID),
+    % Reset the session proxy
+    {ok, _} = ow_session:disconnect(SessionPID),
     ok.
 
 %%----------------------------------------------------------------------------
@@ -103,18 +103,22 @@ disconnect(SessionPID) ->
 notify_clients(_MsgType, _Msg, []) ->
     ok;
 notify_clients(MsgType, Msg, [SessionPID | Rest]) ->
+    logger:debug("Notifying client ~p: ~p", [SessionPID, {MsgType, Msg}]),
     try
         ProxyPID = ow_session:proxy(SessionPID),
         case ProxyPID of
             undefined ->
+                logger:debug("no proxy defined, doing nothing"),
                 ok;
             _ ->
                 % Send a message to the client, let the connection handler figure
                 % out how to serialize it further
+                logger:debug("Sending client message to ~p", [ProxyPID]),
                 ProxyPID ! {self(), client_msg, {MsgType, Msg}}
         end
     catch
         exit:{noproc, _} ->
+            logger:debug("Couldn't communicate with session ~p: noproc", [SessionPID]),
             ok
     end,
     notify_clients(MsgType, Msg, Rest).

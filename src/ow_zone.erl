@@ -47,13 +47,10 @@
 -define(DEFAULT_TICK_MS, 20).
 
 -define(INITIAL_ZONE_DATA, #{
-    joined => [],
-    active => [],
-    parted => [],
+    clients => [],
     frame => 0,
     tick_ms => ?DEFAULT_TICK_MS,
-    lerp_period => ?DEFAULT_LERP_MS,
-    disconnect => soft
+    lerp_period => ?DEFAULT_LERP_MS
 }).
 
 %%=======================================================================
@@ -85,13 +82,10 @@
     | {{send, [session_pid()]}, zone_msg(), state()}.
 -type zone_data() ::
     #{
-        joined => [session_pid()],
-        active => [session_pid()],
-        parted => [session_pid()],
+        clients => [session_pid()],
         frame => non_neg_integer(),
         tick_ms => pos_integer(),
-        lerp_period => pos_integer(),
-        disconnect => hard | soft
+        lerp_period => pos_integer()
     }.
 
 %%=======================================================================
@@ -108,25 +102,29 @@
     InitialData :: term(),
     Reason :: term().
 
--callback handle_join(Msg, From, State) -> Result when
+-callback handle_join(Msg, From, ZoneData, State) -> Result when
     From :: session_pid(),
     Msg :: term(),
+    ZoneData :: zone_data(),
     State :: term(),
     Result :: ow_zone_call_resp().
 
--callback handle_part(Msg, From, State) -> Result when
+-callback handle_part(Msg, From, ZoneData, State) -> Result when
     From :: session_pid(),
     Msg :: term(),
+    ZoneData :: zone_data(),
     State :: term(),
     Result :: ow_zone_call_resp().
 
--callback handle_reconnect(From, State) -> Result when
+-callback handle_reconnect(From, ZoneData, State) -> Result when
     From :: session_pid(),
+    ZoneData :: zone_data(),
     State :: term(),
     Result :: ow_zone_call_resp().
 
--callback handle_disconnect(From, State) -> Result when
+-callback handle_disconnect(From, ZoneData, State) -> Result when
     From :: session_pid(),
+    ZoneData :: zone_data(),
     State :: term(),
     Result :: ow_zone_cast_resp().
 
@@ -136,7 +134,7 @@
     Result :: ow_zone_cast_resp().
 
 -optional_callbacks([
-    handle_join/3, handle_part/3, handle_disconnect/2, handle_reconnect/2
+    handle_join/4, handle_part/4, handle_disconnect/3, handle_reconnect/3
 ]).
 -hank([{unused_callbacks, [all]}]).
 
@@ -297,24 +295,32 @@ init(_CbMod, Stop) ->
 %    4b. If there is a reply, we need to handle it
 
 handle_call(?TAG_I({join, Msg, Who}), _From, St0) ->
-    CbMod = St0#state.cb_mod,
-    CbData0 = St0#state.cb_data,
+    #state{
+        cb_mod = CbMod,
+        cb_data = CbData0,
+        zone_data = ZD
+    } = St0,
     % Update the sessions ZonePid
     ZonePid = self(),
     % Could crash with noproc if the player has timed out meanwhile
     {ok, ZonePid} = ow_session:zone(ZonePid, Who),
-    % Update the session with a termination callback
-    Callback = {CbMod, disconnect, [ZonePid, Who]},
+    Callback =
+        case erlang:function_exported(CbMod, disconnect, 1) of
+            true ->
+                {CbMod, disconnect, [Who]};
+            false ->
+                {CbMod, part, [#{}, Who]}
+        end,
     {ok, Callback} = ow_session:disconnect_callback(Callback, Who),
-    % Add the client to the recently joined list in the zone data
-    #{joined := Joined} = ZD = St0#state.zone_data,
-    ZD1 = ZD#{joined := [Who | Joined]},
+    % Add the session PID to the clients list
+    #{clients := Clients} = ZD,
+    ZD1 = ZD#{clients := [Who | Clients]},
     St1 = St0#state{zone_data = ZD1},
     % Run the callback handler, if exported
     maybe
-        true ?= erlang:function_exported(CbMod, handle_join, 3),
-        {ReplyType, ReplyMsg, CbData1} ?= CbMod:handle_join(Msg, Who, CbData0),
-        CallReply = handle_notify(ReplyType, ReplyMsg, St1),
+        true ?= erlang:function_exported(CbMod, handle_join, 4),
+        {ReplyType, ReplyMsg, CbData1} ?= CbMod:handle_join(Msg, Who, ZD, CbData0),
+        CallReply = handle_notify(ReplyType, ReplyMsg, St0),
         {reply, CallReply, St1#state{cb_data = CbData1}}
     else
         false ->
@@ -323,20 +329,30 @@ handle_call(?TAG_I({join, Msg, Who}), _From, St0) ->
         {noreply, CbData2} ->
             % State internal update, but no reply
             {reply, ok, St1#state{cb_data = CbData2}}
+        % TODO: Placing this here in case it is needed later
+        %{error, CbData2} ->
+        %    % Server rejects this client join for whatever reason.
+        %    % Roll back state update, and then update CbData
+        %    {reply, ok, St0#state{cb_data = CbData2}}
     end;
 handle_call(?TAG_I({part, Msg, Who}), _From, St0) ->
-    CbMod = St0#state.cb_mod,
-    CbData0 = St0#state.cb_data,
-    ZD = St0#state.zone_data,
-    % Add the client to the list of parted users
-    #{parted := Parted, active := Active} = ZD,
-    ZD1 = ZD#{parted := [Who | Parted], active := lists:delete(Who, Active)},
+    #state{
+        cb_mod = CbMod,
+        cb_data = CbData0,
+        zone_data = ZD
+    } = St0,
+    % Remove the client from the clients list
+    #{clients := Clients} = ZD,
+    ZD1 = ZD#{clients := lists:delete(Who, Clients)},
     St1 = St0#state{zone_data = ZD1},
+    % Remove the zone from the session
+    {ok, _} = ow_session:zone(undefined, Who),
     % Run the callback handler, if exported
     maybe
-        true ?= erlang:function_exported(CbMod, handle_part, 3),
-        {ReplyType, ReplyMsg, CbData1} ?= CbMod:handle_part(Msg, Who, CbData0),
-        CallMsg = handle_notify(ReplyType, ReplyMsg, St1),
+        true ?= is_client(Who, St0),
+        true ?= erlang:function_exported(CbMod, handle_part, 4),
+        {ReplyType, ReplyMsg, CbData1} ?= CbMod:handle_part(Msg, Who, ZD, CbData0),
+        CallMsg = handle_notify(ReplyType, ReplyMsg, St0),
         {reply, CallMsg, St1#state{cb_data = CbData1}}
     else
         false ->
@@ -346,17 +362,19 @@ handle_call(?TAG_I({part, Msg, Who}), _From, St0) ->
             % State internal update, but no reply
             {reply, ok, St1#state{cb_data = CbData2}}
     end;
-handle_call(
-    ?TAG_I({reconnect, Msg, Who}),
-    _From,
-    St0 = #state{zone_data = #{disconnect := soft}}
-) ->
+handle_call(?TAG_I({reconnect, Who}), _From, St0) ->
+    #state{
+        cb_mod = CbMod,
+        cb_data = CbData0,
+        zone_data = ZD
+    } = St0,
     CbMod = St0#state.cb_mod,
     CbData0 = St0#state.cb_data,
     % Run the callback handler, if exported
     maybe
+        true ?= is_client(Who, St0),
         true ?= erlang:function_exported(CbMod, handle_reconnect, 3),
-        {ReplyType, ReplyMsg, CbData1} ?= CbMod:handle_reconnect(Msg, Who, CbData0),
+        {ReplyType, ReplyMsg, CbData1} ?= CbMod:handle_reconnect(Who, ZD, CbData0),
         CallReply = handle_notify(ReplyType, ReplyMsg, St0),
         {reply, CallReply, St0#state{cb_data = CbData1}}
     else
@@ -368,13 +386,16 @@ handle_call(
             {reply, ok, St0#state{cb_data = CbData2}}
     end;
 handle_call(?TAG_I({Type, Msg, Who}), _From, St0) ->
-    CbMod = St0#state.cb_mod,
-    CbData0 = St0#state.cb_data,
+    #state{
+        cb_mod = CbMod,
+        cb_data = CbData0,
+        zone_data = ZD
+    } = St0,
     Handler = list_to_existing_atom("handle_" ++ atom_to_list(Type)),
     maybe
-        true ?= session_active(Who, St0),
-        true ?= erlang:function_exported(CbMod, Handler, 3),
-        {ReplyType, ReplyMsg, CbData1} ?= CbMod:Handler(Msg, Who, CbData0),
+        true ?= is_client(Who, St0),
+        true ?= erlang:function_exported(CbMod, Handler, 4),
+        {ReplyType, ReplyMsg, CbData1} ?= CbMod:Handler(Msg, Who, ZD, CbData0),
         CallMsg = handle_notify(ReplyType, ReplyMsg, St0),
         % Replies other than noreply will probably not be sent anywhere useful
         {reply, CallMsg, St0#state{cb_data = CbData1}}
@@ -393,36 +414,16 @@ handle_call(Call, _From, St0) ->
     ),
     {reply, ok, St0}.
 
-handle_cast(?TAG_I({disconnect, Who}), St0 = #state{zone_data = #{disconnect := hard}}) ->
-    logger:notice("Received (hard) disconnect from session ~p. My state: ~p", [Who, St0]),
-    % Player has completely timed out, go ahead and clean up by removing them
-    CbMod = St0#state.cb_mod,
-    CbData0 = St0#state.cb_data,
-    ZD = St0#state.zone_data,
-    % Add the client to the list of parted users
-    #{parted := Parted, active := Active} = ZD,
-    ZD1 = ZD#{parted := [Who | Parted], active := lists:delete(Who, Active)},
-    St1 = St0#state{zone_data = ZD1},
-    % Run the callback handler, if exported
-    maybe
-        true ?= erlang:function_exported(CbMod, handle_part, 3),
-        {ReplyType, ReplyMsg, CbData1} ?= CbMod:handle_part(#{}, Who, CbData0),
-        ok = handle_notify(ReplyType, ReplyMsg, St1),
-        {noreply, St1#state{cb_data = CbData1}}
-    else
-        false ->
-            {noreply, St1};
-        {noreply, CbData2} ->
-            {noreply, St1#state{cb_data = CbData2}}
-    end;
 handle_cast(?TAG_I({disconnect, Who}), St0) ->
-    logger:notice("Received (soft) disconnect from session ~p. My state: ~p", [Who, St0]),
-    % For soft disconnects, we don't immediately clean up the player
-    CbMod = St0#state.cb_mod,
-    CbData0 = St0#state.cb_data,
+    logger:notice("Received disconnect from session ~p. My state: ~p", [Who, St0]),
+    #state{
+        cb_mod = CbMod,
+        cb_data = CbData0,
+        zone_data = ZD
+    } = St0,
     maybe
-        true ?= erlang:function_exported(CbMod, handle_disconnect, 2),
-        {ReplyType, ReplyMsg, CbData1} ?= CbMod:handle_disconnect(Who, CbData0),
+        true ?= erlang:function_exported(CbMod, handle_disconnect, 3),
+        {ReplyType, ReplyMsg, CbData1} ?= CbMod:handle_disconnect(Who, ZD, CbData0),
         ok = handle_notify(ReplyType, ReplyMsg, St0),
         {noreply, St0#state{cb_data = CbData1}}
     else
@@ -456,14 +457,12 @@ handle_info(?TAG_I(tick), St0) ->
     St1 = St0#state{zone_data = ZoneData1},
     % Run the callback handler
     Result = CbMod:handle_tick(ZoneData1, CbData0),
-    % Move all joined to active and remove all parted from active
-    St2 = shift_clients(St1),
     case Result of
         {noreply, CbData1} ->
-            {noreply, St2#state{cb_data = CbData1}};
+            {noreply, St1#state{cb_data = CbData1}};
         {ReplyType, Msg, CbData1} ->
-            ok = handle_notify(ReplyType, Msg, St2),
-            {noreply, St2#state{cb_data = CbData1}}
+            ok = handle_notify(ReplyType, Msg, St1),
+            {noreply, St1#state{cb_data = CbData1}}
     end.
 
 % Undocumented handle_info fall-through. TBD if useful, so commented for now.
@@ -491,15 +490,13 @@ code_change(_OldVsn, St0, _Extra) -> {ok, St0}.
 %% Internal functions
 %%=======================================================================
 
-handle_notify({send, IDs}, {MsgType, Msg}, St0) ->
-    #{active := Active} = St0#state.zone_data,
-    % Filter down to only the active clients specified
-    Players = [P0 || P0 <- IDs, P1 <- Active, P0 =:= P1],
-    ok = ow_session_util:notify_clients(MsgType, Msg, Players),
+handle_notify({send, IDs}, {MsgType, Msg}, _St0) ->
+    % Filter down to only the clients specified
+    ok = ow_session_util:notify_clients(MsgType, Msg, IDs),
     ok;
 handle_notify(broadcast, {MsgType, Msg}, St0) ->
-    #{active := Active} = St0#state.zone_data,
-    ok = ow_session_util:notify_clients(MsgType, Msg, Active),
+    #{clients := Clients} = St0#state.zone_data,
+    ok = ow_session_util:notify_clients(MsgType, Msg, Clients),
     ok;
 handle_notify(reply, {MsgType, Msg}, _St0) ->
     {MsgType, Msg}.
@@ -514,17 +511,6 @@ initialize_state(CbMod, CbData, ZoneData) ->
         zone_data = ZoneData
     }.
 
-shift_clients(#state{zone_data = ZoneData} = St0) ->
-    #{
-        joined := Joined,
-        parted := Parted,
-        active := Active
-    } = ZoneData,
-    % Move all joined to active
-    Active1 = (Active ++ Joined) -- Parted,
-    ZoneData1 = ZoneData#{joined := [], parted := [], active := Active1},
-    St0#state{zone_data = ZoneData1}.
-
-session_active(Who, St0) ->
-    #{active := Active} = St0#state.zone_data,
-    lists:member(Who, Active).
+is_client(Who, St0) ->
+    #{clients := Clients} = St0#state.zone_data,
+    lists:member(Who, Clients).
