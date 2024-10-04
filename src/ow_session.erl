@@ -5,56 +5,57 @@
 %%
 %%=========================================================================
 -module(ow_session).
--behaviour(gen_server).
+-behaviour(gen_statem).
 
 % API
 -export([
-    start/1,
-    start/0,
+    start/1, start/0,
     stop/1,
     id/2, id/1,
+    connect/1,
+    disconnect/1,
     proxy/2, proxy/1,
     serializer/2, serializer/1,
     latency/2, latency/1,
     game_data/2, game_data/1,
     disconnect_callback/2, disconnect_callback/1,
-    status/1,
-    connected/1,
-    disconnected/1,
     token/2, token/1,
     zone/2, zone/1
 ]).
 
-% gen_server required callbacks
+% gen_statem required callbacks
 -export([
     init/1,
-    handle_call/3,
-    handle_cast/2,
-    handle_info/2,
-    terminate/2,
-    code_change/3
+    callback_mode/0,
+    terminate/3
+]).
+% state functions
+-export([
+    disconnected/3,
+    connected/3,
+    active/3
 ]).
 
-%-type msg() :: nonempty_binary() | [binary(), ...].
 -type serializer() :: undefined | protobuf.
 -type id() :: pos_integer().
 -type token() :: binary() | undefined.
--type status() :: preconnect | connected | disconnected.
 -type time_ms() :: non_neg_integer().
 -type mfargs() :: {atom(), atom(), list()}.
+-type proxy_pid() :: pid() | undefined.
+-type zone_pid() :: pid() | undefined.
 
 -record(session, {
     % internal use only
     id :: id(),
-    proxy :: pid() | undefined,
+    proxy :: proxy_pid(),
     serializer :: serializer(),
     latency :: time_ms(),
     game_data :: any(),
     disconnect_callback :: mfargs() | undefined,
     disconnect_timeout :: time_ms(),
-    status :: status(),
+    shutdown_delay :: time_ms(),
     token :: token(),
-    zone :: pid() | undefined
+    zone :: zone_pid()
 }).
 -export_type([serializer/0]).
 -export_type([id/0]).
@@ -76,7 +77,7 @@ start() ->
     start([]).
 -spec start([tuple()]) -> {ok, pid()}.
 start(Config) ->
-    gen_server:start(?MODULE, [Config], []).
+    gen_statem:start(?MODULE, [Config], []).
 
 %%----------------------------------------------------------------------------
 %% @doc Stop the session server
@@ -84,7 +85,7 @@ start(Config) ->
 %%----------------------------------------------------------------------------
 -spec stop(pid()) -> ok.
 stop(Pid) ->
-    gen_server:stop(Pid).
+    gen_statem:stop(Pid).
 
 %%----------------------------------------------------------------------------
 %% @doc Set the session ID for this session (network serializable)
@@ -92,7 +93,7 @@ stop(Pid) ->
 %%----------------------------------------------------------------------------
 -spec id(pid(), id()) -> {ok, id()}.
 id(PID, SessionID) ->
-    gen_server:call(PID, {set_id, SessionID}).
+    gen_statem:call(PID, {set_id, SessionID}).
 
 %%----------------------------------------------------------------------------
 %% @doc Get the session id of this session (network serializable)
@@ -100,24 +101,40 @@ id(PID, SessionID) ->
 %%----------------------------------------------------------------------------
 -spec id(pid()) -> id() | undefined.
 id(PID) ->
-    gen_server:call(PID, get_id).
+    gen_statem:call(PID, get_id).
+
+%%----------------------------------------------------------------------------
+%% @doc Alias for proxy(PID, self())
+%% @end
+%%----------------------------------------------------------------------------
+-spec connect(pid()) -> {ok, proxy_pid()}.
+connect(PID) ->
+    proxy(PID, self()).
+
+%%----------------------------------------------------------------------------
+%% @doc Alias for proxy(PID, undefined)
+%% @end
+%%----------------------------------------------------------------------------
+-spec disconnect(pid()) -> {ok, proxy_pid()}.
+disconnect(PID) ->
+    proxy(PID, undefined).
 
 %%----------------------------------------------------------------------------
 %% @doc Set the pid of the session's proxy process, including ENet, WebSocket
 %%      and internal handlers.
 %% @end
 %%----------------------------------------------------------------------------
--spec proxy(pid(), pid()) -> {ok, pid()}.
+-spec proxy(pid(), proxy_pid()) -> {ok, proxy_pid()}.
 proxy(PID, ProxyPID) ->
-    gen_server:call(PID, {set_proxy, ProxyPID}).
+    gen_statem:call(PID, {set_proxy, ProxyPID}).
 
 %%----------------------------------------------------------------------------
 %% @doc Get the pid of the session's proxy process.
 %% @end
 %%----------------------------------------------------------------------------
--spec proxy(pid()) -> pid() | undefined.
+-spec proxy(pid()) -> proxy_pid().
 proxy(PID) ->
-    gen_server:call(PID, get_proxy).
+    gen_statem:call(PID, get_proxy).
 
 %%----------------------------------------------------------------------------
 %% @doc Set the format for serializing data. If communication happens all
@@ -126,7 +143,7 @@ proxy(PID) ->
 %%----------------------------------------------------------------------------
 -spec serializer(serializer(), pid()) -> {ok, serializer()}.
 serializer(Serializer, PID) ->
-    gen_server:call(PID, {set_serializer, Serializer}).
+    gen_statem:call(PID, {set_serializer, Serializer}).
 
 %%----------------------------------------------------------------------------
 %% @doc Get the format for serializing data.
@@ -134,7 +151,7 @@ serializer(Serializer, PID) ->
 %%----------------------------------------------------------------------------
 -spec serializer(pid()) -> serializer() | undefined.
 serializer(PID) ->
-    gen_server:call(PID, get_serializer).
+    gen_statem:call(PID, get_serializer).
 
 %%----------------------------------------------------------------------------
 %% @doc Set the session latency
@@ -142,7 +159,7 @@ serializer(PID) ->
 %%----------------------------------------------------------------------------
 -spec latency(pos_integer(), pid()) -> {ok, pos_integer()}.
 latency(Latency, PID) ->
-    gen_server:call(PID, {set_latency, Latency}).
+    gen_statem:call(PID, {set_latency, Latency}).
 
 %%----------------------------------------------------------------------------
 %% @doc Get the session latency
@@ -150,7 +167,7 @@ latency(Latency, PID) ->
 %%----------------------------------------------------------------------------
 -spec latency(pid()) -> non_neg_integer().
 latency(PID) ->
-    gen_server:call(PID, get_latency).
+    gen_statem:call(PID, get_latency).
 
 %%----------------------------------------------------------------------------
 %% @doc Set the game data
@@ -158,7 +175,7 @@ latency(PID) ->
 %%----------------------------------------------------------------------------
 -spec game_data(any(), pid()) -> {ok, any()}.
 game_data(Data, PID) ->
-    gen_server:call(PID, {set_game_data, Data}).
+    gen_statem:call(PID, {set_game_data, Data}).
 
 %%----------------------------------------------------------------------------
 %% @doc Get the game data
@@ -166,7 +183,7 @@ game_data(Data, PID) ->
 %%----------------------------------------------------------------------------
 -spec game_data(pid()) -> any().
 game_data(PID) ->
-    gen_server:call(PID, get_game_info).
+    gen_statem:call(PID, get_game_info).
 
 %%----------------------------------------------------------------------------
 %% @doc Set the termination callback
@@ -174,7 +191,7 @@ game_data(PID) ->
 %%----------------------------------------------------------------------------
 -spec disconnect_callback(mfargs(), pid()) -> {ok, mfargs()}.
 disconnect_callback(Callback, PID) ->
-    gen_server:call(PID, {set_disconnect_callback, Callback}).
+    gen_statem:call(PID, {set_disconnect_callback, Callback}).
 
 %%----------------------------------------------------------------------------
 %% @doc Get the termination callback
@@ -182,32 +199,7 @@ disconnect_callback(Callback, PID) ->
 %%----------------------------------------------------------------------------
 -spec disconnect_callback(pid()) -> undefined | mfargs().
 disconnect_callback(PID) ->
-    gen_server:call(PID, get_disconnect_callback).
-
-%%----------------------------------------------------------------------------
-%% @doc Set the current session to disconnected state
-%% @end
-%%----------------------------------------------------------------------------
--spec disconnected(pid()) -> {ok, status()}.
-disconnected(PID) ->
-    gen_server:call(PID, {set_status, disconnected}).
-
-%%----------------------------------------------------------------------------
-%% @doc Set the current session to connected state
-%% @end
-%%----------------------------------------------------------------------------
--spec connected(pid()) -> {ok, status()}.
-connected(PID) ->
-    gen_server:call(PID, {set_status, connected}).
-
-%%----------------------------------------------------------------------------
-%% @doc Get the connection status. Disconnected sessions will be periodically
-%%      culled.
-%% @end
-%%----------------------------------------------------------------------------
--spec status(pid()) -> status().
-status(PID) ->
-    gen_server:call(PID, get_status).
+    gen_statem:call(PID, get_disconnect_callback).
 
 %%----------------------------------------------------------------------------
 %% @doc Sets the session token
@@ -215,7 +207,7 @@ status(PID) ->
 %%----------------------------------------------------------------------------
 -spec token(token(), pid()) -> {ok, token()}.
 token(Token, PID) ->
-    gen_server:call(PID, {set_token, Token}).
+    gen_statem:call(PID, {set_token, Token}).
 
 %%----------------------------------------------------------------------------
 %% @doc Get the session token.
@@ -223,23 +215,23 @@ token(Token, PID) ->
 %%----------------------------------------------------------------------------
 -spec token(pid()) -> token().
 token(PID) ->
-    gen_server:call(PID, get_token).
+    gen_statem:call(PID, get_token).
 
 %%----------------------------------------------------------------------------
 %% @doc Sets the zone pid
 %% @end
 %%----------------------------------------------------------------------------
--spec zone(pid(), pid()) -> {ok, pid()}.
+-spec zone(zone_pid(), pid()) -> {ok, pid()}.
 zone(ZonePID, PID) ->
-    gen_server:call(PID, {set_zone, ZonePID}).
+    gen_statem:call(PID, {set_zone, ZonePID}).
 
 %%----------------------------------------------------------------------------
 %% @doc Get the zone pid
 %% @end
 %%----------------------------------------------------------------------------
--spec zone(pid()) -> pid() | undefined.
+-spec zone(pid()) -> zone_pid().
 zone(PID) ->
-    gen_server:call(PID, get_zone).
+    gen_statem:call(PID, get_zone).
 
 %%=========================================================================
 %% Callback handlers
@@ -248,6 +240,7 @@ zone(PID) ->
 init([Config]) ->
     Session = #session{
         id = proplists:get_value(id, Config, erlang:unique_integer([positive])),
+        proxy = proplists:get_value(proxy, Config, undefined),
         serializer = proplists:get_value(serializer, Config, undefined),
         latency = proplists:get_value(latency, Config, 0),
         game_data = proplists:get_value(game_data, Config, undefined),
@@ -257,86 +250,115 @@ init([Config]) ->
         disconnect_timeout = proplists:get_value(
             disconnect_timeout, Config, ?DEFAULT_DISCONNECT_TIMEOUT
         ),
-        status = proplists:get_value(status, Config, preconnect),
+        shutdown_delay = proplists:get_value(
+            shutdown_delay, Config, ?DEFAULT_SHUTDOWN_DELAY
+        ),
         token = proplists:get_value(token, Config, undefined),
-        zone = proplists:get_value(zone, Config, undefined)
+        zone = undefined
     },
     % Register with gproc
     true = gproc:reg({n, l, Session#session.id}, ignored),
     % Set a timer to maybe terminate a stale session if it hasn't gone active
     % within the default timeout period
-    Timeout = Session#session.disconnect_timeout,
-    erlang:send_after(Timeout, self(), maybe_terminate),
-    {ok, Session}.
-
-handle_call({set_id, SessionID}, _From, Session) ->
-    {reply, {ok, SessionID}, Session#session{id = SessionID}};
-handle_call(get_id, _From, Session) ->
-    {reply, Session#session.id, Session};
-handle_call({set_proxy, ProxyPID}, _From, Session) ->
-    {reply, {ok, ProxyPID}, Session#session{proxy = ProxyPID}};
-handle_call(get_proxy, _From, Session) ->
-    {reply, Session#session.proxy, Session};
-handle_call({set_serializer, Serializer}, _From, Session) ->
-    {reply, {ok, Serializer}, Session#session{serializer = Serializer}};
-handle_call(get_serializer, _From, Session) ->
-    {reply, Session#session.serializer, Session};
-handle_call({set_latency, Latency}, _From, Session) ->
-    {reply, {ok, Latency}, Session#session{latency = Latency}};
-handle_call(get_latency, _From, Session) ->
-    {reply, Session#session.latency, Session};
-handle_call({set_game_data, GameData}, _From, Session) ->
-    {reply, {ok, GameData}, Session#session{game_data = GameData}};
-handle_call(get_game_data, _From, Session) ->
-    {reply, Session#session.game_data, Session};
-handle_call({set_disconnect_callback, TCB}, _From, Session) ->
-    {reply, {ok, TCB}, Session#session{disconnect_callback = TCB}};
-handle_call(get_disconnect_callback, _From, Session) ->
-    {reply, Session#session.disconnect_callback, Session};
-handle_call({set_status, Status}, _From, Session) when
-    Status =:= disconnected
-->
-    % On a disconnected session, set a timer to terminate this session
-    Timeout = Session#session.disconnect_timeout,
-    erlang:send_after(Timeout, self(), maybe_terminate),
-    {reply, {ok, Status}, Session#session{status = Status}};
-handle_call({set_status, Status}, _From, Session) ->
-    {reply, {ok, Status}, Session#session{status = Status}};
-handle_call(get_status, _From, Session) ->
-    {reply, Session#session.status, Session};
-handle_call({set_token, Token}, _From, Session) ->
-    {reply, {ok, Token}, Session#session{token = Token}};
-handle_call(get_token, _From, Session) ->
-    {reply, Session#session.token, Session};
-handle_call({set_zone, Zone}, _From, Session) ->
-    {reply, {ok, Zone}, Session#session{zone = Zone}};
-handle_call(get_zone, _From, Session) ->
-    {reply, Session#session.zone, Session}.
-
-handle_cast(_Msg, Session) ->
-    {noreply, Session}.
-
-handle_info(maybe_terminate, Session = #session{status = S, zone = Z}) when
-    S =:= disconnected;
-    S =:= preconnect
-->
-    case Z of
+    case Session#session.proxy of
         undefined ->
-            {stop, normal, Session};
+            Timeout = Session#session.disconnect_timeout,
+            erlang:send_after(Timeout, self(), maybe_terminate),
+            {ok, disconnected, Session};
         _ ->
-            erlang:send_after(?DEFAULT_SHUTDOWN_DELAY, self(), terminate)
-    end;
-handle_info(maybe_terminate, Session) ->
-    % Client is back into a connected state, continue on as normal.
-    {noreply, Session};
-handle_info(terminate, Session) ->
-    {stop, normal, Session};
-handle_info(_Info, Session) ->
-    {noreply, Session}.
+            {ok, connected, Session}
+    end.
 
-terminate(Reason, _Session) ->
-    logger:notice("Terminating session ~p for reason ~p", [self(), Reason]),
+callback_mode() -> state_functions.
+
+disconnected(info, maybe_terminate, _Session) ->
+    logger:debug("Caught terminate in disconnected state. Stopping ~p.", [self()]),
+    {stop, normal};
+disconnected({call, From}, {set_proxy, ProxyPID}, Session) ->
+    logger:debug("~p connecting to proxy ~p", [self(), ProxyPID]),
+    Reply = {reply, From, {ok, ProxyPID}},
+    {next_state, connected, Session#session{proxy = ProxyPID}, [Reply]};
+disconnected({call, From}, {set_zone, ZonePID}, Session) ->
+    logger:debug("Cannot connect to zone ~p: disconnected", [ZonePID]),
+    Reply = {reply, From, {error, disconnected}},
+    {keep_state, Session, [Reply]};
+disconnected(EventType, EventContent, Session) ->
+    handle_event(EventType, EventContent, Session).
+
+connected({call, From}, {set_zone, ZonePID}, Session) ->
+    logger:debug("~p requests zone be set to ~p", [From, ZonePID]),
+    Reply = {reply, From, {ok, ZonePID}},
+    {next_state, active, Session#session{zone = ZonePID}, [Reply]};
+connected(EventType, EventContent, Session) ->
+    handle_event(EventType, EventContent, Session).
+
+active({call, From}, {set_zone, ZonePID}, Session) ->
+    logger:debug("~p requests zone be set to ~p", [From, ZonePID]),
+    Reply = {reply, From, {ok, undefined}},
+    {next_state, connected, Session#session{zone = ZonePID}, [Reply]};
+active(EventType, EventContent, Session) ->
+    handle_event(EventType, EventContent, Session).
+
+% Fall-throughs
+
+handle_event({call, From}, {set_id, SessionID}, Session) ->
+    Reply = {reply, From, {ok, SessionID}},
+    {keep_state, Session#session{id = SessionID}, [Reply]};
+handle_event({call, From}, get_id, Session) ->
+    Reply = {reply, From, Session#session.id},
+    {keep_state, Session, [Reply]};
+handle_event({call, From}, {set_proxy, undefined}, Session) ->
+    Reply = {reply, From, {ok, undefined}},
+    Timeout = Session#session.disconnect_timeout,
+    erlang:send_after(Timeout, self(), maybe_terminate),
+    {next_state, disconnected, Session#session{proxy = undefined}, [Reply]};
+handle_event({call, From}, {set_proxy, ProxyPID}, Session) ->
+    Reply = {reply, From, {ok, ProxyPID}},
+    {keep_state, Session#session{proxy = ProxyPID}, [Reply]};
+handle_event({call, From}, get_proxy, Session) ->
+    Reply = {reply, From, Session#session.proxy},
+    {keep_state, Session, [Reply]};
+handle_event({call, From}, {set_serializer, Serializer}, Session) ->
+    Reply = {reply, From, {ok, Serializer}},
+    {keep_state, Session#session{serializer = Serializer}, [Reply]};
+handle_event({call, From}, get_serializer, Session) ->
+    Reply = {reply, From, Session#session.serializer},
+    {keep_state, Session, [Reply]};
+handle_event({call, From}, {set_latency, Latency}, Session) ->
+    Reply = {reply, From, {ok, Latency}},
+    {keep_state, Session#session{latency = Latency}, [Reply]};
+handle_event({call, From}, get_latency, Session) ->
+    Reply = {reply, From, Session#session.latency},
+    {keep_state, Session, [Reply]};
+handle_event({call, From}, {set_game_data, GameData}, Session) ->
+    Reply = {reply, From, {ok, GameData}},
+    {keep_state, Session#session{game_data = GameData}, [Reply]};
+handle_event({call, From}, get_game_data, Session) ->
+    Reply = {reply, From, Session#session.game_data},
+    {keep_state, Session, [Reply]};
+handle_event({call, From}, {set_disconnect_callback, MFArgs}, Session) ->
+    Reply = {reply, From, {ok, MFArgs}},
+    {keep_state, Session#session{disconnect_callback = MFArgs}, [Reply]};
+handle_event({call, From}, get_disconnect_callback, Session) ->
+    Reply = {reply, From, Session#session.disconnect_callback},
+    {keep_state, Session, [Reply]};
+handle_event({call, From}, {set_token, Token}, Session) ->
+    Reply = {reply, From, {ok, Token}},
+    {keep_state, Session#session{token = Token}, [Reply]};
+handle_event({call, From}, get_token, Session) ->
+    Reply = {reply, From, Session#session.token},
+    {keep_state, Session, [Reply]};
+handle_event({call, From}, {set_zone, Zone}, Session) ->
+    logger:debug("Cannot connect to zone ~p: not connected", [Zone]),
+    Reply = {reply, From, {error, not_connected}},
+    {keep_state, Session, [Reply]};
+handle_event({call, From}, get_zone, Session) ->
+    Reply = {reply, From, Session#session.zone},
+    {keep_state, Session, [Reply]};
+handle_event(info, maybe_terminate, Session) ->
+    {keep_state, Session};
+handle_event(_, _, Session) ->
+    {keep_state, Session}.
+
+terminate(_Reason, _State, _Data) ->
     ok.
-
-code_change(_OldVsn, Session, _Extra) ->
-    {ok, Session}.

@@ -23,7 +23,7 @@
 init(Req, _St0) ->
     #{peer := {RawIP, _Port}} = Req,
     IP = inet:ntoa(RawIP),
-    {ok, Pid} = ow_session_sup:new([{proxy, self()}]),
+    {ok, Pid} = ow_session_sup:new([]),
     logger:debug("Started session ~p for WebSocket conn. ~p", [Pid, IP]),
     {cowboy_websocket, Req, Pid}.
 
@@ -42,8 +42,9 @@ terminate(_Reason, Req, Pid) ->
 %% @end
 %%---------------------------------------------------------------------------
 -spec websocket_init(any()) -> {ok, any()}.
-websocket_init(State) ->
-    {ok, State}.
+websocket_init(Pid) ->
+    ow_session:proxy(Pid, self()),
+    {ok, Pid}.
 
 %%---------------------------------------------------------------------------
 %% @doc The websocket handler passes any binary message down to the protocol

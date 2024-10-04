@@ -226,6 +226,4 @@ func _connected(proto = ""):
 
 func _on_session_beacon(id):
 	# Used for latency measurements
-	if debug:
-		print("[DEBUG] Processing a session beacon packet")
 	session_ping(id)
