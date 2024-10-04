@@ -6,7 +6,6 @@
   {applications,
    [kernel,
 	stdlib,
-	mnesia,
 	gproc,
 	cowboy,
 	enet
