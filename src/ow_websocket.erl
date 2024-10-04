@@ -81,7 +81,6 @@ websocket_handle(Frame, Pid) ->
 websocket_info({_From, client_msg, {MsgType, Msg}}, Pid) ->
     % Encode the message into binary
     Bin = to_binary(MsgType, Msg),
-    logger:notice("Forwarding a client_msg: ~p", [MsgType]),
     {reply, {binary, Bin}, Pid};
 websocket_info({reconnect_session, Pid1}, _Pid) ->
     {ok, Pid1};
