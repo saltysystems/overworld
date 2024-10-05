@@ -56,9 +56,82 @@ deps, [
 
 Run `rebar3 upgrade` to fetch dependencies.
 
-## Implementing the chat zone 
+## Implementing the chat zone module
+First, let's create the chat_zone. From the top-level directory of the chat application:
 
-The Chat Zone is the core component of our chat application, handling all client interactions and message routing. This section will guide you through implementing the `chat_zone` module, explaining each part in detail.
+```bash
+touch src/chat_zone.erl
+```
+
+Now open the `chat_zone.erl` module and paste in the following. We'll go over it section-by-section afterwards. 
+```erlang
+-module(chat_zone).
+-behaviour(ow_zone).
+
+-export([
+         start_link/0,
+         stop/0,
+         join/2,
+         part/2,
+         channel_msg/2
+        ]).
+
+-export([init/1,
+         handle_join/4,
+         handle_part/4,
+         handle_channel_msg/4,
+         handle_tick/2
+        ]).
+
+-define(SERVER, ?MODULE).
+
+-rpc_client([sync, channel_msg]).
+-rpc_server([join, part, channel_msg]).
+
+start_link() ->
+    ow_zone:start_link({local, ?SERVER}, ?MODULE, [], []).
+stop() ->
+    ow_zone:stop(?SERVER).
+join(Msg, Who) ->
+    ow_zone:join(?SERVER, Msg, Who).
+part(Msg, Who) ->
+    ow_zone:part(?SERVER, Msg, Who).
+channel_msg(Msg, Who) ->
+    ow_zone:rpc(?SERVER, channel_msg, Msg, Who).
+
+init([]) ->
+    State = #{},
+    Config = #{},
+    {ok, State, Config}.
+
+handle_join(Msg, Who, _ZD, State) ->
+    SessionID = ow_session:id(Who),
+    Handle = maps:get(handle, Msg, "Unknown" ++ integer_to_list(SessionID)),
+    logger:notice("Player ~p (~p) has joined the chat.", [Handle, Who]),
+    State1 = State#{ Who => Handle },
+    Handles = maps:values(State1),
+    BcastMsg = {sync, #{ handles => Handles }},
+    {broadcast, BcastMsg, State1}.
+
+handle_part(_Msg, Who, _ZD, State) ->
+    #{ Who := Handle } = State,
+    logger:notice("Player ~p (~p) has left the chat.", [Handle, Who]),
+    State1 = maps:remove(Who, State),
+    Handles = maps:values(State1),
+    BcastMsg = {sync, #{ handles => Handles }},
+    {broadcast, BcastMsg, State1}.
+
+handle_channel_msg(Msg, Who, _ZD, State) ->
+    #{ Who := Handle } = State,
+    logger:notice("<~p>: ~p", [Handle, Msg]),
+    Msg1 = Msg#{ handle => Handle },
+    ow_zone:broadcast(?SERVER, {channel_msg, Msg1}),
+    {noreply, State}.
+handle_tick(_ZoneData, State) ->
+    {noreply, State}.
+```
+
+Next we'll explain each component in detail. 
 
 ### Module Structure
 
@@ -208,71 +281,127 @@ handle_tick(_ZoneData, State) ->
 
 This function is called periodically by Overworld. In this simple chat application, we don't need to do anything on each tick, so we just return the unchanged state.
 
-## The complete `chat_zone.erl` module:
-Finally, here's the completed chat_zone.erl module:
-```erlang
--module(chat_zone).
--behaviour(ow_zone).
+## Chat Application Protocol Buffer Schema
 
--export([
-         start_link/0,
-         stop/0,
-         join/2,
-         part/2,
-         channel_msg/2
-        ]).
+### Overview
 
--export([init/1,
-         handle_join/4,
-         handle_part/4,
-         handle_channel_msg/4,
-         handle_tick/2
-        ]).
+For our chat application, we use Protocol Buffers to define the structure of messages exchanged between the Erlang server and Godot clients. This schema defines four types of messages: join, part, channel_msg, and sync.
 
--define(SERVER, ?MODULE).
+### Creating the Schema File
 
--rpc_client([sync, channel_msg]).
--rpc_server([join, part, channel_msg]).
+Create a new file `chat.proto` in the `priv/proto` directory of your Erlang application:
 
-start_link() ->
-    ow_zone:start_link({local, ?SERVER}, ?MODULE, [], []).
-stop() ->
-    ow_zone:stop(?SERVER).
-join(Msg, Who) ->
-    ow_zone:join(?SERVER, Msg, Who).
-part(Msg, Who) ->
-    ow_zone:part(?SERVER, Msg, Who).
-channel_msg(Msg, Who) ->
-    ow_zone:rpc(?SERVER, channel_msg, Msg, Who).
-
-init([]) ->
-    State = #{},
-    Config = #{},
-    {ok, State, Config}.
-
-handle_join(Msg, Who, _ZD, State) ->
-    SessionID = ow_session:id(Who),
-    Handle = maps:get(handle, Msg, "Unknown" ++ integer_to_list(SessionID)),
-    logger:notice("Player ~p (~p) has joined the chat.", [Handle, Who]),
-    State1 = State#{ Who => Handle },
-    Handles = maps:values(State1),
-    BcastMsg = {sync, #{ handles => Handles }},
-    {broadcast, BcastMsg, State1}.
-
-handle_part(_Msg, Who, _ZD, State) ->
-    #{ Who := Handle } = State,
-    logger:notice("Player ~p (~p) has left the chat.", [Handle, Who]),
-    State1 = maps:remove(Who, State),
-    Handles = maps:values(State1),
-    BcastMsg = {sync, #{ handles => Handles }},
-    {broadcast, BcastMsg, State1}.
-
-handle_channel_msg(Msg, Who, _ZD, State) ->
-    #{ Who := Handle } = State,
-    logger:notice("<~p>: ~p", [Handle, Msg]),
-    Msg1 = Msg#{ handle => Handle },
-    ow_zone:broadcast(?SERVER, {channel_msg, Msg1}),
-    {noreply, State}.
-handle_tick(_ZoneData, State) ->
-    {noreply, State}.
+```bash
+mkdir -p priv/proto
+touch priv/proto/chat.proto
 ```
+
+### The Schema Definition
+
+Open `chat.proto` and add the following content:
+
+```protobuf
+syntax = "proto2";
+
+package chat;
+
+message chat {
+    oneof msg {
+        join        join        = 1;
+        part        part        = 2;
+        channel_msg channel_msg = 3;
+        sync        sync        = 4;
+    }
+}
+
+message join {
+    optional string handle = 1;
+}
+
+message part {
+}
+
+message channel_msg {
+    optional string handle = 1;
+    optional string text = 2;
+}
+
+message sync {
+    repeated string handles = 1;
+}
+```
+
+### Explanation of Message Types
+
+#### Main chat Message
+
+The `chat` message is the wrapper for all other message types. It uses a `oneof` field, which means each `chat` message will contain exactly one of the submessage types.
+
+```protobuf
+message chat {
+    oneof msg {
+        join        join        = 1;
+        part        part        = 2;
+        channel_msg channel_msg = 3;
+        sync        sync        = 4;
+    }
+}
+```
+
+#### Join Message
+
+Used when a client joins the chat.
+
+```protobuf
+message join {
+    optional string handle = 1;
+}
+```
+
+- `handle`: The user's chosen display name. It's optional, allowing the server to assign a default if none is provided.
+
+#### Part Message
+
+Used when a client leaves the chat.
+
+```protobuf
+message part {
+}
+```
+
+This message is empty because no additional information is needed when a user leaves.
+
+#### Channel Message
+
+Used for sending chat messages.
+
+```protobuf
+message channel_msg {
+    optional string handle = 1;
+    optional string text = 2;
+}
+```
+
+- `handle`: The sender's display name.
+- `text`: The content of the message.
+
+#### Sync Message
+
+Used to update clients with the current list of users in the chat.
+
+```protobuf
+message sync {
+    repeated string handles = 1;
+}
+```
+
+- `handles`: A list of all current user handles in the chat.
+
+### Usage in the Chat Application
+
+- When a user joins, the client sends a `join` message with their chosen handle.
+- The server responds with a `sync` message to all clients, updating the user list.
+- Users send chat messages using the `channel_msg` type.
+- When a user leaves, the client sends a `part` message, and the server again sends a `sync` to all remaining clients.
+
+This schema provides a simple yet flexible structure for our chat application, allowing for easy extension if we need to add more features in the future.
