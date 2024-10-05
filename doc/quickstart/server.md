@@ -141,7 +141,7 @@ These functions mostly delegate to the `ow_zone` module, which handles the under
 
 Next, we'll implement the callback functions required by the `ow_zone` behavior:
 
-####init/1
+#### init/1
 
 ```erlang
 init([]) ->
