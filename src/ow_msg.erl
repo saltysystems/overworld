@@ -1,5 +1,4 @@
 -module(ow_msg).
--behaviour(ow_router).
 
 % This module does double-duty as a generic encoder/decoder for applications
 % (encode/4, decode/4), and also an Overworld-specific application encoder

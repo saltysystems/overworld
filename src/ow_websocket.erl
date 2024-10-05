@@ -91,4 +91,5 @@ websocket_info(Info, Session) ->
 to_binary(MsgType, Msg) ->
     #{encoder := Encoder} = ow_protocol:rpc(MsgType, client),
     #{interface := EncoderMod, app := App, lib := EncoderLib} = Encoder,
+    logger:debug("calling ~p:encode(~p,~p,~p,~p)", [EncoderMod, Msg, MsgType, EncoderLib, App]),
     erlang:apply(EncoderMod, encode, [Msg, MsgType, EncoderLib, App]).

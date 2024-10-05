@@ -37,6 +37,7 @@
 ]).
 
 -include_lib("eunit/include/eunit.hrl").
+-define(DEFAULT_ENET_PARAMS, #{qos => reliable, channel => 0}).
 
 %%=========================================================================
 %% API
@@ -128,9 +129,11 @@ route(<<Prefix:16, Msg/binary>>, SessionPID) ->
             logger:notice("No router for prefix: 0x~.16b", [Prefix]),
             logger:notice("The rest of the message: ~p", [Msg]),
             ok;
-        Mod ->
+        #{ app := Application, router := Router } ->
             % Assume this app implements the ow_router behaviour
-            erlang:apply(Mod, decode, [Msg, SessionPID])
+            % Get the EncoderLib and Application
+            EncoderLib = list_to_existing_atom(atom_to_list(Application) ++ "_pb"),
+            erlang:apply(Router, decode, [Msg, SessionPID, EncoderLib, Application])
     end.
 
 %%-------------------------------------------------------------------------
@@ -139,6 +142,7 @@ route(<<Prefix:16, Msg/binary>>, SessionPID) ->
 %%-------------------------------------------------------------------------
 -spec router(integer()) -> atom().
 router(Prefix) ->
+    logger:notice("router prefix: ~p", [Prefix]),
     gen_server:call(?MODULE, {router, Prefix}).
 
 %%============================================================================
@@ -171,6 +175,8 @@ handle_call(apps, _From, #{apps := Apps} = St0) ->
     {reply, Apps, St0};
 handle_call({prefix, PrefixName}, _From, #{apps := Apps} = St0) ->
     %[Prefix] = [P || {P,App} <- Apps, App == PrefixName],
+    logger:notice("Apps: ~p", [Apps]),
+    logger:notice("PrefixName: ~p", [PrefixName]),
     [Prefix] = [P || {P, #{app := App}} <- Apps, App == PrefixName],
     {reply, Prefix, St0};
 handle_call(app_names, _From, #{apps := Apps} = St0) ->
@@ -195,9 +201,7 @@ handle_call({router, Prefix}, _From, #{apps := Apps} = St0) ->
     Reply =
         case orddict:is_key(Prefix, Apps) of
             true ->
-                App = orddict:fetch(Prefix, Apps),
-                #{router := Router} = App,
-                Router;
+                orddict:fetch(Prefix, Apps);
             false ->
                 false
         end,
@@ -324,7 +328,7 @@ inject_module_test() ->
 -spec inject_defaults(map()) -> map().
 inject_defaults(PropMap) ->
     F = fun(_Key, Val) ->
-        maps:merge(ow_router:defaults(), Val)
+        maps:merge(?DEFAULT_ENET_PARAMS, Val)
     end,
     maps:map(F, PropMap).
 
@@ -361,7 +365,14 @@ inject_encoder(Module, PropMap) ->
     App = list_to_atom(Prefix),
     % Make the best guess for lib and interface modules
     EncoderLib = list_to_atom(Prefix ++ "_pb"),
-    EncoderInterface = list_to_atom(Prefix ++ "_msg"),
+    MaybeEncoderMod = list_to_atom(Prefix ++ "_msg"),
+    EncoderInterface =
+        case erlang:module_loaded(MaybeEncoderMod) of 
+            true -> 
+                MaybeEncoderMod;
+            false ->
+                ow_msg % default
+        end,
     DefaultMap = #{
         app => App,
         lib => EncoderLib,
@@ -451,19 +462,24 @@ auto_register(St0) ->
 
 -spec get_overworld_config(atom()) -> map().
 get_overworld_config(App) ->
-    DefaultRouter = list_to_atom(atom_to_list(App) ++ "_msg"),
+    MaybeRouter = list_to_atom(atom_to_list(App) ++ "_msg"),
+    Router = 
+        case erlang:module_loaded(MaybeRouter) of
+            true -> MaybeRouter;
+            false -> ow_msg
+        end,
     case application:get_env(App, overworld) of
         undefined ->
             % No config, deliver default config
             #{
                 app => App,
-                router => DefaultRouter,
+                router => Router,
                 modules => auto
             };
         {ok, Config} ->
             Default = #{
                 app => App,
-                router => DefaultRouter,
+                router => Router,
                 modules => auto
             },
             maps:merge(Default, Config)
