@@ -207,3 +207,72 @@ handle_tick(_ZoneData, State) ->
 ```
 
 This function is called periodically by Overworld. In this simple chat application, we don't need to do anything on each tick, so we just return the unchanged state.
+
+## The complete `chat_zone.erl` module:
+Finally, here's the completed chat_zone.erl module:
+```erlang
+-module(chat_zone).
+-behaviour(ow_zone).
+
+-export([
+         start_link/0,
+         stop/0,
+         join/2,
+         part/2,
+         channel_msg/2
+        ]).
+
+-export([init/1,
+         handle_join/4,
+         handle_part/4,
+         handle_channel_msg/4,
+         handle_tick/2
+        ]).
+
+-define(SERVER, ?MODULE).
+
+-rpc_client([sync, channel_msg]).
+-rpc_server([join, part, channel_msg]).
+
+start_link() ->
+    ow_zone:start_link({local, ?SERVER}, ?MODULE, [], []).
+stop() ->
+    ow_zone:stop(?SERVER).
+join(Msg, Who) ->
+    ow_zone:join(?SERVER, Msg, Who).
+part(Msg, Who) ->
+    ow_zone:part(?SERVER, Msg, Who).
+channel_msg(Msg, Who) ->
+    ow_zone:rpc(?SERVER, channel_msg, Msg, Who).
+
+init([]) ->
+    State = #{},
+    Config = #{},
+    {ok, State, Config}.
+
+handle_join(Msg, Who, _ZD, State) ->
+    SessionID = ow_session:id(Who),
+    Handle = maps:get(handle, Msg, "Unknown" ++ integer_to_list(SessionID)),
+    logger:notice("Player ~p (~p) has joined the chat.", [Handle, Who]),
+    State1 = State#{ Who => Handle },
+    Handles = maps:values(State1),
+    BcastMsg = {sync, #{ handles => Handles }},
+    {broadcast, BcastMsg, State1}.
+
+handle_part(_Msg, Who, _ZD, State) ->
+    #{ Who := Handle } = State,
+    logger:notice("Player ~p (~p) has left the chat.", [Handle, Who]),
+    State1 = maps:remove(Who, State),
+    Handles = maps:values(State1),
+    BcastMsg = {sync, #{ handles => Handles }},
+    {broadcast, BcastMsg, State1}.
+
+handle_channel_msg(Msg, Who, _ZD, State) ->
+    #{ Who := Handle } = State,
+    logger:notice("<~p>: ~p", [Handle, Msg]),
+    Msg1 = Msg#{ handle => Handle },
+    ow_zone:broadcast(?SERVER, {channel_msg, Msg1}),
+    {noreply, State}.
+handle_tick(_ZoneData, State) ->
+    {noreply, State}.
+```
