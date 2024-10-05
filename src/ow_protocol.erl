@@ -129,7 +129,7 @@ route(<<Prefix:16, Msg/binary>>, SessionPID) ->
             logger:notice("No router for prefix: 0x~.16b", [Prefix]),
             logger:notice("The rest of the message: ~p", [Msg]),
             ok;
-        {MsgModule, EncoderLib, Application} -> 
+        {MsgModule, EncoderLib, Application} ->
             erlang:apply(MsgModule, decode, [Msg, SessionPID, EncoderLib, Application])
         %#{app := Application, router := Router} ->
         %    % Assume this app implements the ow_router behaviour
@@ -142,7 +142,7 @@ route(<<Prefix:16, Msg/binary>>, SessionPID) ->
 %% @doc Return the module and decoder function for a given prefix
 %% @end
 %%-------------------------------------------------------------------------
--spec router(integer()) -> atom().
+-spec router(integer()) -> false | {atom(), atom(), atom()}.
 router(Prefix) ->
     gen_server:call(?MODULE, {router, Prefix}).
 
@@ -203,7 +203,7 @@ handle_call({router, Prefix}, _From, #{apps := Apps} = St0) ->
             false ->
                 false
         end,
-    #{ router := MsgModule, app := Application, encoder := EncoderLib } = AppMap,
+    #{router := MsgModule, app := Application, encoder := EncoderLib} = AppMap,
     {reply, {MsgModule, EncoderLib, Application}, St0}.
 
 handle_cast(_Request, St0) ->
