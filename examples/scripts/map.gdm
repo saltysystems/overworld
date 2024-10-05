@@ -1,5 +1,0 @@
-var a = goblet.stupidmap(2)
-var b = {"asdf": "jkl", "zip": 4}
-print(a["A"])
-print(a["B"])
-print(b)
