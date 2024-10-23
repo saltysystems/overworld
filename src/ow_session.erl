@@ -286,14 +286,12 @@ disconnected(EventType, EventContent, Session) ->
     handle_event(EventType, EventContent, Session).
 
 connected({call, From}, {set_zone, ZonePID}, Session) ->
-    logger:debug("~p requests zone be set to ~p", [From, ZonePID]),
     Reply = {reply, From, {ok, ZonePID}},
     {next_state, active, Session#session{zone = ZonePID}, [Reply]};
 connected(EventType, EventContent, Session) ->
     handle_event(EventType, EventContent, Session).
 
 active({call, From}, {set_zone, ZonePID}, Session) ->
-    logger:debug("~p requests zone be set to ~p", [From, ZonePID]),
     Reply = {reply, From, {ok, undefined}},
     {next_state, connected, Session#session{zone = ZonePID}, [Reply]};
 active(EventType, EventContent, Session) ->
