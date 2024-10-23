@@ -224,7 +224,13 @@ code_change(_OldVsn, St0, _Extra) ->
 -spec reg_rpc(atom(), map()) -> map().
 reg_rpc(Module, #{c_rpc := CRPC, s_rpc := SRPC} = St0) ->
     % Get module info for the module
-    AllAttributes = erlang:apply(Module, module_info, [attributes]),
+    AllAttributes =
+        try
+            erlang:apply(Module, module_info, [attributes])
+        catch
+            error:_Reason ->
+                []
+        end,
     F = fun(Attribute) ->
         case proplists:lookup(Attribute, AllAttributes) of
             none ->
