@@ -133,8 +133,17 @@
     State :: term(),
     Result :: ow_zone_cast_resp().
 
+-callback handle_info(Msg, State) -> Result when
+    Msg :: term(),
+    State :: term(),
+    Result :: ow_zone_cast_resp().
+
 -optional_callbacks([
-    handle_join/4, handle_part/4, handle_disconnect/3, handle_reconnect/3
+    handle_join/4,
+    handle_part/4,
+    handle_disconnect/3,
+    handle_reconnect/3,
+    handle_info/2
 ]).
 -hank([{unused_callbacks, [all]}]).
 
@@ -463,25 +472,24 @@ handle_info(?TAG_I(tick), St0) ->
         {ReplyType, Msg, CbData1} ->
             ok = handle_notify(ReplyType, Msg, St1),
             {noreply, St1#state{cb_data = CbData1}}
+    end;
+handle_info(Msg, #state{cb_mod = CbMod} = St0) ->
+    #state{cb_mod = CbMod, cb_data = CbData0} = St0,
+    maybe
+        true ?= erlang:function_exported(CbMod, handle_info, 2),
+        {noreply, CbData1} ?= CbMod:handle_info(Msg, CbData0),
+        {noreply, St0#state{cb_data = CbData1}}
+    else
+        false ->
+            {noreply, St0};
+        {reply, _Msg, CbDataN} ->
+            logger:warning("Dropping 'reply' message sent to info handler in zone ~p", [self()]),
+            {noreply, St0#state{cb_data = CbDataN}};
+        {MsgType, Msg1, CbDataN} ->
+            St1 = St0#state{cb_data = CbDataN},
+            handle_notify(MsgType, Msg1, St1),
+            {noreply, St1}
     end.
-
-% Undocumented handle_info fall-through. TBD if useful, so commented for now.
-%handle_info(Msg, #state{cb_mod = CbMod} = St0) ->
-%    #state{cb_mod = CbMod, cb_data = CbData0} = St0,
-%    maybe
-%        true ?= erlang:function_exported(CbMod, handle_info, 2),
-%        {noreply, CbData1} ?= CbMod:handle_info(Msg, CbData0),
-%        {noreply, St0#state{cb_data = CbData1}}
-%    else
-%        false ->
-%            {noreply, St0};
-%        {reply, _Msg, CbData} ->
-%            logger:warning("Dropping 'reply' message sent to info handler in zone ~p", [self()]),
-%            {noreply, St0#state{cb_data = CbData}};
-%        {MsgType, Msg, CbData} ->
-%            handle_notify(MsgType, Msg, St0),
-%            {noreply, St0#state{cb_data=CbData}}
-%    end.
 
 terminate(_Reason, _St0) -> ok.
 code_change(_OldVsn, St0, _Extra) -> {ok, St0}.
