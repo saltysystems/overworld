@@ -29,6 +29,10 @@ init([]) ->
 
     ChildSpecs = [
         #{
+            id => pg,
+            start => {pg, start_link, [overworld]}
+        },
+        #{
             id => ow_protocol,
             start => {ow_protocol, start, []}
         },
