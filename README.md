@@ -40,7 +40,7 @@ Prerequisites
 
 Quickstart
 -------------------------------------------------
-See [here](docs/quickstart/intro.md)
+See [here](guides/quickstart/intro.md)
 
 Roadmap
 -------------------------------------------------
