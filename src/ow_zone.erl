@@ -498,13 +498,13 @@ code_change(_OldVsn, St0, _Extra) -> {ok, St0}.
 %% Internal functions
 %%=======================================================================
 
-handle_notify({send, IDs}, {MsgType, Msg}, _St0) ->
+handle_notify({send, IDs}, Msg, _St0) ->
     % Filter down to only the clients specified
-    ok = ow_session_util:notify_clients(MsgType, Msg, IDs),
+    ok = ow_session_util:notify_clients(Msg, IDs),
     ok;
-handle_notify(broadcast, {MsgType, Msg}, St0) ->
+handle_notify(broadcast, Msg, St0) ->
     #{clients := Clients} = St0#state.zone_data,
-    ok = ow_session_util:notify_clients(MsgType, Msg, Clients),
+    ok = ow_session_util:notify_clients(Msg, Clients),
     ok;
 handle_notify(reply, {MsgType, Msg}, _St0) ->
     {MsgType, Msg}.

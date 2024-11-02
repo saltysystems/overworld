@@ -10,7 +10,7 @@
 % RPC functions
 -export([session_ping/2, session_request/2]).
 % Utility functions
--export([disconnect/1, notify_clients/3]).
+-export([disconnect/1, notify_clients/2]).
 
 %%===========================================================================
 %% RPC API
@@ -52,7 +52,7 @@ session_request(Msg, SessionPID) ->
             ID = ow_session:id(SessionPID),
             Reply = #{id => ID, reconnect_token => NewToken},
             % Send the reply back through the proxy
-            notify_clients(session_new, Reply, [SessionPID]);
+            notify_clients({session_new, Reply}, [SessionPID]);
         _ ->
             {PrevSessionPID, NewToken} = ow_token_serv:exchange(Token),
             % Inform the proxy process to update its session ID to refer to the
@@ -99,10 +99,10 @@ disconnect(SessionPID) ->
 %% @doc Send a message to a list of clients
 %% @end
 %%----------------------------------------------------------------------------
--spec notify_clients(atom(), map(), [pid()]) -> ok.
-notify_clients(_MsgType, _Msg, []) ->
+-spec notify_clients({atom(), map()}, [pid()]) -> ok.
+notify_clients({_MsgType, _Msg}, []) ->
     ok;
-notify_clients(MsgType, Msg, [SessionPID | Rest]) ->
+notify_clients({MsgType, Msg}, [SessionPID | Rest]) ->
     logger:debug("Notifying client ~p: ~p", [SessionPID, {MsgType, Msg}]),
     try
         ProxyPID = ow_session:proxy(SessionPID),
@@ -121,4 +121,4 @@ notify_clients(MsgType, Msg, [SessionPID | Rest]) ->
             logger:debug("Couldn't communicate with session ~p: noproc", [SessionPID]),
             ok
     end,
-    notify_clients(MsgType, Msg, Rest).
+    notify_clients({MsgType, Msg}, Rest).

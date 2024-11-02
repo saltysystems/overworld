@@ -1,6 +1,6 @@
 {application, overworld,
  [{description, "Multiplayer game server framework"},
-  {vsn, "2.0.0"},
+  {vsn, "2.0.1"},
   {registered, []},
   {mod, {ow_app, []}},
   {applications,

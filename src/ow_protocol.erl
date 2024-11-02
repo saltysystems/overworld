@@ -437,8 +437,8 @@ register_rpcs(#{app := App}, St0) ->
 
 -spec auto_register(map()) -> map().
 auto_register(St0) ->
-    % Get all loaded application modules
-    AllApps = application:loaded_applications(),
+    % Get all loaded application modules and sort them alphabetically
+    AllApps = lists:sort(application:loaded_applications()),
     % For each app, attempt to register modules.
     % If registration is successful, register the app
     F = fun({App, _Descr, _Vers}, State0) ->
