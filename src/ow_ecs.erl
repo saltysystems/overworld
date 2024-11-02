@@ -2,12 +2,8 @@
 
 -behaviour(gen_server).
 
--define(SERVER(World),
-    {via, gproc, {n, l, {?MODULE, World}}}
-).
-
 %% API
--export([start/1, start_link/1, stop/1]).
+-export([start/0, start_link/0, stop/1]).
 -export([
     new_entity/2,
     rm_entity/2,
@@ -47,7 +43,6 @@
 % Types and Records
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -record(world, {
-    name :: term(),
     systems = [] :: [{term(), system()}],
     entities :: ets:tid(),
     components :: ets:tid()
@@ -55,6 +50,8 @@
 
 -type world() :: #world{}.
 -export_type([world/0]).
+-type world_ref() :: pid().
+-export_type([world_ref/0]).
 -type component() :: {term(), term()}.
 -type entity() :: {term(), [component()]}.
 -export_type([entity/0]).
@@ -64,14 +61,17 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % API
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-start(World) ->
-    gen_server:start(?SERVER(World), ?MODULE, [World], []).
+-spec start() -> gen_server:start_ret().
+start() ->
+    gen_server:start(?MODULE, [], []).
 
-start_link(World) ->
-    gen_server:start_link(?SERVER(World), ?MODULE, [World], []).
+-spec start_link() -> gen_server:start_ret().
+start_link() ->
+    gen_server:start_link(?MODULE, [], []).
 
-stop(World) ->
-    gen_server:stop(?SERVER(World)).
+-spec stop(pid()) -> ok.
+stop(PID) ->
+    gen_server:stop(PID).
 
 % This can potentially create an unbounded number of atoms! Careful!
 -spec to_map(entity()) -> map().
@@ -107,30 +107,30 @@ take(Component, ComponentList, Default) ->
             Default
     end.
 
--spec try_component(term(), id(), world()) -> {ok, [term()]} | false.
-try_component(ComponentName, EntityID, World) ->
+-spec try_component(term(), id(), pid()) -> {ok, [term()]} | false.
+try_component(ComponentName, EntityID, WorldRef) ->
     % @doc If EntityID has the specified ComponentName, return all components
     gen_server:call(
-        ?SERVER(World), {try_component, ComponentName, EntityID}
+        WorldRef, {try_component, ComponentName, EntityID}
     ).
 
--spec match_component(term(), world()) -> [entity()].
-match_component(ComponentName, World) ->
-    gen_server:call(?SERVER(World), {match_component, ComponentName}).
+-spec match_component(term(), world_ref()) -> [entity()].
+match_component(ComponentName, WorldRef) ->
+    gen_server:call(WorldRef, {match_component, ComponentName}).
 
--spec match_components([term()], world()) -> [entity()].
-match_components(List, World) ->
+-spec match_components([term()], world_ref()) -> [entity()].
+match_components(List, WorldRef) ->
     % Multi-match. Try to match several components and return the common
     % elements. Use sets v2 introduced in OTP 24
     Sets = [
-        sets:from_list(match_component(X, World), [{version, 2}])
+        sets:from_list(match_component(X, WorldRef), [{version, 2}])
      || X <- List
     ],
     sets:to_list(sets:intersection(Sets)).
 
--spec foreach_component(fun(), term(), world()) -> ok.
-foreach_component(Fun, Component, World) ->
-    Entities = match_component(Component, World),
+-spec foreach_component(fun(), term(), world_ref()) -> ok.
+foreach_component(Fun, Component, WorldRef) ->
+    Entities = match_component(Component, WorldRef),
     F =
         fun({ID, EntityComponents}) ->
             Values = get(Component, EntityComponents),
@@ -138,76 +138,76 @@ foreach_component(Fun, Component, World) ->
         end,
     lists:foreach(F, Entities).
 
--spec new_entity(id(), world()) -> ok.
-new_entity(EntityID, World) ->
-    gen_server:call(?SERVER(World), {new_entity, EntityID}).
+-spec new_entity(id(), world_ref()) -> ok.
+new_entity(EntityID, WorldRef) ->
+    gen_server:call(WorldRef, {new_entity, EntityID}).
 
--spec rm_entity(id(), world()) -> ok.
-rm_entity(EntityID, World) ->
-    gen_server:call(?SERVER(World), {rm_entity, EntityID}).
+-spec rm_entity(id(), world_ref()) -> ok.
+rm_entity(EntityID, WorldRef) ->
+    gen_server:call(WorldRef, {rm_entity, EntityID}).
 
--spec entity(id(), world()) -> {id(), [term()]} | false.
-entity(EntityID, World) ->
-    gen_server:call(?SERVER(World), {entity, EntityID}).
+-spec entity(id(), world_ref()) -> {id(), [term()]} | false.
+entity(EntityID, WorldRef) ->
+    gen_server:call(WorldRef, {entity, EntityID}).
 
--spec entities(world()) -> [{id(), [term()]}].
-entities(World) ->
-    gen_server:call(?SERVER(World), entities).
+-spec entities(world_ref()) -> [{id(), [term()]}].
+entities(WorldRef) ->
+    gen_server:call(WorldRef, entities).
 
--spec add_component(term(), term(), id(), world()) -> ok.
-add_component(Name, Data, EntityID, World) ->
-    gen_server:call(?SERVER(World), {add_component, Name, Data, EntityID}).
+-spec add_component(term(), term(), id(), world_ref()) -> ok.
+add_component(Name, Data, EntityID, WorldRef) ->
+    gen_server:call(WorldRef, {add_component, Name, Data, EntityID}).
 
 % TODO: ok -> true?
--spec add_components([{term(), term()}], id(), world()) -> ok.
-add_components(Components, EntityID, World) ->
+-spec add_components([{term(), term()}], id(), world_ref()) -> ok.
+add_components(Components, EntityID, WorldRef) ->
     F =
         fun({Component, Data}) ->
-            add_component(Component, Data, EntityID, World)
+            add_component(Component, Data, EntityID, WorldRef)
         end,
     lists:foreach(F, Components).
 
--spec del_component(term(), id(), world()) -> ok.
-del_component(Name, EntityID, World) ->
-    gen_server:call(?SERVER(World), {del_component, Name, EntityID}).
+-spec del_component(term(), id(), world_ref()) -> ok.
+del_component(Name, EntityID, WorldRef) ->
+    gen_server:call(WorldRef, {del_component, Name, EntityID}).
 
 % TODO: ok -> true?
--spec del_components([term()], id(), world()) -> ok.
-del_components(Components, EntityID, World) ->
+-spec del_components([term()], id(), world_ref()) -> ok.
+del_components(Components, EntityID, WorldRef) ->
     F =
         fun(Component) ->
-            del_component(Component, EntityID, World)
+            del_component(Component, EntityID, WorldRef)
         end,
     lists:foreach(F, Components).
 
--spec add_system(system(), world()) -> ok.
-add_system(System, World) ->
-    add_system(System, 100, World).
+-spec add_system(system(), world_ref()) -> ok.
+add_system(System, WorldRef) ->
+    add_system(System, 100, WorldRef).
 
--spec add_system(system(), integer(), world()) -> ok.
-add_system(System, Priority, World) ->
-    gen_server:call(?SERVER(World), {add_system, System, Priority}).
+-spec add_system(system(), integer(), world_ref()) -> ok.
+add_system(System, Priority, WorldRef) ->
+    gen_server:call(WorldRef, {add_system, System, Priority}).
 
--spec del_system(system(), world()) -> ok.
-del_system(System, World) ->
-    gen_server:call(?SERVER(World), {del_system, System}).
+-spec del_system(system(), world_ref()) -> ok.
+del_system(System, WorldRef) ->
+    gen_server:call(WorldRef, {del_system, System}).
 
--spec proc(world()) -> any().
-proc(World) ->
-    proc(World, []).
+-spec proc(world_ref()) -> any().
+proc(WorldRef) ->
+    proc(WorldRef, []).
 
--spec proc(world(), any()) -> [any()].
-proc(World, Data) ->
-    Systems = gen_server:call(?SERVER(World), systems),
+-spec proc(world_ref(), any()) -> [any()].
+proc(WorldRef, Data) ->
+    Systems = gen_server:call(WorldRef, systems),
     Fun = fun({_Prio, Sys}, Acc) ->
         Result =
             case Sys of
                 {M, F, 1} ->
-                    erlang:apply(M, F, [World]);
+                    erlang:apply(M, F, [WorldRef]);
                 {M, F, 2} ->
-                    erlang:apply(M, F, [World, Data]);
+                    erlang:apply(M, F, [WorldRef, Data]);
                 Fun2 ->
-                    Fun2(World, Data)
+                    Fun2(WorldRef, Data)
             end,
         [{Sys, Result} | Acc]
     end,
@@ -217,9 +217,8 @@ proc(World, Data) ->
 % gen_server callbacks
 %%%%%%%/%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-init([WorldName]) ->
+init([]) ->
     World = #world{
-        name = WorldName,
         systems = [],
         entities = ets:new(entities, [set, public]),
         components = ets:new(components, [bag, public])
