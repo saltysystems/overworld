@@ -7,8 +7,11 @@ Engine](https://godotengine.org/).
 
 Description
 -------------------------------------------------
-Overworld provides developers with a toolkit to build scalable, multiplayer
-games more efficiently. It manages several low-level aspects of network
+Overworld provides developers with a toolkit to build robust multiplayer
+games. Write your game server with an industry-proven, scalable,
+functional programming language!
+
+Overworld automatically manages several low-level aspects of network
 communication, including:
 
 1. Network connections via TCP (WebSocket) or UDP (ENet), or freely mix the two!
@@ -20,12 +23,6 @@ Abstracting the networking details, Overworld allows developers to concentrate
 more on game logic and less on communication infrastructure. This framework is
 suitable for various multiplayer game types, from small co-op experiences to
 larger online games.
-
-Key features of Overworld include:
-
-- Tight integration with Godot Game Engine
-- Support for games written in both Erlang (_Elixir coming soon_)
-- Tick-based game loop management
 
 Overworld aims to provide a solid foundation for multiplayer game development,
 streamlining the process of creating networked games while leveraging the
@@ -47,8 +44,6 @@ See [here](docs/quickstart/intro.md)
 
 Roadmap
 -------------------------------------------------
-* Elixir support
+* Support for other BEAM languages, including Elxiir
 * Optional Lua-based game logic, via [Luerl](https://github.com/rvirding/luerl)
-* More docs and demos! :sweat_smile:
-
-
+* More docs and demos!

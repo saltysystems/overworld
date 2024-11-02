@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.34.2">
+    <meta name="project" content="overworld v2.0.1">
+
+
+    <title>ow_ecs — overworld v2.0.1</title>
+    <link rel="stylesheet" href="dist/html-erlang-YKQ677RH.css" />
+
+
+    <script src="dist/handlebars.runtime-NWIB6V2M.js"></script>
+    <script src="dist/handlebars.templates-K7URE6B4.js"></script>
+    <script src="dist/sidebar_items-823F469E.js"></script>
+    <script src="docs_config.js"></script>
+    <script async src="dist/html-YIPIRHGU.js"></script>
+
+  </head>
+  <body data-type="modules" class="page-module">
+    <script>
+
+      try {
+        var settings = JSON.parse(localStorage.getItem('ex_doc:settings') || '{}');
+
+        if (settings.theme === 'dark' ||
+           ((settings.theme === 'system' || settings.theme == null) &&
+             window.matchMedia('(prefers-color-scheme: dark)').matches)
+           ) {
+          document.body.classList.add('dark')
+        }
+      } catch (error) { }
+    </script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="readme.html" class="sidebar-projectName" translate="no">
+overworld
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v2.0.1
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-listNav" class="sidebar-listNav" role="tablist">
+      <li>
+        <button id="extras-list-tab-button" role="tab" data-type="extras" aria-controls="extras-tab-panel" aria-selected="true" tabindex="0">
+Pages
+        </button>
+      </li>
+
+        <li>
+          <button id="modules-list-tab-button" role="tab" data-type="modules" aria-controls="modules-tab-panel" aria-selected="false" tabindex="-1">
+            Modules
+          </button>
+        </li>
+
+
+    </ul>
+  </div>
+
+  <div id="extras-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="extras-list-tab-button">
+    <ul id="extras-full-list" class="full-list"></ul>
+  </div>
+
+    <div id="modules-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="modules-list-tab-button" hidden>
+      <ul id="modules-full-list" class="full-list"></ul>
+    </div>
+
+
+</nav>
+
+<main class="content">
+  <output role="status" id="toast"></output>
+
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of overworld</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true" title="Submit search"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+    <span translate="no">ow_ecs</span> 
+    <small class="app-vsn" translate="no">(overworld v2.0.1)</small>
+
+  </h1>
+
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h1>
+<div class="summary-types summary">
+  <h2>
+    <a href="#types">Types</a>
+  </h2>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:component/0" data-no-tooltip translate="no">component/0</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:entity/0" data-no-tooltip translate="no">entity/0</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:id/0" data-no-tooltip translate="no">id/0</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:system/0" data-no-tooltip translate="no">system/0</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:world/0" data-no-tooltip translate="no">world/0</a>
+
+      </div>
+
+    </div>
+
+</div>
+<div class="summary-functions summary">
+  <h2>
+    <a href="#functions">Functions</a>
+  </h2>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#add_component/4" data-no-tooltip translate="no">add_component(Name, Data, EntityID, World)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#add_components/3" data-no-tooltip translate="no">add_components(Components, EntityID, World)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#add_system/2" data-no-tooltip translate="no">add_system(System, World)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#add_system/3" data-no-tooltip translate="no">add_system(System, Priority, World)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#code_change/3" data-no-tooltip translate="no">code_change(OldVsn, State, Extra)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#del_component/3" data-no-tooltip translate="no">del_component(Name, EntityID, World)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#del_components/3" data-no-tooltip translate="no">del_components(Components, EntityID, World)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#del_system/2" data-no-tooltip translate="no">del_system(System, World)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#entities/1" data-no-tooltip translate="no">entities(World)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#entity/2" data-no-tooltip translate="no">entity(EntityID, World)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#foreach_component/3" data-no-tooltip translate="no">foreach_component(Fun, Component, World)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get/2" data-no-tooltip translate="no">get(Component, ComponentList)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get/3" data-no-tooltip translate="no">get(Component, ComponentList, Default)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#handle_call/3" data-no-tooltip translate="no">handle_call(_, From, State)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#handle_cast/2" data-no-tooltip translate="no">handle_cast(Msg, State)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#handle_info/2" data-no-tooltip translate="no">handle_info(Info, State)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#init/1" data-no-tooltip translate="no">init(_)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#match_component/2" data-no-tooltip translate="no">match_component(ComponentName, World)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#match_components/2" data-no-tooltip translate="no">match_components(List, World)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#new_entity/2" data-no-tooltip translate="no">new_entity(EntityID, World)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#proc/1" data-no-tooltip translate="no">proc(World)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#proc/2" data-no-tooltip translate="no">proc(World, Data)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#rm_entity/2" data-no-tooltip translate="no">rm_entity(EntityID, World)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#start/1" data-no-tooltip translate="no">start(World)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#start_link/1" data-no-tooltip translate="no">start_link(World)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#stop/1" data-no-tooltip translate="no">stop(World)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#take/2" data-no-tooltip translate="no">take(Component, ComponentList)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#take/3" data-no-tooltip translate="no">take(Component, ComponentList, Default)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#terminate/2" data-no-tooltip translate="no">terminate(Reason, State)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#to_map/1" data-no-tooltip translate="no">to_map(_)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#try_component/3" data-no-tooltip translate="no">try_component(ComponentName, EntityID, World)</a>
+
+      </div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="types" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#types">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Types</span>
+    </h1>
+    <div class="types-list">
+<section class="detail" id="t:component/0">
+
+  <div class="detail-header">
+    <a href="#t:component/0" class="detail-link" data-no-tooltip title="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <h1 class="signature" translate="no">component/0</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L58" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-type</span> component() :: {<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>()}.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="t:entity/0">
+
+  <div class="detail-header">
+    <a href="#t:entity/0" class="detail-link" data-no-tooltip title="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <h1 class="signature" translate="no">entity/0</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L59" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-type</span> entity() :: {<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), [<a href="#t:component/0">component</a>()]}.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="t:id/0">
+
+  <div class="detail-header">
+    <a href="#t:id/0" class="detail-link" data-no-tooltip title="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <h1 class="signature" translate="no">id/0</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L62" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-type</span> id() :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:integer/0">integer</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="t:system/0">
+
+  <div class="detail-header">
+    <a href="#t:system/0" class="detail-link" data-no-tooltip title="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <h1 class="signature" translate="no">system/0</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L61" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-type</span> system() :: {<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:mfa/0">mfa</a>() | fun()}.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="t:world/0">
+
+  <div class="detail-header">
+    <a href="#t:world/0" class="detail-link" data-no-tooltip title="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <h1 class="signature" translate="no">world/0</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L56" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-type</span> world() ::
+          #world{name :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(),
+                 systems :: [{<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), <a href="#t:system/0">system</a>()}],
+                 entities :: <a href="https://www.erlang.org/doc/apps/stdlib/ets.html#t:tid/0">ets:tid</a>(),
+                 components :: <a href="https://www.erlang.org/doc/apps/stdlib/ets.html#t:tid/0">ets:tid</a>()}.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h1>
+    <div class="functions-list">
+<section class="detail" id="add_component/4">
+
+  <div class="detail-header">
+    <a href="#add_component/4" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">add_component(Name, Data, EntityID, World)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L158" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> add_component(<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), <a href="#t:id/0">id</a>(), <a href="#t:world/0">world</a>()) -> ok.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="add_components/3">
+
+  <div class="detail-header">
+    <a href="#add_components/3" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">add_components(Components, EntityID, World)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L163" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> add_components([{<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>()}], <a href="#t:id/0">id</a>(), <a href="#t:world/0">world</a>()) -> ok.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="add_system/2">
+
+  <div class="detail-header">
+    <a href="#add_system/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">add_system(System, World)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L184" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> add_system(<a href="#t:system/0">system</a>(), <a href="#t:world/0">world</a>()) -> ok.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="add_system/3">
+
+  <div class="detail-header">
+    <a href="#add_system/3" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">add_system(System, Priority, World)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L188" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> add_system(<a href="#t:system/0">system</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:integer/0">integer</a>(), <a href="#t:world/0">world</a>()) -> ok.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="code_change/3">
+
+  <div class="detail-header">
+    <a href="#code_change/3" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">code_change(OldVsn, State, Extra)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L370" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="del_component/3">
+
+  <div class="detail-header">
+    <a href="#del_component/3" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">del_component(Name, EntityID, World)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L171" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> del_component(<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), <a href="#t:id/0">id</a>(), <a href="#t:world/0">world</a>()) -> ok.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="del_components/3">
+
+  <div class="detail-header">
+    <a href="#del_components/3" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">del_components(Components, EntityID, World)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L176" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> del_components([<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>()], <a href="#t:id/0">id</a>(), <a href="#t:world/0">world</a>()) -> ok.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="del_system/2">
+
+  <div class="detail-header">
+    <a href="#del_system/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">del_system(System, World)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L192" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> del_system(<a href="#t:system/0">system</a>(), <a href="#t:world/0">world</a>()) -> ok.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="entities/1">
+
+  <div class="detail-header">
+    <a href="#entities/1" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">entities(World)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L154" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> entities(<a href="#t:world/0">world</a>()) -> [{<a href="#t:id/0">id</a>(), [<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>()]}].</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="entity/2">
+
+  <div class="detail-header">
+    <a href="#entity/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">entity(EntityID, World)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L150" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> entity(<a href="#t:id/0">id</a>(), <a href="#t:world/0">world</a>()) -> {<a href="#t:id/0">id</a>(), [<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>()]} | false.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="foreach_component/3">
+
+  <div class="detail-header">
+    <a href="#foreach_component/3" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">foreach_component(Fun, Component, World)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L132" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> foreach_component(fun(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), <a href="#t:world/0">world</a>()) -> ok.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="get/2">
+
+  <div class="detail-header">
+    <a href="#get/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">get(Component, ComponentList)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L85" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> get(<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), [<a href="#t:component/0">component</a>()]) -> <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="get/3">
+
+  <div class="detail-header">
+    <a href="#get/3" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">get(Component, ComponentList, Default)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L89" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> get(<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), [<a href="#t:component/0">component</a>()], <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>()) -> <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="handle_call/3">
+
+  <div class="detail-header">
+    <a href="#handle_call/3" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">handle_call(_, From, State)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L229" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="handle_cast/2">
+
+  <div class="detail-header">
+    <a href="#handle_cast/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">handle_cast(Msg, State)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L361" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="handle_info/2">
+
+  <div class="detail-header">
+    <a href="#handle_info/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">handle_info(Info, State)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L364" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="init/1">
+
+  <div class="detail-header">
+    <a href="#init/1" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">init(_)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L220" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="match_component/2">
+
+  <div class="detail-header">
+    <a href="#match_component/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">match_component(ComponentName, World)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L118" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> match_component(<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), <a href="#t:world/0">world</a>()) -> [<a href="#t:entity/0">entity</a>()].</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="match_components/2">
+
+  <div class="detail-header">
+    <a href="#match_components/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">match_components(List, World)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L122" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> match_components([<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>()], <a href="#t:world/0">world</a>()) -> [<a href="#t:entity/0">entity</a>()].</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="new_entity/2">
+
+  <div class="detail-header">
+    <a href="#new_entity/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">new_entity(EntityID, World)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L142" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> new_entity(<a href="#t:id/0">id</a>(), <a href="#t:world/0">world</a>()) -> ok.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="proc/1">
+
+  <div class="detail-header">
+    <a href="#proc/1" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">proc(World)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L196" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> proc(<a href="#t:world/0">world</a>()) -> <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:any/0">any</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="proc/2">
+
+  <div class="detail-header">
+    <a href="#proc/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">proc(World, Data)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L200" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> proc(<a href="#t:world/0">world</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:any/0">any</a>()) -> [<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:any/0">any</a>()].</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="rm_entity/2">
+
+  <div class="detail-header">
+    <a href="#rm_entity/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">rm_entity(EntityID, World)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L146" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> rm_entity(<a href="#t:id/0">id</a>(), <a href="#t:world/0">world</a>()) -> ok.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="start/1">
+
+  <div class="detail-header">
+    <a href="#start/1" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">start(World)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L67" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="start_link/1">
+
+  <div class="detail-header">
+    <a href="#start_link/1" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">start_link(World)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L70" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="stop/1">
+
+  <div class="detail-header">
+    <a href="#stop/1" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">stop(World)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L73" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="take/2">
+
+  <div class="detail-header">
+    <a href="#take/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">take(Component, ComponentList)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L98" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> take(<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), [<a href="#t:component/0">component</a>()]) -> <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>() | false.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="take/3">
+
+  <div class="detail-header">
+    <a href="#take/3" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">take(Component, ComponentList, Default)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L102" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> take(<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), [<a href="#t:component/0">component</a>()], <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>()) -> {<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), [<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>()]} | <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="terminate/2">
+
+  <div class="detail-header">
+    <a href="#terminate/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">terminate(Reason, State)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L367" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="to_map/1">
+
+  <div class="detail-header">
+    <a href="#to_map/1" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">to_map(_)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L78" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> to_map(<a href="#t:entity/0">entity</a>()) -> <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:map/0">map</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="try_component/3">
+
+  <div class="detail-header">
+    <a href="#try_component/3" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">try_component(ComponentName, EntityID, World)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_ecs.erl#L111" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> try_component(<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), <a href="#t:id/0">id</a>(), <a href="#t:world/0">world</a>()) -> {ok, [<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>()]} | false.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+      <p>
+
+          <span class="line">
+            <a href="https://hex.pm/packages/overworld/2.0.1" class="footer-hex-package">Hex Package</a>
+
+            <a href="https://preview.hex.pm/preview/overworld/2.0.1">Hex Preview</a>
+
+          </span>
+
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
+
+            <a href="overworld.epub" title="ePub version">
+              Download ePub version
+            </a>
+
+        </span>
+      </p>
+
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.34.2) for the
+
+          <a href="https://erlang.org" title="Erlang" target="_blank" translate="no">Erlang programming language</a>
+
+      </p>
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>

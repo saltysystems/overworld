@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.34.2">
+    <meta name="project" content="overworld v2.0.1">
+
+
+    <title>ow_util — overworld v2.0.1</title>
+    <link rel="stylesheet" href="dist/html-erlang-YKQ677RH.css" />
+
+
+    <script src="dist/handlebars.runtime-NWIB6V2M.js"></script>
+    <script src="dist/handlebars.templates-K7URE6B4.js"></script>
+    <script src="dist/sidebar_items-823F469E.js"></script>
+    <script src="docs_config.js"></script>
+    <script async src="dist/html-YIPIRHGU.js"></script>
+
+  </head>
+  <body data-type="modules" class="page-module">
+    <script>
+
+      try {
+        var settings = JSON.parse(localStorage.getItem('ex_doc:settings') || '{}');
+
+        if (settings.theme === 'dark' ||
+           ((settings.theme === 'system' || settings.theme == null) &&
+             window.matchMedia('(prefers-color-scheme: dark)').matches)
+           ) {
+          document.body.classList.add('dark')
+        }
+      } catch (error) { }
+    </script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="readme.html" class="sidebar-projectName" translate="no">
+overworld
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v2.0.1
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-listNav" class="sidebar-listNav" role="tablist">
+      <li>
+        <button id="extras-list-tab-button" role="tab" data-type="extras" aria-controls="extras-tab-panel" aria-selected="true" tabindex="0">
+Pages
+        </button>
+      </li>
+
+        <li>
+          <button id="modules-list-tab-button" role="tab" data-type="modules" aria-controls="modules-tab-panel" aria-selected="false" tabindex="-1">
+            Modules
+          </button>
+        </li>
+
+
+    </ul>
+  </div>
+
+  <div id="extras-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="extras-list-tab-button">
+    <ul id="extras-full-list" class="full-list"></ul>
+  </div>
+
+    <div id="modules-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="modules-list-tab-button" hidden>
+      <ul id="modules-full-list" class="full-list"></ul>
+    </div>
+
+
+</nav>
+
+<main class="content">
+  <output role="status" id="toast"></output>
+
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of overworld</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true" title="Submit search"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_util.erl#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+    <span translate="no">ow_util</span> 
+    <small class="app-vsn" translate="no">(overworld v2.0.1)</small>
+
+  </h1>
+
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h1>
+<div class="summary-functions summary">
+  <h2>
+    <a href="#functions">Functions</a>
+  </h2>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#any_in_list/2" data-no-tooltip translate="no">any_in_list(L1, L2)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#mapfind/3" data-no-tooltip translate="no">mapfind(K, V, L)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#maplistsort/2" data-no-tooltip translate="no">maplistsort(Key, L)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#maplistsort/3" data-no-tooltip translate="no">maplistsort(Key, L, _)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#mapstore/4" data-no-tooltip translate="no">mapstore(Key, Val, L, Map)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#pipeline/2" data-no-tooltip translate="no">pipeline(Input, Funs)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#remove_dups/1" data-no-tooltip translate="no">remove_dups(T)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#run_bchecks/1" data-no-tooltip translate="no">run_bchecks(T)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#run_checks/1" data-no-tooltip translate="no">run_checks(T)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#take_random/1" data-no-tooltip translate="no">take_random(List)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>This function will take a list of items and return a random element Alternatively an integer number of items may be specified</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#take_random/2" data-no-tooltip translate="no">take_random(List, N)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#weighted_random/1" data-no-tooltip translate="no">weighted_random(Tail)</a>
+
+      </div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="functions" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h1>
+    <div class="functions-list">
+<section class="detail" id="any_in_list/2">
+
+  <div class="detail-header">
+    <a href="#any_in_list/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">any_in_list(L1, L2)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_util.erl#L48" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> any_in_list(<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:list/0">list</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:list/0">list</a>()) -> <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:list/0">list</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="mapfind/3">
+
+  <div class="detail-header">
+    <a href="#mapfind/3" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">mapfind(K, V, L)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_util.erl#L62" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> mapfind(<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:list/0">list</a>()) -> <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>() | false.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="maplistsort/2">
+
+  <div class="detail-header">
+    <a href="#maplistsort/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">maplistsort(Key, L)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_util.erl#L84" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> maplistsort(<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:list/0">list</a>()) -> <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:list/0">list</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="maplistsort/3">
+
+  <div class="detail-header">
+    <a href="#maplistsort/3" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">maplistsort(Key, L, _)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_util.erl#L86" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="mapstore/4">
+
+  <div class="detail-header">
+    <a href="#mapstore/4" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">mapstore(Key, Val, L, Map)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_util.erl#L73" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> mapstore(<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:list/0">list</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:map/0">map</a>()) -> [<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:map/0">map</a>()].</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="pipeline/2">
+
+  <div class="detail-header">
+    <a href="#pipeline/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">pipeline(Input, Funs)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_util.erl#L44" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> pipeline(<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:any/0">any</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:list/0">list</a>()) -> <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:any/0">any</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="remove_dups/1">
+
+  <div class="detail-header">
+    <a href="#remove_dups/1" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">remove_dups(T)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_util.erl#L55" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> remove_dups(<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:list/0">list</a>()) -> <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:list/0">list</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="run_bchecks/1">
+
+  <div class="detail-header">
+    <a href="#run_bchecks/1" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">run_bchecks(T)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_util.erl#L25" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> run_bchecks(<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:list/0">list</a>()) -> ok | <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:any/0">any</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="run_checks/1">
+
+  <div class="detail-header">
+    <a href="#run_checks/1" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">run_checks(T)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_util.erl#L34" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> run_checks(<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:list/0">list</a>()) -> ok | <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:any/0">any</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="take_random/1">
+
+  <div class="detail-header">
+    <a href="#take_random/1" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">take_random(List)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_util.erl#L99" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> take_random(<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:list/0">list</a>()) -> <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:list/0">list</a>().</pre>
+
+      </div>
+
+<p>This function will take a list of items and return a random element Alternatively an integer number of items may be specified</p>
+  </section>
+</section>
+<section class="detail" id="take_random/2">
+
+  <div class="detail-header">
+    <a href="#take_random/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">take_random(List, N)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_util.erl#L103" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> take_random(<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:list/0">list</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:pos_integer/0">pos_integer</a>()) -> <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:list/0">list</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="weighted_random/1">
+
+  <div class="detail-header">
+    <a href="#weighted_random/1" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">weighted_random(Tail)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_util.erl#L117" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> weighted_random([{<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:integer/0">integer</a>()}]) -> [<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>()].</pre>
+
+      </div>
+
+
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+      <p>
+
+          <span class="line">
+            <a href="https://hex.pm/packages/overworld/2.0.1" class="footer-hex-package">Hex Package</a>
+
+            <a href="https://preview.hex.pm/preview/overworld/2.0.1">Hex Preview</a>
+
+          </span>
+
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
+
+            <a href="overworld.epub" title="ePub version">
+              Download ePub version
+            </a>
+
+        </span>
+      </p>
+
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.34.2) for the
+
+          <a href="https://erlang.org" title="Erlang" target="_blank" translate="no">Erlang programming language</a>
+
+      </p>
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>

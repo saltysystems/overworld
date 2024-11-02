@@ -51,7 +51,7 @@ Optional callbacks:
 |    Callback     | Description | 
 | --------------- | ----------- |
 | `handle_status` | Arbitrary term containing stat information | 
-| `rpc_info`      | A list of Overworld RPCs (see the [Protocol documentation](protocol.md))| 
+| `rpc_info`      | A list of Overworld RPCs (see the [Protocol documentation](../architecture/protocol.md))| 
 
 
 Optional Callbacks

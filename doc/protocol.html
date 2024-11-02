@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.34.2">
+    <meta name="project" content="overworld v2.0.1">
+
+
+    <title>Protocol Guide (Outdated) — overworld v2.0.1</title>
+    <link rel="stylesheet" href="dist/html-erlang-YKQ677RH.css" />
+
+
+    <script src="dist/handlebars.runtime-NWIB6V2M.js"></script>
+    <script src="dist/handlebars.templates-K7URE6B4.js"></script>
+    <script src="dist/sidebar_items-823F469E.js"></script>
+    <script src="docs_config.js"></script>
+    <script async src="dist/html-YIPIRHGU.js"></script>
+
+  </head>
+  <body data-type="extras" class="page-extra">
+    <script>
+
+      try {
+        var settings = JSON.parse(localStorage.getItem('ex_doc:settings') || '{}');
+
+        if (settings.theme === 'dark' ||
+           ((settings.theme === 'system' || settings.theme == null) &&
+             window.matchMedia('(prefers-color-scheme: dark)').matches)
+           ) {
+          document.body.classList.add('dark')
+        }
+      } catch (error) { }
+    </script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="readme.html" class="sidebar-projectName" translate="no">
+overworld
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v2.0.1
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-listNav" class="sidebar-listNav" role="tablist">
+      <li>
+        <button id="extras-list-tab-button" role="tab" data-type="extras" aria-controls="extras-tab-panel" aria-selected="true" tabindex="0">
+Pages
+        </button>
+      </li>
+
+        <li>
+          <button id="modules-list-tab-button" role="tab" data-type="modules" aria-controls="modules-tab-panel" aria-selected="false" tabindex="-1">
+            Modules
+          </button>
+        </li>
+
+
+    </ul>
+  </div>
+
+  <div id="extras-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="extras-list-tab-button">
+    <ul id="extras-full-list" class="full-list"></ul>
+  </div>
+
+    <div id="modules-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="modules-list-tab-button" hidden>
+      <ul id="modules-full-list" class="full-list"></ul>
+    </div>
+
+
+</nav>
+
+<main class="content">
+  <output role="status" id="toast"></output>
+
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of overworld</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true" title="Submit search"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/guides/architecture/protocol.md#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+
+    <span>Overworld Protocol Docs</span>
+  </h1>
+
+<h2 id="overworld-packet-structure" class="section-heading">
+  <a href="#overworld-packet-structure" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Overworld Packet Structure</span>
+</h2>
+<p>An Overworld message is constructed as such:</p><pre><code class="makeup erlang" translate="no"><span class="w">    </span><span class="n">Framing</span><span class="w"> </span><span class="p" data-group-id="2460509305-1">(</span><span class="mi">2</span><span class="o">-</span><span class="mi">14</span><span class="w"> </span><span class="ss">bytes</span><span class="p" data-group-id="2460509305-1">)</span><span class="w">       </span><span class="n">OpCode</span><span class="w"> </span><span class="p" data-group-id="2460509305-2">(</span><span class="mi">2</span><span class="w"> </span><span class="ss">bytes</span><span class="p" data-group-id="2460509305-2">)</span><span class="w">     </span><span class="n">Payload</span><span class="w"> </span><span class="p" data-group-id="2460509305-3">(</span><span class="n">N</span><span class="w"> </span><span class="ss">bytes</span><span class="p" data-group-id="2460509305-3">)</span><span class="w">
+ </span><span class="p">|</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="p">|</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="p">|</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="p">|</span><span class="w">
+     </span><span class="n">WebSocket</span><span class="w"> </span><span class="n">Data</span><span class="w">                </span><span class="n">Overworld</span><span class="o">-</span><span class="ss">specific</span><span class="w"> </span><span class="n">Data</span></code></pre><p>WebSocket is used as the transport mechanism thanks to easy firewall negotation, etc. Packets should probably not be much larger than 1000 bytes to avoid fragmentation on the wire. </p><h2 id="overworld-rpc-structure" class="section-heading">
+  <a href="#overworld-rpc-structure" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Overworld RPC structure</span>
+</h2>
+<table><thead><tr><th style="text-align: left;">Key</th><th style="text-align: left;">Type</th><th style="text-align: left;">Description</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">opcode</code></td><td style="text-align: left;"><code class="inline">16#0000..16#FFFFF</code></td><td style="text-align: left;">A 2-byte integer prefix indicating the type of message to be processed</td></tr><tr><td style="text-align: left;"><code class="inline">c2s_call</code></td><td style="text-align: left;"><code class="inline">atom()</code></td><td style="text-align: left;">Name of a client-to-server calling function in the generated client library</td></tr><tr><td style="text-align: left;"><code class="inline">c2s_handler</code></td><td style="text-align: left;"><code class="inline">mfa()</code></td><td style="text-align: left;">A module and function to handle client. The function must either be arity 1 (handles messages from clients without established sessions) or arity 2 (message + client session state)</td></tr><tr><td style="text-align: left;"><code class="inline">s2c_call</code></td><td style="text-align: left;"><code class="inline">atom()</code></td><td style="text-align: left;">Name of a server-to-client calling function, which will generate a signal of the same name in the client library</td></tr><tr><td style="text-align: left;"><code class="inline">encoder</code></td><td style="text-align: left;"><code class="inline">atom()</code></td><td style="text-align: left;">Name of the module that will marshall/unmarshall data with <a href="https://github.com/tomas-abrahamsson/gpb">GPB</a></td></tr></tbody></table><p>OpCodes <code class="inline">0x0</code> through <code class="inline">0x1000</code> are soft reserved for Overworld Core messages, while <code class="inline">0x1001</code> and above are free for applications to use. Overworld does not throw an error if a OpCode is reused.</p><h2 id="defining-a-new-rpc" class="section-heading">
+  <a href="#defining-a-new-rpc" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Defining a new RPC</span>
+</h2>
+<p>To define a new message, simply write a module using the behaviour <code class="inline">ow_rpc</code>
+and implementing the required callbacks, <code class="inline">rpc_info/0</code> which should return a
+list of maps with keys as above.</p><p>Messages in Overworld can be synchronous or asynchronous. Synchronous messages
+initiated by the client are defined by one key:</p><ul><li><code class="inline">c2s_handler</code>, which corresponds to some module and function to process the
+message. Note that your handler's function must be either arity 1 (to
+process messages without an established session, see <code class="inline">account_new</code> for an
+example)  or arity 2.</li></ul><h2 id="generating-the-client-library" class="section-heading">
+  <a href="#generating-the-client-library" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Generating the client library</span>
+</h2>
+<p>Overworld can automatically generate a client library in GDScript usable by Godot v4.x.</p><p>This library should be dropped into your scripts folder, along with your
+protobuf file. You will need to install the
+<a href="https://github.com/oniksan/godobuf">Godobuf</a> plugin in order to generate code
+to marshall/unmarshall data from Protobuf from/to your Godot client. You'll
+want to autoload it with some name, I suggest <code class="inline">NetworkClient</code>. </p><p>Once Erlang is running, you can invoke the following to write out a library:</p><pre><code class="makeup erlang" translate="no"><span class="gp unselectable">1&gt; </span><span class="nc">ow_binding</span><span class="p">:</span><span class="nf">write</span><span class="p" data-group-id="5702780833-1">(</span><span class="p" data-group-id="5702780833-1">)</span><span class="p">.</span></code></pre><h2 id="examples" class="section-heading">
+  <a href="#examples" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Examples</span>
+</h2>
+<h3 id="a-simple-client-message-with-no-response-from-server" class="section-heading">
+  <a href="#a-simple-client-message-with-no-response-from-server" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">A simple client message with no response from server.</span>
+</h3>
+<p>First we write a protobuf file describing the module:</p><pre><code class="makeup erlang" translate="no"><span class="ss">syntax</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;proto2&quot;</span><span class="p">;</span><span class="w">
+
+</span><span class="ss">package</span><span class="w"> </span><span class="ss">my_game</span><span class="p">;</span><span class="w">
+
+</span><span class="ss">message</span><span class="w"> </span><span class="ss">hello</span><span class="w"> </span><span class="p" data-group-id="4979516683-1">{</span><span class="w">
+    </span><span class="ss">required</span><span class="w"> </span><span class="ss">string</span><span class="w"> </span><span class="ss">msg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w">
+</span><span class="p" data-group-id="4979516683-1">}</span></code></pre><p>By default, GPB will generate an Erlang file named <code class="inline">&lt;your&gt;_&lt;module&gt;_pb.erl</code>. </p><p>And then write a module that can generate the client call library, and handle the message:</p><pre><code class="makeup erlang" translate="no"><span class="p">-</span><span class="na">module</span><span class="p" data-group-id="2712411699-1">(</span><span class="ss">my_module</span><span class="p" data-group-id="2712411699-1">)</span><span class="p">.</span><span class="w">
+</span><span class="w">
+</span><span class="p">-</span><span class="na">behaviour</span><span class="p" data-group-id="2712411699-2">(</span><span class="ss">ow_rpc</span><span class="p" data-group-id="2712411699-2">)</span><span class="p">.</span><span class="w">
+
+</span><span class="c1">% Required callback for Overworld</span><span class="w">
+</span><span class="p">-</span><span class="na">export</span><span class="p" data-group-id="2712411699-3">(</span><span class="p" data-group-id="2712411699-4">[</span><span class="ss">rpc_info</span><span class="p">/</span><span class="mi">0</span><span class="p" data-group-id="2712411699-4">]</span><span class="p" data-group-id="2712411699-3">)</span><span class="p">.</span><span class="w">
+
+</span><span class="c1">% A trivial example where the client can ask the server for buffs</span><span class="w">
+</span><span class="p">-</span><span class="na">export</span><span class="p" data-group-id="2712411699-5">(</span><span class="p" data-group-id="2712411699-6">[</span><span class="ss">hello</span><span class="p">/</span><span class="mi">2</span><span class="p" data-group-id="2712411699-6">]</span><span class="p" data-group-id="2712411699-5">)</span><span class="p">.</span><span class="w">
+</span><span class="w">
+</span><span class="p">-</span><span class="na">define</span><span class="p" data-group-id="2712411699-7">(</span><span class="n">HELLO</span><span class="p">,</span><span class="w"> </span><span class="mi">16#2000</span><span class="p" data-group-id="2712411699-7">)</span><span class="p">.</span><span class="w"> </span><span class="c1">% This makes the rpc info a bit more readable</span><span class="w">
+</span><span class="w">
+</span><span class="p">-</span><span class="na">spec</span><span class="w"> </span><span class="nf">rpc_info</span><span class="p" data-group-id="2712411699-8">(</span><span class="p" data-group-id="2712411699-8">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> </span><span class="nc">ow_rpc</span><span class="p">:</span><span class="nf">callbacks</span><span class="p" data-group-id="2712411699-9">(</span><span class="p" data-group-id="2712411699-9">)</span><span class="p">.</span><span class="w">
+</span><span class="nf">rpc_info</span><span class="p" data-group-id="2712411699-10">(</span><span class="p" data-group-id="2712411699-10">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> 
+    </span><span class="p" data-group-id="2712411699-11">[</span><span class="w">
+        </span><span class="p" data-group-id="2712411699-12">#{</span><span class="w"> 
+            </span><span class="ss">opcode</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="o">?</span><span class="n">HELLO</span><span class="p">,</span><span class="w">
+            </span><span class="ss">c2s_call</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ss">send_hello</span><span class="p">,</span><span class="w"> </span><span class="c1">% autogenerates a function of the same name</span><span class="w">
+            </span><span class="ss">c2s_handler</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="2712411699-13">{</span><span class="o">?</span><span class="n">MODULE</span><span class="p">,</span><span class="w"> </span><span class="ss">hello</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p" data-group-id="2712411699-13">}</span><span class="p">,</span><span class="w">
+            </span><span class="ss">encoder</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ss">my_game</span><span class="w">
+         </span><span class="p" data-group-id="2712411699-12">}</span><span class="w">
+    </span><span class="p" data-group-id="2712411699-11">]</span><span class="p">.</span><span class="w">
+</span><span class="w">    
+
+</span><span class="p">-</span><span class="na">spec</span><span class="w"> </span><span class="nf">client_hello</span><span class="p" data-group-id="2712411699-14">(</span><span class="nf">binary</span><span class="p" data-group-id="2712411699-15">(</span><span class="p" data-group-id="2712411699-15">)</span><span class="p">,</span><span class="w"> </span><span class="nc">ow_session</span><span class="p">:</span><span class="nf">session</span><span class="p" data-group-id="2712411699-16">(</span><span class="p" data-group-id="2712411699-16">)</span><span class="p" data-group-id="2712411699-14">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w">
+</span><span class="nf">client_hello</span><span class="p" data-group-id="2712411699-17">(</span><span class="n">Data</span><span class="p">,</span><span class="w"> </span><span class="n">Session</span><span class="p" data-group-id="2712411699-17">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w">
+    </span><span class="n">Decoded</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">my_game_pb</span><span class="p">:</span><span class="nf">decode_msg</span><span class="p" data-group-id="2712411699-18">(</span><span class="n">Data</span><span class="p">,</span><span class="w"> </span><span class="ss">hello</span><span class="p" data-group-id="2712411699-18">)</span><span class="w">
+    </span><span class="n">Msg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">maps</span><span class="p">:</span><span class="nf">get</span><span class="p" data-group-id="2712411699-19">(</span><span class="n">Decoded</span><span class="p">,</span><span class="w"> </span><span class="ss">msg</span><span class="p" data-group-id="2712411699-19">)</span><span class="p">,</span><span class="w">
+    </span><span class="nc">logger</span><span class="p">:</span><span class="nf">notice</span><span class="p" data-group-id="2712411699-20">(</span><span class="s">&quot;Client sends: </span><span class="si">~p</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2712411699-21">[</span><span class="n">Msg</span><span class="p" data-group-id="2712411699-21">]</span><span class="p" data-group-id="2712411699-20">)</span><span class="p">,</span><span class="w">
+    </span><span class="p" data-group-id="2712411699-22">{</span><span class="ss">ok</span><span class="p">,</span><span class="w"> </span><span class="n">Session</span><span class="p" data-group-id="2712411699-22">}</span><span class="p">.</span><span class="w">
+  </span></code></pre><p>A client using <code class="inline">libow.gd</code> will be able to simply call</p><pre><code class="makeup erlang" translate="no"><span class="n">NetworkClient</span><span class="p">.</span><span class="nf">send_hello</span><span class="p" data-group-id="5977888547-1">(</span><span class="s">&quot;Hello world!&quot;</span><span class="p" data-group-id="5977888547-1">)</span></code></pre><p>which should be processed by your <code class="inline">my_module</code> handler after it is routed through Overworld Core.</p><h2 id="built-in-messages" class="section-heading">
+  <a href="#built-in-messages" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Built-in messages</span>
+</h2>
+<p>Overworld has a few built in messages that you can reuse in your own modules.</p><h3 id="gen_response" class="section-heading">
+  <a href="#gen_response" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">gen_response</span>
+</h3>
+<p>The general response message <code class="inline">gen_response</code> encodes an an enum of either 0=OK or 1=ERROR with optional string to describe the error.</p><h4>Example</h4><p>Here's an example of a handler that assumes you have a function that can decode the message called <code class="inline">decode</code> and a function with conditional results called <code class="inline">blahblah</code>. <code class="inline">gen_response</code> is invoked here with <code class="inline">ok</code> returning nothing other than acknowledgement back to the client, and <code class="inline">error</code> with a rather unhelpful error message.</p><pre><code class="makeup erlang" translate="no"><span class="nf">myfun</span><span class="p" data-group-id="7337713992-1">(</span><span class="n">Msg</span><span class="p">,</span><span class="w"> </span><span class="n">Session</span><span class="p" data-group-id="7337713992-1">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> 
+    </span><span class="n">DecodedMsg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">decode</span><span class="p" data-group-id="7337713992-2">(</span><span class="n">Msg</span><span class="p" data-group-id="7337713992-2">)</span><span class="p">,</span><span class="w">
+    </span><span class="n">Reply</span><span class="w"> </span><span class="o">=</span><span class="w"> 
+    </span><span class="k">case</span><span class="w"> </span><span class="nf">blahblah</span><span class="p" data-group-id="7337713992-3">(</span><span class="n">DecodedMsg</span><span class="p">,</span><span class="w"> </span><span class="n">Session</span><span class="p" data-group-id="7337713992-3">)</span><span class="w"> </span><span class="k">of</span><span class="w"> 
+        </span><span class="ss">foo</span><span class="w"> </span><span class="p">-&gt;</span><span class="w"> 
+            </span><span class="nc">ow_protocol</span><span class="p">:</span><span class="nf">response</span><span class="p" data-group-id="7337713992-4">(</span><span class="ss">ok</span><span class="p" data-group-id="7337713992-4">)</span><span class="p">;</span><span class="w">
+        </span><span class="ss">bar</span><span class="w"> </span><span class="p">-&gt;</span><span class="w">
+            </span><span class="nc">ow_protocol</span><span class="p">:</span><span class="nf">response</span><span class="p" data-group-id="7337713992-5">(</span><span class="ss">error</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Blahblah failed somehow&quot;</span><span class="p" data-group-id="7337713992-5">)</span><span class="w">
+    </span><span class="k">end</span><span class="p">,</span><span class="w">
+    </span><span class="p" data-group-id="7337713992-6">[</span><span class="p">&lt;&lt;</span><span class="o">?</span><span class="n">YOUR_OPCODE</span><span class="p">:</span><span class="mi">16</span><span class="p">&gt;&gt;</span><span class="p">,</span><span class="w"> </span><span class="n">Reply</span><span class="p" data-group-id="7337713992-6">]</span><span class="p">.</span></code></pre>
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
+  <div class="bottom-actions-item">
+
+      <a href="ow_zone.html" class="bottom-actions-button" rel="prev">
+        <span class="subheader">
+          ← Previous Page
+        </span>
+        <span class="title">
+Zone Behaviour
+        </span>
+      </a>
+
+  </div>
+  <div class="bottom-actions-item">
+
+  </div>
+</div>
+    <footer class="footer">
+      <p>
+
+          <span class="line">
+            <a href="https://hex.pm/packages/overworld/2.0.1" class="footer-hex-package">Hex Package</a>
+
+            <a href="https://preview.hex.pm/preview/overworld/2.0.1">Hex Preview</a>
+
+              (<a href="https://preview.hex.pm/preview/overworld/2.0.1/show/guides/architecture/protocol.md">current file</a>)
+
+          </span>
+
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
+
+            <a href="overworld.epub" title="ePub version">
+              Download ePub version
+            </a>
+
+        </span>
+      </p>
+
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.34.2) for the
+
+          <a href="https://erlang.org" title="Erlang" target="_blank" translate="no">Erlang programming language</a>
+
+      </p>
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>

@@ -1,0 +1,1668 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.34.2">
+    <meta name="project" content="overworld v2.0.1">
+
+
+    <title>ow_zone — overworld v2.0.1</title>
+    <link rel="stylesheet" href="dist/html-erlang-YKQ677RH.css" />
+
+
+    <script src="dist/handlebars.runtime-NWIB6V2M.js"></script>
+    <script src="dist/handlebars.templates-K7URE6B4.js"></script>
+    <script src="dist/sidebar_items-823F469E.js"></script>
+    <script src="docs_config.js"></script>
+    <script async src="dist/html-YIPIRHGU.js"></script>
+
+  </head>
+  <body data-type="modules" class="page-behaviour">
+    <script>
+
+      try {
+        var settings = JSON.parse(localStorage.getItem('ex_doc:settings') || '{}');
+
+        if (settings.theme === 'dark' ||
+           ((settings.theme === 'system' || settings.theme == null) &&
+             window.matchMedia('(prefers-color-scheme: dark)').matches)
+           ) {
+          document.body.classList.add('dark')
+        }
+      } catch (error) { }
+    </script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="readme.html" class="sidebar-projectName" translate="no">
+overworld
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v2.0.1
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-listNav" class="sidebar-listNav" role="tablist">
+      <li>
+        <button id="extras-list-tab-button" role="tab" data-type="extras" aria-controls="extras-tab-panel" aria-selected="true" tabindex="0">
+Pages
+        </button>
+      </li>
+
+        <li>
+          <button id="modules-list-tab-button" role="tab" data-type="modules" aria-controls="modules-tab-panel" aria-selected="false" tabindex="-1">
+            Modules
+          </button>
+        </li>
+
+
+    </ul>
+  </div>
+
+  <div id="extras-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="extras-list-tab-button">
+    <ul id="extras-full-list" class="full-list"></ul>
+  </div>
+
+    <div id="modules-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="modules-list-tab-button" hidden>
+      <ul id="modules-full-list" class="full-list"></ul>
+    </div>
+
+
+</nav>
+
+<main class="content">
+  <output role="status" id="toast"></output>
+
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of overworld</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true" title="Submit search"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+    <span translate="no">ow_zone</span> <small>behaviour</small>
+    <small class="app-vsn" translate="no">(overworld v2.0.1)</small>
+
+  </h1>
+
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h1>
+<div class="summary-types summary">
+  <h2>
+    <a href="#types">Types</a>
+  </h2>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:from/0" data-no-tooltip translate="no">from/0</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:server_name/0" data-no-tooltip translate="no">server_name/0</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:server_ref/0" data-no-tooltip translate="no">server_ref/0</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:session_pid/0" data-no-tooltip translate="no">session_pid/0</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:start_mon_ret/0" data-no-tooltip translate="no">start_mon_ret/0</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:start_opt/0" data-no-tooltip translate="no">start_opt/0</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:start_ret/0" data-no-tooltip translate="no">start_ret/0</a>
+
+      </div>
+
+    </div>
+
+</div>
+<div class="summary-callbacks summary">
+  <h2>
+    <a href="#callbacks">Callbacks</a>
+  </h2>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#c:handle_disconnect/3" data-no-tooltip translate="no">handle_disconnect/3</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#c:handle_info/2" data-no-tooltip translate="no">handle_info/2</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#c:handle_join/4" data-no-tooltip translate="no">handle_join/4</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#c:handle_part/4" data-no-tooltip translate="no">handle_part/4</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#c:handle_reconnect/3" data-no-tooltip translate="no">handle_reconnect/3</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#c:handle_tick/2" data-no-tooltip translate="no">handle_tick/2</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#c:init/1" data-no-tooltip translate="no">init/1</a>
+
+      </div>
+
+    </div>
+
+</div>
+<div class="summary-functions summary">
+  <h2>
+    <a href="#functions">Functions</a>
+  </h2>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#broadcast/2" data-no-tooltip translate="no">broadcast(ServerRef, Msg)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#call/2" data-no-tooltip translate="no">call(ServerRef, Message)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#call/3" data-no-tooltip translate="no">call(ServerRef, Message, Timeout)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#cast/2" data-no-tooltip translate="no">cast(ServerRef, Message)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#code_change/3" data-no-tooltip translate="no">code_change(OldVsn, St0, Extra)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#disconnect/2" data-no-tooltip translate="no">disconnect(ServerRef, SessionPID)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#handle_call/3" data-no-tooltip translate="no">handle_call(Call, From, St0)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#handle_cast/2" data-no-tooltip translate="no">handle_cast(Cast, St0)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#handle_info/2" data-no-tooltip translate="no">handle_info(Msg, St0)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#init/1" data-no-tooltip translate="no">init(_)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Initialize the internal state of the zone, with timer</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#join/3" data-no-tooltip translate="no">join(ServerRef, Msg, SessionPID)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#part/3" data-no-tooltip translate="no">part(ServerRef, Msg, SessionPID)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#reconnect/2" data-no-tooltip translate="no">reconnect(ServerRef, SessionPID)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#reply/2" data-no-tooltip translate="no">reply(From, Message)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#rpc/4" data-no-tooltip translate="no">rpc(ServerRef, Type, Msg, SessionPID)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#send/3" data-no-tooltip translate="no">send(ServerRef, SessionPIDs, Msg)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#start/3" data-no-tooltip translate="no">start(Module, Args, Opts)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#start/4" data-no-tooltip translate="no">start(ServerName, Module, Args, Opts)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#start_link/3" data-no-tooltip translate="no">start_link(Module, Args, Opts)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#start_link/4" data-no-tooltip translate="no">start_link(ServerName, Module, Args, Opts)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#start_monitor/3" data-no-tooltip translate="no">start_monitor(Module, Args, Opts)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#start_monitor/4" data-no-tooltip translate="no">start_monitor(ServerName, Module, Args, Opts)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#stop/1" data-no-tooltip translate="no">stop(ServerRef)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#stop/3" data-no-tooltip translate="no">stop(ServerRef, Reason, Timeout)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#terminate/2" data-no-tooltip translate="no">terminate(Reason, St0)</a>
+
+      </div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="types" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#types">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Types</span>
+    </h1>
+    <div class="types-list">
+<section class="detail" id="t:from/0">
+
+  <div class="detail-header">
+    <a href="#t:from/0" class="detail-link" data-no-tooltip title="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <h1 class="signature" translate="no">from/0</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L71" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-type</span> from() :: <a href="https://www.erlang.org/doc/apps/stdlib/gen_server.html#t:from/0">gen_server:from</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="t:server_name/0">
+
+  <div class="detail-header">
+    <a href="#t:server_name/0" class="detail-link" data-no-tooltip title="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <h1 class="signature" translate="no">server_name/0</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L59" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-type</span> server_name() :: <a href="https://www.erlang.org/doc/apps/stdlib/gen_server.html#t:server_name/0">gen_server:server_name</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="t:server_ref/0">
+
+  <div class="detail-header">
+    <a href="#t:server_ref/0" class="detail-link" data-no-tooltip title="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <h1 class="signature" translate="no">server_ref/0</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L60" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-type</span> server_ref() :: <a href="https://www.erlang.org/doc/apps/stdlib/gen_server.html#t:server_ref/0">gen_server:server_ref</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="t:session_pid/0">
+
+  <div class="detail-header">
+    <a href="#t:session_pid/0" class="detail-link" data-no-tooltip title="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <h1 class="signature" translate="no">session_pid/0</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L73" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-type</span> session_pid() :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:pid/0">pid</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="t:start_mon_ret/0">
+
+  <div class="detail-header">
+    <a href="#t:start_mon_ret/0" class="detail-link" data-no-tooltip title="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <h1 class="signature" translate="no">start_mon_ret/0</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L66" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-type</span> start_mon_ret() :: {ok, {<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:pid/0">pid</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:reference/0">reference</a>()}} | ignore | {error, <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>()}.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="t:start_opt/0">
+
+  <div class="detail-header">
+    <a href="#t:start_opt/0" class="detail-link" data-no-tooltip title="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <h1 class="signature" translate="no">start_opt/0</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L61" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-type</span> start_opt() :: <a href="https://www.erlang.org/doc/apps/stdlib/gen_server.html#t:start_opt/0">gen_server:start_opt</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="t:start_ret/0">
+
+  <div class="detail-header">
+    <a href="#t:start_ret/0" class="detail-link" data-no-tooltip title="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <h1 class="signature" translate="no">start_ret/0</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L62" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-type</span> start_ret() :: {ok, <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:pid/0">pid</a>()} | ignore | {error, <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>()}.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="callbacks" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#callbacks">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Callbacks</span>
+    </h1>
+    <div class="callbacks-list">
+<section class="detail" id="c:handle_disconnect/3">
+
+  <div class="detail-header">
+    <a href="#c:handle_disconnect/3" class="detail-link" data-no-tooltip title="Link to this callback">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this callback</span>
+    </a>
+    <h1 class="signature" translate="no">handle_disconnect/3</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L125" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+      <span class="note">(optional)</span>
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-callback</span> handle_disconnect(From, ZoneData, State) -> Result
+                               when
+                                   From :: <a href="#t:session_pid/0">session_pid</a>(),
+                                   ZoneData :: zone_data(),
+                                   State :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(),
+                                   Result :: ow_zone_cast_resp().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="c:handle_info/2">
+
+  <div class="detail-header">
+    <a href="#c:handle_info/2" class="detail-link" data-no-tooltip title="Link to this callback">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this callback</span>
+    </a>
+    <h1 class="signature" translate="no">handle_info/2</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L136" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+      <span class="note">(optional)</span>
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-callback</span> handle_info(Msg, State) -> Result
+                         when Msg :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), State :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), Result :: ow_zone_cast_resp().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="c:handle_join/4">
+
+  <div class="detail-header">
+    <a href="#c:handle_join/4" class="detail-link" data-no-tooltip title="Link to this callback">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this callback</span>
+    </a>
+    <h1 class="signature" translate="no">handle_join/4</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L105" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+      <span class="note">(optional)</span>
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-callback</span> handle_join(Msg, From, ZoneData, State) -> Result
+                         when
+                             From :: <a href="#t:session_pid/0">session_pid</a>(),
+                             Msg :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(),
+                             ZoneData :: zone_data(),
+                             State :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(),
+                             Result :: ow_zone_call_resp().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="c:handle_part/4">
+
+  <div class="detail-header">
+    <a href="#c:handle_part/4" class="detail-link" data-no-tooltip title="Link to this callback">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this callback</span>
+    </a>
+    <h1 class="signature" translate="no">handle_part/4</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L112" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+      <span class="note">(optional)</span>
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-callback</span> handle_part(Msg, From, ZoneData, State) -> Result
+                         when
+                             From :: <a href="#t:session_pid/0">session_pid</a>(),
+                             Msg :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(),
+                             ZoneData :: zone_data(),
+                             State :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(),
+                             Result :: ow_zone_call_resp().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="c:handle_reconnect/3">
+
+  <div class="detail-header">
+    <a href="#c:handle_reconnect/3" class="detail-link" data-no-tooltip title="Link to this callback">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this callback</span>
+    </a>
+    <h1 class="signature" translate="no">handle_reconnect/3</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L119" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+      <span class="note">(optional)</span>
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-callback</span> handle_reconnect(From, ZoneData, State) -> Result
+                              when
+                                  From :: <a href="#t:session_pid/0">session_pid</a>(),
+                                  ZoneData :: zone_data(),
+                                  State :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(),
+                                  Result :: ow_zone_call_resp().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="c:handle_tick/2">
+
+  <div class="detail-header">
+    <a href="#c:handle_tick/2" class="detail-link" data-no-tooltip title="Link to this callback">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this callback</span>
+    </a>
+    <h1 class="signature" translate="no">handle_tick/2</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L131" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-callback</span> handle_tick(ZoneData, State) -> Result
+                         when ZoneData :: zone_data(), State :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), Result :: ow_zone_cast_resp().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="c:init/1">
+
+  <div class="detail-header">
+    <a href="#c:init/1" class="detail-link" data-no-tooltip title="Link to this callback">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this callback</span>
+    </a>
+    <h1 class="signature" translate="no">init/1</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L94" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-callback</span> init(Args) -> Result
+                  when
+                      Args :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(),
+                      Result :: {ok, InitialData} | {ok, InitialData, ConfigMap} | ignore | {stop, Reason},
+                      ConfigMap :: zone_data(),
+                      InitialData :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(),
+                      Reason :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h1>
+    <div class="functions-list">
+<section class="detail" id="broadcast/2">
+
+  <div class="detail-header">
+    <a href="#broadcast/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">broadcast(ServerRef, Msg)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L273" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> broadcast(<a href="#t:server_ref/0">server_ref</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>()) -> ok.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="call/2">
+
+  <div class="detail-header">
+    <a href="#call/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">call(ServerRef, Message)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L213" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> call(ServerRef, Message) -> Reply
+              when ServerRef :: <a href="#t:server_ref/0">server_ref</a>(), Message :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), Reply :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="call/3">
+
+  <div class="detail-header">
+    <a href="#call/3" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">call(ServerRef, Message, Timeout)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L221" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> call(ServerRef, Message, Timeout) -> Reply
+              when ServerRef :: <a href="#t:server_ref/0">server_ref</a>(), Message :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), Timeout :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:timeout/0">timeout</a>(), Reply :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="cast/2">
+
+  <div class="detail-header">
+    <a href="#cast/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">cast(ServerRef, Message)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L227" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> cast(ServerRef, Message) -> ok when ServerRef :: <a href="#t:server_ref/0">server_ref</a>(), Message :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="code_change/3">
+
+  <div class="detail-header">
+    <a href="#code_change/3" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">code_change(OldVsn, St0, Extra)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L495" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="disconnect/2">
+
+  <div class="detail-header">
+    <a href="#disconnect/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">disconnect(ServerRef, SessionPID)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L261" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> disconnect(<a href="#t:server_ref/0">server_ref</a>(), <a href="#t:session_pid/0">session_pid</a>()) -> ok.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="handle_call/3">
+
+  <div class="detail-header">
+    <a href="#handle_call/3" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">handle_call(Call, From, St0)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L306" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="handle_cast/2">
+
+  <div class="detail-header">
+    <a href="#handle_cast/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">handle_cast(Cast, St0)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L426" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="handle_info/2">
+
+  <div class="detail-header">
+    <a href="#handle_info/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">handle_info(Msg, St0)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L457" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="init/1">
+
+  <div class="detail-header">
+    <a href="#init/1" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">init(_)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L285" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Initialize the internal state of the zone, with timer</p>
+  </section>
+</section>
+<section class="detail" id="join/3">
+
+  <div class="detail-header">
+    <a href="#join/3" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">join(ServerRef, Msg, SessionPID)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L253" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> join(<a href="#t:server_ref/0">server_ref</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), <a href="#t:session_pid/0">session_pid</a>()) -> ok.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="part/3">
+
+  <div class="detail-header">
+    <a href="#part/3" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">part(ServerRef, Msg, SessionPID)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L257" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> part(<a href="#t:server_ref/0">server_ref</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), <a href="#t:session_pid/0">session_pid</a>()) -> ok.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="reconnect/2">
+
+  <div class="detail-header">
+    <a href="#reconnect/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">reconnect(ServerRef, SessionPID)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L265" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> reconnect(<a href="#t:server_ref/0">server_ref</a>(), <a href="#t:session_pid/0">session_pid</a>()) -> ok.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="reply/2">
+
+  <div class="detail-header">
+    <a href="#reply/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">reply(From, Message)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L233" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> reply(From, Message) -> ok when From :: <a href="#t:from/0">from</a>(), Message :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="rpc/4">
+
+  <div class="detail-header">
+    <a href="#rpc/4" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">rpc(ServerRef, Type, Msg, SessionPID)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L269" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> rpc(<a href="#t:server_ref/0">server_ref</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:atom/0">atom</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), <a href="#t:session_pid/0">session_pid</a>()) -> ok.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="send/3">
+
+  <div class="detail-header">
+    <a href="#send/3" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">send(ServerRef, SessionPIDs, Msg)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L277" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> send(<a href="#t:server_ref/0">server_ref</a>(), [<a href="#t:session_pid/0">session_pid</a>()], <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>()) -> ok.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="start/3">
+
+  <div class="detail-header">
+    <a href="#start/3" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">start(Module, Args, Opts)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L159" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> start(Module, Args, Opts) -> Result
+               when Module :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:module/0">module</a>(), Args :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), Opts :: [<a href="#t:start_opt/0">start_opt</a>()], Result :: <a href="#t:start_ret/0">start_ret</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="start/4">
+
+  <div class="detail-header">
+    <a href="#start/4" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">start(ServerName, Module, Args, Opts)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L168" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> start(ServerName, Module, Args, Opts) -> Result
+               when
+                   ServerName :: <a href="#t:server_name/0">server_name</a>(),
+                   Module :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:module/0">module</a>(),
+                   Args :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(),
+                   Opts :: [<a href="#t:start_opt/0">start_opt</a>()],
+                   Result :: <a href="#t:start_ret/0">start_ret</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="start_link/3">
+
+  <div class="detail-header">
+    <a href="#start_link/3" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">start_link(Module, Args, Opts)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L178" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> start_link(Module, Args, Opts) -> Result
+                    when
+                        Module :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:module/0">module</a>(), Args :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), Opts :: [<a href="#t:start_opt/0">start_opt</a>()], Result :: <a href="#t:start_ret/0">start_ret</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="start_link/4">
+
+  <div class="detail-header">
+    <a href="#start_link/4" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">start_link(ServerName, Module, Args, Opts)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L187" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> start_link(ServerName, Module, Args, Opts) -> Result
+                    when
+                        ServerName :: <a href="#t:server_name/0">server_name</a>(),
+                        Module :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:module/0">module</a>(),
+                        Args :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(),
+                        Opts :: [<a href="#t:start_opt/0">start_opt</a>()],
+                        Result :: <a href="#t:start_ret/0">start_ret</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="start_monitor/3">
+
+  <div class="detail-header">
+    <a href="#start_monitor/3" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">start_monitor(Module, Args, Opts)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L197" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> start_monitor(Module, Args, Opts) -> Result
+                       when
+                           Module :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:module/0">module</a>(),
+                           Args :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(),
+                           Opts :: [<a href="#t:start_opt/0">start_opt</a>()],
+                           Result :: <a href="#t:start_mon_ret/0">start_mon_ret</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="start_monitor/4">
+
+  <div class="detail-header">
+    <a href="#start_monitor/4" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">start_monitor(ServerName, Module, Args, Opts)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L206" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> start_monitor(ServerName, Module, Args, Opts) -> Result
+                       when
+                           ServerName :: <a href="#t:server_name/0">server_name</a>(),
+                           Module :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:module/0">module</a>(),
+                           Args :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(),
+                           Opts :: [<a href="#t:start_opt/0">start_opt</a>()],
+                           Result :: <a href="#t:start_mon_ret/0">start_mon_ret</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="stop/1">
+
+  <div class="detail-header">
+    <a href="#stop/1" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">stop(ServerRef)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L238" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> stop(ServerRef) -> ok when ServerRef :: <a href="#t:server_ref/0">server_ref</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="stop/3">
+
+  <div class="detail-header">
+    <a href="#stop/3" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">stop(ServerRef, Reason, Timeout)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L245" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> stop(ServerRef, Reason, Timeout) -> ok
+              when ServerRef :: <a href="#t:server_ref/0">server_ref</a>(), Reason :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>(), Timeout :: <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:timeout/0">timeout</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="terminate/2">
+
+  <div class="detail-header">
+    <a href="#terminate/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">terminate(Reason, St0)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_zone.erl#L494" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+      <p>
+
+          <span class="line">
+            <a href="https://hex.pm/packages/overworld/2.0.1" class="footer-hex-package">Hex Package</a>
+
+            <a href="https://preview.hex.pm/preview/overworld/2.0.1">Hex Preview</a>
+
+          </span>
+
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
+
+            <a href="overworld.epub" title="ePub version">
+              Download ePub version
+            </a>
+
+        </span>
+      </p>
+
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.34.2) for the
+
+          <a href="https://erlang.org" title="Erlang" target="_blank" translate="no">Erlang programming language</a>
+
+      </p>
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>

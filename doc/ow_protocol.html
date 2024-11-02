@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.34.2">
+    <meta name="project" content="overworld v2.0.1">
+
+
+    <title>ow_protocol — overworld v2.0.1</title>
+    <link rel="stylesheet" href="dist/html-erlang-YKQ677RH.css" />
+
+
+    <script src="dist/handlebars.runtime-NWIB6V2M.js"></script>
+    <script src="dist/handlebars.templates-K7URE6B4.js"></script>
+    <script src="dist/sidebar_items-823F469E.js"></script>
+    <script src="docs_config.js"></script>
+    <script async src="dist/html-YIPIRHGU.js"></script>
+
+  </head>
+  <body data-type="modules" class="page-module">
+    <script>
+
+      try {
+        var settings = JSON.parse(localStorage.getItem('ex_doc:settings') || '{}');
+
+        if (settings.theme === 'dark' ||
+           ((settings.theme === 'system' || settings.theme == null) &&
+             window.matchMedia('(prefers-color-scheme: dark)').matches)
+           ) {
+          document.body.classList.add('dark')
+        }
+      } catch (error) { }
+    </script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="readme.html" class="sidebar-projectName" translate="no">
+overworld
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v2.0.1
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-listNav" class="sidebar-listNav" role="tablist">
+      <li>
+        <button id="extras-list-tab-button" role="tab" data-type="extras" aria-controls="extras-tab-panel" aria-selected="true" tabindex="0">
+Pages
+        </button>
+      </li>
+
+        <li>
+          <button id="modules-list-tab-button" role="tab" data-type="modules" aria-controls="modules-tab-panel" aria-selected="false" tabindex="-1">
+            Modules
+          </button>
+        </li>
+
+
+    </ul>
+  </div>
+
+  <div id="extras-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="extras-list-tab-button">
+    <ul id="extras-full-list" class="full-list"></ul>
+  </div>
+
+    <div id="modules-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="modules-list-tab-button" hidden>
+      <ul id="modules-full-list" class="full-list"></ul>
+    </div>
+
+
+</nav>
+
+<main class="content">
+  <output role="status" id="toast"></output>
+
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of overworld</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true" title="Submit search"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_protocol.erl#L9" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+    <span translate="no">ow_protocol</span> 
+    <small class="app-vsn" translate="no">(overworld v2.0.1)</small>
+
+  </h1>
+
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h1>
+<div class="summary-functions summary">
+  <h2>
+    <a href="#functions">Functions</a>
+  </h2>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#app_names/0" data-no-tooltip translate="no">app_names()</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#apps/0" data-no-tooltip translate="no">apps()</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#code_change/3" data-no-tooltip translate="no">code_change(OldVsn, St0, Extra)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#deep_propmap_test/0" data-no-tooltip translate="no">deep_propmap_test()</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#handle_call/3" data-no-tooltip translate="no">handle_call/3</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#handle_cast/2" data-no-tooltip translate="no">handle_cast(Request, St0)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#handle_info/2" data-no-tooltip translate="no">handle_info(Request, St0)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#init/1" data-no-tooltip translate="no">init/1</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#inject_encoder_test/0" data-no-tooltip translate="no">inject_encoder_test()</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#inject_module_test/0" data-no-tooltip translate="no">inject_module_test()</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#prefix/1" data-no-tooltip translate="no">prefix(Name)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#reg_app_prefix_test/0" data-no-tooltip translate="no">reg_app_prefix_test()</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#reg_app_test/0" data-no-tooltip translate="no">reg_app_test()</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#register/1" data-no-tooltip translate="no">register(App)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#route/2" data-no-tooltip translate="no">route/2</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#router/1" data-no-tooltip translate="no">router(Prefix)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#rpc/2" data-no-tooltip translate="no">rpc(RPC, Type)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#rpcs/1" data-no-tooltip translate="no">rpcs(Type)</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#start/0" data-no-tooltip translate="no">start()</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#stop/0" data-no-tooltip translate="no">stop()</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#terminate/2" data-no-tooltip translate="no">terminate(Reason, St0)</a>
+
+      </div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="functions" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h1>
+    <div class="functions-list">
+<section class="detail" id="app_names/0">
+
+  <div class="detail-header">
+    <a href="#app_names/0" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">app_names()</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_protocol.erl#L89" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> app_names() -> [<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:atom/0">atom</a>()].</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="apps/0">
+
+  <div class="detail-header">
+    <a href="#apps/0" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">apps()</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_protocol.erl#L81" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> apps() -> [{<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:non_neg_integer/0">non_neg_integer</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:map/0">map</a>()}].</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="code_change/3">
+
+  <div class="detail-header">
+    <a href="#code_change/3" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">code_change(OldVsn, St0, Extra)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_protocol.erl#L218" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="deep_propmap_test/0">
+
+  <div class="detail-header">
+    <a href="#deep_propmap_test/0" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">deep_propmap_test()</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_protocol.erl#L353" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> deep_propmap_test() -> ok.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="handle_call/3">
+
+  <div class="detail-header">
+    <a href="#handle_call/3" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">handle_call/3</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_protocol.erl#L166" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="handle_cast/2">
+
+  <div class="detail-header">
+    <a href="#handle_cast/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">handle_cast(Request, St0)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_protocol.erl#L209" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="handle_info/2">
+
+  <div class="detail-header">
+    <a href="#handle_info/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">handle_info(Request, St0)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_protocol.erl#L212" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="init/1">
+
+  <div class="detail-header">
+    <a href="#init/1" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">init/1</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_protocol.erl#L153" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="inject_encoder_test/0">
+
+  <div class="detail-header">
+    <a href="#inject_encoder_test/0" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">inject_encoder_test()</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_protocol.erl#L399" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> inject_encoder_test() -> ok.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="inject_module_test/0">
+
+  <div class="detail-header">
+    <a href="#inject_module_test/0" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">inject_module_test()</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_protocol.erl#L316" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> inject_module_test() -> ok.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="prefix/1">
+
+  <div class="detail-header">
+    <a href="#prefix/1" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">prefix(Name)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_protocol.erl#L97" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> prefix(<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:atom/0">atom</a>()) -> <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:non_neg_integer/0">non_neg_integer</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="reg_app_prefix_test/0">
+
+  <div class="detail-header">
+    <a href="#reg_app_prefix_test/0" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">reg_app_prefix_test()</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_protocol.erl#L276" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> reg_app_prefix_test() -> ok.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="reg_app_test/0">
+
+  <div class="detail-header">
+    <a href="#reg_app_test/0" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">reg_app_test()</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_protocol.erl#L264" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> reg_app_test() -> ok.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="register/1">
+
+  <div class="detail-header">
+    <a href="#register/1" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">register(App)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_protocol.erl#L71" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> register(<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:map/0">map</a>()) -> {reply, ok | {error, <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:atom/0">atom</a>()}, <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:map/0">map</a>()}.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="route/2">
+
+  <div class="detail-header">
+    <a href="#route/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">route/2</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_protocol.erl#L125" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> route(<<_:16, _:_*8>>, <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:pid/0">pid</a>()) -> <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:term/0">term</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="router/1">
+
+  <div class="detail-header">
+    <a href="#router/1" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">router(Prefix)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_protocol.erl#L146" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> router(<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:integer/0">integer</a>()) -> false | {<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:atom/0">atom</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:atom/0">atom</a>(), <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:atom/0">atom</a>()}.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="rpc/2">
+
+  <div class="detail-header">
+    <a href="#rpc/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">rpc(RPC, Type)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_protocol.erl#L115" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> rpc(<a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:atom/0">atom</a>(), client | server) -> <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:map/0">map</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="rpcs/1">
+
+  <div class="detail-header">
+    <a href="#rpcs/1" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">rpcs(Type)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_protocol.erl#L106" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> rpcs(all | client | server) -> <a href="https://www.erlang.org/doc/apps/erts/erlang.html#t:list/0">list</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="start/0">
+
+  <div class="detail-header">
+    <a href="#start/0" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">start()</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_protocol.erl#L51" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> start() -> <a href="https://www.erlang.org/doc/apps/stdlib/gen_server.html#t:start_ret/0">gen_server:start_ret</a>().</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="stop/0">
+
+  <div class="detail-header">
+    <a href="#stop/0" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">stop()</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_protocol.erl#L59" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">-spec</span> stop() -> ok.</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="terminate/2">
+
+  <div class="detail-header">
+    <a href="#terminate/2" class="detail-link" data-no-tooltip title="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature" translate="no">terminate(Reason, St0)</h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/src/ow_protocol.erl#L215" class="icon-action" rel="help" title="View Source">
+       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+      <p>
+
+          <span class="line">
+            <a href="https://hex.pm/packages/overworld/2.0.1" class="footer-hex-package">Hex Package</a>
+
+            <a href="https://preview.hex.pm/preview/overworld/2.0.1">Hex Preview</a>
+
+          </span>
+
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
+
+            <a href="overworld.epub" title="ePub version">
+              Download ePub version
+            </a>
+
+        </span>
+      </p>
+
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.34.2) for the
+
+          <a href="https://erlang.org" title="Erlang" target="_blank" translate="no">Erlang programming language</a>
+
+      </p>
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>
