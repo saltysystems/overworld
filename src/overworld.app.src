@@ -1,12 +1,11 @@
 {application, overworld,
  [{description, "Multiplayer game server framework"},
-  {vsn, "2.0.1"},
+  {vsn, "2.0.2"},
   {registered, []},
   {mod, {ow_app, []}},
   {applications,
    [kernel,
 	stdlib,
-	gproc,
 	cowboy,
 	enet
    ]},
