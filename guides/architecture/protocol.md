@@ -45,7 +45,7 @@ initiated by the client are defined by one key:
 
 Generating the client library
 ---------------------
-Overworld can automatically generate a client library in GDScript usable by Godot v3.x.
+Overworld can automatically generate a client library in GDScript usable by Godot v4.x.
 
 This library should be dropped into your scripts folder, along with your
 protobuf file. You will need to install the
@@ -58,10 +58,6 @@ Once Erlang is running, you can invoke the following to write out a library:
 ```
 1> ow_binding:write().
 ```
-
-The library file will live in `apps/ow_core/static/libow.gd`. It's up
-to you to distribute the file. 
-
 
 Examples
 --------------

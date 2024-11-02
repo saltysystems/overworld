@@ -223,7 +223,7 @@ init([]) ->
     {ok, State, Config}.
 ```
 
-This function initializes the zone's state. In this simple chat application, we start with an empty map for both internal State and the `ow_zone` Config. You can add any initial state or configuration here as needed. For example, you might want to change the tick rate via `Config = #{ tick_ms => 100 }` for a 100ms tick rate. You can find further documentation [here](../ow_zone.md). 
+This function initializes the zone's state. In this simple chat application, we start with an empty map for both internal State and the `ow_zone` Config. You can add any initial state or configuration here as needed. For example, you might want to change the tick rate via `Config = #{ tick_ms => 100 }` for a 100ms tick rate. You can find further documentation [here](../architecture/ow_zone.md). 
 
 #### handle_join/4
 

@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.34.2">
+    <meta name="project" content="overworld v2.0.1">
+
+
+    <title>Quickstart for Server — overworld v2.0.1</title>
+    <link rel="stylesheet" href="dist/html-erlang-YKQ677RH.css" />
+
+
+    <script src="dist/handlebars.runtime-NWIB6V2M.js"></script>
+    <script src="dist/handlebars.templates-K7URE6B4.js"></script>
+    <script src="dist/sidebar_items-823F469E.js"></script>
+    <script src="docs_config.js"></script>
+    <script async src="dist/html-YIPIRHGU.js"></script>
+
+  </head>
+  <body data-type="extras" class="page-extra">
+    <script>
+
+      try {
+        var settings = JSON.parse(localStorage.getItem('ex_doc:settings') || '{}');
+
+        if (settings.theme === 'dark' ||
+           ((settings.theme === 'system' || settings.theme == null) &&
+             window.matchMedia('(prefers-color-scheme: dark)').matches)
+           ) {
+          document.body.classList.add('dark')
+        }
+      } catch (error) { }
+    </script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="readme.html" class="sidebar-projectName" translate="no">
+overworld
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v2.0.1
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-listNav" class="sidebar-listNav" role="tablist">
+      <li>
+        <button id="extras-list-tab-button" role="tab" data-type="extras" aria-controls="extras-tab-panel" aria-selected="true" tabindex="0">
+Pages
+        </button>
+      </li>
+
+        <li>
+          <button id="modules-list-tab-button" role="tab" data-type="modules" aria-controls="modules-tab-panel" aria-selected="false" tabindex="-1">
+            Modules
+          </button>
+        </li>
+
+
+    </ul>
+  </div>
+
+  <div id="extras-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="extras-list-tab-button">
+    <ul id="extras-full-list" class="full-list"></ul>
+  </div>
+
+    <div id="modules-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="modules-list-tab-button" hidden>
+      <ul id="modules-full-list" class="full-list"></ul>
+    </div>
+
+
+</nav>
+
+<main class="content">
+  <output role="status" id="toast"></output>
+
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of overworld</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true" title="Submit search"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <h1>
+
+      <a href="https://github.com/saltysystems/overworld/blob/v2.0.1/guides/quickstart/server.md#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+
+    <span>Conceptual Overview</span>
+  </h1>
+
+<p>Overworld is built around the concept of &quot;Zones&quot;. A Zone is an Erlang process that manages a group of connected clients, handling tasks such as:</p><ul><li>Connected clients </li><li>Message serialization and deserialization as needed (Protobuf for networked clients, tuples for Erlang clients) </li><li>Broadcasting messages to connected clients or specific lists of clients </li><li>Implementing game via periodic ticks with configurable tick rate</li></ul><p>On the client side, Overworld generates Godot code that interfaces with the Erlang server, providing an easy-to-use API for sending and receiving messages.</p><h1>Server Implementation Guide</h1><h2 id="prerequisites" class="section-heading">
+  <a href="#prerequisites" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Prerequisites</span>
+</h2>
+<ul><li> <a href="https://www.erlang.org/downloads">Erlang/OTP 27</a></li><li> <a href="https://rebar3.org/">rebar3</a></li></ul><h2 id="creating-the-chat-application" class="section-heading">
+  <a href="#creating-the-chat-application" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Creating the <code class="inline">chat</code> application</span>
+</h2>
+<pre><code class="makeup bash" translate="no"><span class="">rebar3 new app chat
+</span><span class="">cd chat
+</span></code></pre><p>Edit <code class="inline">rebar.config</code> to include Overworld and the Protocol Buffers plugins:</p><pre><code class="makeup erlang" translate="no"><span class="ss">deps</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8768820771-1">[</span><span class="w">
+    </span><span class="p" data-group-id="8768820771-2">{</span><span class="ss">overworld</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8768820771-3">{</span><span class="ss">git</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;https://github.com/saltysystems/overworld.git&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8768820771-4">{</span><span class="ss">branch</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;master&quot;</span><span class="p" data-group-id="8768820771-4">}</span><span class="p" data-group-id="8768820771-3">}</span><span class="p" data-group-id="8768820771-2">}</span><span class="w">
+</span><span class="p" data-group-id="8768820771-1">]</span><span class="p">}</span><span class="p">.</span><span class="w">
+
+</span><span class="p" data-group-id="8768820771-5">{</span><span class="ss">plugins</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8768820771-6">[</span><span class="w">
+    </span><span class="p" data-group-id="8768820771-7">{</span><span class="ss">rebar3_gpb_plugin</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;2.23.2&quot;</span><span class="p" data-group-id="8768820771-7">}</span><span class="w">
+</span><span class="p" data-group-id="8768820771-6">]</span><span class="p" data-group-id="8768820771-5">}</span><span class="p">.</span><span class="w">
+
+</span><span class="p" data-group-id="8768820771-8">{</span><span class="ss">erl_opts</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8768820771-9">[</span><span class="w">
+    </span><span class="p" data-group-id="8768820771-10">{</span><span class="ss">i</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;./_build/default/plugins/gpb/include&quot;</span><span class="p" data-group-id="8768820771-10">}</span><span class="w">
+</span><span class="p" data-group-id="8768820771-9">]</span><span class="p" data-group-id="8768820771-8">}</span><span class="p">.</span><span class="w">
+
+</span><span class="p" data-group-id="8768820771-11">{</span><span class="ss">gpb_opts</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8768820771-12">[</span><span class="w">
+    </span><span class="p" data-group-id="8768820771-13">{</span><span class="ss">i</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;priv/proto&quot;</span><span class="p" data-group-id="8768820771-13">}</span><span class="p">,</span><span class="w">
+    </span><span class="p" data-group-id="8768820771-14">{</span><span class="ss">module_name_suffix</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;_pb&quot;</span><span class="p" data-group-id="8768820771-14">}</span><span class="p">,</span><span class="w">
+    </span><span class="p" data-group-id="8768820771-15">{</span><span class="ss">o_erl</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;src&quot;</span><span class="p" data-group-id="8768820771-15">}</span><span class="p">,</span><span class="w">
+    </span><span class="p" data-group-id="8768820771-16">{</span><span class="ss">o_hrl</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;src&quot;</span><span class="p" data-group-id="8768820771-16">}</span><span class="p">,</span><span class="w">
+    </span><span class="p" data-group-id="8768820771-17">{</span><span class="ss">strings_as_binaries</span><span class="p">,</span><span class="w"> </span><span class="ss">false</span><span class="p" data-group-id="8768820771-17">}</span><span class="p">,</span><span class="w">
+    </span><span class="p" data-group-id="8768820771-18">{</span><span class="ss">maps</span><span class="p">,</span><span class="w"> </span><span class="ss">true</span><span class="p" data-group-id="8768820771-18">}</span><span class="p">,</span><span class="w">
+    </span><span class="p" data-group-id="8768820771-19">{</span><span class="ss">msgs_as_maps</span><span class="p">,</span><span class="w"> </span><span class="ss">true</span><span class="p" data-group-id="8768820771-19">}</span><span class="p">,</span><span class="w">
+    </span><span class="p" data-group-id="8768820771-20">{</span><span class="ss">mapfields_as_maps</span><span class="p">,</span><span class="w"> </span><span class="ss">true</span><span class="p" data-group-id="8768820771-20">}</span><span class="p">,</span><span class="w">
+    </span><span class="ss">type_specs</span><span class="w">
+</span><span class="p" data-group-id="8768820771-12">]</span><span class="p" data-group-id="8768820771-11">}</span><span class="p">.</span><span class="w">
+
+</span><span class="p" data-group-id="8768820771-21">{</span><span class="ss">provider_hooks</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8768820771-22">[</span><span class="w">
+    </span><span class="p" data-group-id="8768820771-23">{</span><span class="ss">pre</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8768820771-24">[</span><span class="w">
+        </span><span class="p" data-group-id="8768820771-25">{</span><span class="ss">compile</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8768820771-26">{</span><span class="ss">protobuf</span><span class="p">,</span><span class="w"> </span><span class="ss">compile</span><span class="p" data-group-id="8768820771-26">}</span><span class="p" data-group-id="8768820771-25">}</span><span class="p">,</span><span class="w">
+        </span><span class="p" data-group-id="8768820771-27">{</span><span class="ss">clean</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8768820771-28">{</span><span class="ss">protobuf</span><span class="p">,</span><span class="w"> </span><span class="ss">clean</span><span class="p" data-group-id="8768820771-28">}</span><span class="p" data-group-id="8768820771-27">}</span><span class="w">
+    </span><span class="p" data-group-id="8768820771-24">]</span><span class="p" data-group-id="8768820771-23">}</span><span class="w">
+</span><span class="p" data-group-id="8768820771-22">]</span><span class="p" data-group-id="8768820771-21">}</span><span class="p">.</span></code></pre><p>Run <code class="inline">rebar3 upgrade</code> to fetch dependencies.</p><h2 id="implementing-the-chat-zone-module" class="section-heading">
+  <a href="#implementing-the-chat-zone-module" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Implementing the chat zone module</span>
+</h2>
+<p>First, let's create the chat_zone. From the top-level directory of the chat application:</p><pre><code class="makeup bash" translate="no"><span class="">touch src/chat_zone.erl
+</span></code></pre><p>Now open the <code class="inline">chat_zone.erl</code> module and paste in the following. We'll go over it section-by-section afterwards. </p><pre><code class="makeup erlang" translate="no"><span class="p">-</span><span class="na">module</span><span class="p" data-group-id="5869538927-1">(</span><span class="ss">chat_zone</span><span class="p" data-group-id="5869538927-1">)</span><span class="p">.</span><span class="w">
+</span><span class="p">-</span><span class="na">behaviour</span><span class="p" data-group-id="5869538927-2">(</span><span class="ss">ow_zone</span><span class="p" data-group-id="5869538927-2">)</span><span class="p">.</span><span class="w">
+</span><span class="w">
+</span><span class="p">-</span><span class="na">export</span><span class="p" data-group-id="5869538927-3">(</span><span class="p" data-group-id="5869538927-4">[</span><span class="w">
+         </span><span class="ss">start_link</span><span class="p">/</span><span class="mi">0</span><span class="p">,</span><span class="w">
+         </span><span class="ss">stop</span><span class="p">/</span><span class="mi">0</span><span class="p">,</span><span class="w">
+         </span><span class="ss">join</span><span class="p">/</span><span class="mi">2</span><span class="p">,</span><span class="w">
+         </span><span class="ss">part</span><span class="p">/</span><span class="mi">2</span><span class="p">,</span><span class="w">
+         </span><span class="ss">channel_msg</span><span class="p">/</span><span class="mi">2</span><span class="w">
+        </span><span class="p" data-group-id="5869538927-4">]</span><span class="p" data-group-id="5869538927-3">)</span><span class="p">.</span><span class="w">
+</span><span class="w">
+</span><span class="p">-</span><span class="na">export</span><span class="p" data-group-id="5869538927-5">(</span><span class="p" data-group-id="5869538927-6">[</span><span class="ss">init</span><span class="p">/</span><span class="mi">1</span><span class="p">,</span><span class="w">
+         </span><span class="ss">handle_join</span><span class="p">/</span><span class="mi">4</span><span class="p">,</span><span class="w">
+         </span><span class="ss">handle_part</span><span class="p">/</span><span class="mi">4</span><span class="p">,</span><span class="w">
+         </span><span class="ss">handle_channel_msg</span><span class="p">/</span><span class="mi">4</span><span class="p">,</span><span class="w">
+         </span><span class="ss">handle_tick</span><span class="p">/</span><span class="mi">2</span><span class="w">
+        </span><span class="p" data-group-id="5869538927-6">]</span><span class="p" data-group-id="5869538927-5">)</span><span class="p">.</span><span class="w">
+</span><span class="w">
+</span><span class="p">-</span><span class="na">define</span><span class="p" data-group-id="5869538927-7">(</span><span class="n">SERVER</span><span class="p">,</span><span class="w"> </span><span class="o">?</span><span class="n">MODULE</span><span class="p" data-group-id="5869538927-7">)</span><span class="p">.</span><span class="w">
+</span><span class="w">
+</span><span class="p">-</span><span class="na">rpc_client</span><span class="p" data-group-id="5869538927-8">(</span><span class="p" data-group-id="5869538927-9">[</span><span class="ss">sync</span><span class="p">,</span><span class="w"> </span><span class="ss">channel_msg</span><span class="p" data-group-id="5869538927-9">]</span><span class="p" data-group-id="5869538927-8">)</span><span class="p">.</span><span class="w">
+</span><span class="p">-</span><span class="na">rpc_server</span><span class="p" data-group-id="5869538927-10">(</span><span class="p" data-group-id="5869538927-11">[</span><span class="ss">join</span><span class="p">,</span><span class="w"> </span><span class="ss">part</span><span class="p">,</span><span class="w"> </span><span class="ss">channel_msg</span><span class="p" data-group-id="5869538927-11">]</span><span class="p" data-group-id="5869538927-10">)</span><span class="p">.</span><span class="w">
+
+</span><span class="nf">start_link</span><span class="p" data-group-id="5869538927-12">(</span><span class="p" data-group-id="5869538927-12">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w">
+    </span><span class="nc">ow_zone</span><span class="p">:</span><span class="nf">start_link</span><span class="p" data-group-id="5869538927-13">(</span><span class="p" data-group-id="5869538927-14">{</span><span class="ss">local</span><span class="p">,</span><span class="w"> </span><span class="o">?</span><span class="n">SERVER</span><span class="p" data-group-id="5869538927-14">}</span><span class="p">,</span><span class="w"> </span><span class="o">?</span><span class="n">MODULE</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5869538927-15">[</span><span class="p" data-group-id="5869538927-15">]</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5869538927-16">[</span><span class="p" data-group-id="5869538927-16">]</span><span class="p" data-group-id="5869538927-13">)</span><span class="p">.</span><span class="w">
+</span><span class="nf">stop</span><span class="p" data-group-id="5869538927-17">(</span><span class="p" data-group-id="5869538927-17">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w">
+    </span><span class="nc">ow_zone</span><span class="p">:</span><span class="nf">stop</span><span class="p" data-group-id="5869538927-18">(</span><span class="o">?</span><span class="n">SERVER</span><span class="p" data-group-id="5869538927-18">)</span><span class="p">.</span><span class="w">
+</span><span class="nf">join</span><span class="p" data-group-id="5869538927-19">(</span><span class="n">Msg</span><span class="p">,</span><span class="w"> </span><span class="n">Who</span><span class="p" data-group-id="5869538927-19">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w">
+    </span><span class="nc">ow_zone</span><span class="p">:</span><span class="nf">join</span><span class="p" data-group-id="5869538927-20">(</span><span class="o">?</span><span class="n">SERVER</span><span class="p">,</span><span class="w"> </span><span class="n">Msg</span><span class="p">,</span><span class="w"> </span><span class="n">Who</span><span class="p" data-group-id="5869538927-20">)</span><span class="p">.</span><span class="w">
+</span><span class="nf">part</span><span class="p" data-group-id="5869538927-21">(</span><span class="n">Msg</span><span class="p">,</span><span class="w"> </span><span class="n">Who</span><span class="p" data-group-id="5869538927-21">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w">
+    </span><span class="nc">ow_zone</span><span class="p">:</span><span class="nf">part</span><span class="p" data-group-id="5869538927-22">(</span><span class="o">?</span><span class="n">SERVER</span><span class="p">,</span><span class="w"> </span><span class="n">Msg</span><span class="p">,</span><span class="w"> </span><span class="n">Who</span><span class="p" data-group-id="5869538927-22">)</span><span class="p">.</span><span class="w">
+</span><span class="nf">channel_msg</span><span class="p" data-group-id="5869538927-23">(</span><span class="n">Msg</span><span class="p">,</span><span class="w"> </span><span class="n">Who</span><span class="p" data-group-id="5869538927-23">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w">
+    </span><span class="nc">ow_zone</span><span class="p">:</span><span class="nf">rpc</span><span class="p" data-group-id="5869538927-24">(</span><span class="o">?</span><span class="n">SERVER</span><span class="p">,</span><span class="w"> </span><span class="ss">channel_msg</span><span class="p">,</span><span class="w"> </span><span class="n">Msg</span><span class="p">,</span><span class="w"> </span><span class="n">Who</span><span class="p" data-group-id="5869538927-24">)</span><span class="p">.</span><span class="w">
+
+</span><span class="nf">init</span><span class="p" data-group-id="5869538927-25">(</span><span class="p" data-group-id="5869538927-26">[</span><span class="p" data-group-id="5869538927-26">]</span><span class="p" data-group-id="5869538927-25">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w">
+    </span><span class="n">State</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="5869538927-27">#{</span><span class="p" data-group-id="5869538927-27">}</span><span class="p">,</span><span class="w">
+    </span><span class="n">Config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="5869538927-28">#{</span><span class="p" data-group-id="5869538927-28">}</span><span class="p">,</span><span class="w">
+    </span><span class="p" data-group-id="5869538927-29">{</span><span class="ss">ok</span><span class="p">,</span><span class="w"> </span><span class="n">State</span><span class="p">,</span><span class="w"> </span><span class="n">Config</span><span class="p" data-group-id="5869538927-29">}</span><span class="p">.</span><span class="w">
+
+</span><span class="nf">handle_join</span><span class="p" data-group-id="5869538927-30">(</span><span class="n">Msg</span><span class="p">,</span><span class="w"> </span><span class="n">Who</span><span class="p">,</span><span class="w"> </span><span class="p">_</span><span class="n">ZD</span><span class="p">,</span><span class="w"> </span><span class="n">State</span><span class="p" data-group-id="5869538927-30">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w">
+    </span><span class="n">SessionID</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">ow_session</span><span class="p">:</span><span class="nf">id</span><span class="p" data-group-id="5869538927-31">(</span><span class="n">Who</span><span class="p" data-group-id="5869538927-31">)</span><span class="p">,</span><span class="w">
+    </span><span class="n">Handle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">maps</span><span class="p">:</span><span class="nf">get</span><span class="p" data-group-id="5869538927-32">(</span><span class="ss">handle</span><span class="p">,</span><span class="w"> </span><span class="n">Msg</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Unknown&quot;</span><span class="w"> </span><span class="o">++</span><span class="w"> </span><span class="nf">integer_to_list</span><span class="p" data-group-id="5869538927-33">(</span><span class="n">SessionID</span><span class="p" data-group-id="5869538927-33">)</span><span class="p" data-group-id="5869538927-32">)</span><span class="p">,</span><span class="w">
+    </span><span class="nc">logger</span><span class="p">:</span><span class="nf">notice</span><span class="p" data-group-id="5869538927-34">(</span><span class="s">&quot;Player </span><span class="si">~p</span><span class="s"> (</span><span class="si">~p</span><span class="s">) has joined the chat.&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5869538927-35">[</span><span class="n">Handle</span><span class="p">,</span><span class="w"> </span><span class="n">Who</span><span class="p" data-group-id="5869538927-35">]</span><span class="p" data-group-id="5869538927-34">)</span><span class="p">,</span><span class="w">
+    </span><span class="n">State1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">State</span><span class="p" data-group-id="5869538927-36">#{</span><span class="w"> </span><span class="n">Who</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">Handle</span><span class="w"> </span><span class="p" data-group-id="5869538927-36">}</span><span class="p">,</span><span class="w">
+    </span><span class="n">Handles</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">maps</span><span class="p">:</span><span class="nf">values</span><span class="p" data-group-id="5869538927-37">(</span><span class="n">State1</span><span class="p" data-group-id="5869538927-37">)</span><span class="p">,</span><span class="w">
+    </span><span class="n">BcastMsg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="5869538927-38">{</span><span class="ss">sync</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5869538927-39">#{</span><span class="w"> </span><span class="ss">handles</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">Handles</span><span class="w"> </span><span class="p" data-group-id="5869538927-39">}</span><span class="p" data-group-id="5869538927-38">}</span><span class="p">,</span><span class="w">
+    </span><span class="p" data-group-id="5869538927-40">{</span><span class="ss">broadcast</span><span class="p">,</span><span class="w"> </span><span class="n">BcastMsg</span><span class="p">,</span><span class="w"> </span><span class="n">State1</span><span class="p" data-group-id="5869538927-40">}</span><span class="p">.</span><span class="w">
+
+</span><span class="nf">handle_part</span><span class="p" data-group-id="5869538927-41">(</span><span class="p">_</span><span class="n">Msg</span><span class="p">,</span><span class="w"> </span><span class="n">Who</span><span class="p">,</span><span class="w"> </span><span class="p">_</span><span class="n">ZD</span><span class="p">,</span><span class="w"> </span><span class="n">State</span><span class="p" data-group-id="5869538927-41">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w">
+    </span><span class="p" data-group-id="5869538927-42">#{</span><span class="w"> </span><span class="n">Who</span><span class="w"> </span><span class="p">:=</span><span class="w"> </span><span class="n">Handle</span><span class="w"> </span><span class="p" data-group-id="5869538927-42">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">State</span><span class="p">,</span><span class="w">
+    </span><span class="nc">logger</span><span class="p">:</span><span class="nf">notice</span><span class="p" data-group-id="5869538927-43">(</span><span class="s">&quot;Player </span><span class="si">~p</span><span class="s"> (</span><span class="si">~p</span><span class="s">) has left the chat.&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5869538927-44">[</span><span class="n">Handle</span><span class="p">,</span><span class="w"> </span><span class="n">Who</span><span class="p" data-group-id="5869538927-44">]</span><span class="p" data-group-id="5869538927-43">)</span><span class="p">,</span><span class="w">
+    </span><span class="n">State1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">maps</span><span class="p">:</span><span class="nf">remove</span><span class="p" data-group-id="5869538927-45">(</span><span class="n">Who</span><span class="p">,</span><span class="w"> </span><span class="n">State</span><span class="p" data-group-id="5869538927-45">)</span><span class="p">,</span><span class="w">
+    </span><span class="n">Handles</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">maps</span><span class="p">:</span><span class="nf">values</span><span class="p" data-group-id="5869538927-46">(</span><span class="n">State1</span><span class="p" data-group-id="5869538927-46">)</span><span class="p">,</span><span class="w">
+    </span><span class="n">BcastMsg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="5869538927-47">{</span><span class="ss">sync</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5869538927-48">#{</span><span class="w"> </span><span class="ss">handles</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">Handles</span><span class="w"> </span><span class="p" data-group-id="5869538927-48">}</span><span class="p" data-group-id="5869538927-47">}</span><span class="p">,</span><span class="w">
+    </span><span class="p" data-group-id="5869538927-49">{</span><span class="ss">broadcast</span><span class="p">,</span><span class="w"> </span><span class="n">BcastMsg</span><span class="p">,</span><span class="w"> </span><span class="n">State1</span><span class="p" data-group-id="5869538927-49">}</span><span class="p">.</span><span class="w">
+
+</span><span class="nf">handle_channel_msg</span><span class="p" data-group-id="5869538927-50">(</span><span class="n">Msg</span><span class="p">,</span><span class="w"> </span><span class="n">Who</span><span class="p">,</span><span class="w"> </span><span class="p">_</span><span class="n">ZD</span><span class="p">,</span><span class="w"> </span><span class="n">State</span><span class="p" data-group-id="5869538927-50">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w">
+    </span><span class="p" data-group-id="5869538927-51">#{</span><span class="w"> </span><span class="n">Who</span><span class="w"> </span><span class="p">:=</span><span class="w"> </span><span class="n">Handle</span><span class="w"> </span><span class="p" data-group-id="5869538927-51">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">State</span><span class="p">,</span><span class="w">
+    </span><span class="nc">logger</span><span class="p">:</span><span class="nf">notice</span><span class="p" data-group-id="5869538927-52">(</span><span class="s">&quot;&lt;</span><span class="si">~p</span><span class="s">&gt;: </span><span class="si">~p</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5869538927-53">[</span><span class="n">Handle</span><span class="p">,</span><span class="w"> </span><span class="n">Msg</span><span class="p" data-group-id="5869538927-53">]</span><span class="p" data-group-id="5869538927-52">)</span><span class="p">,</span><span class="w">
+    </span><span class="n">Msg1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Msg</span><span class="p" data-group-id="5869538927-54">#{</span><span class="w"> </span><span class="ss">handle</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">Handle</span><span class="w"> </span><span class="p" data-group-id="5869538927-54">}</span><span class="p">,</span><span class="w">
+    </span><span class="nc">ow_zone</span><span class="p">:</span><span class="nf">broadcast</span><span class="p" data-group-id="5869538927-55">(</span><span class="o">?</span><span class="n">SERVER</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5869538927-56">{</span><span class="ss">channel_msg</span><span class="p">,</span><span class="w"> </span><span class="n">Msg1</span><span class="p" data-group-id="5869538927-56">}</span><span class="p" data-group-id="5869538927-55">)</span><span class="p">,</span><span class="w">
+    </span><span class="p" data-group-id="5869538927-57">{</span><span class="ss">noreply</span><span class="p">,</span><span class="w"> </span><span class="n">State</span><span class="p" data-group-id="5869538927-57">}</span><span class="p">.</span><span class="w">
+</span><span class="nf">handle_tick</span><span class="p" data-group-id="5869538927-58">(</span><span class="p">_</span><span class="n">ZoneData</span><span class="p">,</span><span class="w"> </span><span class="n">State</span><span class="p" data-group-id="5869538927-58">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w">
+    </span><span class="p" data-group-id="5869538927-59">{</span><span class="ss">noreply</span><span class="p">,</span><span class="w"> </span><span class="n">State</span><span class="p" data-group-id="5869538927-59">}</span><span class="p">.</span></code></pre><p>Next we'll explain each component in detail. </p><h3 id="module-structure" class="section-heading">
+  <a href="#module-structure" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Module Structure</span>
+</h3>
+<p>Let's start by breaking down the structure of the <code class="inline">chat_zone</code> module. Here are the top-level annotations for the module:</p><pre><code class="makeup erlang" translate="no"><span class="p">-</span><span class="na">module</span><span class="p" data-group-id="1512234165-1">(</span><span class="ss">chat_zone</span><span class="p" data-group-id="1512234165-1">)</span><span class="p">.</span><span class="w">
+</span><span class="p">-</span><span class="na">behaviour</span><span class="p" data-group-id="1512234165-2">(</span><span class="ss">ow_zone</span><span class="p" data-group-id="1512234165-2">)</span><span class="p">.</span><span class="w">
+
+</span><span class="c1">% API exports</span><span class="w">
+</span><span class="p">-</span><span class="na">export</span><span class="p" data-group-id="1512234165-3">(</span><span class="p" data-group-id="1512234165-4">[</span><span class="w">
+    </span><span class="ss">start_link</span><span class="p">/</span><span class="mi">0</span><span class="p">,</span><span class="w">
+    </span><span class="ss">stop</span><span class="p">/</span><span class="mi">0</span><span class="p">,</span><span class="w">
+    </span><span class="ss">join</span><span class="p">/</span><span class="mi">2</span><span class="p">,</span><span class="w">
+    </span><span class="ss">part</span><span class="p">/</span><span class="mi">2</span><span class="p">,</span><span class="w">
+    </span><span class="ss">channel_msg</span><span class="p">/</span><span class="mi">2</span><span class="w">
+</span><span class="p" data-group-id="1512234165-4">]</span><span class="p" data-group-id="1512234165-3">)</span><span class="p">.</span><span class="w">
+
+</span><span class="c1">% Callback exports</span><span class="w">
+</span><span class="p">-</span><span class="na">export</span><span class="p" data-group-id="1512234165-5">(</span><span class="p" data-group-id="1512234165-6">[</span><span class="w">
+    </span><span class="ss">init</span><span class="p">/</span><span class="mi">1</span><span class="p">,</span><span class="w">
+    </span><span class="ss">handle_join</span><span class="p">/</span><span class="mi">4</span><span class="p">,</span><span class="w">
+    </span><span class="ss">handle_part</span><span class="p">/</span><span class="mi">4</span><span class="p">,</span><span class="w">
+    </span><span class="ss">handle_channel_msg</span><span class="p">/</span><span class="mi">4</span><span class="p">,</span><span class="w">
+    </span><span class="ss">handle_tick</span><span class="p">/</span><span class="mi">2</span><span class="w">
+</span><span class="p" data-group-id="1512234165-6">]</span><span class="p" data-group-id="1512234165-5">)</span><span class="p">.</span><span class="w">
+
+</span><span class="c1">% RPC annotations</span><span class="w">
+</span><span class="p">-</span><span class="na">rpc_client</span><span class="p" data-group-id="1512234165-7">(</span><span class="p" data-group-id="1512234165-8">[</span><span class="ss">sync</span><span class="p">,</span><span class="w"> </span><span class="ss">channel_msg</span><span class="p" data-group-id="1512234165-8">]</span><span class="p" data-group-id="1512234165-7">)</span><span class="p">.</span><span class="w">
+</span><span class="p">-</span><span class="na">rpc_server</span><span class="p" data-group-id="1512234165-9">(</span><span class="p" data-group-id="1512234165-10">[</span><span class="ss">join</span><span class="p">,</span><span class="w"> </span><span class="ss">part</span><span class="p">,</span><span class="w"> </span><span class="ss">channel_msg</span><span class="p" data-group-id="1512234165-10">]</span><span class="p" data-group-id="1512234165-9">)</span><span class="p">.</span></code></pre><h4>Behavior Declaration</h4><p>The <code class="inline">-behaviour(ow_zone).</code> line declares that this module implements the <code class="inline">ow_zone</code> behavior. This is similar to implementing <code class="inline">gen_server</code>, but tailored for tick-based games in Overworld. </p><h4>API Functions</h4><p>The first export list defines the public API for the chat zone. These functions will be called by other parts of your application to interact with the chat zone.</p><h4>Callback Functions</h4><p>The second export list defines the callback functions required by the <code class="inline">ow_zone</code> behavior. These functions will be called by Overworld in response to various events.</p><h4>RPC Annotations</h4><p>The <code class="inline">-rpc_client</code> and <code class="inline">-rpc_server</code> annotations are crucial for Overworld's code generation features:</p><ul><li><code class="inline">-rpc_client([sync, channel_msg]).</code> indicates that the server can send <code class="inline">sync</code> and <code class="inline">channel_msg</code> messages to clients.</li><li><code class="inline">-rpc_server([join, part, channel_msg]).</code> indicates that clients can send <code class="inline">join</code>, <code class="inline">part</code>, and <code class="inline">channel_msg</code> messages to the server.</li></ul><p>These annotations will generate appropriate Godot signals and functions in the client library. For example, the <code class="inline">sync</code> function will be available in Godot as a signal <code class="inline">server_sync</code> emitted in the <code class="inline">Overworld</code> module. Likewise, <code class="inline">join</code> will be available to call via <code class="inline">Overworld.join(handle: String)</code>. </p><h3 id="implementing-api-functions" class="section-heading">
+  <a href="#implementing-api-functions" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Implementing API Functions</span>
+</h3>
+<p>Now, let's implement the API functions:</p><pre><code class="makeup erlang" translate="no"><span class="p">-</span><span class="na">define</span><span class="p" data-group-id="0190262360-1">(</span><span class="n">SERVER</span><span class="p">,</span><span class="w"> </span><span class="o">?</span><span class="n">MODULE</span><span class="p" data-group-id="0190262360-1">)</span><span class="p">.</span><span class="w">
+
+</span><span class="nf">start_link</span><span class="p" data-group-id="0190262360-2">(</span><span class="p" data-group-id="0190262360-2">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w">
+    </span><span class="nc">ow_zone</span><span class="p">:</span><span class="nf">start_link</span><span class="p" data-group-id="0190262360-3">(</span><span class="p" data-group-id="0190262360-4">{</span><span class="ss">local</span><span class="p">,</span><span class="w"> </span><span class="o">?</span><span class="n">SERVER</span><span class="p" data-group-id="0190262360-4">}</span><span class="p">,</span><span class="w"> </span><span class="o">?</span><span class="n">MODULE</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0190262360-5">[</span><span class="p" data-group-id="0190262360-5">]</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0190262360-6">[</span><span class="p" data-group-id="0190262360-6">]</span><span class="p" data-group-id="0190262360-3">)</span><span class="p">.</span><span class="w">
+
+</span><span class="nf">stop</span><span class="p" data-group-id="0190262360-7">(</span><span class="p" data-group-id="0190262360-7">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w">
+    </span><span class="nc">ow_zone</span><span class="p">:</span><span class="nf">stop</span><span class="p" data-group-id="0190262360-8">(</span><span class="o">?</span><span class="n">SERVER</span><span class="p" data-group-id="0190262360-8">)</span><span class="p">.</span><span class="w">
+
+</span><span class="nf">join</span><span class="p" data-group-id="0190262360-9">(</span><span class="n">Msg</span><span class="p">,</span><span class="w"> </span><span class="n">Who</span><span class="p" data-group-id="0190262360-9">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w">
+    </span><span class="nc">ow_zone</span><span class="p">:</span><span class="nf">join</span><span class="p" data-group-id="0190262360-10">(</span><span class="o">?</span><span class="n">SERVER</span><span class="p">,</span><span class="w"> </span><span class="n">Msg</span><span class="p">,</span><span class="w"> </span><span class="n">Who</span><span class="p" data-group-id="0190262360-10">)</span><span class="p">.</span><span class="w">
+
+</span><span class="nf">part</span><span class="p" data-group-id="0190262360-11">(</span><span class="n">Msg</span><span class="p">,</span><span class="w"> </span><span class="n">Who</span><span class="p" data-group-id="0190262360-11">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w">
+    </span><span class="nc">ow_zone</span><span class="p">:</span><span class="nf">part</span><span class="p" data-group-id="0190262360-12">(</span><span class="o">?</span><span class="n">SERVER</span><span class="p">,</span><span class="w"> </span><span class="n">Msg</span><span class="p">,</span><span class="w"> </span><span class="n">Who</span><span class="p" data-group-id="0190262360-12">)</span><span class="p">.</span><span class="w">
+
+</span><span class="nf">channel_msg</span><span class="p" data-group-id="0190262360-13">(</span><span class="n">Msg</span><span class="p">,</span><span class="w"> </span><span class="n">Who</span><span class="p" data-group-id="0190262360-13">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w">
+    </span><span class="nc">ow_zone</span><span class="p">:</span><span class="nf">rpc</span><span class="p" data-group-id="0190262360-14">(</span><span class="o">?</span><span class="n">SERVER</span><span class="p">,</span><span class="w"> </span><span class="ss">channel_msg</span><span class="p">,</span><span class="w"> </span><span class="n">Msg</span><span class="p">,</span><span class="w"> </span><span class="n">Who</span><span class="p" data-group-id="0190262360-14">)</span><span class="p">.</span></code></pre><p>These functions mostly delegate to the <code class="inline">ow_zone</code> module, which handles the underlying mechanics of the zone behavior. The <code class="inline">?SERVER</code> macro is used to refer to the module name, which is a common pattern in Erlang for naming registered processes.</p><h3 id="implementing-callback-functions" class="section-heading">
+  <a href="#implementing-callback-functions" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Implementing Callback Functions</span>
+</h3>
+<p>Next, we'll implement the callback functions required by the <code class="inline">ow_zone</code> behavior:</p><h4>init/1</h4><pre><code class="makeup erlang" translate="no"><span class="nf">init</span><span class="p" data-group-id="8548465012-1">(</span><span class="p" data-group-id="8548465012-2">[</span><span class="p" data-group-id="8548465012-2">]</span><span class="p" data-group-id="8548465012-1">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w">
+    </span><span class="n">State</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="8548465012-3">#{</span><span class="p" data-group-id="8548465012-3">}</span><span class="p">,</span><span class="w">
+    </span><span class="n">Config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="8548465012-4">#{</span><span class="p" data-group-id="8548465012-4">}</span><span class="p">,</span><span class="w">
+    </span><span class="p" data-group-id="8548465012-5">{</span><span class="ss">ok</span><span class="p">,</span><span class="w"> </span><span class="n">State</span><span class="p">,</span><span class="w"> </span><span class="n">Config</span><span class="p" data-group-id="8548465012-5">}</span><span class="p">.</span></code></pre><p>This function initializes the zone's state. In this simple chat application, we start with an empty map for both internal State and the <code class="inline">ow_zone</code> Config. You can add any initial state or configuration here as needed. For example, you might want to change the tick rate via <code class="inline">Config = #{ tick_ms =&gt; 100 }</code> for a 100ms tick rate. You can find further documentation <a href="ow_zone.html">here</a>. </p><h4>handle_join/4</h4><pre><code class="makeup erlang" translate="no"><span class="nf">handle_join</span><span class="p" data-group-id="3360959265-1">(</span><span class="n">Msg</span><span class="p">,</span><span class="w"> </span><span class="n">Who</span><span class="p">,</span><span class="w"> </span><span class="p">_</span><span class="n">ZD</span><span class="p">,</span><span class="w"> </span><span class="n">State</span><span class="p" data-group-id="3360959265-1">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w">
+    </span><span class="n">SessionID</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">ow_session</span><span class="p">:</span><span class="nf">id</span><span class="p" data-group-id="3360959265-2">(</span><span class="n">Who</span><span class="p" data-group-id="3360959265-2">)</span><span class="p">,</span><span class="w">
+    </span><span class="n">Handle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">maps</span><span class="p">:</span><span class="nf">get</span><span class="p" data-group-id="3360959265-3">(</span><span class="ss">handle</span><span class="p">,</span><span class="w"> </span><span class="n">Msg</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Unknown&quot;</span><span class="w"> </span><span class="o">++</span><span class="w"> </span><span class="nf">integer_to_list</span><span class="p" data-group-id="3360959265-4">(</span><span class="n">SessionID</span><span class="p" data-group-id="3360959265-4">)</span><span class="p" data-group-id="3360959265-3">)</span><span class="p">,</span><span class="w">
+    </span><span class="nc">logger</span><span class="p">:</span><span class="nf">notice</span><span class="p" data-group-id="3360959265-5">(</span><span class="s">&quot;Player </span><span class="si">~p</span><span class="s"> (</span><span class="si">~p</span><span class="s">) has joined the chat.&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3360959265-6">[</span><span class="n">Handle</span><span class="p">,</span><span class="w"> </span><span class="n">Who</span><span class="p" data-group-id="3360959265-6">]</span><span class="p" data-group-id="3360959265-5">)</span><span class="p">,</span><span class="w">
+    </span><span class="n">State1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">State</span><span class="p" data-group-id="3360959265-7">#{</span><span class="w"> </span><span class="n">Who</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">Handle</span><span class="w"> </span><span class="p" data-group-id="3360959265-7">}</span><span class="p">,</span><span class="w">
+    </span><span class="n">Handles</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">maps</span><span class="p">:</span><span class="nf">values</span><span class="p" data-group-id="3360959265-8">(</span><span class="n">State1</span><span class="p" data-group-id="3360959265-8">)</span><span class="p">,</span><span class="w">
+    </span><span class="n">BcastMsg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="3360959265-9">{</span><span class="ss">sync</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3360959265-10">#{</span><span class="w"> </span><span class="ss">handles</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">Handles</span><span class="w"> </span><span class="p" data-group-id="3360959265-10">}</span><span class="p" data-group-id="3360959265-9">}</span><span class="p">,</span><span class="w">
+    </span><span class="p" data-group-id="3360959265-11">{</span><span class="ss">broadcast</span><span class="p">,</span><span class="w"> </span><span class="n">BcastMsg</span><span class="p">,</span><span class="w"> </span><span class="n">State1</span><span class="p" data-group-id="3360959265-11">}</span><span class="p">.</span></code></pre><p>This function handles a client joining the chat. It:</p><ol><li>Extracts the client's handle from the join message or generates one.</li><li>Logs the join event.</li><li>Updates the state with the new client.</li><li>Prepares a broadcast message with the updated list of handles.</li><li>Returns a tuple instructing Overworld to broadcast the message and update the state.</li></ol><h4>handle_part/4</h4><pre><code class="makeup erlang" translate="no"><span class="nf">handle_part</span><span class="p" data-group-id="9976743905-1">(</span><span class="p">_</span><span class="n">Msg</span><span class="p">,</span><span class="w"> </span><span class="n">Who</span><span class="p">,</span><span class="w"> </span><span class="p">_</span><span class="n">ZD</span><span class="p">,</span><span class="w"> </span><span class="n">State</span><span class="p" data-group-id="9976743905-1">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w">
+    </span><span class="p" data-group-id="9976743905-2">#{</span><span class="w"> </span><span class="n">Who</span><span class="w"> </span><span class="p">:=</span><span class="w"> </span><span class="n">Handle</span><span class="w"> </span><span class="p" data-group-id="9976743905-2">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">State</span><span class="p">,</span><span class="w">
+    </span><span class="nc">logger</span><span class="p">:</span><span class="nf">notice</span><span class="p" data-group-id="9976743905-3">(</span><span class="s">&quot;Player </span><span class="si">~p</span><span class="s"> (</span><span class="si">~p</span><span class="s">) has left the chat.&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9976743905-4">[</span><span class="n">Handle</span><span class="p">,</span><span class="w"> </span><span class="n">Who</span><span class="p" data-group-id="9976743905-4">]</span><span class="p" data-group-id="9976743905-3">)</span><span class="p">,</span><span class="w">
+    </span><span class="n">State1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">maps</span><span class="p">:</span><span class="nf">remove</span><span class="p" data-group-id="9976743905-5">(</span><span class="n">Who</span><span class="p">,</span><span class="w"> </span><span class="n">State</span><span class="p" data-group-id="9976743905-5">)</span><span class="p">,</span><span class="w">
+    </span><span class="n">Handles</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">maps</span><span class="p">:</span><span class="nf">values</span><span class="p" data-group-id="9976743905-6">(</span><span class="n">State1</span><span class="p" data-group-id="9976743905-6">)</span><span class="p">,</span><span class="w">
+    </span><span class="n">BcastMsg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="9976743905-7">{</span><span class="ss">sync</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9976743905-8">#{</span><span class="w"> </span><span class="ss">handles</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">Handles</span><span class="w"> </span><span class="p" data-group-id="9976743905-8">}</span><span class="p" data-group-id="9976743905-7">}</span><span class="p">,</span><span class="w">
+    </span><span class="p" data-group-id="9976743905-9">{</span><span class="ss">broadcast</span><span class="p">,</span><span class="w"> </span><span class="n">BcastMsg</span><span class="p">,</span><span class="w"> </span><span class="n">State1</span><span class="p" data-group-id="9976743905-9">}</span><span class="p">.</span></code></pre><p>This function is similar to <code class="inline">handle_join/4</code>, but handles a client leaving the chat. It removes the client from the state and broadcasts an updated list of handles.</p><h4>handle_channel_msg/4</h4><pre><code class="makeup erlang" translate="no"><span class="nf">handle_channel_msg</span><span class="p" data-group-id="9649197634-1">(</span><span class="n">Msg</span><span class="p">,</span><span class="w"> </span><span class="n">Who</span><span class="p">,</span><span class="w"> </span><span class="p">_</span><span class="n">ZD</span><span class="p">,</span><span class="w"> </span><span class="n">State</span><span class="p" data-group-id="9649197634-1">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w">
+    </span><span class="p" data-group-id="9649197634-2">#{</span><span class="w"> </span><span class="n">Who</span><span class="w"> </span><span class="p">:=</span><span class="w"> </span><span class="n">Handle</span><span class="w"> </span><span class="p" data-group-id="9649197634-2">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">State</span><span class="p">,</span><span class="w">
+    </span><span class="nc">logger</span><span class="p">:</span><span class="nf">notice</span><span class="p" data-group-id="9649197634-3">(</span><span class="s">&quot;&lt;</span><span class="si">~p</span><span class="s">&gt;: </span><span class="si">~p</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9649197634-4">[</span><span class="n">Handle</span><span class="p">,</span><span class="w"> </span><span class="n">Msg</span><span class="p" data-group-id="9649197634-4">]</span><span class="p" data-group-id="9649197634-3">)</span><span class="p">,</span><span class="w">
+    </span><span class="n">Msg1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Msg</span><span class="p" data-group-id="9649197634-5">#{</span><span class="w"> </span><span class="ss">handle</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="n">Handle</span><span class="w"> </span><span class="p" data-group-id="9649197634-5">}</span><span class="p">,</span><span class="w">
+    </span><span class="nc">ow_zone</span><span class="p">:</span><span class="nf">broadcast</span><span class="p" data-group-id="9649197634-6">(</span><span class="o">?</span><span class="n">SERVER</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9649197634-7">{</span><span class="ss">channel_msg</span><span class="p">,</span><span class="w"> </span><span class="n">Msg1</span><span class="p" data-group-id="9649197634-7">}</span><span class="p" data-group-id="9649197634-6">)</span><span class="p">,</span><span class="w">
+    </span><span class="p" data-group-id="9649197634-8">{</span><span class="ss">noreply</span><span class="p">,</span><span class="w"> </span><span class="n">State</span><span class="p" data-group-id="9649197634-8">}</span><span class="p">.</span></code></pre><p>This function handles chat messages from clients. It logs the message, adds the sender's handle to the message, and broadcasts it to all clients.</p><h4>handle_tick/2</h4><pre><code class="makeup erlang" translate="no"><span class="nf">handle_tick</span><span class="p" data-group-id="0871937676-1">(</span><span class="p">_</span><span class="n">ZoneData</span><span class="p">,</span><span class="w"> </span><span class="n">State</span><span class="p" data-group-id="0871937676-1">)</span><span class="w"> </span><span class="p">-&gt;</span><span class="w">
+    </span><span class="p" data-group-id="0871937676-2">{</span><span class="ss">noreply</span><span class="p">,</span><span class="w"> </span><span class="n">State</span><span class="p" data-group-id="0871937676-2">}</span><span class="p">.</span></code></pre><p>This function is called periodically by Overworld. In this simple chat application, we don't need to do anything on each tick, so we just return the unchanged state.</p><h2 id="chat-application-protocol-buffer-schema" class="section-heading">
+  <a href="#chat-application-protocol-buffer-schema" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Chat Application Protocol Buffer Schema</span>
+</h2>
+<h3 id="overview" class="section-heading">
+  <a href="#overview" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Overview</span>
+</h3>
+<p>For our chat application, we use Protocol Buffers to define the structure of messages exchanged between the Erlang server and Godot clients. This schema defines four types of messages: join, part, channel_msg, and sync.</p><h3 id="creating-the-schema-file" class="section-heading">
+  <a href="#creating-the-schema-file" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Creating the Schema File</span>
+</h3>
+<p>Create a new file <code class="inline">chat.proto</code> in the <code class="inline">priv/proto</code> directory of your Erlang application:</p><pre><code class="makeup bash" translate="no"><span class="">mkdir -p priv/proto
+</span><span class="">touch priv/proto/chat.proto
+</span></code></pre><h3 id="the-schema-definition" class="section-heading">
+  <a href="#the-schema-definition" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">The Schema Definition</span>
+</h3>
+<p>Open <code class="inline">chat.proto</code> and add the following content:</p><pre><code class="protobuf">syntax = &quot;proto2&quot;;
+
+package chat;
+
+message chat {
+    oneof msg {
+        join        join        = 1;
+        part        part        = 2;
+        channel_msg channel_msg = 3;
+        sync        sync        = 4;
+    }
+}
+
+message join {
+    optional string handle = 1;
+}
+
+message part {
+}
+
+message channel_msg {
+    optional string handle = 1;
+    optional string text = 2;
+}
+
+message sync {
+    repeated string handles = 1;
+}</code></pre><h3 id="explanation-of-message-types" class="section-heading">
+  <a href="#explanation-of-message-types" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Explanation of Message Types</span>
+</h3>
+<h4>Main chat Message</h4><p>The <code class="inline">chat</code> message is the wrapper for all other message types. It uses a <code class="inline">oneof</code> field, which means each <code class="inline">chat</code> message will contain exactly one of the submessage types.</p><pre><code class="protobuf">message chat {
+    oneof msg {
+        join        join        = 1;
+        part        part        = 2;
+        channel_msg channel_msg = 3;
+        sync        sync        = 4;
+    }
+}</code></pre><h4>Join Message</h4><p>Used when a client joins the chat.</p><pre><code class="protobuf">message join {
+    optional string handle = 1;
+}</code></pre><ul><li><code class="inline">handle</code>: The user's chosen display name. It's optional, allowing the server to assign a default if none is provided.</li></ul><h4>Part Message</h4><p>Used when a client leaves the chat.</p><pre><code class="protobuf">message part {
+}</code></pre><p>This message is empty because no additional information is needed when a user leaves.</p><h4>Channel Message</h4><p>Used for sending chat messages.</p><pre><code class="protobuf">message channel_msg {
+    optional string handle = 1;
+    optional string text = 2;
+}</code></pre><ul><li><code class="inline">handle</code>: The sender's display name.</li><li><code class="inline">text</code>: The content of the message.</li></ul><h4>Sync Message</h4><p>Used to update clients with the current list of users in the chat.</p><pre><code class="protobuf">message sync {
+    repeated string handles = 1;
+}</code></pre><ul><li><code class="inline">handles</code>: A list of all current user handles in the chat.</li></ul><h3 id="usage-in-the-chat-application" class="section-heading">
+  <a href="#usage-in-the-chat-application" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Usage in the Chat Application</span>
+</h3>
+<ul><li>When a user joins, the client sends a <code class="inline">join</code> message with their chosen handle.</li><li>The server responds with a <code class="inline">sync</code> message to all clients, updating the user list.</li><li>Users send chat messages using the <code class="inline">channel_msg</code> type.</li><li>When a user leaves, the client sends a <code class="inline">part</code> message, and the server again sends a <code class="inline">sync</code> to all remaining clients.</li></ul><p>This schema provides a simple yet flexible structure for our chat application, allowing for easy extension if we need to add more features in the future.</p>
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
+  <div class="bottom-actions-item">
+
+      <a href="intro.html" class="bottom-actions-button" rel="prev">
+        <span class="subheader">
+          ← Previous Page
+        </span>
+        <span class="title">
+Quickstart Intro
+        </span>
+      </a>
+
+  </div>
+  <div class="bottom-actions-item">
+
+      <a href="client.html" class="bottom-actions-button" rel="next">
+        <span class="subheader">
+          Next Page →
+        </span>
+        <span class="title">
+Quickstart for Client
+        </span>
+      </a>
+
+  </div>
+</div>
+    <footer class="footer">
+      <p>
+
+          <span class="line">
+            <a href="https://hex.pm/packages/overworld/2.0.1" class="footer-hex-package">Hex Package</a>
+
+            <a href="https://preview.hex.pm/preview/overworld/2.0.1">Hex Preview</a>
+
+              (<a href="https://preview.hex.pm/preview/overworld/2.0.1/show/guides/quickstart/server.md">current file</a>)
+
+          </span>
+
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
+
+            <a href="overworld.epub" title="ePub version">
+              Download ePub version
+            </a>
+
+        </span>
+      </p>
+
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.34.2) for the
+
+          <a href="https://erlang.org" title="Erlang" target="_blank" translate="no">Erlang programming language</a>
+
+      </p>
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>
