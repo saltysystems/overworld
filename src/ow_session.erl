@@ -256,8 +256,6 @@ init([Config]) ->
         token = proplists:get_value(token, Config, undefined),
         zone = undefined
     },
-    % Register with gproc
-    true = gproc:reg({n, l, Session#session.id}, ignored),
     % Set a timer to maybe terminate a stale session if it hasn't gone active
     % within the default timeout period
     case Session#session.proxy of
