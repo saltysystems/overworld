@@ -68,9 +68,8 @@ session_request(Msg, SessionPID) ->
             % Stop the temporary session
             ok = ow_session_sup:delete(SessionPID)
     end,
-    % Register the process of the caller
-    gproc:reg({p, l, client_session}),
-    ok.
+    % Register this session in the client list
+    ok = pg:join(overworld, clients, SessionPID).
 
 %%===========================================================================
 %% Utility API
@@ -108,13 +107,13 @@ notify_clients({MsgType, Msg}, [SessionPID | Rest]) ->
         ProxyPID = ow_session:proxy(SessionPID),
         case ProxyPID of
             undefined ->
-                logger:debug("no proxy defined, doing nothing"),
+                logger:debug("no proxy defined for session ~p (noop)", [SessionPID]),
                 ok;
             _ ->
                 % Send a message to the client, let the connection handler figure
                 % out how to serialize it further
                 logger:debug("Sending client message to ~p", [ProxyPID]),
-                ProxyPID ! {self(), client_msg, {MsgType, Msg}}
+                ProxyPID ! {self(), ow_msg, {MsgType, Msg}}
         end
     catch
         exit:{noproc, _} ->

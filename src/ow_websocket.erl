@@ -71,14 +71,14 @@ websocket_handle(Frame, Pid) ->
 %%      process comes into this handler process.
 %% @end
 %%--------------------------------------------------------------------------
--spec websocket_info({From, client_msg, Msg}, SessionPid) -> Reply when
+-spec websocket_info({From, ow_msg, Msg}, SessionPid) -> Reply when
     From :: pid(),
     Msg :: binary(),
     SessionPid :: pid(),
     Reply :: {reply, {binary, Msg1}, SessionPid1},
     Msg1 :: binary(),
     SessionPid1 :: pid().
-websocket_info({_From, client_msg, {MsgType, Msg}}, Pid) ->
+websocket_info({_From, ow_msg, {MsgType, Msg}}, Pid) ->
     % Encode the message into binary
     Bin = to_binary(MsgType, Msg),
     {reply, {binary, Bin}, Pid};

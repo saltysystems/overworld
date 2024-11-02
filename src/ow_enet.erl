@@ -77,7 +77,7 @@ handle_info({enet, _Channel, {unsequenced, _Group, Msg}}, PeerInfo) ->
     decode_and_reply(Msg, PeerInfo),
     {noreply, PeerInfo};
 handle_info(
-    {_From, client_msg, {MsgType, Msg}}, PeerInfo = #{channels := Channels}
+    {_From, ow_msg, {MsgType, Msg}}, PeerInfo = #{channels := Channels}
 ) ->
     % Handle a message from another overworld process
     channelize_msg(MsgType, Msg, Channels),

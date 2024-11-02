@@ -83,12 +83,10 @@ handle_info(tick, {Window, OldTimer}) ->
     % Push the beacon ID + current time to the stack
     Beacon = {ID, erlang:monotonic_time()},
     % Encode the beacon and broadcast it to all clients.
-    % n.b., There's a very small race here. A client could conceivably respond
-    % faster than the server has updated the list but I've never observed this
-    % even on LAN
-    Msg = {self(), client_msg, {session_beacon, #{id => ID}}},
-    % use gproc to send ALL registered processes!
-    gproc:send({p, l, client_session}, Msg),
+    Msg = {session_beacon, #{id => ID}},
+    Clients = pg:get_members(overworld, clients),
+    ow_session_util:notify_clients(Msg, Clients),
+    % Start next timer
     NewTimer = erlang:send_after(?HEARTBEAT, self(), tick),
     {noreply, {push(Beacon, Window), NewTimer}};
 handle_info(_Info, State) ->
