@@ -1,19 +1,7 @@
 -module(ow_binding).
 
 -export([
-    write/0,
-    pb_to_godot_type/1,
-    print/0,
-    get_encoders/0,
-    load_scripts/1,
-    generate_prefixes/0,
-    generate_signals/0,
-    generate_enums/1,
-    generate_submsgs/1,
-    generate_unmarshall/0,
-    generate_marshall_submsgs/1,
-    generate_marshall/0,
-    generate_router/0
+    print/0
 ]).
 
 -include_lib("eunit/include/eunit.hrl").
@@ -24,13 +12,7 @@
 ).
 -define(DEFAULT_TEMPLATE_4, "templates/libow4.mustache").
 
--spec write() -> ok | {error, Reason} when
-    Reason :: file:posix() | badarg | terminated | system_limit.
-write() ->
-    file:write_file(
-        "priv/static/libow.gd", ow_binding:print()
-    ).
-
+-spec print() -> string().
 print() ->
     Encoders = get_encoders(),
     Preloads = load_scripts(Encoders),
@@ -63,53 +45,6 @@ get_template() ->
     bbmustache:parse_file(
         PrivDir ++ "/" ++ Template
     ).
-
--spec pb_to_godot_type(PbType) -> GodotType when
-    PbType ::
-        double
-        | float
-        | int32
-        | int64
-        | uint32
-        | sint32
-        | sint64
-        | fixed32
-        | fixed64
-        | sfixed32
-        | sfixed64
-        | bool
-        | string
-        | bytes
-        | atom(),
-    GodotType ::
-        float
-        | int
-        | bool
-        | 'String'
-        | 'PackedByteArray'
-        | void.
-pb_to_godot_type(Type) ->
-    % https://docs.godotengine.org/en/latest/tutorials/scripting/gdscript/gdscript_basics.html
-    % All ints are internally handled as int64_t in GDScript (2.0)
-    case Type of
-        double -> float;
-        float -> float;
-        int32 -> int;
-        int64 -> int;
-        uint32 -> int;
-        uint64 -> int;
-        sint32 -> int;
-        sint64 -> int;
-        fixed32 -> int;
-        fixed64 -> int;
-        sfixed32 -> int;
-        sfixed64 -> int;
-        bool -> bool;
-        string -> 'String';
-        bytes -> 'PackedByteArray';
-        % Do the best you can.
-        _Other -> void
-    end.
 
 -spec get_encoders() -> list().
 get_encoders() ->

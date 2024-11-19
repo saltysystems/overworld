@@ -1,12 +1,21 @@
+%%%-------------------------------------------------------------------
+%% @doc Overworld HTTP(S) Handler for providing the Protobuf schema
+%%      and generated Godot library
+%% @end
+%%%-------------------------------------------------------------------
+
 -module(ow_dl_handler).
 -behaviour(cowboy_handler).
 
 -export([init/2]).
 
+%%-------------------------------------------------------------------------
+%% @doc Initializes the handler and handles the request for the API
+%%      package. Compiles the latest code, generates the client API
+%%      and protocol files, creates a ZIP archive containing the
+%%      files, and sends it as the response.
+%%-------------------------------------------------------------------------
 -spec init(cowboy_req:req(), any()) -> {ok, cowboy_req:req(), any()}.
-%% @doc Initializes the handler and handles the request for the API package.
-%% Compiles the latest code, generates the client API and protocol files,
-%% creates a ZIP archive containing the files, and sends it as the response.
 init(Req, State) ->
     #{peer := {IP, _Port}} = Req,
     logger:info("Got a request for API package from ~p", [IP]),
@@ -30,22 +39,29 @@ init(Req, State) ->
     ),
     {ok, Req2, State}.
 
+%%-------------------------------------------------------------------------
+%% @doc Converts a list of application information into a list of
+%%      protocol files.
+%%-------------------------------------------------------------------------
 -spec protofiles(list()) -> [{string(), binary()}, ...].
-%% @doc Converts a list of application information into a list of protocol files.
 protofiles(FileList) ->
     protofiles(FileList, []).
 
+%%-------------------------------------------------------------------------
+%% @doc Helper function to recursively process the list of application
+%%      information and build the list of protocol files.
+%%-------------------------------------------------------------------------
 -spec protofiles([{atom(), map()}], list()) -> list().
-%% @doc Helper function to recursively process the list of application information
-%% and build the list of protocol files.
 protofiles([], Acc) ->
     Acc;
 protofiles([{_Prefix, #{app := App}} | T], Acc) ->
     Files = {atom_to_list(App) ++ ".proto", protofile(App)},
     protofiles(T, [Files | Acc]).
 
--spec protofile(atom()) -> binary().
+%%-------------------------------------------------------------------------
 %% @doc Retrieves the protocol file for the given application.
+%%-------------------------------------------------------------------------
+-spec protofile(atom()) -> binary().
 protofile(App) ->
     D = code:priv_dir(App),
     % Very hard-coded and rudimentary.
