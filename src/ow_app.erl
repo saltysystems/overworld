@@ -14,9 +14,9 @@
 -define(WSS_PORT, "4434").
 
 %%-------------------------------------------------------------------------
-%% @doc Start the top-level Overworld application, including the Cowboy 
+%% @doc Start the top-level Overworld application, including the Cowboy
 %%      router (WebSocket/TCP) and ENet host (UDP)
-%% @end  
+%% @end
 %%-------------------------------------------------------------------------
 -spec start(application:start_type(), map()) -> supervisor:startlink_ret().
 start(StartType, []) ->
@@ -54,7 +54,7 @@ start(_StartType, StartArgs) ->
 
 %%-------------------------------------------------------------------------
 %% @doc Stop the Overworld application.
-%% @end  
+%% @end
 %%-------------------------------------------------------------------------
 -spec stop(term()) -> ok.
 stop(_State) ->
