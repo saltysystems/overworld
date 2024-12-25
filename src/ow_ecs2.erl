@@ -1,3 +1,10 @@
+%%%-------------------------------------------------------------------
+%% @doc Entity Component System for Overworld without gen_server.
+%%      All ETS tables are set public and refernces are returned
+%%      directly to the caller in an opaque world() type.
+%% @end
+%%%-------------------------------------------------------------------
+
 -module(ow_ecs2).
 
 %% API
@@ -47,6 +54,11 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % API
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%---------------------------------------------------------------------
+%% @doc Start the ECS with ETS tables set to public, return them in an
+%%      opaque world() type to the caller
+%%---------------------------------------------------------------------
 -spec start() -> world().
 start() ->
     #world{
@@ -55,13 +67,20 @@ start() ->
         components = ets:new(components, [bag, public])
     }.
 
+%%---------------------------------------------------------------------
+%% @doc Stop the ECS and delete the ETS tables
+%%---------------------------------------------------------------------
 -spec stop(world()) -> ok.
 stop(#world{entities = ETable, components = CTable}) ->
     ets:delete(ETable),
     ets:delete(CTable),
     ok.
 
-% This can potentially create an unbounded number of atoms! Careful!
+%%---------------------------------------------------------------------
+%% @doc Convert the component list for a given entity ID to a map.
+%       Warning: this can potentially create an unbounded number of
+%       atoms!
+%%---------------------------------------------------------------------
 -spec to_map(entity()) -> map().
 to_map({EntityID, Components}) ->
     % Create the component map
@@ -69,10 +88,19 @@ to_map({EntityID, Components}) ->
     % Add the ID
     EMap#{id => EntityID}.
 
+%%---------------------------------------------------------------------
+%% @doc Retrieve a given component from a component list, othewise
+%%      return false
+%%---------------------------------------------------------------------
 -spec get(term(), [component()]) -> term().
 get(Component, ComponentList) ->
     get(Component, ComponentList, false).
 
+%%---------------------------------------------------------------------
+%% @doc Retrieve a given component from a component list, optionally
+%%      specifying a default value should the component not be
+%%      found.
+%%---------------------------------------------------------------------
 -spec get(term(), [component()], term()) -> term().
 get(Component, ComponentList, Default) ->
     case lists:keyfind(Component, 1, ComponentList) of
@@ -82,10 +110,21 @@ get(Component, ComponentList, Default) ->
             Default
     end.
 
+%%---------------------------------------------------------------------
+%% @doc Take a component from a component list, returning a tuple
+%%      containing the data from the component, and the rest of the
+%%      component list. If the component is not found, return false.
+%%---------------------------------------------------------------------
 -spec take(term(), [component()]) -> term() | false.
 take(Component, ComponentList) ->
     take(Component, ComponentList, false).
 
+%%---------------------------------------------------------------------
+%% @doc Take a component from a component list, returning a tuple
+%%      containing the data from the component, and the rest of the
+%%      component list. If the component is not found, return a
+%%      default value.
+%%---------------------------------------------------------------------
 -spec take(term(), [component()], term()) -> {term(), [term()]} | term().
 take(Component, ComponentList, Default) ->
     case lists:keytake(Component, 1, ComponentList) of
@@ -95,6 +134,10 @@ take(Component, ComponentList, Default) ->
             Default
     end.
 
+%%---------------------------------------------------------------------
+%% @doc Insert a new entity into the entity table, identified by
+%%      EntityID
+%%---------------------------------------------------------------------
 -spec new_entity(id(), world()) -> ok.
 new_entity(EntityID, World) ->
     #world{entities = E} = World,
@@ -106,6 +149,9 @@ new_entity(EntityID, World) ->
             ok
     end.
 
+%%---------------------------------------------------------------------
+%% @doc Remove a given entity from the entity table
+%%---------------------------------------------------------------------
 -spec rm_entity(id(), world()) -> ok.
 rm_entity(EntityID, World) ->
     #world{entities = E, components = C} = World,
