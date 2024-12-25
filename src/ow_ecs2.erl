@@ -90,7 +90,7 @@ to_map({EntityID, Components}) ->
 
 %%---------------------------------------------------------------------
 %% @doc Retrieve a given component from a component list, othewise
-%%      return false 
+%%      return false
 %%---------------------------------------------------------------------
 -spec get(term(), [component()]) -> term().
 get(Component, ComponentList) ->
