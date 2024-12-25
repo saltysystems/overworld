@@ -12,7 +12,7 @@
 ).
 -define(DEFAULT_TEMPLATE_4, "templates/libow4.mustache").
 
--spec print() -> string().
+-spec print() -> binary().
 print() ->
     Encoders = get_encoders(),
     Preloads = load_scripts(Encoders),
