@@ -8,6 +8,61 @@ To proceed with the tutorials, you will need to have [Erlang/OTP
 game server. For your client, we recommend the latest stable release of the
 [Godot](https://godotengine.com/) 4.x release series.
 
+## Tutorial Server Installation
+
+
+Install necessary packages via package manager 
+
+```
+apt-get install curl build-essential autoconf libssl-dev libncurses-dev
+```
+
+Fetch [kerl](https://github.com/kerl/kerl) and [rebar3](https://rebar3.org/)
+
+```
+curl -O https://raw.githubusercontent.com/kerl/kerl/master/kerl
+curl -O https://s3.amazonaws.com/rebar3/rebar3
+```
+
+Make those files executable with `chmod +x` and optionally add them to your
+PATH. Now use kerl to build and install your Erlang/OTP instance
+
+```
+kerl build 27.1.2
+kerl install 27.1.2 ~/erlang27.1.2
+```
+
+Activate and deactivate the Erlang environment analogously to a python venv
+
+```
+. ~/erlang27.1.2/activate
+kerl_deactivate
+```
+
+Use rebar3 to build and run the server for the tutorial. Rebar3 should
+automatically fetch dependencies for the overworld game server. The `shell`
+subcommand will start the server and begin listening for connections:
+
+```
+git clone git@github.com:saltysystems/chat_server_example.git
+cd chat_server_example
+rebar3 shell
+```
+
+You should be left with an erlang shell running an overworld server. Use the
+Godot client
+[chat-client-example](https://github.com/saltysystems/chat-client-example) to
+connect. Use `q().` to stop the server.
+
+As a test for the server, run the following to join, send a message, and finally
+leave as a Robot from the Erlang console:
+
+```
+1> {ok, S} = ow_session:start([{proxy, self()}]).
+2> chat_zone:join(#{ handle => "Robot" }, S).
+3> chat_zone:channel_msg(#{ handle => [], text => "sup"}, S).
+4> chat_zone:part(#{}, S).
+```
 
 ## Quickstart
 In the quickstart tutorial, you will build a Chat server in Erlang that will
@@ -23,3 +78,4 @@ communicating with the Overworld server.
 [Creating the server](server.md)
 
 [Creating the client](client.md)
+
