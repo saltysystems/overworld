@@ -1,4 +1,4 @@
--module(ow_dl_manifest).
+-module(ow_client_lib).
 -behaviour(cowboy_handler).
 
 -export([init/2]).
