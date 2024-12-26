@@ -85,7 +85,7 @@ send_file([{<<"file">>, BinFile}], Req) ->
             )
     end.
 
--spec protofiles(list()) -> [binary(), ...].
+-spec protofiles(list()) -> iolist().
 protofiles(FileList) ->
     protofiles(FileList, []).
 protofiles([], Acc) ->
