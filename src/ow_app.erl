@@ -32,8 +32,7 @@ start(_StartType, StartArgs) ->
     Dispatch = cowboy_router:compile([
         {'_', [
             {"/ws", ow_websocket, []},
-            {"/client/download", ow_dl_handler, []},
-            {"/client/manifest", ow_dl_manifest, []}
+            {"/client/manifest", ow_client_lib, []}
         ]}
     ]),
     % Start Cowboy for Websocket connections

@@ -1,4 +1,4 @@
--module(ow_dl_manifest).
+-module(ow_client_lib).
 -behaviour(cowboy_handler).
 
 -export([init/2]).
@@ -22,14 +22,12 @@ init(Req, State) ->
     {ok, Reply, State}.
 
 manifest(Req) ->
-    % List all registered apps
-    Apps = ow_protocol:apps(),
-    % Get the list of files
-    % only support 4
+    % Static files
     ClientLibs = [<<"libow4.gd">>],
-    ProtoFiles = ClientLibs ++ protofiles(Apps),
+    % Protobuf files
+    ProtoFiles = protofiles(ow_protocol:apps()),
     % Encode the list via jsone
-    Manifest = jsone:encode(ProtoFiles),
+    Manifest = jsone:encode(ClientLibs ++ ProtoFiles),
     cowboy_req:reply(
         200,
         #{
@@ -68,12 +66,12 @@ send_file([{<<"file">>, <<"libow4.gd">>}], Req) ->
     );
 send_file([{<<"file">>, BinFile}], Req) ->
     File = binary_to_list(BinFile),
-    [App | _] = string:split(File, "."),
-    Content = protofile(App),
+    % Now split the path into constituent components
+    Content = sanitized_protofile(File),
     case Content of
-        error ->
+        {error, _} ->
             cowboy_req:reply(404, #{}, Req);
-        F ->
+        {ok, F} ->
             cowboy_req:reply(
                 200,
                 #{
@@ -91,19 +89,28 @@ protofiles(FileList) ->
     protofiles(FileList, []).
 protofiles([], Acc) ->
     Acc;
-protofiles([{_Prefix, #{app := AppName}} | T], Acc) ->
-    % Simple namer
-    ProtoName = atom_to_list(AppName),
-    Files = list_to_binary(ProtoName ++ ".proto"),
-    protofiles(T, [Files | Acc]).
-
-% return the path of the proto file for the given application
--spec protofile(string()) -> binary() | error.
-protofile(App) ->
-    D = code:priv_dir(list_to_existing_atom(App)),
-    % Very hard-coded and rudimentary.
-    F = D ++ "/proto/" ++ App ++ ".proto",
-    case file:read_file(F) of
-        {ok, Proto} -> Proto;
-        _ -> error
+protofiles([{_Prefix, #{app := App}} | T], Acc) ->
+    % Lookup all proto files in priv dir
+    ProtoDir = code:priv_dir(App) ++ "/proto",
+    case file:list_dir(ProtoDir) of
+        {ok, F} ->
+            F1 = lists:map(
+                fun(Elem) ->
+                    filename:flatten([App, "/", Elem])
+                end,
+                F
+            ),
+            protofiles(T, [list_to_binary(F1) | Acc]);
+        {error, _E} ->
+            protofiles(T, Acc)
     end.
+
+-spec sanitized_protofile(string()) -> {ok, binary()} | {error, atom()}.
+sanitized_protofile(Input) ->
+    [App, Protofile] = filename:split(Input),
+    % Only accept and return protobuf files or crash
+    ".proto" = filename:extension(Protofile),
+    % Get the protofile
+    D = code:priv_dir(list_to_existing_atom(App)),
+    F = D ++ "/proto/" ++ Protofile,
+    file:read_file(F).
