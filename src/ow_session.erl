@@ -60,7 +60,7 @@
 -export_type([serializer/0]).
 -export_type([id/0]).
 
--define(DEFAULT_DISCONNECT_TIMEOUT, 5000).
+-define(DEFAULT_DISCONNECT_TIMEOUT, 0).
 % A bit hackish, but gives the zone some time to deal with shutdowns
 -define(DEFAULT_SHUTDOWN_DELAY, 1000).
 
