@@ -131,11 +131,6 @@ route(<<Prefix:16, Msg/binary>>, SessionPID) ->
             ok;
         {MsgModule, EncoderLib, Application} ->
             erlang:apply(MsgModule, decode, [Msg, SessionPID, EncoderLib, Application])
-        %#{app := Application, router := Router} ->
-        %    % Assume this app implements the ow_router behaviour
-        %    % Get the EncoderLib and Application
-        %    EncoderLib = list_to_existing_atom(atom_to_list(Application) ++ "_pb"),
-        %    erlang:apply(Router, decode, [Msg, SessionPID, EncoderLib, Application])
     end.
 
 %%-------------------------------------------------------------------------
