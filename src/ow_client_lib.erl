@@ -27,7 +27,8 @@ manifest(Req) ->
     % Protobuf files
     ProtoFiles = protofiles(ow_protocol:apps()),
     % Encode the list via jsone
-    Manifest = jsone:encode(ClientLibs ++ ProtoFiles),
+    FileList = lists:flatten([ProtoFiles | ClientLibs]),
+    Manifest = jsone:encode(FileList),
     cowboy_req:reply(
         200,
         #{
@@ -84,7 +85,7 @@ send_file([{<<"file">>, BinFile}], Req) ->
             )
     end.
 
--spec protofiles(list()) -> [binary(), ...].
+-spec protofiles(list()) -> iolist().
 protofiles(FileList) ->
     protofiles(FileList, []).
 protofiles([], Acc) ->
@@ -93,14 +94,15 @@ protofiles([{_Prefix, #{app := App}} | T], Acc) ->
     % Lookup all proto files in priv dir
     ProtoDir = code:priv_dir(App) ++ "/proto",
     case file:list_dir(ProtoDir) of
-        {ok, F} ->
+        {ok, FileList} ->
             F1 = lists:map(
                 fun(Elem) ->
-                    filename:flatten([App, "/", Elem])
+                    list_to_binary(filename:flatten([App, "/", Elem]))
                 end,
-                F
+                FileList
             ),
-            protofiles(T, [list_to_binary(F1) | Acc]);
+            logger:debug("F1: ~p", [F1]),
+            protofiles(T, [F1 | Acc]);
         {error, _E} ->
             protofiles(T, Acc)
     end.
