@@ -32,7 +32,8 @@ start(_StartType, StartArgs) ->
     Dispatch = cowboy_router:compile([
         {'_', [
             {"/ws", ow_websocket, []},
-            {"/client/manifest", ow_client_lib, []}
+            {"/client/manifest", ow_client_lib, []},
+            {"/client", ow_client, []}
         ]}
     ]),
     % Start Cowboy for Websocket connections
@@ -44,7 +45,7 @@ start(_StartType, StartArgs) ->
     Options = [
         {peer_limit, PeerLimit},
         {channel_limit, ChannelLimit},
-        {compression_mode, zlib}
+        {compression_mode, none}
     ],
     Handler = {ow_enet, start, []},
     enet:start_host(EnetPort, Handler, Options),
